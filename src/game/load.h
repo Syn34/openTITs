@@ -75,7 +75,7 @@ namespace lg {
 // Game_Load
 constexpr u32 kSysMsgShows = 0x010BA12C;      // u8[4]: set to 1 (see update.h)
 constexpr u32 kSysMsgCallback = 0x00F65C8C;   // u32 OPD (see update.h)
-constexpr u32 kWorld = 0x00F65CA0;            // u32: copy of Game +0 (update.h calls it kSession)
+constexpr u32 kWorld = 0x00F65CA0;            // u32: copy of Game +0 (update.h calls it kCurrentWorld)
 constexpr u32 kSysMsgCallbackOpd = 0x00F39BD8;  // OPD of 0x004645AC
 constexpr u32 kNpManagerCallbackOpd = 0x00F39E70;  // OPD of 0x0049AF38
 // UI

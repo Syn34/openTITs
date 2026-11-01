@@ -41,12 +41,12 @@ DECOMP(0055329C, FrameArena_Align) {
     if (up > top) field<u32>(a, 16) = up - 16;
 }
 
-// void Input_SetMenuMode(bool on)  (name?)
+// void Audio_SetPaused(bool on)  (name?)
 // Records the mode; once kMenuModeReady is set, works out the new mask (all
 // bits when on, plus kMenuModeExtraBits and bit 2 when kMenuModeBit2) and
 // passes the bits that turned on to sub_006D530C and those that turned off
 // to sub_006D53F0.
-DECOMP(0044BA6C, Input_SetMenuMode) {
+DECOMP(0044BA6C, Audio_SetPaused) {
     const u8 on = arg<u8>(ctx, 0);
     ref<u8>(kMenuMode) = on;
     const u8 ready = ref<u8>(kMenuModeReady);
@@ -64,8 +64,8 @@ DECOMP(0044BA6C, Input_SetMenuMode) {
     store<u32>(kMenuModeMask, mask);
 }
 
-// u8 Input_GetMenuMode()  (name?)
-DECOMP(0044BB3C, Input_GetMenuMode) { ret(ctx, static_cast<u32>(ref<u8>(kMenuMode))); }
+// u8 Audio_IsPaused()  (name?)
+DECOMP(0044BB3C, Audio_IsPaused) { ret(ctx, static_cast<u32>(ref<u8>(kMenuMode))); }
 
 // void Ui_SetInputHandler(opd handler, u32 arg)  (name?)
 DECOMP(004D5048, Ui_SetInputHandler) {

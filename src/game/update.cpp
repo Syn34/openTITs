@@ -110,7 +110,7 @@ void Game_UpdateSystemMessage(PPUContext& ctx, u32 game) {
             ref<u8>(kSavedLoadingState) = static_cast<u8>(call_ptr(ctx, vfunc(e, kUiVfnState), {e}));
             Ui_SetVisible(ctx, e, 0);
         }
-        call(ctx, ufn::Input_SetMenuMode, {1});
+        call(ctx, ufn::Audio_SetPaused, {1});
         call(ctx, ufn::Ui_SetInputHandler, {kSysMsgInputHandler, 0});
         call(ctx, ufn::Ui_SetEventHandler, {kSysMsgEventHandler, game});
         // Game +4 is still 0 here unless one of the calls above set it.
@@ -171,7 +171,7 @@ bool Game_AnyPadConnected(u32 session, s32 users) {
 // four frames in a row, and drops it again once one is back (while the
 // watch state is 3).
 void Game_WatchPads() {
-    const u32 session = load<u32>(kSession);
+    const u32 session = load<u32>(kCurrentWorld);
     const s32 users = ref<u8>(session + kSessionUserCount);
     auto& flags = ref<be_u32>(g::sysutil_flags);
     if (ref<u8>(kPadWatchArmed) == 1) {
@@ -274,18 +274,18 @@ DECOMP(0045B858, Game_Update) {
 
     const s32 prev = load<s32>(kPrevMainState);
     const s32 now = static_cast<s32>(state.get());
-    const u32 session = load<u32>(kSession);
+    const u32 session = load<u32>(kCurrentWorld);
     if (prev != now && !(prev == 0 && now == 1)) {
         const u32 movie = static_cast<u32>(call(ctx, ufn::FlowState_GetMovieOwner, {session}));
         auto& session_flags = ref<u8>(session + kSessionFlags);
         if (now == static_cast<s32>(kMainPaused)) {
             // Pausing: remember the menu mode, switch it on, pause the movie.
-            const u32 mode = static_cast<u32>(call(ctx, ufn::Input_GetMenuMode));
+            const u32 mode = static_cast<u32>(call(ctx, ufn::Audio_IsPaused));
             session_flags = static_cast<u8>((session_flags & ~0x40) | ((mode & 1) << 6));
-            if ((mode & 1) == 0) call(ctx, ufn::Input_SetMenuMode, {1});
+            if ((mode & 1) == 0) call(ctx, ufn::Audio_SetPaused, {1});
             if (movie != 0) call(ctx, ufn::Movie_SetPaused, {movie, 1});
         } else {
-            if ((session_flags & 0x40) == 0) call(ctx, ufn::Input_SetMenuMode, {0});
+            if ((session_flags & 0x40) == 0) call(ctx, ufn::Audio_SetPaused, {0});
             if (movie != 0) call(ctx, ufn::Movie_SetPaused, {movie, 0});
         }
     }

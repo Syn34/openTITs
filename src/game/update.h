@@ -14,8 +14,8 @@ namespace ufn {
 constexpr u32 Ui_Find = 0x004D5544;            // (const char* name, Element* parent or 0) -> Element* (name?)
 constexpr u32 String_Format = 0x005534D0;      // (const char* fmt, ...) -> static buffer (name?)
 constexpr u32 FrameArena_Align = 0x0055329C;   // (Arena*)  decompiled in update_misc.cpp
-constexpr u32 Input_SetMenuMode = 0x0044BA6C;  // (bool)    decompiled in update_misc.cpp
-constexpr u32 Input_GetMenuMode = 0x0044BB3C;  // () -> u8  decompiled in update_misc.cpp
+constexpr u32 Audio_SetPaused = 0x0044BA6C;  // (bool)    decompiled in update_misc.cpp
+constexpr u32 Audio_IsPaused = 0x0044BB3C;  // () -> u8  decompiled in update_misc.cpp
 constexpr u32 Ui_SetInputHandler = 0x004D5048;  // (opd, arg) decompiled in update_misc.cpp
 constexpr u32 Ui_SetEventHandler = 0x004D505C;  // (opd, arg) decompiled in update_misc.cpp
 constexpr u32 Ui_SendEvent = 0x004D3DA4;        // (type, a, b, c) -> handler result or 1  (update_misc.cpp)
@@ -46,7 +46,7 @@ constexpr u32 sub_0050FDC8 = 0x0050FDC8;
 // ---------------------------------------------------------------- globals
 constexpr u32 kPrevMainState = 0x00F65BEC;  // u32: g::main_state at the start of this frame
 constexpr u32 kAppliedViewW = 0x00F65DE8;   // u16: config +4 when the viewport was last applied
-constexpr u32 kSession = 0x00F65CA0;        // u32: Session* (local users) (name?)
+constexpr u32 kCurrentWorld = 0x00F65CA0;   // u32: the World (also at Game+0); frame ring at +0x1285E4
 constexpr u32 kMainView = 0x00F6684C;       // u32: View* the viewport and matrix go to (name?)
 constexpr u32 kViewMatrix = 0x01164BD0;     // float[16], rows copied without their w
 constexpr u32 kDebugStall = 0x010BB8FC;     // u8: stall random frames for 16 ms (debug option?)
@@ -99,10 +99,10 @@ constexpr u32 kPadWatchArmed = 0x00F65DEA;      // u8: 1 while watching for a di
 constexpr u32 kPadWatchState = 0x00F65C98;      // s32: 3 = waiting for a pad to come back?
 constexpr u32 kPadLostCountdown = 0x00F65DEC;   // s32: frames left before pausing, -1 = idle
 
-// Input_SetMenuMode / Input_GetMenuMode
+// Audio_SetPaused / Audio_IsPaused
 constexpr u32 kMenuMode = 0x010AF1BD;         // u8
 constexpr u32 kMenuModeReady = 0x010AEC60;    // u8: nothing is applied until this is set
-constexpr u32 kMenuModeDirty = 0x00F65B88;    // u8: set to 1 by every Input_SetMenuMode
+constexpr u32 kMenuModeDirty = 0x00F65B88;    // u8: set to 1 by every Audio_SetPaused
 constexpr u32 kMenuModeExtraBits = 0x010AF1C0;  // u32, or-ed into the mask
 constexpr u32 kMenuModeBit2 = 0x010AF1C4;     // u8: adds bit 2 to the mask
 constexpr u32 kMenuModeMask = 0x00F65BE0;     // u32: mask last applied
