@@ -86,17 +86,18 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-| Function | Address | File |
-|---|---|---|
-| `main` | 0x00463658 | `src/main.cpp` |
-| `Main_ParseCommandLine` | 0x0046320C | `src/commandline.cpp` |
-| `Main_InitSystems` | 0x005DB1D0 | `src/system/init.cpp` |
-| `Np_Init` | 0x0056C0B4 | `src/system/np.cpp` |
-| `Sysutil_CheckCallback` | 0x0056C184 | `src/system/sysutil.cpp` |
-| `Sysutil_RegisterCallback` | 0x0056C1E8 | `src/system/sysutil.cpp` |
-| `File_Exists` | 0x0055D78C | `src/file/file.cpp` |
+55 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
 
-7 of 24,164 functions. See [docs/DECOMP.md](docs/DECOMP.md) to help.
+| Area | Folder | Decompiled |
+|---|---|---|
+| Start-up: `main`, command line, `Main_InitSystems` | `src/`, `src/system/` | 7 |
+| System start-up: SPUs, sysmodules, SPURS, language | `src/system/` | 3 |
+| Memory: allocators, pools, heaps | `src/memory/` | 9 |
+| Strings and files | `src/string/`, `src/file/` | 3 |
+| `Game_Load`: tuning, UI, render targets, pads, formatting | `src/game/load*.cpp` | 16 |
+| `Game_Update` and its frame helpers | `src/game/update*.cpp` | 17 |
+
+`symbols.txt` names many more functions that haven't been decompiled yet. See [docs/DECOMP.md](docs/DECOMP.md) to help.
 
 ## Legal
 

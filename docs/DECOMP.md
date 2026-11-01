@@ -84,10 +84,4 @@ Only the 32-bit addresses the game uses are valid guest pointers. Keep them as `
 
 ## Progress
 
-| Area | Functions |
-|---|---|
-| start-up | `main` (default config, start-up sequence, sysutil polling, main loop, shutdown), `Main_ParseCommandLine`, `Main_InitSystems` |
-| system | `Np_Init`, `Sysutil_CheckCallback`, `Sysutil_RegisterCallback` |
-| file | `File_Exists` |
-
-Next up are `Game_Load` and `Game_Update`, and the subsystems `Main_InitSystems` starts.
+See the table in the [README](../README.md#progress). In the cloud test setup the boot stops at the missing `Sly4.psarc`, before `Game_Load` runs. The A/B check there covers start-up, memory, strings, files and system init. `Game_Load` and `Game_Update` need a full dump to be compared at run time.
