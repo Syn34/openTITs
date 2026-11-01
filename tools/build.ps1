@@ -1,31 +1,32 @@
-# Build openTIT's tools, recompile your EBOOT with the decompiled functions in
+# Build the tools, recompile your EBOOT with the decompiled functions in
 # src\ left out, and build the game with them linked in (Windows / PowerShell).
 #
 #   .\tools\build.ps1 -Dump "D:\Dumps\Sly 4"
 #
-# Requires what openTIT does: Visual Studio 2022 (Desktop C++), CMake, Ninja on
-# PATH and the Vulkan SDK. Run from a "Developer PowerShell for VS 2022".
+# Requires: Visual Studio 2022 (Desktop C++), CMake, Ninja on PATH, and the
+# Vulkan SDK (https://vulkan.lunarg.com - Vulkan + glslang for the renderer).
+# SDL2 is downloaded automatically if it is not installed.
+# Run from a "Developer PowerShell for VS 2022" so cl.exe is available.
 param(
     [Parameter(Mandatory = $true)][string]$Dump,
     [string]$Gen = "gen",
-    [string]$Config = "Release",
-    [string]$Engine = ""
+    [string]$Config = "Release"
 )
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
-    if (-not $Engine) { $Engine = if ($env:OPENTIT_DIR) { $env:OPENTIT_DIR } else { Join-Path $root "openTIT" } }
-    if (-not (Test-Path (Join-Path $Engine "CMakeLists.txt"))) {
-        throw "openTIT not found at $Engine. Run: git submodule update --init"
-    }
     $eboot = Join-Path $Dump "PS3_GAME\USRDIR\EBOOT.elf"
     if (-not (Test-Path $eboot)) {
         throw "Decrypted executable not found: $eboot`nDecrypt EBOOT.BIN with RPCS3 (Utilities > Decrypt PS3 Binaries) and save it as EBOOT.elf."
     }
 
-    cmake -S $Engine -B build\tools -G Ninja -DCMAKE_BUILD_TYPE=$Config
+    if (-not $env:VULKAN_SDK) {
+        Write-Warning "VULKAN_SDK is not set: the game will build without its renderer (nothing will be drawn). Install the Vulkan SDK and reopen the shell."
+    }
+    cmake -S . -B build\tools -G Ninja -DCMAKE_BUILD_TYPE=$Config
     cmake --build build\tools
+    .\build\tools\opentit_tests.exe
     $recomp = ".\build\tools\opentit-recomp.exe"
 
     & $recomp recompile $eboot -o $Gen --decomp src --symbols symbols.txt
@@ -46,9 +47,7 @@ try {
     & $recomp spu-recompile @spuInputs -o (Join-Path $Gen "spu")
 
     $genAbs = (Resolve-Path $Gen).Path
-    $srcAbs = (Resolve-Path "src").Path
-    cmake -S $Engine -B build\game -G Ninja -DCMAKE_BUILD_TYPE=$Config -DOPENTIT_BUILD_TESTS=OFF `
-          "-DOPENTIT_GENERATED_DIR=$genAbs" "-DOPENTIT_DECOMP_DIR=$srcAbs"
+    cmake -S . -B build\game -G Ninja -DCMAKE_BUILD_TYPE=$Config -DOPENTIT_BUILD_TESTS=OFF "-DOPENTIT_GENERATED_DIR=$genAbs"
     cmake --build build\game
 
     Write-Host "`nDone. Run:  .\build\game\opentit.exe `"$Dump`" --log info"

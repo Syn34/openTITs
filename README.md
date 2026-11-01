@@ -2,12 +2,7 @@
 
 A decompilation of **Sly Cooper: Thieves in Time** (PS3, Sanzaru Games, 2013) into readable C++, one function at a time.
 
-openTITs holds only the hand-decompiled code. It runs on [openTIT](https://github.com/Syn34/openTIT/tree/decomp), a static recompiler that turns the game's whole PowerPC executable into C++ that compiles and runs on PC.
-
-The decompilation is *functional* and *incremental*:
-
-- Each function in `src/` replaces the recompiled one at the same address. Everything not yet decompiled keeps running as recompiled code, so the game builds and boots at every step.
-- The C++ has to behave like the original, not compile back to the same PowerPC.
+The decompilation is *functional* and *incremental*. A static recompiler in `engine/` first turns the game's whole PowerPC executable into C++ that compiles and runs on PC. Each function decompiled by hand in `src/` then replaces the recompiled one at the same address. Everything not yet decompiled keeps running as recompiled code, so the game builds and boots at every step. The goal is C++ that behaves like the original; it doesn't have to compile back to the same PowerPC.
 
 > **No game code or data is in this repository.** You need your own disc dump (BCES01284, v01.02). The recompiled C++ is generated locally from your decrypted `EBOOT.elf` and must never be committed or shared (`.gitignore` blocks it).
 
@@ -18,29 +13,76 @@ The decompilation is *functional* and *incremental*:
 | `src/` | decompiled functions (`DECOMP(address, name) { ... }`), grouped by subsystem |
 | `src/sly4.h` | shared declarations: imports, syscalls, globals, structures, functions not decompiled yet |
 | `symbols.txt` | our names for function addresses, used by the tools |
-| `openTIT/` | the recompiler and runtime (git submodule, `decomp` branch) |
-| `docs/DECOMP.md` | how to decompile a function, and current progress |
+| `engine/` | the static recompiler (`opentit-recomp`) and the runtime the game links against |
+| `docs/DECOMP.md` | how to decompile a function and check it, plus progress |
+| `docs/ENGINE.md`, `docs/ROADMAP.md` | how the engine works, and what it still lacks |
 
 ## Build
 
-You need what openTIT needs: CMake ≥ 3.20, a C++20 compiler, Ninja, and the Vulkan SDK for graphics. You also need your dump with the decrypted `PS3_GAME/USRDIR/EBOOT.elf`; see openTIT's README for dumping and the optional `firmware/libsre.prx`.
+You need:
+- CMake ≥ 3.20 and Ninja;
+- a C++20 compiler: MSVC 2022, clang 15+ or GCC 12+;
+- for graphics, the [Vulkan SDK](https://vulkan.lunarg.com). On Linux, `libvulkan-dev glslang-dev` work.
+
+SDL2 provides the window; CMake downloads it if it isn't installed. On Windows without SDL2, a native window is used.
+
+### 1. Dump and decrypt
+
+Dump your disc, then decrypt `PS3_GAME/USRDIR/EBOOT.BIN` with RPCS3 (*Utilities → Decrypt PS3 Binaries*). Save the result next to it as `EBOOT.elf`:
+
+```
+<dump>/PS3_GAME/USRDIR/EBOOT.elf     <- decrypted
+<dump>/PS3_GAME/USRDIR/Sly4.psarc
+...
+```
+
+**Recommended: the SPURS firmware module.** Sly 4 uses SPURS job chains, so the game runs Sony's real SPURS library.
+
+1. In RPCS3, install the firmware: *File → Install Firmware*. The `PS3_UPDATE/PS3UPDAT.PUP` from your dump works.
+2. Decrypt `dev_flash/sys/external/libsre.sprx` with *Utilities → Decrypt PS3 Binaries*.
+3. Save the result as `<dump>/firmware/libsre.prx`, or as `<dump>/libsre.prx`.
+
+No keys or firmware are shipped here.
+
+### 2. Build and run
 
 ```sh
-git clone --recursive https://github.com/Syn34/openTITs
-cd openTITs
 tools/build.sh "/path/to/Sly 4 dump"            # Linux / macOS
-.\tools\build.ps1 -Dump "D:\Dumps\Sly 4"        # Windows
+.\tools\build.ps1 -Dump "D:\Dumps\Sly 4"        # Windows, from a VS 2022 Developer PowerShell
 ./build/game/opentit "/path/to/Sly 4 dump" --log info
 ```
 
-The script does four things:
+The script:
 
-1. Builds openTIT's tools.
+1. Builds the tools and runs the tests.
 2. Recompiles your EBOOT, leaving out the functions decompiled in `src/` (`--decomp src`).
 3. Recompiles the firmware and SPU code.
 4. Builds the game with `src/` linked in.
 
-To compare against the original code, run with `--no-decomp`, or switch off single functions with `--decomp-off <addr,...>`. See [docs/DECOMP.md](docs/DECOMP.md).
+Useful switches:
+
+```sh
+./build/game/opentit <dump> --no-decomp            # run the recompiled originals instead
+./build/game/opentit <dump> --decomp-off 00463658  # ... for some functions only
+./build/game/opentit <dump> --dump-mem run.bin     # save game memory at exit, to compare runs
+./build/game/opentit <dump> --spu-record <dump>/sly4.spurec   # record SPU jobs for the next build
+./build/game/opentit <dump> -- -T                  # pass switches to the game itself
+```
+
+### Controls
+
+Any controller SDL recognises works as a DualShock 3. On the keyboard:
+
+| Keys | Pad |
+|---|---|
+| W A S D | left stick |
+| arrow keys | right stick |
+| I J K L | d-pad |
+| Space / F / C / R | Cross / Square / Circle / Triangle |
+| Q / E | L1 / R1 |
+| Left Shift / Left Ctrl | L2 / R2 |
+| Z / X | L3 / R3 |
+| Enter / Backspace | Start / Select |
 
 ## Progress
 
@@ -54,4 +96,8 @@ To compare against the original code, run with `--no-decomp`, or switch off sing
 | `Sysutil_RegisterCallback` | 0x0056C1E8 | `src/system/sysutil.cpp` |
 | `File_Exists` | 0x0055D78C | `src/file/file.cpp` |
 
-7 of 24,164 functions.
+7 of 24,164 functions. See [docs/DECOMP.md](docs/DECOMP.md) to help.
+
+## Legal
+
+openTITs is an independent project. It is not affiliated with or endorsed by Sony Interactive Entertainment or Sanzaru Games. *Sly Cooper* is a trademark of Sony Interactive Entertainment. You must own the game to use this project, and the repository will never host game code, assets, or recompiled output.

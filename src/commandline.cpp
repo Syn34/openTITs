@@ -29,7 +29,7 @@ constexpr u32 kSwitchQ = 0x1E;      // char[128] -Q<text>
 // -H and -B only take the separate form and are true for "1". Each switch
 // and its value are removed from argv as they are parsed (the shorter count
 // isn't passed back). argv[0] is scanned too, so a path starting with '/'
-// would be read as a switch and dropped (openTIT passes no argv[0]).
+// would be read as a switch and dropped (openTITs passes no argv[0]).
 DECOMP(0046320C, Main_ParseCommandLine) {
     s32 argc = arg<s32>(ctx, 0);
     const u32 argv = arg<u32>(ctx, 1);

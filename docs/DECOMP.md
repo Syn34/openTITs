@@ -1,6 +1,6 @@
 # Decompilation
 
-openTITs is a functional, incremental decompilation of Sly Cooper: Thieves in Time (BCES01284 v01.02). It runs on [openTIT](https://github.com/Syn34/openTIT/tree/decomp), the static recompiler, which is included here as the `openTIT/` submodule.
+openTITs is a functional, incremental decompilation of Sly Cooper: Thieves in Time (BCES01284 v01.02). It runs on the static recompiler and runtime in `engine/` (see [ENGINE.md](ENGINE.md)).
 
 Every game function starts out as recompiled C++, which is correct but unreadable. Functions are then rewritten by hand, one at a time, as readable C++ in `src/`. A hand-written function replaces the recompiled one at the same address, and the game keeps running at every step. The aim is matching *behaviour*, not matching assembly: the C++ doesn't have to compile back to the original PowerPC.
 
@@ -13,7 +13,7 @@ This repository holds only hand-written code and our own names. The generated co
 | `src/sly4.h` | shared declarations: import stubs, syscalls, globals, structs, not-yet-decompiled functions |
 | `src/<area>/*.cpp` | decompiled functions, grouped by subsystem (`system/`, `file/`, ...) |
 | `symbols.txt` | names for function addresses, decompiled or not |
-| `openTIT/runtime/include/opentit/decomp.h` | the API decompiled code uses |
+| `engine/runtime/include/opentit/decomp.h` | the API decompiled code uses |
 
 ## Writing a function
 

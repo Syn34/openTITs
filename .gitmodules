@@ -1,4 +1,0 @@
-[submodule "openTIT"]
-	path = openTIT
-	url = https://github.com/Syn34/openTIT.git
-	branch = decomp

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build openTIT's tools, recompile your EBOOT with the decompiled functions in
+# Build the tools, recompile your EBOOT with the decompiled functions in
 # src/ left out, and build the game with them linked in (Linux / macOS).
 #   tools/build.sh "/path/to/Sly 4 dump" [gen dir]
 set -euo pipefail
@@ -7,12 +7,6 @@ dump="${1:?usage: tools/build.sh <path to disc dump> [gen dir]}"
 cd "$(dirname "$0")/.."
 root="$PWD"
 gen="${2:-$root/gen}"
-engine="${OPENTIT_DIR:-$root/openTIT}"
-
-if [[ ! -f "$engine/CMakeLists.txt" ]]; then
-  echo "openTIT not found at $engine. Run: git submodule update --init" >&2
-  exit 1
-fi
 eboot="$dump/PS3_GAME/USRDIR/EBOOT.elf"
 if [[ ! -f "$eboot" ]]; then
   echo "Decrypted executable not found: $eboot" >&2
@@ -20,8 +14,9 @@ if [[ ! -f "$eboot" ]]; then
   exit 1
 fi
 
-cmake -S "$engine" -B build/tools -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build/tools -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build/tools
+./build/tools/opentit_tests
 recomp=build/tools/opentit-recomp
 
 "$recomp" recompile "$eboot" -o "$gen" --decomp src --symbols symbols.txt
@@ -40,8 +35,8 @@ spu_inputs=("$eboot")
 for f in "$dump"/firmware/*.prx "$dump"/*.prx "$dump"/*.spurec; do [[ -f "$f" ]] && spu_inputs+=("$f"); done
 "$recomp" spu-recompile "${spu_inputs[@]}" -o "$gen/spu"
 
-cmake -S "$engine" -B build/game -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENTIT_BUILD_TESTS=OFF \
-      -DOPENTIT_GENERATED_DIR="$(cd "$gen" && pwd)" -DOPENTIT_DECOMP_DIR="$root/src"
+cmake -S . -B build/game -G Ninja -DCMAKE_BUILD_TYPE=Release -DOPENTIT_BUILD_TESTS=OFF \
+      -DOPENTIT_GENERATED_DIR="$(cd "$gen" && pwd)"
 cmake --build build/game
 echo
 echo "Done. Run:  ./build/game/opentit \"$dump\" --log info"
