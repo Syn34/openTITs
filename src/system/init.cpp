@@ -7,10 +7,10 @@ namespace {
 
 // Bits of Main_InitSystems' argument. main() passes 1, then -2 (the rest).
 enum InitStage : u32 {
-    kInitThreads = 0x1,  // record the main thread, then sub_0056D87C and sub_0055DC18
-    kInit2 = 0x2,        // sub_00588828
-    kInit4 = 0x4,        // sub_0050F520
-    kInit8 = 0x8,        // sub_0056A944
+    kInitThreads = 0x1,  // record the main thread, then System_Init and Platform_Init
+    kInit2 = 0x2,        // Resources_Init
+    kInit4 = 0x4,        // Graphics_Init
+    kInit8 = 0x8,        // Debug_Init
 };
 
 // function-local static: { u64 main_thread_id; u64 zero; }
@@ -45,12 +45,12 @@ DECOMP(005DB1D0, Main_InitSystems) {
         }
         store<u64>(kMainThread, id);
         store<u64>(kMainThread + 8, 0);
-        if (static_cast<u32>(call(ctx, fn::sub_0056D87C)) == 0) return ret(ctx, 0u);
-        if (static_cast<u32>(call(ctx, fn::sub_0055DC18)) == 0) return ret(ctx, 0u);
+        if (static_cast<u32>(call(ctx, fn::System_Init)) == 0) return ret(ctx, 0u);
+        if (static_cast<u32>(call(ctx, fn::Platform_Init)) == 0) return ret(ctx, 0u);
     }
-    if ((stages & kInit4) && static_cast<u32>(call(ctx, fn::sub_0050F520)) == 0) return ret(ctx, 0u);
-    if ((stages & kInit2) && static_cast<u32>(call(ctx, fn::sub_00588828)) == 0) return ret(ctx, 0u);
-    if ((stages & kInit8) && static_cast<u32>(call(ctx, fn::sub_0056A944)) == 0) return ret(ctx, 0u);
+    if ((stages & kInit4) && static_cast<u32>(call(ctx, fn::Graphics_Init)) == 0) return ret(ctx, 0u);
+    if ((stages & kInit2) && static_cast<u32>(call(ctx, fn::Resources_Init)) == 0) return ret(ctx, 0u);
+    if ((stages & kInit8) && static_cast<u32>(call(ctx, fn::Debug_Init)) == 0) return ret(ctx, 0u);
 
     store<u32>(kRegistryEntry0, 0);
     store<u32>(kRegistryEntry1, 0);

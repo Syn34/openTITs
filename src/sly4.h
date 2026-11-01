@@ -38,8 +38,9 @@ constexpr u32 _exit = 0x0071F460;
 constexpr u32 String_Copy = 0x00553684;   // (char* dst, const char* src, u32 size): always terminates
 constexpr u32 String_HashNoCase = 0x0056A710;  // (const char*) -> u32: h = h * 31 + toupper(c)
 // Memory
-constexpr u32 Mem_Alloc = 0x0054ED38;  // (u32 size, u32 ?, u32 heap?) -> pointer or 0
-constexpr u32 Mem_Free = 0x005611B0;   // (void*)  (name?)
+constexpr u32 Mem_Alloc = 0x0054ED38;  // (u32 size, u32 pool, u32 align) -> pointer or 0
+constexpr u32 Mem_Free = 0x005611B0;   // (void*)
+constexpr u32 Mem_New = 0x007A3DD8;    // operator new(size): pool 0, align 16
 // Files and archives
 constexpr u32 File_Open = 0x0055BD3C;        // (const char* path, const char* mode) -> File* or 0
 constexpr u32 File_LoadWhole = 0x00560B90;   // (const char* path, u32* size_out) -> buffer (name?)
@@ -53,12 +54,12 @@ constexpr u32 Game_Load = 0x00463000;      // (Game*): Scripts/Tuning.xml, curso
 constexpr u32 Game_Update = 0x0045B858;    // (Game*) -> next main state; FrontEnd / InGame
 constexpr u32 Game_Shutdown = 0x00458940;  // (Game*)  (name?)
 // Not named yet: called from main.
-constexpr u32 Heap_Construct = 0x0054ECA0;  // (Heap* this, u32 size, 0, 0)  (name?)
-constexpr u32 sub_0050F520 = 0x0050F520;
-constexpr u32 sub_0055DC18 = 0x0055DC18;
-constexpr u32 sub_0056A944 = 0x0056A944;
-constexpr u32 sub_0056D87C = 0x0056D87C;
-constexpr u32 sub_00588828 = 0x00588828;
+constexpr u32 Heap_Construct = 0x0054ECA0;  // LinearHeap(this, size, pool, owns)
+constexpr u32 Graphics_Init = 0x0050F520;
+constexpr u32 Platform_Init = 0x0055DC18;
+constexpr u32 Debug_Init = 0x0056A944;
+constexpr u32 System_Init = 0x0056D87C;
+constexpr u32 Resources_Init = 0x00588828;
 constexpr u32 sub_00324A48 = 0x00324A48;  // (const char*) -> u32; parses a "Scale..." string
 constexpr u32 sub_000AC0F0 = 0x000AC0F0;
 constexpr u32 sub_000AC478 = 0x000AC478;
@@ -115,7 +116,7 @@ enum SysutilFlag : u32 {
     kSysutilExitRequested = 0x010,  // CELL_SYSUTIL_REQUEST_EXITGAME
     kSysutilResume = 0x002,         // ? -> kMainResumed
     kSysutilPause80 = 0x080,        // ? -> kMainPaused
-    kSysutilPause100 = 0x100,       // ? -> kMainPaused
+    kSysutilPadLost = 0x100,        // no local user has a connected pad (set by Game_Update) -> kMainPaused
 };
 
 // g::main_state. Game_Update returns the next one; 1 and 2 keep the loop going.

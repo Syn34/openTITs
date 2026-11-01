@@ -9,15 +9,15 @@
 0071B570 exit
 0071F460 _exit                    // sys_process_exit
 00726E54 memset
-00553684 String_Copy              // (dst, src, size): copies and always terminates
-0056A710 String_HashNoCase        // h = h * 31 + toupper(c); 0 for a null string
+00553684 String_Copy              // strncpy(dst, src, size-1) + terminate; decompiled: src/string/string.cpp
+0056A710 String_HashNoCase        // h = h * 31 + toupper(c); decompiled: src/string/string.cpp
 
 # Game
 00463658 main                     // decompiled: decomp/src/main.cpp
 0046320C Main_ParseCommandLine    // (argc, argv) switches such as -T; decompiled: decomp/src/commandline.cpp
 005DB1D0 Main_InitSystems         // (stage bits) 1, then -2; decompiled: decomp/src/system/init.cpp
-00463000 Game_Load                // Scripts/Tuning.xml, Common.Cursors.%02d
-0045B858 Game_Update              // per frame; returns the next main state; FrontEnd / InGame
+00463000 Game_Load                // decompiled: src/game/load.cpp
+0045B858 Game_Update              // per frame; returns the next main state; decompiled: src/game/update.cpp
 00458940 Game_Shutdown            // (name?)
 
 # System
@@ -26,13 +26,109 @@
 0056C1E8 Sysutil_RegisterCallback // decompiled: decomp/src/system/sysutil.cpp
 00532D3C VBlank_Handler           // increments the counter at 0x010F0E00
 0049AED8 Sysutil_OnEvent          // cellSysutil callback: sets bits in 0x010BB9F8
-0054ED38 Mem_Alloc                // (size, ?, heap?) with lazy heap setup
-0054ECA0 Heap_Construct           // (this, size, 0, 0) (name?)
-005611B0 Mem_Free                 // (name?)
+0054ED38 Mem_Alloc                // (size, pool, align); decompiled: src/memory/alloc.cpp
+0054ECA0 Heap_Construct           // LinearHeap(this, size, pool, owns), vtable 0x00B242D0; decompiled: src/memory/alloc.cpp
+005611B0 Mem_Free                 // Mem_FreePool(p, 1, 0); decompiled: src/memory/alloc.cpp
 
 # Files
-0055BD3C File_Open                // (path, mode) -> File*
+0055BD3C File_Open                // (path, mode) -> File*; decompiled: src/file/open.cpp
 0055D78C File_Exists              // decompiled: decomp/src/file/file.cpp
 00560B90 File_LoadWhole           // (path, u32* size) -> buffer; main: "System\Shaders.Zip" (name?)
 00562944 Archive_Mount            // (path, options by value); main: Sly4.psarc (name?)
 00567034 Archive_OpenZip          // (data, size, name); main: "RamDisk" (name?)
+
+# Game start-up (Game_Load subtree)
+004FC250 Tuning_Load              // (path, bool keep_strings) Scripts/Tuning.xml; decompiled: src/game/load.cpp
+004D35AC Ui_Init                  // (const ViewRect* or 0) "RenderTarget_GUI"; decompiled: src/game/load_ui.cpp
+004D5544 Ui_Find                  // (path, parent) dotted path lookup; decompiled: src/game/load_ui.cpp
+00522FB8 RenderTarget_Create      // (type, bool); decompiled: src/game/load_ui.cpp
+0052038C RenderTarget_SetByte49   // (name?) decompiled: src/game/load_ui.cpp
+00522500 RenderTarget_AddCallback // (rt, list, opd, user, s8 prio); decompiled: src/game/load_ui.cpp
+005200AC RenderTarget_SetViewport // (rt, ViewRect*); decompiled: src/game/load_ui.cpp
+0056324C InputMgr_CreatePad       // decompiled: src/game/load_input.cpp
+00562DDC InputDevice_Construct    // decompiled: src/game/load_input.cpp
+0056FAC8 PadDevice_Construct      // decompiled: src/game/load_input.cpp
+005534D0 String_Format            // (fmt, ...) -> rotating static buffer; decompiled: src/game/load_util.cpp
+005DB0A8 Thread_IsMain            // decompiled: src/game/load_util.cpp
+005DB13C Thread_IsSecond          // (name?) decompiled: src/game/load_util.cpp
+00724588 vsprintf                 // (name?) decompiled: src/game/load_util.cpp
+00551A58 FreeList_Init            // (list, elem_size, count, heap, bool); decompiled: src/game/load_util.cpp
+0045CC18 World_Construct          // (obj, 0) 6393 instr, object of 0x1286B0 bytes at Game+0 (name?)
+0071C3F0 memmove
+00723884 strcpy                   // (name?)
+00555D94 String_Assign            // (String*, const char*) -> strcpy (name?)
+00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
+00520D88 RenderTarget_Construct   // "RenderTarget_Primary" (name?)
+0053C9F8 RenderTarget_SetParams   // (name?)
+005518FC FreeList_SetFlag         // (name?)
+00551598 PtrVector_Init           // (name?)
+00551718 PtrVector_Reserve        // (name?)
+004FA888 XmlDoc_Construct         // (doc, path) (name?)
+004FAF10 XmlDoc_Parse             // (name?)
+004FA9C0 XmlDoc_Destruct          // (name?)
+004F92BC XmlNode_FirstChild       // (node, tag hash) (name?)
+004F8FC8 XmlNode_NextSibling      // (node, tag hash) (name?)
+004F9534 XmlNode_FindAttr         // (node, attr hash) -> const char* (name?)
+004F9628 XmlNode_FindAttrByName   // (node, const char*) (name?)
+004F986C XmlNode_ReadU8           // (node, hash, out, default) -> 1 if missing (name?)
+004F99BC XmlNode_ReadS32          // (name?)
+004F9B20 XmlNode_ReadF32          // default in f1 (name?)
+004F9C9C XmlNode_ReadType3        // (name?)
+004F9E0C XmlNode_ReadType4        // (name?)
+004F9F9C XmlNode_ReadType5        // (name?)
+004FA14C XmlNode_ReadHash         // hash of attr string (name?)
+
+# Per frame (Game_Update subtree)
+005DB6B8 Time_BeginFrame          // frame time clamp, frame count; decompiled: src/game/update_misc.cpp (name?)
+0055329C FrameArena_Align         // (Arena*) 16-byte align of +12/+16; decompiled: src/game/update_misc.cpp (name?)
+0044BA6C Input_SetMenuMode        // (bool); decompiled: src/game/update_misc.cpp (name?)
+0044BB3C Input_GetMenuMode        // () -> u8; decompiled: src/game/update_misc.cpp (name?)
+004D5048 Ui_SetInputHandler       // (opd, arg); decompiled: src/game/update_misc.cpp (name?)
+004D505C Ui_SetEventHandler       // (opd, arg); decompiled: src/game/update_misc.cpp (name?)
+004D3DA4 Ui_SendEvent             // (type, a, b, c) -> handler result or 1; decompiled: src/game/update_misc.cpp (name?)
+004D2284 Movie_SetPaused          // (Movie*, bool) BinkPause on +272; decompiled: src/game/update_misc.cpp (name?)
+005DBB30 Systems_EndFrame         // () -> 1; decompiled: src/game/update_misc.cpp (name?)
+004A8AC8 DebugHookA               // empty in retail; decompiled: src/game/update_misc.cpp
+004A8ACC DebugHookB               // (u32) empty in retail; decompiled: src/game/update_misc.cpp
+000D0628 Triggers_Clear           // decompiled: src/game/update_misc.cpp (name?)
+0050FF64 FrameBuffer_Begin        // (FrameBuffer*); decompiled: src/game/update_misc.cpp (name?)
+00510544 FrameBuffer_End          // (FrameBuffer*) +0x44 = 0; decompiled: src/game/update_misc.cpp (name?)
+005630D4 Input_UpdateDevices      // ApeInputMgr per-frame device update; decompiled: src/game/update_misc.cpp (name?)
+00458D6C FlowState_GetMovieOwner  // (Flow*) -> object or 0; decompiled: src/game/update_misc.cpp (name?)
+007B4990 Bink_Pause               // RAD BinkPause(HBINK, s32) (name?)
+0045B1E8 Player_Update            // (Player*, f32 dt) (name?)
+004D4538 Ui_Update                // (f32 dt) (name?)
+006D530C Pad_EnableBits           // (u32 bits) "src/common/api.cpp" (name?)
+006D53F0 Pad_DisableBits          // (u32 bits) "src/common/api.cpp" (name?)
+
+# Memory, strings, files, system start-up
+007A3DD8 Mem_New                  // operator new(size) = pool 0, align 16; decompiled: src/memory/alloc.cpp
+0056C514 Mem_AllocPool            // (align, size, pool, tag); decompiled: src/memory/alloc.cpp
+0056C730 Mem_FreePool             // (p, pool, tag); decompiled: src/memory/alloc.cpp
+00565BD0 Pool_Alloc               // (MemPool*, align, size); decompiled: src/memory/alloc.cpp
+00565C50 Pool_Free                // (MemPool*, p); decompiled: src/memory/alloc.cpp
+0056C2E4 Mem_InitSystemStats      // once; decompiled: src/memory/alloc.cpp
+0056D87C System_Init              // Main_InitSystems stage 1a; decompiled: src/system/subsystems.cpp
+0056D630 Spurs_Init               // ApeCore + ApeSpurs_1SPU; decompiled: src/system/subsystems.cpp
+0056BE30 System_GetLanguage       // CELL_SYSUTIL_LANG -> game language; decompiled: src/system/subsystems.cpp
+0055DC18 Platform_Init            // Main_InitSystems stage 1b: heaps, event flags, psarc, Image.zip, pad, IFF types (name?)
+0050F520 Graphics_Init            // Main_InitSystems stage 4: libgcm, Agl allocators (name?)
+00588828 Resources_Init           // Main_InitSystems stage 2: IFF chunk types PVSH..LCRD (name?)
+0056A944 Debug_Init               // Main_InitSystems stage 8: ApeDebug font/prims (name?)
+0053AC38 Gcm_Init                 // "Error initializing libgcm" (name?)
+0055902C Iff_RegisterChunk        // (fourcc, handler, ...) (name?)
+0055BA70 Archive_Contains         // (Archive*, path, 0) -> bool (name?)
+0055B87C File_OpenArchived        // (path, mode); "%s - Open" (name?)
+00570B64 File_OpenDirect          // (path, mode) disc/host fs (name?)
+0056D3B0 JobChain_Init            // (JobChain*, CellSpurs*, nSpus, u8 prio[8]) "ApeSpurs" (name?)
+00550690 Mspace_Memalign          // dlmalloc
+0054EE9C Mspace_Free              // dlmalloc
+0072A88C memalign
+0072A8FC free
+0072A928 malloc
+007240F4 printf
+0071ED08 strlen
+0071EEF8 strstr
+00723678 strchr
+00723C88 strncpy
+007265F0 spu_printf_initialize    // SDK

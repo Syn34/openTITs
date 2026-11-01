@@ -19,7 +19,7 @@ bool Main_Poll(PPUContext& ctx) {
         state = kMainQuit;
         return false;
     }
-    if (flags & (kSysutilMenuOpen | kSysutilPause80 | kSysutilPause100))
+    if (flags & (kSysutilMenuOpen | kSysutilPause80 | kSysutilPadLost))
         state = kMainPaused;
     else if (flags & kSysutilResume)
         state = kMainResumed;
@@ -105,7 +105,7 @@ constexpr u32 kNpPoolSize = 0x20000;
 
 // Function-local statics of the original, initialised on first use.
 constexpr u32 kStaticB = 0x011DE300, kStaticBGuard = 0x011DE480;
-constexpr u32 kStartTime = 0x01164890;  // u32: time base when the main loop started
+constexpr u32 kRandomState = 0x01164890;  // u32: random generator state, seeded with the time base
 constexpr u32 kFrameFlagF9CDE2 = 0x00F9CDE2, kFirstFrameDone = 0x00F65DF0;
 
 // Rotate the three-entry ring the renderer keeps at *(*(Game) + 0x1285E4).
@@ -188,7 +188,7 @@ DECOMP(00463658, main) {
     while (start == 0);
     auto& state = ref<be_u32>(g::main_state);
     state = kMainStarting;
-    store<u32>(kStartTime, start);
+    store<u32>(kRandomState, start);
     Main_Poll(ctx);  // a quit request here ends the loop below before it starts
 
     // ------------------------------------------------------------ main loop
