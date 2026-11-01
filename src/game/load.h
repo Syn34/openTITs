@@ -48,26 +48,26 @@ constexpr u32 String_Assign = 0x00555D94;        // (String* dst, const char*): 
 constexpr u32 vprintf_core = 0x00724620;         // (OutputFn* opd, void* arg, fmt, va_list) -> int (name?)
 constexpr u32 RenderTarget_Construct = 0x00520D88;   // (rt, type): "RenderTarget_Primary" (name?)
 constexpr u32 RenderTarget_SetParams = 0x0053C9F8;   // (p, u32, u32, f32, f32, u32 at r8) (name?)
-constexpr u32 FreeList_SetFlag = 0x005518FC;     // (FreeList*, bool) (name?)
+constexpr u32 FreeList_AddBlock = 0x005518FC;     // (FreeList*, bool) (name?)
 constexpr u32 PtrVector_Init = 0x00551598;       // (Vector*, capacity, heap, 0, 0) (name?)
 constexpr u32 PtrVector_Reserve = 0x00551718;    // (Vector*, new_capacity) (name?)
 // XML reader (hashes are String_HashNoCase of the tag / attribute name)
 constexpr u32 XmlDoc_Construct = 0x004FA888;     // (XmlDoc*, const char* path) (name?)
 constexpr u32 XmlDoc_Parse = 0x004FAF10;         // (XmlDoc*, 0) -> bool (name?)
 constexpr u32 XmlDoc_Destruct = 0x004FA9C0;      // (XmlDoc*) (name?)
-constexpr u32 XmlNode_FirstChild = 0x004F92BC;   // (node, tag hash) -> node or 0
-constexpr u32 XmlNode_NextSibling = 0x004F8FC8;  // (node, tag hash) -> node or 0
-constexpr u32 XmlNode_FindAttr = 0x004F9534;     // (node, attr hash) -> const char* or 0
-constexpr u32 XmlNode_FindAttrByName = 0x004F9628;  // (node, const char* name) -> const char* or 0
-// XmlNode_Read*(node, attr hash, out, default): store the value (or the
+constexpr u32 XmlCursor_FirstChild = 0x004F92BC;   // (node, tag hash) -> node or 0
+constexpr u32 XmlCursor_NextSibling = 0x004F8FC8;  // (node, tag hash) -> node or 0
+constexpr u32 XmlCursor_FindAttr = 0x004F9534;     // (node, attr hash) -> const char* or 0
+constexpr u32 XmlCursor_FindAttrByName = 0x004F9628;  // (node, const char* name) -> const char* or 0
+// XmlCursor_Read*(node, attr hash, out, default): store the value (or the
 // default) in *out and return 1 when the attribute is missing, else 0.
-constexpr u32 XmlNode_ReadU8 = 0x004F986C;       // u8 (bool?) (name?)
-constexpr u32 XmlNode_ReadS32 = 0x004F99BC;      // (name?)
-constexpr u32 XmlNode_ReadF32 = 0x004F9B20;      // default in f1 (name?)
-constexpr u32 XmlNode_ReadType3 = 0x004F9C9C;    // 8-byte value, default by pointer (name?)
-constexpr u32 XmlNode_ReadType4 = 0x004F9E0C;    // up to 16 bytes, default by pointer (name?)
-constexpr u32 XmlNode_ReadType5 = 0x004F9F9C;    // byte buffer, default by pointer (name?)
-constexpr u32 XmlNode_ReadHash = 0x004FA14C;     // u32 hash of the attribute's string (name?)
+constexpr u32 XmlCursor_ReadBool = 0x004F986C;       // u8 (bool?) (name?)
+constexpr u32 XmlCursor_ReadS32 = 0x004F99BC;      // (name?)
+constexpr u32 XmlCursor_ReadF32 = 0x004F9B20;      // default in f1 (name?)
+constexpr u32 XmlCursor_ReadVec2 = 0x004F9C9C;    // 8-byte value, default by pointer (name?)
+constexpr u32 XmlCursor_ReadVec3 = 0x004F9E0C;    // up to 16 bytes, default by pointer (name?)
+constexpr u32 XmlCursor_ReadColor = 0x004F9F9C;    // byte buffer, default by pointer (name?)
+constexpr u32 XmlCursor_ReadHash = 0x004FA14C;     // u32 hash of the attribute's string (name?)
 }  // namespace lfn
 
 // ---------------------------------------------------------------- globals
@@ -227,9 +227,9 @@ enum TuningType : s32 {
     kTuningU8 = 0,      // set +12 (u8)
     kTuningS32 = 1,     // set +16 (s32)
     kTuningF32 = 2,     // set +20 (f32 in f1)
-    kTuningType3 = 3,   // set +24 (pointer to the value)
-    kTuningType4 = 4,   // set +28 (pointer)
-    kTuningType5 = 5,   // set +32 (pointer)
+    kTuningVec2 = 3,    // set +24 (pointer to 2 floats)
+    kTuningVec3 = 4,    // set +28 (pointer to 3 floats)
+    kTuningColor = 5,   // set +32 (pointer to 4 bytes)
     kTuningString = 6,  // set +36 (const char*)
     kTuningHash = 7,    // set +40 (u32)
 };

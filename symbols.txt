@@ -55,28 +55,28 @@
 00551A58 FreeList_Init            // (list, elem_size, count, heap, bool); decompiled: src/game/load_util.cpp
 0045CC18 World_Construct          // (obj, 0) 6393 instr, object of 0x1286B0 bytes at Game+0 (name?)
 0071C3F0 memmove
-00723884 strcpy                   // (name?)
-00555D94 String_Assign            // (String*, const char*) -> strcpy (name?)
+00723884 strcpy
+00555D94 String_Assign            // strcpy; decompiled: src/string/string_misc.cpp
 00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
 00520D88 RenderTarget_Construct   // "RenderTarget_Primary" (name?)
 0053C9F8 RenderTarget_SetParams   // (name?)
-005518FC FreeList_SetFlag         // (name?)
-00551598 PtrVector_Init           // (name?)
-00551718 PtrVector_Reserve        // (name?)
-004FA888 XmlDoc_Construct         // (doc, path) (name?)
-004FAF10 XmlDoc_Parse             // (name?)
-004FA9C0 XmlDoc_Destruct          // (name?)
-004F92BC XmlNode_FirstChild       // (node, tag hash) (name?)
-004F8FC8 XmlNode_NextSibling      // (node, tag hash) (name?)
-004F9534 XmlNode_FindAttr         // (node, attr hash) -> const char* (name?)
-004F9628 XmlNode_FindAttrByName   // (node, const char*) (name?)
-004F986C XmlNode_ReadU8           // (node, hash, out, default) -> 1 if missing (name?)
-004F99BC XmlNode_ReadS32          // (name?)
-004F9B20 XmlNode_ReadF32          // default in f1 (name?)
-004F9C9C XmlNode_ReadType3        // (name?)
-004F9E0C XmlNode_ReadType4        // (name?)
-004F9F9C XmlNode_ReadType5        // (name?)
-004FA14C XmlNode_ReadHash         // hash of attr string (name?)
+005518FC FreeList_AddBlock        // (list, flag); decompiled: src/container/freelist.cpp
+00551598 PtrVector_Init           // decompiled: src/container/vector.cpp
+00551718 PtrVector_Reserve        // decompiled: src/container/vector.cpp
+004FA888 XmlDoc_Construct         // (doc, path); decompiled: src/xml/doc.cpp
+004FAF10 XmlDoc_Parse             // (doc, unused) .xml -> .xmb; decompiled: src/xml/doc.cpp
+004FA9C0 XmlDoc_Destruct          // decompiled: src/xml/doc.cpp
+004F92BC XmlCursor_FirstChild     // (cursor, tag hash); decompiled: src/xml/node.cpp
+004F8FC8 XmlCursor_NextSibling    // (cursor, tag hash); decompiled: src/xml/node.cpp
+004F9534 XmlCursor_FindAttr       // (cursor, hash) -> string; decompiled: src/xml/node.cpp
+004F9628 XmlCursor_FindAttrByName // decompiled: src/xml/node.cpp
+004F986C XmlCursor_ReadBool       // 0 ok / 1 missing / 2 wrong type; decompiled: src/xml/node.cpp
+004F99BC XmlCursor_ReadS32        // decompiled: src/xml/node.cpp
+004F9B20 XmlCursor_ReadF32        // default in f1; decompiled: src/xml/node.cpp
+004F9C9C XmlCursor_ReadVec2       // decompiled: src/xml/node.cpp
+004F9E0C XmlCursor_ReadVec3       // decompiled: src/xml/node.cpp
+004F9F9C XmlCursor_ReadColor      // u8[4] (name?) decompiled: src/xml/node.cpp
+004FA14C XmlCursor_ReadHash       // decompiled: src/xml/node.cpp
 
 # Per frame (Game_Update subtree)
 005DB6B8 Time_BeginFrame          // frame time clamp, frame count; decompiled: src/game/update_misc.cpp (name?)
@@ -132,3 +132,17 @@
 00723678 strchr
 00723C88 strncpy
 007265F0 spu_printf_initialize    // SDK
+
+# XML reader, containers
+004FACCC XmlDoc_LoadXmlb          // (doc, File*, unused) "XMLB"; decompiled: src/xml/doc.cpp
+004FABB4 XmlElement_Relocate      // (elem, base) recursive; decompiled: src/xml/doc.cpp
+004F8ACC XmlCursor_FirstChildRaw  // decompiled: src/xml/node.cpp
+004F8C70 XmlCursor_NextSiblingRaw // decompiled: src/xml/node.cpp
+00555FA4 String_Length            // decompiled: src/string/string_misc.cpp
+00551540 String_Printf            // sprintf; decompiled: src/string/string_misc.cpp
+00555DB8 Mem_Compare              // memcmp; decompiled: src/string/string_misc.cpp
+005525FC Mem_GetDefaultStack      // MemState.heap; decompiled: src/memory/memstack.cpp
+0055260C MemStack_Alloc           // (ApeMemStack*, size) "ApeMemStack::Alloc using malloc" (name?)
+00723AC4 memcmp
+0079BA00 XmlCursor_AsElement      // blr: returns this
+0079BA08 XmlDoc_AsDocument        // blr: returns this

@@ -125,7 +125,7 @@ DECOMP(00551A58, FreeList_Init) {
     field<u32>(list, kFreeList48) = 0;
     field<u16>(list, kFreeListBlockCount) = static_cast<u16>(count > 1 ? count : 1);
     if (count != 0) {
-        call(ctx, lfn::FreeList_SetFlag, {list, (flag & 0xFF) != 0 ? 1u : 0u});
+        call(ctx, lfn::FreeList_AddBlock, {list, (flag & 0xFF) != 0 ? 1u : 0u});
         u32 blocks = count;
         if (count > 16) {
             blocks = count >> 2;

@@ -98,17 +98,17 @@ DECOMP(004FC250, Tuning_Load) {
         call(ctx, lfn::XmlDoc_Destruct, {doc});
         return ret(ctx, 0u);
     }
-    const u32 root = call32(ctx, lfn::XmlNode_FirstChild, {doc, kXmlTuning});
+    const u32 root = call32(ctx, lfn::XmlCursor_FirstChild, {doc, kXmlTuning});
     if (root == 0) {
         call(ctx, lfn::XmlDoc_Destruct, {doc});
         return ret(ctx, 0u);
     }
 
-    auto report = [&](u32 node) { call(ctx, lfn::XmlNode_FindAttr, {node, kXmlName}); };
+    auto report = [&](u32 node) { call(ctx, lfn::XmlCursor_FindAttr, {node, kXmlName}); };
 
-    for (u32 node = call32(ctx, lfn::XmlNode_FirstChild, {root, kXmlVar}); node != 0;
-         node = call32(ctx, lfn::XmlNode_NextSibling, {node, kXmlVar})) {
-        if (call32(ctx, lfn::XmlNode_ReadHash, {node, kXmlName, name_hash, 0}) != 0) continue;
+    for (u32 node = call32(ctx, lfn::XmlCursor_FirstChild, {root, kXmlVar}); node != 0;
+         node = call32(ctx, lfn::XmlCursor_NextSibling, {node, kXmlVar})) {
+        if (call32(ctx, lfn::XmlCursor_ReadHash, {node, kXmlName, name_hash, 0}) != 0) continue;
 
         // Linear search of the registered variables by name hash.
         u32 var = 0;
@@ -132,13 +132,13 @@ DECOMP(004FC250, Tuning_Load) {
         const s32 type = static_cast<s32>(call_ptr(ctx, vfunc(var, kVarVfnType), {var}));
         switch (type) {
         case kTuningHash:
-            if (call32(ctx, lfn::XmlNode_ReadHash, {node, kXmlValue, val_hash, 0}) == 0)
+            if (call32(ctx, lfn::XmlCursor_ReadHash, {node, kXmlValue, val_hash, 0}) == 0)
                 call_ptr(ctx, vfunc(var, 40), {var, load<u32>(val_hash)});
             else
                 report(node);
             break;
         case kTuningString: {
-            const u32 str = call32(ctx, lfn::XmlNode_FindAttrByName, {node, kValueAttrName});
+            const u32 str = call32(ctx, lfn::XmlCursor_FindAttrByName, {node, kValueAttrName});
             if (str == 0) {
                 report(node);
                 break;
@@ -147,27 +147,27 @@ DECOMP(004FC250, Tuning_Load) {
             call_ptr(ctx, vfunc(var, 36), {var, str});
             break;
         }
-        case kTuningType5:
-            if (call32(ctx, lfn::XmlNode_ReadType5, {node, kXmlValue, val_type5, lg::kTuningDefaultType5}) != 0)
+        case kTuningColor:
+            if (call32(ctx, lfn::XmlCursor_ReadColor, {node, kXmlValue, val_type5, lg::kTuningDefaultType5}) != 0)
                 report(node);
             else
                 call_ptr(ctx, vfunc(var, 32), {var, val_type5});
             break;
-        case kTuningType4:
-            if (call32(ctx, lfn::XmlNode_ReadType4, {node, kXmlValue, val_type4, lg::kTuningDefaultType4}) != 0)
+        case kTuningVec3:
+            if (call32(ctx, lfn::XmlCursor_ReadVec3, {node, kXmlValue, val_type4, lg::kTuningDefaultType4}) != 0)
                 report(node);
             else
                 call_ptr(ctx, vfunc(var, 28), {var, val_type4});
             break;
-        case kTuningType3:
-            if (call32(ctx, lfn::XmlNode_ReadType3, {node, kXmlValue, val_type3, lg::kTuningDefaultType3}) != 0)
+        case kTuningVec2:
+            if (call32(ctx, lfn::XmlCursor_ReadVec2, {node, kXmlValue, val_type3, lg::kTuningDefaultType3}) != 0)
                 report(node);
             else
                 call_ptr(ctx, vfunc(var, 24), {var, val_type3});
             break;
         case kTuningF32:
             // The default (0.0f) comes from the constant at 0x004FC248.
-            callf(ctx, lfn::XmlNode_ReadF32, {node, kXmlValue, val_f32}, {0.0});
+            callf(ctx, lfn::XmlCursor_ReadF32, {node, kXmlValue, val_f32}, {0.0});
             if (static_cast<u32>(ctx.gpr[3]) == 0) {
                 ctx.fpr[1] = static_cast<f64>(load<f32>(val_f32));
                 call_ptr(ctx, vfunc(var, 20), {var});
@@ -176,14 +176,14 @@ DECOMP(004FC250, Tuning_Load) {
             }
             break;
         case kTuningS32:
-            if (call32(ctx, lfn::XmlNode_ReadS32, {node, kXmlValue, val_s32, 0}) == 0)
+            if (call32(ctx, lfn::XmlCursor_ReadS32, {node, kXmlValue, val_s32, 0}) == 0)
                 call_ptr(ctx, vfunc(var, 16),
                          {var, static_cast<u64>(static_cast<s64>(static_cast<s32>(load<u32>(val_s32))))});
             else
                 report(node);
             break;
         case kTuningU8:
-            if (call32(ctx, lfn::XmlNode_ReadU8, {node, kXmlValue, val_u8, 0}) != 0)
+            if (call32(ctx, lfn::XmlCursor_ReadBool, {node, kXmlValue, val_u8, 0}) != 0)
                 report(node);
             else
                 call_ptr(ctx, vfunc(var, 12), {var, ref<u8>(val_u8)});
