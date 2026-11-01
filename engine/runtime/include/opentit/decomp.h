@@ -113,7 +113,7 @@ void ret(PPUContext& ctx, T v) {
 
 // ---------------------------------------------------------------- calling other guest functions
 // Call the function at `addr` (decompiled or recompiled) with integer
-// arguments in r3.. and return r3. Volatile registers are clobbered, as for
+// arguments in r3..r10 (more go on the stack, as the ABI says) and return r3. Volatile registers are clobbered, as for
 // any PPU call.
 u64 call(PPUContext& ctx, u32 addr, std::initializer_list<u64> args = {});
 // Same, with floating-point arguments in f1.. as well; returns f1.

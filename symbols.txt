@@ -55,7 +55,7 @@
 00551A58 FreeList_Init            // (list, elem_size, count, heap, bool); decompiled: src/game/load_util.cpp
 0045CC18 World_Construct          // (obj, 0) 6393 instr, object of 0x1286B0 bytes at Game+0 (name?)
 0071C3F0 memmove
-00723884 strcpy
+00723884 strcmp
 00555D94 String_Assign            // strcpy; decompiled: src/string/string_misc.cpp
 00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
 00520D88 RenderTarget_Construct   // "RenderTarget_Primary" (name?)
@@ -111,15 +111,15 @@
 0056D87C System_Init              // Main_InitSystems stage 1a; decompiled: src/system/subsystems.cpp
 0056D630 Spurs_Init               // ApeCore + ApeSpurs_1SPU; decompiled: src/system/subsystems.cpp
 0056BE30 System_GetLanguage       // CELL_SYSUTIL_LANG -> game language; decompiled: src/system/subsystems.cpp
-0055DC18 Platform_Init            // Main_InitSystems stage 1b: heaps, event flags, psarc, Image.zip, pad, IFF types (name?)
-0050F520 Graphics_Init            // Main_InitSystems stage 4: libgcm, Agl allocators (name?)
-00588828 Resources_Init           // Main_InitSystems stage 2: IFF chunk types PVSH..LCRD (name?)
-0056A944 Debug_Init               // Main_InitSystems stage 8: ApeDebug font/prims (name?)
+0055DC18 Platform_Init            // heaps, timebase, worker, FIOS, Image.zip, pads, IFF types; decompiled: src/platform/platform.cpp
+0050F520 Graphics_Init            // decompiled: src/gfx/graphics.cpp
+00588828 Resources_Init           // decompiled: src/resource/resources.cpp (name?)
+0056A944 Debug_Init               // ApeDebug font, prims, material, meshes; decompiled: src/debug/debug.cpp
 0053AC38 Gcm_Init                 // "Error initializing libgcm" (name?)
-0055902C Iff_RegisterChunk        // (fourcc, handler, ...) (name?)
-0055BA70 Archive_Contains         // (Archive*, path, 0) -> bool (name?)
-0055B87C File_OpenArchived        // (path, mode); "%s - Open" (name?)
-00570B64 File_OpenDirect          // (path, mode) disc/host fs (name?)
+0055902C Iff_RegisterChunk        // (fourcc, opd, arg, name, flags); decompiled: src/resource/iff.cpp
+0055BA70 Archive_Contains         // (Archive*, path, mode); decompiled: src/file/archive.cpp
+0055B87C File_OpenArchived        // decompiled: src/file/archive.cpp
+00570B64 File_OpenDirect          // decompiled: src/file/archive.cpp
 0056D3B0 JobChain_Init            // (JobChain*, CellSpurs*, nSpus, u8 prio[8]) "ApeSpurs" (name?)
 00550690 Mspace_Memalign          // dlmalloc
 0054EE9C Mspace_Free              // dlmalloc
@@ -146,3 +146,40 @@
 00723AC4 memcmp
 0079BA00 XmlCursor_AsElement      // blr: returns this
 0079BA08 XmlDoc_AsDocument        // blr: returns this
+
+# Platform, files, resources, graphics start-up
+0055DA00 Worker_CreateThreads     // "ApeWorkerThread_1", WaitStart/WaitComplete; decompiled: src/platform/platform.cpp
+0056F63C Pad_Init                 // decompiled: src/platform/platform.cpp
+0055BE90 Input_SetRecordMode      // controller.bin 1=record 2=playback; decompiled: src/platform/platform.cpp (name?)
+00570E08 Fios_Init                // decompiled: src/platform/fios.cpp
+0055D830 Archive_MountImageZip    // decompiled: src/file/archive.cpp (name?)
+007239D8 strcpy
+005706FC File_OpenFs              // (path, mode) "%s/%s", "%s - Open" (name?)
+0055B3C8 Archive_Find             // (Archive*, path, 0) -> 1 (name?)
+00559D5C Archive_Prepare          // (Archive*) -> 1 (name?)
+0055D494 ZipArchive_Open          // (zip, path, 0) -> 1; ".sca" (name?)
+005DBB60 SystemState_CallHook     // calls SystemState+20 opd with SystemState+24 (name?)
+00559310 Iff_InitTags             // registers ATAG/TAG2/TAGG (name?)
+0056F5BC Thread_Create            // (Thread*, entry opd, params*) -> sys_ppu_thread_create (name?)
+0056C8E4 Game_BootCheck           // cellGameBootCheck/PatchCheck/ContentPermit (name?)
+00570B88 Image_Nop                // empty
+007A46EC IffMap_Find              // (name?)
+007A44F8 IffMap_Erase             // (name?)
+007A4390 IffMap_Insert            // (name?)
+005F6D54 FIOSInit
+005E7E1C Fios_New                 // (size, 0x10000100, 3) (name?)
+00606834 Ps3Media_Construct       // "ps3media::m_dirLock" (name?)
+005FE29C Scheduler_CreateForMedia // fios::scheduler::createSchedulerForMedia
+005EB938 SchedulerCache_Construct // 9 args (name?)
+005EFDD8 Dearchiver_Construct     // "dearchiver" (name?)
+005F978C Overlay_Construct        // "overlay" (name?)
+00731648 Mem_NewAligned           // (size, align) (name?)
+007A5350 EdgeDecompressor_Construct // "edgeDecompressorTaskset" (name?)
+0051D91C Texture_LoadFromMemory   // (data, size, "Bmp", "MEM:...") (name?)
+00565410 DebugFont_Construct      // (name?)
+004FEBD0 Shader_Find              // (hash) (name?)
+004FF43C Material_Create          // (shader) (name?)
+0051BC20 Mesh_CreateSphere        // "SphereIdx" (name?)
+0051C1A8 Mesh_CreateCube          // "Cube" (name?)
+005516E0 PtrVector_Construct      // (name?)
+0050F308 Shaders_Init             // "System\Shaders\" -> bool (name?)

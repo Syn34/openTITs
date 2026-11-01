@@ -32,18 +32,24 @@ void disable(u32 addr) {
 }
 
 u64 call(PPUContext& ctx, u32 addr, std::initializer_list<u64> args) {
-    int r = 3;
-    for (u64 a : args) ctx.gpr[r++] = a;
     // Callers of a decompiled function expect r2 (TOC) and LR as they left
     // them; import stubs and cross-module calls switch r2.
-    // The call gets its own 112-byte linkage area, as if the decompiled
-    // function had a stack frame: stubs save r2 at 40(r1) and callees save
-    // LR at 16(r1), which must not land in our caller's frame.
+    // The call gets its own linkage area, as if the decompiled function had a
+    // stack frame: stubs save r2 at 40(r1) and callees save LR at 16(r1),
+    // which must not land in our caller's frame. Arguments 1-8 go in r3-r10;
+    // the rest in the parameter save area, at 48 + 8 * n from the new r1.
     const u64 saved_lr = ctx.lr;
     const u64 saved_r2 = ctx.gpr[2];
     const u64 saved_r1 = ctx.gpr[1];
-    const u32 sp = (static_cast<u32>(saved_r1) - 112) & ~15u;
+    const u32 extra = args.size() > 8 ? static_cast<u32>(args.size() - 8) * 8 : 0;
+    const u32 sp = (static_cast<u32>(saved_r1) - 112 - ((extra + 15) & ~15u)) & ~15u;
     mem::w64(sp, saved_r1);  // back-chain
+    int n = 0;
+    for (u64 a : args) {
+        if (n < 8) ctx.gpr[3 + n] = a;
+        else mem::w64(sp + 48 + 8 * static_cast<u32>(n), a);
+        ++n;
+    }
     ctx.gpr[1] = sp;
     call_indirect(ctx, addr, 0);
     ctx.gpr[1] = saved_r1;
