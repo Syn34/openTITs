@@ -1,0 +1,38 @@
+# Sly Cooper: Thieves in Time (BCES01284 v01.02) - function names
+# ADDR name // note       Used by opentit-recomp --symbols and funcinfo.
+# "(name?)" or "?" in a note marks a guess.
+
+# C runtime / start-up
+00010200 _init                    // static constructors
+004FC7B4 _start                   // entry point: sets r2, calls CrtStart
+004FC8BC CrtStart                 // runs _init, calls main, then exit
+0071B570 exit
+0071F460 _exit                    // sys_process_exit
+00726E54 memset
+00553684 String_Copy              // (dst, src, size): copies and always terminates
+0056A710 String_HashNoCase        // h = h * 31 + toupper(c); 0 for a null string
+
+# Game
+00463658 main                     // decompiled: decomp/src/main.cpp
+0046320C Main_ParseCommandLine    // (argc, argv) switches such as -T; decompiled: decomp/src/commandline.cpp
+005DB1D0 Main_InitSystems         // (stage bits) 1, then -2; decompiled: decomp/src/system/init.cpp
+00463000 Game_Load                // Scripts/Tuning.xml, Common.Cursors.%02d
+0045B858 Game_Update              // per frame; returns the next main state; FrontEnd / InGame
+00458940 Game_Shutdown            // (name?)
+
+# System
+0056C0B4 Np_Init                  // decompiled: decomp/src/system/np.cpp
+0056C184 Sysutil_CheckCallback    // decompiled: decomp/src/system/sysutil.cpp
+0056C1E8 Sysutil_RegisterCallback // decompiled: decomp/src/system/sysutil.cpp
+00532D3C VBlank_Handler           // increments the counter at 0x010F0E00
+0049AED8 Sysutil_OnEvent          // cellSysutil callback: sets bits in 0x010BB9F8
+0054ED38 Mem_Alloc                // (size, ?, heap?) with lazy heap setup
+0054ECA0 Heap_Construct           // (this, size, 0, 0) (name?)
+005611B0 Mem_Free                 // (name?)
+
+# Files
+0055BD3C File_Open                // (path, mode) -> File*
+0055D78C File_Exists              // decompiled: decomp/src/file/file.cpp
+00560B90 File_LoadWhole           // (path, u32* size) -> buffer; main: "System\Shaders.Zip" (name?)
+00562944 Archive_Mount            // (path, options by value); main: Sly4.psarc (name?)
+00567034 Archive_OpenZip          // (data, size, name); main: "RamDisk" (name?)
