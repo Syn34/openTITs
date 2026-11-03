@@ -56,10 +56,10 @@
 0045CC18 World_Construct          // (obj, 0) 6393 instr, object of 0x1286B0 bytes at Game+0 (name?)
 0071C3F0 memmove
 00723884 strcmp
-00555D94 String_Assign            // strcpy; decompiled: src/string/string_misc.cpp
+00555D94 String_Compare           // strcmp; decompiled: src/string/string_misc.cpp
 00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
 00520D88 RenderTarget_Construct   // "RenderTarget_Primary" (name?)
-0053C9F8 RenderTarget_SetParams   // (name?)
+0053C9F8 RenderTarget_SetParams   // decompiled: src/common/misc.cpp
 005518FC FreeList_AddBlock        // (list, flag); decompiled: src/container/freelist.cpp
 00551598 PtrVector_Init           // decompiled: src/container/vector.cpp
 00551718 PtrVector_Reserve        // decompiled: src/container/vector.cpp
@@ -205,4 +205,81 @@
 00442C10 Emitter_Update           // (Emitter*, Listener*, -, bool still, f32 dt) (name?)
 00784008 SortedMap_Find           // (map, const u32* key) -> s32 (name?)
 0078378C HandlePool_Remove        // (out, pool, handle) (name?)
-00552420 Pool_FreeSized           // (ptr, size) (name?)
+00552420 SmallFree                // (p, size)
+
+# UI elements, allocators, free lists
+00762150 UiElem_Type              // +12 -> 100; decompiled: src/uielem/element.cpp
+00795E6C UiText_Type              // -> 3; decompiled: src/uielem/element.cpp
+00796528 UiElem5_Type             // -> 5 (name?) decompiled: src/uielem/element.cpp
+00761B14 UiElem_GetMatrix         // +16; decompiled: src/uielem/element.cpp
+00761B20 UiElem_SetMatrix         // +20
+00761B84 UiElem_GetPosition       // +24
+00761B90 UiElem_SetPosition       // +28
+00761BB4 UiElem_GetScale          // +36 (name?)
+00761BC0 UiElem_SetScale          // +40
+00761BDC UiElem_GetSize           // +44 sret, zero vec2
+00761BF8 UiElem_SetSize           // +48 empty
+00761BFC UiElem_GetColor          // +52 sret
+00761C28 UiElem_SetColor          // +56
+00761C50 UiElem_GetFieldA         // +60 flags bits 22-23
+00761C5C UiElem_SetFieldA         // +64
+00761C6C UiElem_GetFieldB         // +68 bits 14-21
+00761C78 UiElem_SetFieldB         // +72
+00761C88 UiElem_GetFieldC         // +76 bits 6-13
+00761C94 UiElem_SetFieldC         // +80
+00761CA4 UiElem_IsActive          // +84 bit 31
+00761CBC UiElem_SetActive         // +88 (SetVisible)
+00761CD0 UiElem_IsFocusable       // +92
+00761CE8 UiElem_SetFocusable      // +96
+00761CF8 UiElem_GetFlag29         // +100
+00761D10 UiElem_SetFlag29         // +104
+00761D20 UiElem_GetFlag28         // +108
+00761D38 UiElem_SetFlag28         // +112
+00761D48 UiElem_GetFlag27         // +116
+00761D60 UiElem_SetFlag27         // +120
+00761D70 UiElem_GetFlag26         // +124
+00761D88 UiElem_SetFlag26         // +128
+00761D98 UiElem_GetFlag05         // +132
+00761DB0 UiElem_SetFlag05         // +136
+004D5870 Ui_DrawCallback0         // empty; decompiled: src/uielem/element.cpp
+004D5874 Ui_DrawCallback1         // empty
+004645AC SysMsg_OnClose           // decompiled: src/uielem/sysmsg.cpp
+00464794 SysMsg_OnInput           // decompiled: src/uielem/sysmsg.cpp
+00464804 SysMsg_OnEvent           // decompiled: src/uielem/sysmsg.cpp
+00553140 LinearHeap_Destruct      // decompiled: src/common/alloc.cpp
+005531A4 LinearHeap_Delete        // decompiled: src/common/alloc.cpp
+0055322C LinearHeap_Free          // decompiled: src/common/alloc.cpp
+005514E0 DefaultHeap_Alloc        // -> 0 (name?) decompiled: src/common/alloc.cpp
+00551510 DefaultHeap_Free         // decompiled: src/common/alloc.cpp
+0056C89C Mem_Stub0                // -> 0 (name?)
+0054EE6C Mem_FreeFrom             // (p, pool)
+0055238C SmallAlloc               // (name?) -> 00551CC0
+005523AC DefaultAllocator_Alloc   // (this, size, clear)
+00552418 DefaultAllocator_Fn4     // -> 0
+005524D8 DefaultAllocator_Free    // (this, p, size)
+007245E4 Sprintf_Output           // vsprintf output fn (OPD 0x00F486A8)
+00556C04 FreeList_Alloc           // decompiled: src/common/freelist.cpp
+00556D18 FreeList_Free            // decompiled: src/common/freelist.cpp
+005568FC FreeList_Destroy         // decompiled: src/common/freelist.cpp
+007A2564 RtFreeList_Destruct
+007A25B8 RtFreeList_Delete
+007A2628 RtFreeList_Fn8           // empty
+0079EA84 RtFreeList_Alloc
+0079EAA8 RtFreeList_Free
+007A1018 RtFreeList_Init          // (count, heap) size 1840
+007A4E80 InputFreeList_Destruct
+007A4ECC InputFreeList_Delete
+007A4F38 InputFreeList_Fn8        // empty
+007A4A90 InputFreeList_Alloc
+007A4AB0 InputFreeList_Free
+007A4D1C InputFreeList_Init       // size 296
+00555F80 String_Assign            // strcpy; decompiled: src/common/misc.cpp
+0056DF78 Stub_True                // (name?)
+0055E284 Stub_CallTrue            // (name?)
+0049AF38 NpManager_OnStatus       // offline -> sysutil flag 0x80
+00551CC0 SmallAlloc_Impl          // size classes at 0x00F67C74 (name?)
+0072A470 _memalign_r
+007277D0 _free_r
+00728608 _malloc_r
+004DC1B8 UiElem_SetText           // +188
+005201B0 RenderTarget_SetMatrix   // VMX

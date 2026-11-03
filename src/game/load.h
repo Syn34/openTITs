@@ -41,10 +41,10 @@ constexpr u32 vsprintf = 0x00724588;             // (char* dst, const char* fmt,
 
 // still recompiled
 constexpr u32 World_Construct = 0x0045CC18;      // (World*, 0): 6393 instructions (name?)
-constexpr u32 operator_new = 0x007A3DD8;         // (u32 size) -> pointer  (name?)
+constexpr u32 Mem_New = 0x007A3DD8;              // operator new(u32 size)
 constexpr u32 memmove = 0x0071C3F0;              // (dst, src, n)
-constexpr u32 strcpy = 0x00723884;               // (dst, src)  (name?)
-constexpr u32 String_Assign = 0x00555D94;        // (String* dst, const char*): calls strcpy (name?)
+constexpr u32 strcmp = 0x00723884;               // (a, b)
+constexpr u32 String_Compare = 0x00555D94;       // (a, b): strcmp
 constexpr u32 vprintf_core = 0x00724620;         // (OutputFn* opd, void* arg, fmt, va_list) -> int (name?)
 constexpr u32 RenderTarget_Construct = 0x00520D88;   // (rt, type): "RenderTarget_Primary" (name?)
 constexpr u32 RenderTarget_SetParams = 0x0053C9F8;   // (p, u32, u32, f32, f32, u32 at r8) (name?)

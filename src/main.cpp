@@ -19,7 +19,7 @@ bool Main_Poll(PPUContext& ctx) {
         state = kMainQuit;
         return false;
     }
-    if (flags & (kSysutilMenuOpen | kSysutilPause80 | kSysutilPadLost))
+    if (flags & (kSysutilMenuOpen | kSysutilNpOffline | kSysutilPadLost))
         state = kMainPaused;
     else if (flags & kSysutilResume)
         state = kMainResumed;

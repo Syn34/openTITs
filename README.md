@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-105 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
+179 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -98,6 +98,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | `Game_Update` and its frame helpers | `src/game/update*.cpp` | 17 |
 | XML reader (`.xmb`), vectors, free lists, string helpers | `src/xml/`, `src/container/`, `src/string/`, `src/memory/` | 26 |
 | Per frame: players, UI focus and timelines, audio, world submission | `src/game/player.cpp`, `src/game/frame*.cpp`, `src/ui/` | 11 |
+| UI element methods, system message box, heaps, allocators, free lists | `src/uielem/`, `src/common/` | 74 |
 | Platform, FIOS, archives, IFF, resources, debug and graphics start-up | `src/platform/`, `src/file/`, `src/resource/`, `src/debug/`, `src/gfx/` | 13 |
 
 `symbols.txt` names many more functions that haven't been decompiled yet. See [docs/DECOMP.md](docs/DECOMP.md) to help.

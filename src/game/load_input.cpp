@@ -18,7 +18,7 @@ constexpr s32 CELL_OK = 0;
 DECOMP(0056324C, InputMgr_CreatePad) {
     u32 list = load<u32>(lg::kInputMgr);
     if (list == 0) {
-        const u32 mem = call32(ctx, lfn::operator_new, {kFreeListSize});
+        const u32 mem = call32(ctx, lfn::Mem_New, {kFreeListSize});
         if (mem != 0) {
             FreeList_Construct(ctx, mem, lg::kInputDeviceFreeListVtbl, lg::kInputDeviceFreeListName, kDeviceSize,
                                kDeviceFreeListCount);

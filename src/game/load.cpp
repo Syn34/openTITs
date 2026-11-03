@@ -143,7 +143,8 @@ DECOMP(004FC250, Tuning_Load) {
                 report(node);
                 break;
             }
-            if (keep_strings) call(ctx, lfn::String_Assign, {var + kVarName, str});
+            // Compares the name with the value and drops the result (as the original does).
+            if (keep_strings) call(ctx, lfn::String_Compare, {var + kVarName, str});
             call_ptr(ctx, vfunc(var, 36), {var, str});
             break;
         }

@@ -115,7 +115,7 @@ enum SysutilFlag : u32 {
     kSysutilMenuOpen = 0x004,       // XMB open (CELL_SYSUTIL_SYSTEM_MENU_OPEN / _CLOSE)
     kSysutilExitRequested = 0x010,  // CELL_SYSUTIL_REQUEST_EXITGAME
     kSysutilResume = 0x002,         // ? -> kMainResumed
-    kSysutilPause80 = 0x080,        // ? -> kMainPaused
+    kSysutilNpOffline = 0x080,      // PSN went offline (NpManager_OnStatus) -> kMainPaused
     kSysutilPadLost = 0x100,        // no local user has a connected pad (set by Game_Update) -> kMainPaused
 };
 

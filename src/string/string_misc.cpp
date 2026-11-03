@@ -5,15 +5,15 @@
 using namespace sly4;
 
 namespace {
-constexpr u32 kStrcpy = 0x00723884;    // strcpy(dst, src)
+constexpr u32 kStrcmp = 0x00723884;    // strcmp(a, b)
 constexpr u32 kMemcmp = 0x00723AC4;    // memcmp(a, b, n)
 constexpr u32 kVsprintf = 0x00724588;  // vsprintf(dst, fmt, va) (src/game/load_util.cpp)
 }  // namespace
 
-// char* String_Assign(char* dst, const char* src)
-// strcpy (the String member Tuning_Load assigns names with).
-DECOMP(00555D94, String_Assign) {
-    ret(ctx, call(ctx, kStrcpy, {arg<u32>(ctx, 0), arg<u32>(ctx, 1)}));
+// int String_Compare(const char* a, const char* b)
+// strcmp.
+DECOMP(00555D94, String_Compare) {
+    ret(ctx, call(ctx, kStrcmp, {arg<u32>(ctx, 0), arg<u32>(ctx, 1)}));
 }
 
 // s32 String_Length(const char* s)

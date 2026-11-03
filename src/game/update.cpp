@@ -246,7 +246,7 @@ DECOMP(0045B858, Game_Update) {
     const u32 flags = load<u32>(g::sysutil_flags);
     if (flags & kSysutilExitRequested)
         state = kMainQuit;
-    else if (flags & (kSysutilMenuOpen | kSysutilPause80 | kSysutilPadLost))
+    else if (flags & (kSysutilMenuOpen | kSysutilNpOffline | kSysutilPadLost))
         state = kMainPaused;
     else if (flags & kSysutilResume)
         state = kMainResumed;
