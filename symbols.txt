@@ -142,7 +142,7 @@
 00551540 String_Printf            // sprintf; decompiled: src/string/string_misc.cpp
 00555DB8 Mem_Compare              // memcmp; decompiled: src/string/string_misc.cpp
 005525FC Mem_GetDefaultStack      // MemState.heap; decompiled: src/memory/memstack.cpp
-0055260C MemStack_Alloc           // (ApeMemStack*, size) "ApeMemStack::Alloc using malloc" (name?)
+0055260C MemStack_Alloc           // ApeMemStack::Alloc; decompiled: src/heap/stack_alloc.cpp
 00723AC4 memcmp
 0079BA00 XmlCursor_AsElement      // blr: returns this
 0079BA08 XmlDoc_AsDocument        // blr: returns this
@@ -277,11 +277,11 @@
 0056DF78 Stub_True                // (name?)
 0055E284 Stub_CallTrue            // (name?)
 0049AF38 NpManager_OnStatus       // offline -> sysutil flag 0x80
-00551CC0 SmallAlloc_Impl          // size classes at 0x00F67C74 (name?)
+00551CC0 SmallAlloc_Impl          // ApeMem::_BucketAlloc; decompiled: src/heap/bucket.cpp
 0072A470 _memalign_r
 007277D0 _free_r
 00728608 _malloc_r
-004DC1B8 UiElem_SetText           // +188
+004DC1B8 UiText_SetText           // (elem, text, bool relayout); decompiled: src/text/settext.cpp
 005201B0 RenderTarget_SetMatrix   // VMX
 
 # File layer, threads, tags, shaders
@@ -354,3 +354,15 @@
 00442478 Emitter_Spatialise       // (name?)
 0044A3D4 Audio_FocusRelease       // (name?)
 00443424 Audio_FocusUpdate        // (handle, u8) (name?)
+
+# Text, heaps
+004DB378 UiText_Layout            // (elem, bool force); decompiled: src/text/settext.cpp
+004DA380 Utf8_Next                // (this, const char**, u32* len, bool advance); decompiled: src/text/measure.cpp
+004DB1E8 UiText_SpaceWidth        // (elem, const f32* scale) -> f1; decompiled: src/text/measure.cpp
+004DAEE8 UiText_MeasureLines      // (elem, f32* widths, max, -, scale; f1 space) -> lines; decompiled: src/text/measure.cpp
+004D3700 Ui_BuildPath             // (elem, char** cursor) ".a.b"; decompiled: src/text/strings.cpp
+004F87C4 StringTable_Lookup       // (strings, id, fallback, quiet); decompiled: src/text/strings.cpp
+00550F5C DefaultHeap_AllocAligned // vtable 0x00B24278 +0; decompiled: src/heap/default_heap.cpp
+004DB828 UiText_Format            // (elem, text, buf, 4096, 8 out ptrs) (name?)
+004DAAA8 UiText_BuildGlyph        // (elem, quad, c, &x, &y, -, scale, line; f1 space) -> bool (name?)
+004E0648 UiElem_GetScale2         // vfunc +168, sret f32[2] (name?)

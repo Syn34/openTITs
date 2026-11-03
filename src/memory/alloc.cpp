@@ -41,7 +41,7 @@ u32 linear_heap_construct(PPUContext& ctx, u32 obj, u64 size, u64 pool, u8 owns)
     h.end = 0;
     h.cursor = 0;
     h.pool = static_cast<s32>(pool);
-    h.capacity = static_cast<u32>(size);
+    h.min_free = static_cast<u32>(size);
     h.owns = owns;
     const u32 base = static_cast<u32>(call(ctx, fn::Mem_Alloc, {size, pool, kHeapAlign}));
     h.base = base;

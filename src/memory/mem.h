@@ -95,7 +95,7 @@ struct LinearHeap {
     be_s32 pool;     // +24 pool the block came from (the destructor frees it there)
     u8 owns;         // +28 (name?) the lazy heap passes 1, Main_InitSystems 0
     u8 pad29[3];
-    be_u32 capacity; // +32 = size
+    be_u32 min_free; // +32 lowest free space seen (starts at size)
 };
 static_assert(sizeof(LinearHeap) == 36);
 constexpr u32 kLinearHeapVtable = 0x00B242D0;
