@@ -195,16 +195,16 @@
 00565178 Arena_Snapshot           // decompiled: src/game/frame_misc.cpp (name?)
 005220E8 FrameBuffer_PushMarker   // (fb, -, value) reads r5; decompiled: src/game/frame_misc.cpp (name?)
 0001BEE8 View_Notify              // decompiled: src/game/frame_misc.cpp (name?)
-005E649C Math_Acos                // f32 (f32) (name?)
-005E665C Math_Atan2               // f32 (f32, f32) (name?)
-0045A6F8 View_SubmitSplit         // (World*, View*, Camera*, index, Job*) (name?)
-006D5E10 Voice_IsPlaying          // (voice) (name?)
-006D64AC Voice_GetValue           // (voice) -> s32 (name?)
-006D60AC Voice_Stop               // (voice, 1) (name?)
-0044448C Emitter_Start            // (u32 handle) (name?)
-00442C10 Emitter_Update           // (Emitter*, Listener*, -, bool still, f32 dt) (name?)
-00784008 KeyMap_Find              // (Map*, const u32* key) -> s32 index or < 0 (name?)
-0078378C HandlePool_Remove        // (out, pool, handle) (name?)
+005E649C acosf                    // decompiled: src/math/trig.cpp
+005E665C atan2f                   // decompiled: src/math/trig.cpp
+0045A6F8 View_SubmitSplit         // VMX (name?)
+006D5E10 Voice_IsPlaying          // decompiled: src/audio/voice.cpp (name?)
+006D64AC Voice_GetValue           // decompiled: src/audio/voice.cpp (name?)
+006D60AC Voice_Stop               // decompiled: src/audio/voice.cpp (name?)
+0044448C Emitter_Start            // decompiled: src/audio/emitter.cpp (name?)
+00442C10 Emitter_Update           // decompiled: src/audio/emitter.cpp (name?)
+00784008 KeyMap_Find              // (Map*, const u32* key) -> s32 index or < 0; decompiled: src/audio/pool.cpp (name?)
+0078378C HandlePool_Remove        // decompiled: src/audio/pool.cpp (name?)
 00552420 SmallFree                // (p, size)
 
 # UI elements, allocators, free lists
@@ -326,3 +326,31 @@
 00534310 PostProc_Init            // "PostProc_Resolve2xMSAA" (name?)
 00546F6C PostProc_InitCopy        // "PostProc_Copy" (name?)
 0054BF48 StencilShadow_Init       // (name?)
+
+# World render submission, audio, math
+00459198 Job_Begin                // (slot, view, u8 layer); decompiled: src/world/job.cpp (name?)
+00459308 World_SubmitList308      // decompiled: src/world/submit.cpp (name?)
+00459500 World_SubmitList500      // decompiled: src/world/submit.cpp (name?)
+004596E8 World_SubmitOverlay      // (World*, bool); decompiled: src/world/submit.cpp (name?)
+004598D0 World_Submit3D8D0        // decompiled: src/world/submit.cpp (name?)
+00459E10 World_Submit3DE10        // decompiled: src/world/submit.cpp (name?)
+00459B60 World_SubmitCameraB60    // decompiled: src/world/submit.cpp (name?)
+00457654 World_HasMovieOwner      // decompiled: src/world/state.cpp (name?)
+0045A208 World_SubmitMain         // decompiled: src/world/main_view.cpp (name?)
+0044A970 Audio_UpdateMix          // (f32 dt); decompiled: src/audio/mix.cpp (name?)
+005E68D0 _FDtest                  // decompiled: src/math/trig.cpp
+005E693C sqrtf                    // decompiled: src/math/trig.cpp
+005E6830 _Atan                    // atanf kernel (f32, flags); decompiled: src/math/trig.cpp
+00565154 Arena_Restore            // (Arena*, u32) (name?)
+00521A5C FrameBuffer_BeginLayer   // (fb, view, u8 layer) (name?)
+0056A0D0 Matrix_Build             // (out[16], a, b, c) (name?)
+004D4E28 Ui_Render                // (u8, View*) (name?)
+006EFD10 Voice_Lock               // (name?)
+006EFD34 Voice_Unlock             // (name?)
+006E5B6C Voice_Lookup             // (handle) -> Voice* (name?)
+006D50F0 Voice_SetParam           // (voice, which, s32) (name?)
+006D5EE0 Voice_Play               // (bank, s16 id, params*, -2) -> handle (name?)
+00441D68 Emitter_BuildParams      // (name?)
+00442478 Emitter_Spatialise       // (name?)
+0044A3D4 Audio_FocusRelease       // (name?)
+00443424 Audio_FocusUpdate        // (handle, u8) (name?)
