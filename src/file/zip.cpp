@@ -71,13 +71,13 @@ DECOMP(0055D494, ZipArchive_Open) {
     field<u32>(zip, zp::kEnd) = end;
     field<u32>(zip, zp::kStream) = 0;
     field<u32>(zip, zp::kDataBase) =
-        end - (field<u32>(zip, zp::kDirSize) + field<u32>(zip, zp::kDirOffset));
+        end - (field<u32>(zip, zp::kDirOffset) + field<u32>(zip, zp::kDirSize));
     if (prefix == 0) {
         ref<u8>(zip + zp::kPrefix) = 0;
     } else {
         call(ctx, fs::libc::strcpy, {zip + zp::kPrefix, fs::normalise_path(ctx, prefix)});
     }
-    field<u32>(zip, zp::kEntryOffset) = field<u32>(zip, zp::kDirSize);
+    field<u32>(zip, zp::kEntryOffset) = field<u32>(zip, zp::kDirOffset);
     field<u32>(zip, zp::kEntryIndex) = 0;
     call(ctx, fs::fn::Zip_LocateEntry, {zip});
     if (field<u32>(zip, zp::kEntryValid) == 0) ref<u8>(zip + zp::kCurrentName) = 0;

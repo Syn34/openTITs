@@ -302,26 +302,26 @@
 005681A4 ArchiveFile_Seek         // decompiled: src/file/archivefile.cpp
 0056829C ArchiveFile_Size         // decompiled: src/file/archivefile.cpp
 0071EC28 qsort
-0055A8E4 Zip_LocateEntry          // (zip) reads the entry at +32 (name?)
-0055CF1C Zip_ReadDirectory        // (zip, sca, s32* ok, u32* end) (name?)
-0055C01C Zip_BuildIndex           // (zip) (name?)
-00567938 Zip_StreamRead           // (zip, buf, size) (name?)
-005DC7C0 Zip_InflateEnd           // (z_stream*) (name?)
-005594C4 FileBase_Construct       // (File*, path) (name?)
-00560B80 FileBase_Destruct        // (name?)
-005618B8 Fs_Open                  // (path, mode, options by value r5-r7) (name?)
-00561C78 Fs_Close                 // (handle, options r4-r6) (name?)
-00562230 Fs_Write                 // (handle, data, size, u64 pos, options r7-r9) (name?)
-005625C8 Fs_GetSize               // (handle, options r4-r6) (name?)
-005611DC Path_GetExtension        // (name?)
-00555DE8 String_CompareNoCase     // (name?)
-00568490 ReadCache_Init           // (cache, size) (name?)
-005682B4 ReadCache_Destruct       // (name?)
-007A5840 ReadCache_Read           // (cache, file, buf, size) (name?)
-007A5B58 WriteBuffer_Write        // (wb, file, buf, size) (name?)
-00567F2C Archive_MountMemory      // (data, prefix, bufsize) -> index or 0 (name?)
-0055D684 Archive_MountFile        // (path, prefix, bufsize) -> index or 0 (name?)
-0055E350 Archive_Promote          // (u16 index) (name?)
+0055A8E4 Zip_LocateEntry          // (zip) -> 1 (name?)
+0055CF1C Zip_ReadDirectory        // decompiled: src/file/zipread.cpp
+0055C01C Zip_BuildIndex           // decompiled: src/file/zipread_index.cpp
+00567938 Zip_StreamRead           // decompiled: src/file/zipread.cpp
+005DC7C0 inflateEnd               // zlib
+005594C4 FileBase_Construct       // decompiled: src/file/fsio.cpp
+00560B80 FileBase_Destruct        // decompiled: src/file/fsio.cpp
+005618B8 Fs_Open                  // decompiled: src/file/fsio.cpp
+00561C78 Fs_Close                 // decompiled: src/file/fsio.cpp
+00562230 Fs_Write                 // decompiled: src/file/fsio.cpp
+005625C8 Fs_GetSize               // decompiled: src/file/fsio.cpp
+005611DC Path_GetExtension        // decompiled: src/file/fsio.cpp
+00555DE8 String_CompareNoCase     // decompiled: src/file/fsio.cpp
+00568490 ReadCache_Init           // decompiled: src/file/cache.cpp
+005682B4 ReadCache_Destruct       // decompiled: src/file/cache.cpp
+007A5840 ReadCache_Read           // decompiled: src/file/cache.cpp
+007A5B58 WriteBuffer_Write        // decompiled: src/file/cache.cpp
+00567F2C Archive_MountMemory      // (data, prefix) -> u16 index; decompiled: src/file/mount.cpp
+0055D684 Archive_MountFile        // (path, prefix) -> u16 index; decompiled: src/file/mount.cpp
+0055E350 Archive_Unmount          // (u16 index); decompiled: src/file/mount.cpp
 0050F0F0 Shader_LoadGroup         // (group 0..5) (name?)
 00534310 PostProc_Init            // "PostProc_Resolve2xMSAA" (name?)
 00546F6C PostProc_InitCopy        // "PostProc_Copy" (name?)
@@ -366,3 +366,33 @@
 004DB828 UiText_Format            // (elem, text, buf, 4096, 8 out ptrs) (name?)
 004DAAA8 UiText_BuildGlyph        // (elem, quad, c, &x, &y, -, scale, line; f1 space) -> bool (name?)
 004E0648 UiElem_GetScale2         // vfunc +168, sret f32[2] (name?)
+
+# File I/O, caches, zip directory
+00570B9C FsOp_Init                // (op, target, kind, options r6-r8)
+00570BD4 FsOp_Wait
+00570C0C FsOp_Cancel              // (name?)
+00570C38 FsOp_GetError
+00570C98 FsOp_Report              // (name?)
+00570D54 FsOp_GetResult           // bytes transferred
+00570D80 FsOp_GetPath             // (name?)
+00570DA8 FsOp_Destruct
+00561450 FsOp_Sync                // (name?)
+00561514 FsOp_Release             // (name?)
+00571178 Fios_OpenFile            // (op, handle obj, path, mode, options r7-r9) (name?)
+00571350 Fios_CloseFile           // (name?)
+00571688 Fios_WriteFile           // (name?)
+00571858 Fios_GetFileSize         // (name?)
+00561FE8 Fs_Read                  // (handle, buf, size, u64 pos, options r7-r9) (name?)
+005F886C Fios_Wait                // (count, ops*, timeout) (name?)
+005FCA64 Fios_CancelOp            // (scheduler, op) (name?)
+005FE784 Fios_FreeOp              // (scheduler, op) (name?)
+00571D80 FsHandle_Construct
+00571D98 FsHandle_Destruct        // empty
+00568A28 Cache_Find               // (cache, pos, wait) -> slot (name?)
+00568E74 Cache_PickSlot           // (cache, pos, hint) (name?)
+00568D30 Cache_NextPrefetch       // (cache, pos, hint, u64* out) (name?)
+007A5684 Cache_Prefetch           // (cache, file, pos, slot) (name?)
+005677A4 ZipArchive_OpenMemory    // (zip, data, prefix) (name?)
+0055C780 Zip_FindEndRecord        // (zip, bool sca) -> offset (name?)
+00559534 Zip_ReadU32              // (zip, u32* out) (name?)
+0056736C Zip_ReadRaw              // (zip, buf, size) (name?)

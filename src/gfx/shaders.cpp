@@ -65,7 +65,7 @@ DECOMP(0050F308, Shaders_Init) {
         ref<u8>(kOnce54CDB0) = 1;
         call(ctx, sh::fn::Shaders_Init54CDB0);
     }
-    call(ctx, sh::fn::Archive_Promote, {archive});
+    call(ctx, sh::fn::Archive_Unmount, {archive});
     for (s32 group = 0; group < static_cast<s32>(sh::kShaderGroups); ++group)
         call(ctx, sh::fn::Shader_LoadGroup, {static_cast<u64>(static_cast<s64>(group))});
     ret(ctx, 1u);
