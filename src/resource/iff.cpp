@@ -69,14 +69,14 @@ DECOMP(0055902C, Iff_RegisterChunk) {
     Stack frame(ctx, 8);
     const u32 insert_key = frame.addr(), find_key = frame.addr() + 4;
     store<u32>(find_key, code);
-    const u32 slot = static_cast<u32>(call(ctx, pf::fn::IffMap_Find, {kChunkMap, find_key}));
+    const u32 slot = static_cast<u32>(call(ctx, pf::fn::SortedMap_Find, {kChunkMap, find_key}));
     const u32 existing = load<u32>(slot);
     if (existing != 0) {
         if (!(flags & kIffQuiet))
             call(ctx, pf::fn::String_Format,
                  {kStrReplacing, code & 0xFF, (code >> 8) & 0xFF, (code >> 16) & 0xFF, code >> 24,
                   ref<ChunkDesc>(existing).name.get(), name});  // the message is formatted, not printed
-        call(ctx, pf::fn::IffMap_Erase, {kChunkMap, existing});
+        call(ctx, pf::fn::SortedMap_Erase, {kChunkMap, existing});
         const u32 list = chunk_allocator(ctx);
         vcall(ctx, list, kFreeListFreeSlot, {list, existing});
     }
@@ -92,5 +92,5 @@ DECOMP(0055902C, Iff_RegisterChunk) {
         d.name = name;
         d.flags = flags & kIffFlag10;
     }
-    ctx.gpr[3] = call(ctx, pf::fn::IffMap_Insert, {kChunkMap, insert_key, desc});  // even with desc 0
+    ctx.gpr[3] = call(ctx, pf::fn::SortedMap_Insert, {kChunkMap, insert_key, desc});  // even with desc 0
 }

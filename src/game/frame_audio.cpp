@@ -18,13 +18,13 @@ u32 Audio_NodeHandle(u32 index) {
 void Audio_RemoveKey(PPUContext& ctx, u32 key, u32 handle) {
     Stack frame(ctx, 8);
     store<u32>(frame.addr(), key);
-    s32 i = static_cast<s32>(call(ctx, afn::SortedMap_Find, {kAudioKeyMap, frame.addr()}));
+    s32 i = static_cast<s32>(call(ctx, afn::KeyMap_Find, {kAudioKeyMap, frame.addr()}));
     // Not found: the map's default entry (+16) is compared instead.
     const u32 entry = i >= 0 ? load<u32>(kAudioKeyMap + 8) + static_cast<u32>(i) * 12 + 4 : kAudioKeyMap + 16;
     const u32 h = load<u32>(entry);
     if ((h >> 16) != (handle >> 16) || ((h ^ handle) & 0xFFFF) != 0) return;
 
-    i = static_cast<s32>(call(ctx, afn::SortedMap_Find, {kAudioKeyMap, frame.addr()}));
+    i = static_cast<s32>(call(ctx, afn::KeyMap_Find, {kAudioKeyMap, frame.addr()}));
     if (i < 0) return;
     auto count = [] { return static_cast<s32>(load<u16>(kAudioKeyMap + 2)); };
     if (count() >= 2 && i < count() - 1) {

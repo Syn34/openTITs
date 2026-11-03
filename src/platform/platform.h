@@ -59,9 +59,9 @@ constexpr u32 Archive_Find = 0x0055B3C8;    // (Archive*, path, 0) -> 1 if the a
 constexpr u32 Archive_Prepare = 0x00559D5C; // (Archive*) -> 1 on success (735 instructions) (name?)
 constexpr u32 SystemState_CallHook = 0x005DBB60;  // () calls SystemState+20 (opd) with SystemState+24 (name?)
 constexpr u32 File_OpenFs = 0x005706FC;     // (path, mode) -> File*; "%s/%s", "%s - Open" (name?)
-constexpr u32 IffMap_Find = 0x007A46EC;     // (map, const u32* key) -> ChunkDesc** slot (name?)
-constexpr u32 IffMap_Erase = 0x007A44F8;    // (map, ChunkDesc*) (name?)
-constexpr u32 IffMap_Insert = 0x007A4390;   // (map, const u32* key, ChunkDesc*) (name?)
+constexpr u32 SortedMap_Find = 0x007A46EC;     // (map, const u32* key) -> ChunkDesc** slot (name?)
+constexpr u32 SortedMap_Erase = 0x007A44F8;    // (map, ChunkDesc*) (name?)
+constexpr u32 SortedMap_Insert = 0x007A4390;   // (map, const u32* key, ChunkDesc*) (name?)
 // Sony FIOS (still recompiled).
 constexpr u32 FIOSInit = 0x005F6D54;                 // (const fios_parameters*) "FIOS %s initialized"
 constexpr u32 Fios_New = 0x005E7E1C;                 // (u32 size, u32 flags, u32 ?) FIOS allocator new (name?)

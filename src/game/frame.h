@@ -39,7 +39,7 @@ constexpr u32 Emitter_Update2 = 0x00442250;  // (Emitter*) (name?)
 constexpr u32 sub_0044A970 = 0x0044A970;     // (f32 dt), 610 instructions
 constexpr u32 Pool_Free = 0x00552420;        // (void*, u32 size) (name?)
 constexpr u32 HandlePool_Remove = 0x0078378C;  // (out, Pool*, u32 handle) (name?)
-constexpr u32 SortedMap_Find = 0x00784008;   // (Map*, const u32* key) -> s32 index or < 0 (name?)
+constexpr u32 KeyMap_Find = 0x00784008;      // (Map*, const u32* key) -> s32 index or < 0 (name?)
 }  // namespace afn
 
 constexpr u32 kAudioReady = 0x010AEC60;          // u8: the audio system is up (also checked by 0x0044BA6C)

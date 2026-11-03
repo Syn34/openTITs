@@ -154,18 +154,18 @@
 00570E08 Fios_Init                // decompiled: src/platform/fios.cpp
 0055D830 Archive_MountImageZip    // decompiled: src/file/archive.cpp (name?)
 007239D8 strcpy
-005706FC File_OpenFs              // (path, mode) "%s/%s", "%s - Open" (name?)
-0055B3C8 Archive_Find             // (Archive*, path, 0) -> 1 (name?)
+005706FC File_OpenFs              // decompiled: src/file/fs.cpp
+0055B3C8 Archive_Find             // (zip, path, mode) -> 1 / 0 / -100; decompiled: src/file/zip.cpp
 00559D5C Archive_Prepare          // (Archive*) -> 1 (name?)
-0055D494 ZipArchive_Open          // (zip, path, 0) -> 1; ".sca" (name?)
+0055D494 ZipArchive_Open          // (zip, path, prefix); decompiled: src/file/zip.cpp
 005DBB60 SystemState_CallHook     // calls SystemState+20 opd with SystemState+24 (name?)
-00559310 Iff_InitTags             // registers ATAG/TAG2/TAGG (name?)
-0056F5BC Thread_Create            // (Thread*, entry opd, params*) -> sys_ppu_thread_create (name?)
+00559310 Iff_InitTags             // ATAG/TAG2/TAGG; decompiled: src/resource/tags.cpp
+0056F5BC Thread_Create            // decompiled: src/platform/thread.cpp
 0056C8E4 Game_BootCheck           // cellGameBootCheck/PatchCheck/ContentPermit (name?)
 00570B88 Image_Nop                // empty
-007A46EC IffMap_Find              // (name?)
-007A44F8 IffMap_Erase             // (name?)
-007A4390 IffMap_Insert            // (name?)
+007A46EC SortedMap_Find           // decompiled: src/resource/tags_map.cpp
+007A44F8 SortedMap_Erase          // decompiled: src/resource/tags_map.cpp
+007A4390 SortedMap_Insert         // decompiled: src/resource/tags_map.cpp
 005F6D54 FIOSInit
 005E7E1C Fios_New                 // (size, 0x10000100, 3) (name?)
 00606834 Ps3Media_Construct       // "ps3media::m_dirLock" (name?)
@@ -182,7 +182,7 @@
 0051BC20 Mesh_CreateSphere        // "SphereIdx" (name?)
 0051C1A8 Mesh_CreateCube          // "Cube" (name?)
 005516E0 PtrVector_Construct      // (name?)
-0050F308 Shaders_Init             // "System\Shaders\" -> bool (name?)
+0050F308 Shaders_Init             // decompiled: src/gfx/shaders.cpp
 
 # Per frame: players, UI, audio, world
 004D4178 Ui_FindInDirection       // recursive focus search; decompiled: src/ui/navigate.cpp (name?)
@@ -203,7 +203,7 @@
 006D60AC Voice_Stop               // (voice, 1) (name?)
 0044448C Emitter_Start            // (u32 handle) (name?)
 00442C10 Emitter_Update           // (Emitter*, Listener*, -, bool still, f32 dt) (name?)
-00784008 SortedMap_Find           // (map, const u32* key) -> s32 (name?)
+00784008 KeyMap_Find              // (Map*, const u32* key) -> s32 index or < 0 (name?)
 0078378C HandlePool_Remove        // (out, pool, handle) (name?)
 00552420 SmallFree                // (p, size)
 
@@ -283,3 +283,46 @@
 00728608 _malloc_r
 004DC1B8 UiElem_SetText           // +188
 005201B0 RenderTarget_SetMatrix   // VMX
+
+# File layer, threads, tags, shaders
+0055B7D4 File_ResolvePath         // decompiled: src/file/fs.cpp
+0055BD00 Mode_IsRead              // decompiled: src/file/fs.cpp
+007A5DDC FsFile_Destruct          // decompiled: src/file/fsfile.cpp
+007A5E40 FsFile_Delete            // decompiled: src/file/fsfile.cpp
+00571DC4 FsFile_Close             // flush, close, delete self; decompiled: src/file/fsfile.cpp
+00571F70 FsFile_Read              // decompiled: src/file/fsfile.cpp
+00571FE4 FsFile_Write             // decompiled: src/file/fsfile.cpp
+0057203C FsFile_Seek              // decompiled: src/file/fsfile.cpp
+00572118 FsFile_Size              // decompiled: src/file/fsfile.cpp
+007A4DF8 ArchiveFile_Destruct     // decompiled: src/file/archivefile.cpp
+007A4E08 ArchiveFile_Delete       // decompiled: src/file/archivefile.cpp
+00568034 ArchiveFile_Close        // decompiled: src/file/archivefile.cpp
+00568118 ArchiveFile_Read         // decompiled: src/file/archivefile.cpp
+00568168 ArchiveFile_Write        // log only; decompiled: src/file/archivefile.cpp
+005681A4 ArchiveFile_Seek         // decompiled: src/file/archivefile.cpp
+0056829C ArchiveFile_Size         // decompiled: src/file/archivefile.cpp
+0071EC28 qsort
+0055A8E4 Zip_LocateEntry          // (zip) reads the entry at +32 (name?)
+0055CF1C Zip_ReadDirectory        // (zip, sca, s32* ok, u32* end) (name?)
+0055C01C Zip_BuildIndex           // (zip) (name?)
+00567938 Zip_StreamRead           // (zip, buf, size) (name?)
+005DC7C0 Zip_InflateEnd           // (z_stream*) (name?)
+005594C4 FileBase_Construct       // (File*, path) (name?)
+00560B80 FileBase_Destruct        // (name?)
+005618B8 Fs_Open                  // (path, mode, options by value r5-r7) (name?)
+00561C78 Fs_Close                 // (handle, options r4-r6) (name?)
+00562230 Fs_Write                 // (handle, data, size, u64 pos, options r7-r9) (name?)
+005625C8 Fs_GetSize               // (handle, options r4-r6) (name?)
+005611DC Path_GetExtension        // (name?)
+00555DE8 String_CompareNoCase     // (name?)
+00568490 ReadCache_Init           // (cache, size) (name?)
+005682B4 ReadCache_Destruct       // (name?)
+007A5840 ReadCache_Read           // (cache, file, buf, size) (name?)
+007A5B58 WriteBuffer_Write        // (wb, file, buf, size) (name?)
+00567F2C Archive_MountMemory      // (data, prefix, bufsize) -> index or 0 (name?)
+0055D684 Archive_MountFile        // (path, prefix, bufsize) -> index or 0 (name?)
+0055E350 Archive_Promote          // (u16 index) (name?)
+0050F0F0 Shader_LoadGroup         // (group 0..5) (name?)
+00534310 PostProc_Init            // "PostProc_Resolve2xMSAA" (name?)
+00546F6C PostProc_InitCopy        // "PostProc_Copy" (name?)
+0054BF48 StencilShadow_Init       // (name?)
