@@ -2372,13 +2372,12 @@
 005D17E8 SlyTextureWarp_Draw                  // shader vtable 0x00B25FE8 slot 12; decompiled: src/gfx/shader4_draw.cpp
 005C39C8 SlyDecal_Draw                        // shader vtable 0x00B25B50 slot 12; decompiled: src/gfx/shader4_draw.cpp
 005B67C8 SAC_Skinned_Draw                     // shader vtable 0x00B25638 slot 12; decompiled: src/gfx/shader4_draw.cpp
-0050B980 MaterialAnim_GetMatrix               // (MaterialAnim*) -> const f32*: the animated UV matrix (rows of 4), 311 insns (name?)
+0050B980 MaterialAnim_GetMatrix               // (MaterialAnim*) -> g::anim_matrix 0x010C5C40: UV offset (row 2) and pivot rotation; decompiled: src/gfx/shader5_util.cpp (name?)
 005E6028 Cg_GetIOMask                         // (CgProgram*) vertex profile: output mask (+16); fragment: input mask (+4) (libgcm Cg) (name?)
 005E608C Cg_SetIOMask                         // (CgProgram*, u32) the same word written (libgcm Cg) (name?)
-0056A200 Matrix_Perspective                   // (f32 out[16]; f1 fov, f2 aspect, f3 near, f4 far) via 0x005E62E8 (tan?) (name?)
-005B0CF0 ProjTxr_BuildProjection              // (f32 pos[3], f32 m[16], a[3], b[3], c[3], proj[16], DrawItem*, 0x01196A00) (name?)
-005B47F4 SelfLight_GetLight                   // (Shader* unused, DrawItem*, f32 a[4], f32 dir[4], f32 b[4]) (name?)
-005207D0 View_Sub5207D0                       // (View*) called by View_BeginFrame (unknown)
+0056A200 Matrix_Perspective                   // (f32 out[16]; f1 fov, f2 aspect, f3 near, f4 far) -> f1 cot(fov/2); decompiled: src/gfx/shader5_util.cpp (name?)
+005B0CF0 ProjTxr_BuildProjection              // (pos_out[4], m_out[16], eye, target, up, proj[16], DrawItem*, block[16]); decompiled: src/gfx/shader5_util.cpp (name?)
+005B47F4 SelfLight_GetLight                   // (Shader*, DrawItem*, a[4], dir[4], b[4]); resolves params[0] via Map_Find once; decompiled: src/gfx/shader5_util.cpp (name?)
 
 # World event handler callees, part 8
 004FCE88 SubMesh_ConstructBase2_4FCE88        // (SubMesh*) reads only r3 (name?)
@@ -2387,3 +2386,23 @@
 007345F0 Math_Sinf                            // (f1 x) -> f1 (name?)
 000CFBD0 Ev_PostViewQuery0CFBD0               // (): 176-byte frame-stack job (radius^2, main view and first user matrices) -> 0x00456918; decompiled: src/world/hevent8_e.cpp (name?)
 00456918 Job_Post456918                       // (Job*) reads only r3 (name?)
+
+# Shader draws, part 5
+005207D0 View_SetConstants                    // (View*) fills the view constants block 0x010DD780 (was View_Sub5207D0); decompiled: src/gfx/shader5_util.cpp (name?)
+005D3750 SlyWater2_Draw                       // shader vtable 0x00B26088 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005D5220 SlyWater3_Draw                       // shader vtable 0x00B260D8 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005B1FA0 Diffuse_Draw                         // shader vtable 0x00B25490 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005C7210 SlyHeightFog_Draw                    // shader vtable 0x00B25C40 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005C2880 SlyCharacterCollectible_Draw         // shader vtable 0x00B25B30 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005C9948 SlyPanorama_Draw                     // shader vtable 0x00B25CE0 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005B8EC0 SAC_EnvMap_Draw                      // shader vtable 0x00B257C8 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005B3590 EnvMap_Draw                          // shader vtable 0x00B25508 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005C57B0 SlyEnvMap_Draw                       // shader vtable 0x00B25BF0 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005BB4D8 SlyCharacter_Draw                    // shader vtable 0x00B25938 slot 12; decompiled: src/gfx/shader5_draw.cpp
+005CC240 SlyTerrain_Draw                      // shader vtable 0x00B25EC0 slot 12; decompiled: src/gfx/shader5_draw.cpp
+0050C018 Material_ParamSlot                   // (Material*, u32 index) -> u32* &params[index], grows material +124 (u8 capacity +121) via SmallAlloc (name?)
+007A68DC Map_Find                             // (map, const u32* key) -> value*; sorted lookup, qsort on demand (name?)
+0055499C Matrix_MultiplyTo                    // (out[16], a[16], b[16]): rows of a through b (4x Vec4_TransformByMatrix) (name?)
+005E62E8 libm_tanf                            // f1 -> f1 (libm; leave recompiled) (name?)
+005D4FF0 SlyWater3_UploadFragment             // (Material*) SlyWater3's fragment constant 3 (name?)
+005C6EB8 SlyHeightFog_BuildMatrices           // (Material*, f32 a[3][4], f32 b[3][4]) via Matrix_FromAxisAngle / Matrix_ScaleRows (name?)
