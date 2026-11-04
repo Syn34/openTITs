@@ -20,6 +20,7 @@
 
 #include <cstring>
 #include <initializer_list>
+#include <string>
 #include <type_traits>
 
 #include "opentit/recomp.h"
@@ -28,6 +29,9 @@ namespace opentit::decomp {
 
 // ---------------------------------------------------------------- switches
 bool enabled(u32 addr);  // false under --no-decomp / --decomp-off
+// --decomp-coverage <file>: list the decompiled functions that ran (written at exit).
+void set_coverage_file(const std::string& path);
+void write_coverage();
 void disable_all();
 void disable(u32 addr);
 

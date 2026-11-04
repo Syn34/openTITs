@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-390 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
+399 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -109,6 +109,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | File layer (zip archives, disc files, archive streams), threads, tag map, shaders | `src/file/`, `src/platform/`, `src/resource/`, `src/gfx/` | 25 |
 | File I/O on FIOS, read cache, write buffer, archive mounting, zip directory and index | `src/file/` | 18 |
 | FIOS operations and wrappers, read-ahead cache slots, zip end record and raw reads | `src/file/` | 28 |
+| Video mode selection and configuration, display targets, surfaces, render targets | `src/gfx/` | 9 |
 | Zip entry info and open, libgcm/RSX start-up, RSX memory pools, command buffers | `src/file/`, `src/gfx/` | 9 |
 | Text element classes (destruct, clone, update, draw), timelines, axis-angle matrix, hash map; zip local header, display and frame surfaces, RSX heap | `src/uielem/`, `src/view/`, `src/file/`, `src/gfx/` | 19 |
 

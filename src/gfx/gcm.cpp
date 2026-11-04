@@ -87,7 +87,7 @@ DECOMP(0053AC38, Gcm_Init) {
     store<u32>(kVBlankCounter, load<u32>(kVBlankCounterSrc));
     call(ctx, gc::imp::cellGcmSetVBlankFrequency, {kVBlankFrequency});
     call(ctx, gc::imp::cellGcmSetVBlankHandler, {kVBlankHandler});
-    call(ctx, gc::fn::Gfx_Init52FD2C);
+    call(ctx, gc::fn::Video_SelectMode);
 
     // Screen parameters.
     {
@@ -110,7 +110,7 @@ DECOMP(0053AC38, Gcm_Init) {
         field<u8>(kConfig, 35) = 0;
     }
     call(ctx, gc::fn::Display_InitSurfaces);
-    call(ctx, gc::fn::Gfx_Init5312E4, {ref<u8>(kStats + 8), 0, 1});
+    call(ctx, gc::fn::Video_Configure, {ref<u8>(kStats + 8), 0, 1});
     call(ctx, gc::fn::Gfx_InitFrameSurfaces);
 
     // Render command buffer of half the I/O size.

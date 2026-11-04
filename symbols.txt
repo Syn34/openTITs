@@ -489,9 +489,9 @@
 005E0530 Gcm_InitBody             // (cmd size, io size, io addr) -> 0 / error (name?)
 0060E0B4 JobQueue_Init            // (queue, 5, spurs, prio[8], 251, buf, 22528) (name?)
 00530318 Surface_GetSize          // decompiled: src/gfx/init_surface.cpp
-0052FD2C Gfx_Init52FD2C           // (unknown)
+0052FD2C Video_SelectMode         // decompiled: src/gfx/setup.cpp
 00531084 Display_InitSurfaces     // decompiled: src/gfx/init_surface.cpp (name?)
-005312E4 Gfx_Init5312E4           // (u8, 0, 1) (unknown)
+005312E4 Video_Configure          // decompiled: src/gfx/setup.cpp
 005333CC Gfx_InitFrameSurfaces    // decompiled: src/gfx/init_surface.cpp (name?)
 00537F28 RsxHeap_Init             // decompiled: src/gfx/init_surface.cpp (name?)
 005E403C Gfx_Init5E403C           // (u32, 1, 1) (unknown)
@@ -517,13 +517,13 @@
 004DB6CC UiText_ReserveQuads      // (elem, glyphs); decompiled: src/uielem/ctor.cpp
 004E23A0 UiText_UpdateQuads       // (elem; f1 dt) reveal clock + all quads; decompiled: src/uielem/update.cpp
 004D89CC UiElem_UpdateChildren    // (elem; f1 dt); decompiled: src/uielem/update.cpp
-0051B228 Display_CreateTargets    // (w, h, 29, max w, max h) (name?)
-005304D4 Surface_Create           // (desc*, buffer*, w, h, 0, 0, 1) (name?)
-0053074C Display_Finish           // (display) (name?)
-00530DB4 Target_Init              // (target, w, h, 3, 0, 0) (name?)
-00532E70 Target_Attach            // (out, target, w, h, 0, 0) (name?)
-00532D5C Surface_SetBuffer        // (surface, buffer) (name?)
-00533054 Display_SetSize          // (display, w) (name?)
+0051B228 Display_CreateTargets    // decompiled: src/gfx/display.cpp
+005304D4 Surface_Create           // decompiled: src/gfx/target.cpp
+0053074C Display_Finish           // decompiled: src/gfx/display.cpp
+00530DB4 Target_Init              // decompiled: src/gfx/target.cpp
+00532E70 Target_Attach            // decompiled: src/gfx/target.cpp
+00532D5C Surface_SetBuffer        // decompiled: src/gfx/target.cpp
+00533054 Display_SetSize          // (display, Target** frame); decompiled: src/gfx/display.cpp
 
 # Sound library: handlers, voices, channels
 00440B48 Emitter_Init             // (Emitter*) (name?)
@@ -540,3 +540,11 @@
 # UI element construction and update
 004D76D0 UiElem_Construct         // (elem, desc) base element, links into parent/root list; decompiled: src/uielem/ctor.cpp
 00553638 String_CopyN             // (dst, src, n) -> strncpy or 0 when n == 0; decompiled: src/uielem/ctor.cpp
+
+# Video mode, display targets
+0053044C Target_Construct         // (Target*) default 60-byte target (name?)
+0052F32C Target_BindTile          // (Target** slot, u32 flag) cellGcmSetTileInfo+BindTile (name?)
+00530998 Target_BindZcull         // (Target** slot) cellGcmBindZcull (name?)
+00530A9C Target_InitDepth         // (Target** out, w, h, 7, 0) depth target (name?)
+005311D8 Tiles_Unbind             // () unbinds display tiles/zcull (name?)
+0051AF28 RenderSurface_Alloc      // () -> AglRenderSurface* from free list at 0x00F8F110 (name?)

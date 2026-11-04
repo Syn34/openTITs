@@ -39,6 +39,7 @@ int usage() {
                  "  --no-decomp           run the recompiled originals instead of decompiled functions\n"
                  "  --decomp-off <a,b>    same for the listed functions (hex addresses)\n"
                  "  --dump-mem <file>     write the game's data/bss to <file> on exit or crash (A/B checks)\n"
+                 "  --decomp-coverage <f> list the decompiled functions that ran, written on exit or crash\n"
                  "  --headless            no window\n"
                  "  --scale <n>           window size: 1 = 640x360, 2 = 1280x720, 3 = 1920x1080\n"
                  "  -- <args...>          pass the remaining arguments to the game (argv)\n");
@@ -97,6 +98,7 @@ int boot_main(int argc, char** argv) {
         else if (a == "--spu-record" && k + 1 < argc) cfg.spu_record = argv[++k];
         else if (a == "--no-decomp") decomp::disable_all();
         else if (a == "--dump-mem" && k + 1 < argc) dump_mem = argv[++k];
+        else if (a == "--decomp-coverage" && k + 1 < argc) decomp::set_coverage_file(argv[++k]);
         else if (a == "--decomp-off" && k + 1 < argc) {
             // comma-separated hex addresses
             std::string list = argv[++k];

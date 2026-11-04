@@ -24,7 +24,7 @@ constexpr u32 Display_Finish = 0x0053074C;         // (display) (name?)
 constexpr u32 Target_Init = 0x00530DB4;            // (target, w, h, 3, 0, 0) (name?)
 constexpr u32 Target_Attach = 0x00532E70;          // (out, target, w, h, 0, 0) (name?)
 constexpr u32 Surface_SetBuffer = 0x00532D5C;      // (surface, buffer) (name?)
-constexpr u32 Display_SetSize = 0x00533054;        // (display, w) (name?)
+constexpr u32 Display_SetSize = 0x00533054;        // (display, Target** frame)
 constexpr u32 Mem_AllocPool = 0x0056C514;
 constexpr u32 memset = 0x00726E54;
 }  // namespace callee
@@ -158,7 +158,8 @@ DECOMP(005333CC, Gfx_InitFrameSurfaces) {
         call(ctx, callee::Surface_SetBuffer, {s, load<u32>(from)});
         store<u32>(kStats + 92 + 4 * i, s);
     }
-    ctx.gpr[3] = call(ctx, callee::Display_SetSize, {d, w});
+    // The original passes r31 = the attached-target slot (0x011647B0), not the width.
+    ctx.gpr[3] = call(ctx, callee::Display_SetSize, {d, kAttached});
 }
 
 // void RsxHeap_Init(RsxHeap* heap)

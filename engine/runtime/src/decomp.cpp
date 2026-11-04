@@ -1,6 +1,10 @@
 #include "opentit/decomp.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cstdio>
+#include <string>
+#include <vector>
 #include <mutex>
 #include <unordered_set>
 
@@ -16,9 +20,35 @@ std::unordered_set<u32>& off_set() {
     return s;
 }
 std::atomic<bool> g_any_off{false};
+std::atomic<bool> g_coverage{false};
+std::string g_coverage_path;
+std::unordered_set<u32>& called_set() {
+    static std::unordered_set<u32> s;
+    return s;
+}
 }  // namespace
 
+void set_coverage_file(const std::string& path) {
+    g_coverage_path = path;
+    g_coverage = !path.empty();
+}
+
+void write_coverage() {
+    if (!g_coverage) return;
+    std::lock_guard<std::mutex> lk(g_m);
+    std::vector<u32> v(called_set().begin(), called_set().end());
+    std::sort(v.begin(), v.end());
+    if (std::FILE* f = std::fopen(g_coverage_path.c_str(), "w")) {
+        for (u32 a : v) std::fprintf(f, "%08X\n", a);
+        std::fclose(f);
+    }
+}
+
 bool enabled(u32 addr) {
+    if (g_coverage.load(std::memory_order_relaxed)) {
+        std::lock_guard<std::mutex> lk(g_m);
+        called_set().insert(addr);
+    }
     if (g_all_off.load(std::memory_order_relaxed)) return false;
     if (!g_any_off.load(std::memory_order_relaxed)) return true;
     std::lock_guard<std::mutex> lk(g_m);

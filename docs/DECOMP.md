@@ -73,6 +73,8 @@ Only the 32-bit addresses the game uses are valid guest pointers. Keep them as `
    ./build/game/opentit <dump> --dump-mem without.bin --no-decomp
    cmp -l with.bin without.bin | wc -l
    ```
+   `--dump-mem` also writes `<file>.pages`, a hash of every 64 KiB page of user memory (the game's heaps) and RSX local memory. `tools/ab.sh` compares both, and `--decomp-coverage <file>` lists which decompiled functions actually ran, so you know what a check covered.
+
    Some bytes differ between any two runs because of timing. The VBlank counter at 0x010F0E00 is one of them: run `--no-decomp` twice to see the rest. A byte that differs only when your function is switched on is a bug.
 
 ## Leftover registers

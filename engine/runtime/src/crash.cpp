@@ -3,6 +3,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <utility>
 #include <vector>
@@ -11,6 +12,8 @@
 #include "opentit/ppu_context.h"
 #include "opentit/spu_recomp.h"
 #include "runtime.h"
+#include "kernel.h"
+#include "opentit/decomp.h"
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -89,12 +92,33 @@ void set_exit_dump(const std::string& path, std::vector<std::pair<u32, u32>> ran
 }
 
 void write_exit_dump() {
+    decomp::write_coverage();
     if (g_dump_path.empty()) return;
     std::FILE* f = std::fopen(g_dump_path.c_str(), "wb");
     if (!f) return;
     for (const auto& [addr, size] : g_dump_ranges) std::fwrite(mem::ptr(addr), 1, size, f);
     std::fclose(f);
-    std::fprintf(stderr, "guest memory written to %s\n", g_dump_path.c_str());
+    // Heap memory is too big to write out, so <path>.pages lists a hash of
+    // every 64 KiB page of user memory (sys_memory, where the game's heaps
+    // live) and RSX local memory.
+    if (std::FILE* h = std::fopen((g_dump_path + ".pages").c_str(), "w")) {
+        auto hash_range = [&](u32 base, u32 size) {
+            for (u64 p = base; p < u64(base) + size; p += 0x10000) {
+                const u8* d = mem::ptr(static_cast<u32>(p));
+                u64 x = 0xcbf29ce484222325ull;
+                for (u32 i = 0; i < 0x10000; i += 8) {
+                    u64 w;
+                    std::memcpy(&w, d + i, 8);
+                    x = (x ^ w) * 0x100000001b3ull;
+                }
+                std::fprintf(h, "%08X %016llX\n", static_cast<u32>(p), static_cast<unsigned long long>(x));
+            }
+        };
+        hash_range(kernel::user_memory().base(), kernel::user_memory().size());
+        hash_range(mem::kRsxLocalBase, 0x10000000);
+        std::fclose(h);
+    }
+    std::fprintf(stderr, "guest memory written to %s (+ .pages)\n", g_dump_path.c_str());
     g_dump_path.clear();
 }
 
