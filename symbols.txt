@@ -675,9 +675,9 @@
 007A2D40 FMap_Find                // decompiled: src/gfx/post_map.cpp
 007A2EC8 VMap_Insert              // decompiled: src/gfx/post_map.cpp
 007A3014 VMap_Find                // decompiled: src/gfx/post_map.cpp
-00534160 ProgramPair_Load         // (VProgram**, FProgram**, name, bindings, 0) (name?)
-0053378C FProgram_Finish          // (FProgram**) (name?)
-004FF0D8 Material_Construct       // (AglMaterial*) (name?)
+00534160 ProgramPair_Load         // decompiled: src/gfx/prog_pair.cpp
+0053378C FProgram_Finish          // decompiled: src/gfx/prog_pair.cpp
+004FF0D8 Material_Construct       // decompiled: src/gfx/material.cpp
 005E5F38 Cg_GetRegisterCount      // libgcm (name?)
 005E5F9C Cg_SetRegisterCount      // libgcm (name?)
 005E5FF0 Cg_GetAttributeMask      // libgcm (name?)
@@ -720,3 +720,39 @@
 0050C398 Tex_FindLoaded           // (name?)
 0051E68C Tex_LoadFile             // (name?)
 004D5C64 Texture_MakePages        // (name?)
+
+# Shader programs, post-process effects
+00534074 VProgram_Load            // decompiled: src/gfx/prog_pair.cpp
+00533DF8 FProgram_Load            // decompiled: src/gfx/prog_pair.cpp
+0050AFEC Shader_Register          // decompiled: src/gfx/material.cpp
+00546334 ThermalVision_Init       // decompiled: src/gfx/effect_init.cpp
+0053D800 Bloom_Init               // decompiled: src/gfx/effect_init.cpp
+00540824 Dof_Init                 // decompiled: src/gfx/effect_init.cpp
+0053EC4C Effect_InitNone          // empty; decompiled: src/gfx/effect_init.cpp
+0053ECE0 Monochrome_Init          // decompiled: src/gfx/effect_init.cpp
+0054588C Warp_Init                // decompiled: src/gfx/effect_init.cpp
+00543774 GodRays_Init             // decompiled: src/gfx/effect_init.cpp
+005447F4 MotionTrail_Init         // decompiled: src/gfx/effect_init.cpp
+005420CC BloomNoise_Init          // decompiled: src/gfx/effect_init.cpp
+0051EE94 GodRays_Load             // decompiled: src/gfx/effect_init.cpp
+0051F0FC MotionTrail_Load         // decompiled: src/gfx/effect_init.cpp
+005433AC PostProc_DrawCopyBlend   // decompiled: src/gfx/effect_draw.cpp
+00542D2C Blur03_Draw              // decompiled: src/gfx/effect_draw.cpp
+00536AC0 Draw_SetTexture0         // (Target*, u32, u32) reads r4/r5 (name?)
+005373A8 Draw_SetTarget           // (Target*, u32) (name?)
+005355D8 Draw_SetDepthMode        // (u32, u32) (name?)
+0053539C Draw_FullscreenQuad      // () (name?)
+00535294 Draw_EndQuad             // () (name?)
+00513038 Draw_Sub513038           // (effect) (unknown)
+0053CBD0 Bloom_Apply              // (name?)
+00543530 PostProc_CopyScale       // (name?)
+00542960 PostProc_DownSampleDepth // (name?)
+00534F80 PostProc_ResolveMsaa     // (name?)
+00542EE8 GodRays_Draw             // (name?)
+0053D1B0 Bloom_Chain              // (name?)
+0054522C Warp_Draw                // (name?)
+00544120 MotionTrail_Draw         // (name?)
+00545B60 ThermalVision_Draw       // (name?)
+0053F050 Monochrome_Draw          // (name?)
+0053F8A8 Dof_Draw                 // (name?)
+00540DD8 BloomNoise_Draw          // (name?)
