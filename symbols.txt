@@ -761,17 +761,17 @@
 004F899C XmlCursor_FirstChildRawAny // (cursor) first child of any tag; decompiled: src/uiload/more.cpp
 004FA744 XmlCursor_Text           // (cursor) -> XMLB element +4; decompiled: src/uiload/more.cpp
 004D65EC Bmp_GetPixel             // (out, pix, pal, x, y, stride, h, bpp, topdown); decompiled: src/font/bmp.cpp
-004DF708 TimelineDef_KeyFromXml   // (doc, node, def) -> key or 0 (name?)
-005801DC WorldObj_FindByHash      // (hash, 0) -> object (name?)
-007399A4 HashMap_Find2            // (map, const u32* key) -> value slot (name?)
-005A05E8 WorldObj_Instance        // (class, 0) -> object (name?)
-0057D368 WorldObj_SetName         // (obj, name, 1) (name?)
-00583E54 WorldObj_Func583E54      // (obj, 12) (name?)
-0057D100 WorldObj_SetScale        // (obj, const f32[3], 0) (name?)
-004D7CF8 UiElem8_Attach           // (e, obj, 1) (name?)
-0051D368 Texture_Alloc            // () -> Texture* (name?)
-0053A640 Texture_Init             // (tex, data, size, ext, path) -> bool (name?)
-0079DD10 Map_Find                 // (map, const u32* key) -> value slot (name?)
+004DF708 TimelineDef_KeyFromXml   // decompiled: src/uiload/tlkey.cpp
+005801DC WorldObj_FindByHash      // decompiled: src/obj/worldobj.cpp
+007399A4 HashMap_Find2            // same template; decompiled: src/obj/map.cpp
+005A05E8 WorldObj_Instance        // decompiled: src/obj/worldobj.cpp
+0057D368 WorldObj_SetName         // decompiled: src/obj/worldobj.cpp
+00583E54 WorldObj_SetGroup        // (obj, group) +320 bits 18-23; decompiled: src/obj/worldobj.cpp (name?)
+0057D100 WorldObj_SetScale        // decompiled: src/obj/worldobj.cpp
+004D7CF8 UiElem8_Attach           // decompiled: src/obj/worldobj.cpp
+0051D368 Texture_Alloc            // decompiled: src/font/texinit.cpp
+0053A640 Texture_Init             // decompiled: src/font/texinit.cpp
+0079DD10 Map_Find                 // sorted {key,value} map lookup; decompiled: src/obj/map.cpp
 004D8D48 UiElem6_AddSlice         // (name?)
 
 # Draw state; World_Update, fades, post FX state; trophies, upgrades, awards
@@ -807,3 +807,21 @@
 005E6D1C Event_Init               // (event, 0) (name?)
 0079BA10 Lock_Init                // (lock, 32) (name?)
 0056A6E0 Award_Register           // (u32 name hash) (name?)
+
+# World objects, textures
+0057D000 WorldObj_UpdateMatrix    // (obj) (name?)
+00580708 WorldObj_Construct       // (obj, kind) (name?)
+005858D4 WorldClass_Copy          // (cls) -> cls (name?)
+00526494 WorldObj_MakeExtra       // () -> object for +288 (name?)
+007A6D74 MapA_Find                // same map template (name?)
+007A6BEC MapB_Find                // (name?)
+00793884 MapC_Find                // (name?)
+00793A0C MapD_Find                // (name?)
+0053A284 Texture_Construct        // (AglTexture*) (name?)
+00555D70 String_CompareNoCase2    // (a, b) -> 0 when equal (name?)
+0050A6C8 Image_FromBmp            // (data, size, Image*, path) (name?)
+0050ACAC Image_FromTga            // (name?)
+0053A448 Texture_FromGtf          // (tex, data, size, 0) (name?)
+0053A34C Texture_FromImage        // (tex, Image*, path) (name?)
+004DEF50 TlKeyEvent_FromXml       // (doc, node, def; f1 time) (name?)
+004DF0D0 TlKeyAnim_FromXml        // (doc, node, def; f1 time) (name?)
