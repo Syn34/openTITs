@@ -158,7 +158,7 @@
 0055B3C8 Archive_Find             // (zip, path, mode) -> 1 / 0 / -100; decompiled: src/file/zip.cpp
 00559D5C Archive_Prepare          // unzOpenCurrentFile; decompiled: src/file/prepare.cpp
 0055D494 ZipArchive_Open          // (zip, path, prefix); decompiled: src/file/zip.cpp
-005DBB60 SystemState_CallHook     // calls SystemState+20 opd with SystemState+24 (name?)
+005DBB60 SystemState_CallHook               // () SystemState (built on first use) +20 OPD called with +24; decompiled: src/gfx/gfx9.cpp
 00559310 Iff_InitTags             // ATAG/TAG2/TAGG; decompiled: src/resource/tags.cpp
 0056F5BC Thread_Create            // decompiled: src/platform/thread.cpp
 0056C8E4 Game_BootCheck           // decompiled: src/system/boot.cpp
@@ -2978,7 +2978,6 @@
 00562998 InputDevice_Fn562998     // (d), InputDevice_UpdateButtons's callee (name?)
 00571B90 Fn_571B90                // Fn_562944's callee (name?)
 0058C9B0 Records_Fn58C9B0         // (obj, record, x), Records_Process58CE24's callee (name?)
-005132D8 Fn_5132D8                // (list), Render_Pass575C34's callee (name?)
 005754E0 Fn_5754E0                // (u16 count), Render_Pass575C34's callee (name?)
 0057328C Fn_57328C                // void Fn_57328C(): with command buffers pending: Fn_572908, waits for the busy word, runs every non-empty buffe; decompiled: src/obj/obj15_small.cpp
 
@@ -3132,11 +3131,10 @@
 0051ACE4 SurfaceBase_Delete                 // SurfaceBase deleting destructor: SurfaceBase_Destruct inlined, then Mem_FreeFrom(this, 0) [vtable 00B234B0[1]]; decompiled: src/gfx/gfx8.cpp
 00542804 EnsureTextures_00542804            // void (): makes the texture for the active mode once: with g::config +34 set, the u32 at 0x00F67504 = f_0051E514(mem_stats +100, 0) unless set or +1... (name?); decompiled: src/gfx/gfx8.cpp
 005B0280 OutlineType_SetupMaterial          // bool (ShaderType*, Material* m, Mesh* mesh): m->u16 +46 = 4095, +112 bits 1..16 (IBM) = 513, Material_ParamSlot(m, 0) = w * w with w = mesh->+88 wh... (name?); decompiled: src/gfx/gfx8.cpp
-0050C118 Material_DestructBody              // (Material*) the body Material_Destruct / Material_Delete call after setting vtable 0x00B233D0 (name?)
-0050A5E4 Texture_DestructBody               // (Texture*) after vtable 0x00B23EE0 (Texture_DestructBase, TextureBase_Delete) (name?)
-0052163C RenderTarget_DestructBody          // (RenderTarget*) after vtable 0x00B240D0 (name?)
-00537684 Handle_Release                     // (u32* slot) releases the handle in a surface's +16 / +20 / +24 slot (name?)
-00569638 Iff_ReadString                     // (x, char buf[256]) -> nonzero on success; ReadName_0051D198 dups the text (name?)
+0050C118 Material_DestructBody              // (Material*) vtable 0x00B233B0, anim block back to the AglMaterialAnim free list (GetAllocator inlined), values SmallFree'd, texture slots released, ApeRoot_Destruct; decompiled: src/gfx/gfx9.cpp
+0050A5E4 Texture_DestructBody               // (Texture*) vtable 0x00B23380, +108 released, Pool_DestructPart(+56) twice around the +96 free (0052F06C + Mem_FreeFrom unless u8 +104), ApeRoot_Destruct; decompiled: src/gfx/gfx9.cpp
+0052163C RenderTarget_DestructBody          // (RenderTarget*) vtable 0x00B236C0, +672 freed, +656 slot 3, +516 released, ApeRoot_Destruct; decompiled: src/gfx/gfx9.cpp
+00537684 Handle_Release                     // (Handle** slot) unbind tile/zcull, tile-slot bit, part freed (twice), Mem_FreeFrom; *slot = 0; decompiled: src/gfx/gfx9.cpp
 00724304 sprintf                            // (buf, fmt, ...) libc; CmdBuf_OnOverflow (name?)
 0060DA10 EdgeInflateQueue_Submit            // Edge zlib SDK (edgezlib_inflate_queue.cpp), called by Call60DA10_007A6878; leave recompiled (name?)
 0054F6FC dlmalloc_InitFailure               // dlmalloc init_mparams + errno = ENOMEM (0x80010004), returns 0; libc, left recompiled (name?)
@@ -3290,5 +3288,62 @@
 005E4514 Gcm_Fn5E4514             // (context, 0, shader +16) (name?)
 005E3F18 Gcm_Fn5E3F18             // (context, 0, 1, 0, u16, 0) (name?)
 005E3E88 Gcm_Fn5E3E88             // (context, 0, 0, u8, u8, 1) (name?)
-0051E824 Fn_51E824                // () Bank_Create's (name?)
 00588FFC Fn_588FFC                // (u32) Bank_Start / Bank_Tick (name?)
+
+# Renderer sweep part 3 (IFF handlers, render targets, query slots)
+0050A404 TextureBase_Destruct               // [vtable 00B23380[0]] the Texture_DestructBody body compiled separately; decompiled: src/gfx/gfx9.cpp
+005011A0 Stencil_SetEqual32_005011A0        // void (x): when x->+4->u8 +69: stencil test on, ops KEEP, mask 255, func EQUAL/32/32 inline + cached state +160..+184 (name?); decompiled: src/gfx/gfx9.cpp
+005131E8 CallbackList_Insert_005131E8       // (list, opd, user, id, s8 prio) -> entry: prio-sorted insert into 16-byte entries, u8 count +64 (name?); decompiled: src/gfx/gfx9.cpp
+005132D8 CallbackList_RunForView_005132D8   // (list) entries whose id == current view u8 +48 called, then 0x010DD598/5A0 = -1; returns count (was Fn_5132D8) (name?); decompiled: src/gfx/gfx9.cpp
+005150A8 Stream_SetAlphaTest_005150A8       // (Stream*) record {u8 enable, u8 ref, u16 func} -> ALPHA_TEST_ENABLE / ALPHA_FUNC+REF inline (name?); decompiled: src/gfx/gfx9.cpp
+005155C4 Stream_SetFpConstant_005155C4      // (Stream*) record {s32 index, f32[4]} -> FProgram_SetConstant (name?); decompiled: src/gfx/gfx9.cpp
+00515688 Stream_SetVpConstant_00515688      // (Stream*) record {index, f32[4]} -> cellGcmSetVertexProgramConstants(ctx, index, 4, v) (name?); decompiled: src/gfx/gfx9.cpp
+005165D0 Layer9_RunStream_005165D0          // () f_005159E8(layer 9 0x010DDAB4, stack state {0, 0, .., matrix from 0x01164C10}) (name?); decompiled: src/gfx/gfx9.cpp
+0051A6D4 Layer0_FlushMarker_0051A6D4        // () u8 0x00F66F94 = view +1776 bit 0x40; when set, marker {-1,0} into layer 0 and f_0056ED88 on its records (name?); decompiled: src/gfx/gfx9.cpp
+0051AE24 Surface_DefaultRects_0051AE24      // (Surface*, ViewRect** a, ViewRect** b) null rects -> statics 0x010F0CA8 {0,0,w,h} / 0x010F0CB8 copy (name?); decompiled: src/gfx/gfx9.cpp
+0051C640 Iff_HandleMatl                     // MATL chunk: Material_Alloc + Iff_ReadChunks with the allocator hook (*0x00F8F114 +8/+12) before/after; decompiled: src/gfx/gfx9.cpp
+0051D83C Iff_HandleNTXD                     // (r, Texture** pt) NTXD chunk: *pt takes the group-4 texture's format (0x010DDADC) (name?); decompiled: src/gfx/gfx9.cpp
+0051E428 DepthTarget_Create                 // (u16 w, u16 h, format) -> Texture* "Z-RenderTarget" (ColorTarget_Create51E33C's twin) (name?); decompiled: src/gfx/gfx9.cpp
+0051E824 NameList_Clear_0051E824            // () frees the name list 0x010DDADC (+28 count, +32 entries) from the end; name +100 = "" when it had entries (name?); decompiled: src/gfx/gfx9.cpp
+005214A4 RenderTargetBase_Destruct          // [vtable 00B236C0[0]] RenderTarget_DestructBody's body compiled separately; decompiled: src/gfx/gfx9.cpp
+00521564 RenderTargetBase_Delete            // [vtable 00B236C0[1]] the same body + Mem_FreeFrom(this, 0); decompiled: src/gfx/gfx9.cpp
+005229B0 RenderTarget_BindTexture_005229B0  // (rt, Texture*) releases +516, binds tex (+512 = tex+108, refcount +4 ++), viewport {0,0,w,h} (name?); decompiled: src/gfx/gfx9.cpp
+005233F8 FrameBuffer_SetSlot_005233F8       // (fb, value, slot) +84[slot] = value + a type-8 record; leaves r7 for Draw_BeginPrims (name?); decompiled: src/gfx/gfx9.cpp
+00524108 Iff_HandleVTUO                     // (r, o) VTUO chunk into o+4, u16 triples byte-swapped when r+12 bit 2; decompiled: src/gfx/gfx9.cpp
+00525818 Iff_HandleXTVM                     // (r, Mesh*) XTVM chunk into the mesh's next buffer part (Buffer_Alloc52F198), f_0052528C on swap; decompiled: src/gfx/gfx9.cpp
+00525BE8 Iff_HandleLAPM                     // (r, o) LAPM chunk: o+84 = {u8 count, u8 v[]} of u16 entries <= 255; decompiled: src/gfx/gfx9.cpp
+00527C4C Query_SetupState_00527C4C          // () methods 0x310/0xA70/0x183C = 0, VP constant 4 from 0x01164BB0, colour mask 0 (name?); decompiled: src/gfx/gfx9.cpp
+00527DAC QuerySlots_Flush_00527DAC          // () gated by u8 0x00F66FD5 / 0x010E05D0: Call_005488AC, slot 2 on every used query slot, Call_00548900, Draw_InvalidateState (name?); decompiled: src/gfx/gfx9.cpp
+00527E64 QuerySlot_Acquire_00527E64         // (const f32 m[16], s32 a, s32 b) -> first free query slot, Slot_Setup(slot, f_0051B788(proxy, a, b), m) (name?); decompiled: src/gfx/gfx9.cpp
+00527F2C Worker_ThreadLoop_00527F2C         // (Worker*) thread entry: wait flag +20, run +32(+36) or +40(+44), set flag +28; never returns (name?); decompiled: src/gfx/gfx9.cpp
+0052B210 Frustum_SliceSphere_0052B210       // (f32 out[4], const f32 c[16]; f1 near, f2 far) bounding sphere {0,0,-centre,radius} (name?); decompiled: src/gfx/gfx9.cpp
+0052CC88 Obj23D50_Resolve_0052CC88          // (o) gated by +20/+28/view+256/+96 bit 0x80: optional Draw_Clear(2) + f_0052C6B8, slot 2, Draw_InvalidateState (name?); decompiled: src/gfx/gfx9.cpp
+0052D938 Obj23D28_BindPrograms_0052D938     // (this, Mesh*) [vtable 00B23D28[5]] vertex program 0x010F0AD0[skinned] + fragment program 0x010F0AD8 via the cached state (name?); decompiled: src/gfx/gfx9.cpp
+0052DA10 Construct_0052DA10                 // (o) -> o: tuning floats +24..+92, vtable 0x00B24158, +128 atomically cleared, vtable 0x00B23D50 (name?); decompiled: src/gfx/gfx9.cpp
+005398CC Texture_CopyDefaultFormat_005398CC // (Texture*) -> bool: takes Tex_GetDefault(0)'s format (name?); decompiled: src/gfx/gfx9.cpp
+00542630 Iff_HandleKLBT                     // KLBT chunk as a 12-byte blob (vtable 0x00B24120) in Registry slot 0; decompiled: src/gfx/gfx9.cpp
+00542704 Graphics_RegisterChunks_00542704   // () f_0051DF3C, textures 0x00F67500/504 via f_0051E514, registers FTGT / NTXD / KLBT (name?); decompiled: src/gfx/gfx9.cpp
+00542C50 Target_ClearColour_00542C50        // (o, i) Draw_SetTarget(o+136[i]), clear colour 0 (+ gcm state), layer 1 slot 4 (name?); decompiled: src/gfx/gfx9.cpp
+00543AAC View_SaveRestore_00543AAC          // (o) +152/+144 from 0x01164060.. by mem_stats mode; config +34: mode 2 restores / else saves +32..+72 (name?); decompiled: src/gfx/gfx9.cpp
+00548C00 Iff_HandleKLBM                     // KLBM chunk as a blob (vtable 0x00B24180) in Registry slot 1; decompiled: src/gfx/gfx9.cpp
+0054CDB0 Shaders_ClampRegisterCounts        // () once (0x00F67C72): f_0052DB58, the 5 fragment programs at 0x010F0AE0 get >= 5 registers (shaders.h Shaders_Init54CDB0); decompiled: src/gfx/gfx9.cpp
+00569638 Iff_ReadInclude                    // (IffReader*, char* path_out) -> bool: opens the named file next to the stream's own and reads its chunks (was Iff_ReadString); decompiled: src/gfx/gfx9.cpp
+005AC1A8 Stencil_ResetAndClear_005AC1A8     // () stencil off / func / mask 0 inline, Draw_Clear(1, 0, 1.0, -, 0, 255) (name?); decompiled: src/gfx/gfx9.cpp
+005AC54C FlipList_Process_005AC54C          // () previous flip slot's 112-byte entries: +0 == 0 -> f_005ABE5C(e, 0), else u8 0x01196982 = 1 (name?); decompiled: src/gfx/gfx9.cpp
+005AD0A0 TableEntry_Release_005AD0A0        // (Ent*) gated by u8 0x0119509C: table 0x011950A0 entry cleared, Obj_SetSlot20, f_007A9530, e->+0 = -1 (name?); decompiled: src/gfx/gfx9.cpp
+005B1728 ProjTxr_LoadParams                 // [vtable 00B25330[1]] texture d+16 (1,1,1), m+120 top bits; -> found; decompiled: src/gfx/gfx9.cpp
+005B4FC4 SelfLight_LoadParams               // [vtable 00B25570[1]] material params 0..3 = d+88..+100; decompiled: src/gfx/gfx9.cpp
+005B7118 SACSkinned_LoadParams              // [vtable 00B25658[1]] texture d+4 (1,3,1), m+120 top bits; -> 1; decompiled: src/gfx/gfx9.cpp
+005BA68C Sly2UV_LoadParams                  // [vtable 00B25890[1]] as ProjTxr_LoadParams; decompiled: src/gfx/gfx9.cpp
+005CAC3C SlyProjTxr_LoadParams              // [vtable 00B25D50[1]] as ProjTxr_LoadParams; decompiled: src/gfx/gfx9.cpp
+005D8B9C SHONightBlend_LoadParams           // [vtable 00B261B8[1]] unless config +152 bit 0x80: texture d+4 (or default), slot 4 (tex, m+20->u16 +122, +124, 1); decompiled: src/gfx/gfx9.cpp
+0079DE98 Matrix_MulAffine_0079DE98          // (out, a, b) VMX out = a * b (a's w column unused, row 3 adds b3) (name?); decompiled: src/gfx/gfx9.cpp
+0079E6DC Obj24070_Destruct                  // [vtable 00B24070[0]] parts +5828/+5812/+5796, Obj23650_Destruct inlined; decompiled: src/gfx/gfx9.cpp
+0079EDE4 Clone_0079EDE4                     // [vtable 00B23170[3]] 40-byte SmallAlloc clone (name?); decompiled: src/gfx/gfx9.cpp
+0079F2D4 Clone_0079F2D4                     // [vtable 00B23190[3]] 40-byte SmallAlloc clone (name?); decompiled: src/gfx/gfx9.cpp
+007A5284 Iff_HandlePrfn                     // PRFN chunk (Platform_Init): rest of the chunk read into a 1024-byte stack buffer and dropped; decompiled: src/gfx/gfx9.cpp
+007A6138 InflateQueue_Delete                // [vtable 00B24558[1]] InflateQueue_Destruct inlined + Mem_FreeFrom; decompiled: src/gfx/gfx9.cpp
+007A6638 InflateQueueLF_Destruct            // [vtable 00B245A4[0]] LF queue detached (0060D988), then the InflateQueue part; decompiled: src/gfx/gfx9.cpp
+007A66EC InflateQueueLF_Delete              // [vtable 00B245A4[1]] InflateQueueLF_Destruct inlined + Mem_FreeFrom; decompiled: src/gfx/gfx9.cpp
+0052F06C Release_0052F06C                   // (x) Texture_DestructBody's +96 object, before Mem_FreeFrom(x, 0) (name?)
+0060D988 LFQueue_Detach_0060D988            // Edge zlib: cellSpursLFQueueDetachLv2EventQueue + assert (SDK, left recompiled)
