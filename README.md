@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-605 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
+625 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -114,6 +114,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | File I/O on FIOS, read cache, write buffer, archive mounting, zip directory and index | `src/file/` | 18 |
 | FIOS operations and wrappers, read-ahead cache slots, zip end record and raw reads | `src/file/` | 28 |
 | Tiles and zcull, depth targets, render surfaces, shader groups, post-process and blur programs | `src/gfx/` | 23 |
+| Per-frame post-process draws: bloom, DOF, warp, motion trail, thermal, monochrome, blur, MSAA resolve | `src/gfx/fx_*.cpp` | 20 |
 | Shader program loading, materials, post-process effect set-up (bloom, DOF, god rays, ...), copy/blur draws | `src/gfx/` | 19 |
 | UI file loader, element builders and clones (types 0-9), textures and includes | `src/uiload/`, `src/uielem/`, `src/font/` | 25 |
 | World objects (lookup, name, scale, instancing), maps, texture allocation/decoding, timeline keys | `src/obj/`, `src/font/`, `src/uiload/` | 11 |

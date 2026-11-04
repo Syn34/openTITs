@@ -32,7 +32,7 @@ constexpr u32 cellGcmSetSurface = 0x005E47A0;         // (context, CellGcmSurfac
 constexpr u32 cellGcmSetViewport = 0x005E4068;        // (context, x, y, w, h, min, max, scale, offset) (name?)
 constexpr u32 cellGcmSetFragmentProgram = 0x005E42A0; // (context, program, 1) (name?)
 constexpr u32 cellGcmSetDrawInlineArray = 0x005E51AC; // (context, mode 9, count, data) (name?)
-constexpr u32 cellGcmSetColorMask = 0x005E5CB0;       // (context, mask, 4, f32[4]*) (name?)
+constexpr u32 cellGcmSetVertexProgramConstants = 0x005E5CB0;  // (context, first, count, f32*): method 0x1EFC
 }  // namespace fn
 
 namespace g {

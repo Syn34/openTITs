@@ -744,17 +744,17 @@
 0053539C Draw_PrepareQuad         // decompiled: src/gfx/draw_state.cpp
 00535294 Draw_RestoreDepth        // decompiled: src/gfx/draw_state.cpp
 00513038 Draw_BindScreenTargets   // decompiled: src/gfx/draw_state.cpp
-0053CBD0 Bloom_Apply              // (name?)
-00543530 PostProc_CopyScale       // (name?)
-00542960 PostProc_DownSampleDepth // (name?)
-00534F80 PostProc_ResolveMsaa     // (name?)
-00542EE8 GodRays_Draw             // (name?)
-0053D1B0 Bloom_Chain              // (name?)
-0054522C Warp_Draw                // (name?)
-00544120 MotionTrail_Draw         // (name?)
-00545B60 ThermalVision_Draw       // (name?)
-0053F050 Monochrome_Draw          // (name?)
-0053F8A8 Dof_Draw                 // (name?)
+0053CBD0 Bloom_Apply              // decompiled: src/gfx/fx_post.cpp
+00543530 PostProc_CopyScale       // decompiled: src/gfx/fx_post.cpp
+00542960 PostProc_DownSampleDepth // decompiled: src/gfx/fx_post.cpp
+00534F80 PostProc_ResolveMsaa     // decompiled: src/gfx/fx_draw.cpp
+00542EE8 GodRays_Draw             // set-up only; decompiled: src/gfx/fx_post.cpp
+0053D1B0 Bloom_Chain              // decompiled: src/gfx/fx_bloom.cpp
+0054522C Warp_Draw                // decompiled: src/gfx/fx_warp.cpp
+00544120 MotionTrail_Draw         // decompiled: src/gfx/fx_trail.cpp
+00545B60 ThermalVision_Draw       // decompiled: src/gfx/fx_thermal.cpp
+0053F050 Monochrome_Draw          // decompiled: src/gfx/fx_mono.cpp
+0053F8A8 Dof_Draw                 // decompiled: src/gfx/fx_dof.cpp
 00540DD8 BloomNoise_Draw          // (name?)
 
 # UI helpers, fonts, type-5 update
@@ -775,9 +775,9 @@
 004D8D48 UiElem6_AddSlice         // (name?)
 
 # Draw state; World_Update, fades, post FX state; trophies, upgrades, awards
-0053585C Draw_BindDisplay         // () (name?)
-00532090 Draw_BindTargets         // (Target* depth, Target* colour, 0) (name?)
-0052F4F0 FProgram_Upload          // (FProgram** current) (name?)
+0053585C Draw_BindDisplay         // decompiled: src/gfx/fx_draw.cpp
+00532090 Draw_BindTargets         // (Target* depth, Target* colour, u32 slot); decompiled: src/gfx/fx_draw.cpp
+0052F4F0 FProgram_Upload          // (FProgram** cur); decompiled: src/gfx/fx_draw.cpp
 004665C0 World_RequestState       // (World*, level, u8 id) -> 1; decompiled: src/world/wupdate_fx.cpp
 00468760 Cutscene_ApplyCamera     // (Cutscene*); decompiled: src/world/wupdate_fx.cpp (name?)
 00468944 MsgDialog_Open           // (msg, s32 kind) -> bool; decompiled: src/world/wupdate_fx.cpp
@@ -825,3 +825,27 @@
 0053A34C Texture_FromImage        // (tex, Image*, path) (name?)
 004DEF50 TlKeyEvent_FromXml       // (doc, node, def; f1 time) (name?)
 004DF0D0 TlKeyAnim_FromXml        // (doc, node, def; f1 time) (name?)
+
+# Post-process effect draws
+0053C7EC Draw_SetTexture0Call     // thunk; decompiled: src/gfx/fx_draw.cpp
+0053C80C Draw_ResetStateCall      // thunk; decompiled: src/gfx/fx_draw.cpp
+0053E190 PostProc_DrawFade        // vtable slot 20; decompiled: src/gfx/fx_post.cpp (name?)
+00543C44 PostProc_DrawOverlay     // decompiled: src/gfx/fx_post.cpp (name?)
+005402E4 Dof_BlurDown             // Dof vtable slot 24; decompiled: src/gfx/fx_post.cpp (name?)
+0053E3B8 PostProc_DrawBlur        // decompiled: src/gfx/fx_blur.cpp (name?)
+005356F4 Display_GetTargets       // (Target*** colour, Target*** depth) leaf
+00732BCC memcpy                   // (name?)
+005E5CB0 cellGcmSetVertexProgramConstants // (ctx, first, count, f32*) method 0x1EFC
+005E073C cellGcmSetFragmentProgramOffset  // (ctx, offset, location) method 0x8E4
+005E3E64 cellGcmSetInvalidateTextureCache // (ctx, 1) method 0x1FD8
+005E3CB4 cellGcmSetClearColor     // method 0x1D90
+005E3CD8 cellGcmSetClearDepthStencil // method 0x1D8C
+005E3D8C cellGcmSetStencilMask    // method 0x32C
+005E3C74 cellGcmSetClearSurface   // method 0x1D94
+005E47AC cellGcmSetTransferImage  // 13 args
+005E4F64 cellGcmSetDrawIndexArray // (ctx, mode, count, type, location, offset)
+004FDBA8 View_GetCurrent          // (name?)
+0056A358 Mat4_Ortho               // (out, l, r, b, t, n, f) (name?)
+00515750 VertexFormat_Get         // (name?)
+00554C28 Mat4_Sub554C28           // (a, out, src) (unknown)
+0051279C Trail_Sub51279C          // (unknown)

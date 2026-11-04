@@ -105,9 +105,9 @@ DECOMP(005373A8, Draw_SetTarget) {
     ctx.gpr[3] = load<u32>(st);
 }
 
-// void Draw_ResetState(bool no_blend, u32 colour_mask)
+// void Draw_ResetState(bool no_blend, u32 vconst)
 // Optionally blending off, then depth test, depth write, alpha test and
-// culling off, and the colour mask (with a zero f32[4]).
+// culling off, and zeroes vertex program constant `vconst` (cellGcmSetVertexProgramConstants, 1 vec4).
 DECOMP(005355D8, Draw_ResetState) {
     const bool no_blend = arg<u8>(ctx, 0) != 0;
     const u32 mask = arg<u32>(ctx, 1);
@@ -118,7 +118,7 @@ DECOMP(005355D8, Draw_ResetState) {
     emit({0x0004183C, 0});                 // CULL_FACE_ENABLE
     Stack frame(ctx, 16);
     for (u32 i = 0; i < 16; i += 4) store<u32>(frame.addr() + i, 0);
-    ctx.gpr[3] = call(ctx, dfn::cellGcmSetColorMask, {load<u32>(dg::render_state), mask, 4, frame.addr()});
+    ctx.gpr[3] = call(ctx, dfn::cellGcmSetVertexProgramConstants, {load<u32>(dg::render_state), mask, 4, frame.addr()});
 }
 
 // void Draw_PrepareQuad()
