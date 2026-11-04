@@ -1557,17 +1557,11 @@
 00527150 Pool_Refresh             // pool vtable slot 10: vslot 9 then vslot 11 (name?); decompiled: src/gfx/layers4.cpp
 0050F9A0 Pool_Nop11               // pool vtable slot 11: blr (name?); decompiled: src/gfx/layers4.cpp
 00527108 Draw_ApplyView           // () current View (current_surface+672) vslot 20 (name?); decompiled: src/gfx/layers4.cpp
-00531F80 Draw_Clear               // (u32 mask, u32 colour, f32 depth [f1], u32 stencil, u32 stencil mask) (name?)
-00538FA0 DrawItem_DrawDepth       // (Material* item+12, DrawItem*) ZLayer pre-pass draw, 3248-byte frame (name?)
-00554484 DrawItem_GetScale        // (DrawItem*, f32 out[3]) (name?)
-00557A90 View_ProjectSphere       // (f32 sphere[4], view matrix 0x010DD840, view+1008, f32* x0, y0, x1, y1) 0..1 rect (name?)
-00501520 MaterialAnim_Update      // (track*, f32 step [f1]) (name?)
-00526650 Pool_Slot0               // pool vtable slot 0, 193 insns (unknown)
-00526A84 Pool_Slot1               // pool vtable slot 1, 165 insns (unknown)
-0054B3D8 Pool_Slot5               // pool vtable slot 5, 192 insns (unknown)
-00526D98 Pool_Slot6               // pool vtable slot 6, 220 insns (unknown)
-0054A998 Pool_Slot7               // pool vtable slot 7, 656 insns (unknown)
-0054B6E0 Pool_Slot8               // pool vtable slot 8, 406 insns (unknown)
+00531F80 Draw_Clear               // (u32 mask, u32 colour, f32 depth [f1], -, u32 stencil, u32 stencil mask) clear colour/depth(24-bit)/stencil (name?); decompiled: src/gfx/pool.cpp
+00538FA0 DrawItem_DrawDepth       // (Mesh*, DrawItem*) bone palette, vertex format, indexed / array draw (name?); decompiled: src/gfx/pool_draw.cpp
+00554484 DrawItem_GetScale        // (f32 m[3][4], f32 out[3]) row lengths (name?); decompiled: src/gfx/pool.cpp
+00557A90 View_ProjectSphere       // (f32 sphere[4], view matrix, proj (+0/+20 scales), f32* x0, y0, x1, y1) 0..1 screen rect (name?); decompiled: src/gfx/pool.cpp
+00501520 MaterialAnim_Update      // (track*, f32 dt [f1]) delay/hold states, loop / sine / ping-pong value (name?); decompiled: src/gfx/pool.cpp
 
 # World-object helpers, part 6
 005812F0 Bone_InitEntry           // (entry, bone def, local, world, vec3*): inverse bind matrix (name?); decompiled: src/obj/obj6.cpp
@@ -1677,3 +1671,30 @@
 0057DCF0 ApeObj_Destruct          // base +0 (0xB24610) (name?)
 00591410 LightAnim_Setup          // (record, comps, s32 slot, s32 light type) (name?)
 0058DE4C EmitterDef_Init          // (ApeEmitterDef*): the remaining fields (name?)
+
+# Stencil shadows, occlusion queries
+00501410 MaterialAnim_SetState    // (track*, s32 state) 0 random delay / 1 hold / 2 stopped (name?); decompiled: src/gfx/pool.cpp
+00526650 StencilShadow_AddCaps    // StencilShadow (0x010DF8B0) vtable 0x00B241E8 slot 0: face light terms + back-facing caps (name?); decompiled: src/gfx/pool_shadow.cpp
+00526A84 StencilShadow_AddCapsSkinned // slot 1: AddCaps from skinned positions (name?); decompiled: src/gfx/pool_shadow.cpp
+00526960 StencilShadow_FaceSign   // (StencilShadow*, index, u16* idx, f32* pos, f32 light[3]) 127*N.L of face index/3 (name?); decompiled: src/gfx/pool_shadow.cpp
+00526D98 StencilShadow_Build      // slot 6: (StencilShadow*, caster*, f32 light[3], bool caps) caps + silhouette quads, caster +4 = tris (name?); decompiled: src/gfx/pool_shadow.cpp
+0054B3D8 StencilShadow_Begin      // slot 5: optional stencil clear, stencil/depth state, StencilShadow programs (name?); decompiled: src/gfx/pool_draw.cpp
+0054A998 StencilShadow_DrawVolume // slot 7: (StencilShadow*, caster*, f32 m[4][4], f32* verts) z-fail/z-pass stencil passes (name?); decompiled: src/gfx/pool_draw.cpp
+0054B6E0 StencilShadow_DrawQuad   // slot 8: (StencilShadow*, s32 blend, f32* colour) shade where stencil != 0 (name?); decompiled: src/gfx/pool_draw.cpp
+007A31CC Draw_InlineArray         // (u8 mode, u32 count, void* data, VertexFormat*) fragment upload, formats, inline draw (name?); decompiled: src/gfx/pool_draw.cpp
+004FCC10 SlotBase_Destruct        // vtable 0x00B23720 slot 0 (name?); decompiled: src/gfx/pool_query.cpp
+004FCC20 SlotBase_DestructInline  // same body, called by Slot_Delete (name?); decompiled: src/gfx/pool_query.cpp
+005276C4 SlotBase_Delete          // vtable 0x00B23720 slot 1 (name?); decompiled: src/gfx/pool_query.cpp
+0079C404 Slot_Destruct            // vtable 0x00B240F8 slot 0 (name?); decompiled: src/gfx/pool_query.cpp
+007A395C Slot_Delete              // slot 1 (name?); decompiled: src/gfx/pool_query.cpp
+00548694 Slot_Issue               // slot 2: two occlusion-query passes (depth test on / off) with reports (name?); decompiled: src/gfx/pool_query.cpp
+00548848 Slot_GetResult           // slot 3: (Slot*, u32 out[2], u32 back) -> entry state == 7 (name?); decompiled: src/gfx/pool_query.cpp
+007A39B4 BufferBase_Destruct      // vtable 0x00B24110 slot 0 (name?); decompiled: src/gfx/pool_query.cpp
+007A39C4 BufferBase_Delete        // vtable 0x00B24110 slot 1 (name?); decompiled: src/gfx/pool_query.cpp
+007A3A08 Buffer_Destruct          // vtable 0x00B24120 slot 0: Mem_FreePool(+8, 4, 1) (name?); decompiled: src/gfx/pool_query.cpp
+007A3A60 Buffer_Delete            // vtable 0x00B24120 slot 1 (name?); decompiled: src/gfx/pool_query.cpp
+005382C0 DrawItem_DrawDepthSkinned // (mesh, *0x01163A80, DrawItem*, item+60, item+28, 0x40000000) 263 insns (name?)
+00527708 Slot_DrawProxy           // (Slot*) query proxy geometry draw, 207 insns (name?)
+005E4D98 cellGcmSetDrawArrays     // (context, mode, first, count) (name?)
+005E3248 cellGcmSetClearReport    // (context, type) (name?)
+005E32D8 cellGcmSetReport         // (context, type, index) (name?)
