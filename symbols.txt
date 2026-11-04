@@ -452,7 +452,7 @@
 004E2C78 UiElem_FindResourceOfType // vfunc +184 (name?); decompiled: src/uielem/vtbl_misc.cpp
 004E0FDC UiElem_GetWorldColor     // vfunc +172; decompiled: src/uielem/vtbl_misc.cpp
 004E17D4 UiText_Delete            // text vfunc +4; decompiled: src/uielem/vtbl_misc.cpp
-00553910 Vec4_TransformByMatrix   // VMX (name?)
+00553910 Vec4_TransformByMatrix               // (f32 out[4], const f32 v[4], const f32 m[16]) VMX (already listed)
 0056A410 Matrix_FromAxisAngle     // decompiled: src/view/matrix.cpp
 007948E4 HashMap_Find             // sorted map lookup; decompiled: src/view/matrix.cpp
 004E2178 UiText_CountGlyphs       // -> +212; decompiled: src/uielem/text_slots.cpp
@@ -2393,12 +2393,11 @@
 005C57B0 SlyEnvMap_Draw                       // shader vtable 0x00B25BF0 slot 12; decompiled: src/gfx/shader5_draw.cpp
 005BB4D8 SlyCharacter_Draw                    // shader vtable 0x00B25938 slot 12; decompiled: src/gfx/shader5_draw.cpp
 005CC240 SlyTerrain_Draw                      // shader vtable 0x00B25EC0 slot 12; decompiled: src/gfx/shader5_draw.cpp
-0050C018 Material_ParamSlot                   // (Material*, u32 index) -> u32* &params[index], grows material +124 (u8 capacity +121) via SmallAlloc (name?)
-007A68DC Map_Find                             // (map, const u32* key) -> value*; sorted lookup, qsort on demand (name?)
-0055499C Matrix_MultiplyTo                    // (out[16], a[16], b[16]): rows of a through b (4x Vec4_TransformByMatrix) (name?)
+0050C018 Material_ParamSlot                   // (Material*, u32 index) -> u32* &params[index]: grows material +124 (u8 capacity +121) via SmallAlloc; decompiled: src/gfx/shader6_util.cpp
+0055499C Matrix_MultiplyTo                    // (out[16], a[16], b[16]) -> out: rows of a through b (4x Vec4_TransformByMatrix); decompiled: src/gfx/shader6_util.cpp
 005E62E8 libm_tanf                            // f1 -> f1 (libm; leave recompiled) (name?)
-005D4FF0 SlyWater3_UploadFragment             // (Material*) SlyWater3's fragment constant 3 (name?)
-005C6EB8 SlyHeightFog_BuildMatrices           // (Material*, f32 a[3][4], f32 b[3][4]) via Matrix_FromAxisAngle / Matrix_ScaleRows (name?)
+005D4FF0 SlyWater3_UploadFragment             // (Material*) fragment constants 3 / 4 and the screen copy on texture unit 5; decompiled: src/gfx/shader6_util.cpp
+005C6EB8 SlyHeightFog_BuildMatrices           // (Material*, f32 a[16], f32 b[16]) two rotated / scrolled / scaled UV matrices; decompiled: src/gfx/shader6_util.cpp
 
 # World-object helpers, part 12 (draw submission, lights, IFF readers)
 005637D4 Iff_ChunkSize            // (IffReader*) -> top chunk size (empty stack reads address 8) (was Iff_Read5637D4); decompiled: src/obj/obj12_small.cpp
@@ -2466,3 +2465,15 @@
 0039D054 Probe_Prepare39D054                  // (Probe*) (name?)
 0039D1D4 Probe_SetOn39D1D4                    // (Probe*, u8 on) (name?)
 0039FBD8 Probe_Update39FBD8                   // (Probe*, f32 dt) (name?)
+
+# Shader draws, part 6
+007A68DC Map_Find3                            // (Map*, const u32* key) -> value*: the third copy of the sorted-map lookup (0079DD10 Map_Find, 007399A4 HashMap_Find2), default compare 00F3CBF0; decompiled: src/gfx/shader6_util.cpp (renamed from Map_Find: that name is taken by 0079DD10)
+005CFDC0 SlyTerrainSnowDecal_Draw             // shader vtable 0x00B25F60 slot 12; decompiled: src/gfx/shader6_draw.cpp
+005CE6A0 SlyTerrainSnow_Draw                  // shader vtable 0x00B25F10 slot 12; decompiled: src/gfx/shader6_draw.cpp
+005CAE18 SlyProp_Draw                         // shader vtable 0x00B25D80 slot 12; decompiled: src/gfx/shader6_draw.cpp
+005C8338 SlyMirror_Draw                       // shader vtable 0x00B25C90 slot 12; decompiled: src/gfx/shader6_draw.cpp
+005BE100 SlyCharacterEye_Draw                 // shader vtable 0x00B259D8 slot 12; decompiled: src/gfx/shader6_draw.cpp
+005BFD20 SlyCharacterFur_Draw                 // shader vtable 0x00B25A28 slot 12; decompiled: src/gfx/shader6_draw.cpp
+00554858 Matrix_SplitScale                    // (const f32 m[16], f32 rot[16], f32 scale[3]) rows 0..2 normalised, lengths to scale, row 3 xyz copied; w lanes unwritten (leaf, 77 insns) (name?)
+00553F18 Matrix_RotationZ                     // (f32 out[16]; f1 angle) rotation about z with a polynomial sine; w lanes unwritten (leaf, 54 insns) (name?)
+005BFB50 Fur_ShellCount                       // (Shader*, DrawItem*, f32* scale_out) -> u16 shell count from the item's view depth and material parameters +76 (leaf, 104 insns) (name?)
