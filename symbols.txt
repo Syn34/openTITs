@@ -176,7 +176,7 @@
 00731648 Mem_NewAligned           // (size, align) (name?)
 007A5350 EdgeDecompressor_Construct // "edgeDecompressorTaskset" (name?)
 0051D91C Texture_LoadFromMemory   // (data, size, "Bmp", "MEM:...") (name?)
-00565410 DebugFont_Construct      // (name?)
+00565410 DebugFont_Construct      // void DebugFont_Construct(DebugFont* f, const FontData* data, Texture* tex) +0 the data, +4 the texture, +8 a m; decompiled: src/obj/obj15_small.cpp
 004FEBD0 Shader_Find              // (hash) (name?)
 004FF43C Material_Create          // (shader) (name?)
 0051BC20 Mesh_CreateSphere        // "SphereIdx" (name?)
@@ -485,7 +485,7 @@
 00565AA8 Pool_Create              // create_mspace_with_base; decompiled: src/gfx/gcm_mem.cpp
 005596F0 Zip_CheckLocalHeader     // unzlocal_CheckCurrentFileCoherencyHeader; decompiled: src/file/localhdr.cpp
 005DC638 inflateInit2_            // zlib
-005504F4 init_user_mstate         // dlmalloc (name?)
+005504F4 init_user_mstate         // dlmalloc: left recompiled (libc internal)
 005E0530 Gcm_InitBody             // (cmd size, io size, io addr) -> 0 / error (name?)
 0060E0B4 JobQueue_Init            // (queue, 5, spurs, prio[8], 251, buf, 22528) (name?)
 00530318 Surface_GetSize          // decompiled: src/gfx/init_surface.cpp
@@ -713,9 +713,9 @@
 004DD08C UiElem2_SetBlend         // decompiled: src/uiload/more.cpp
 00523B7C Tex_Acquire              // (Texture*) -> new AglMaterial on it; decompiled: src/uiload/more.cpp (name?)
 004DF88C Timeline_FromXml         // -> TimelineDef (vtbl 0xB22F60); decompiled: src/uiload/more.cpp
-005903F4 Bank_Create              // (name?)
+005903F4 Bank_Create              // Bank* Bank_Create(arg): an 88-byte bank (Fn_586440, vtable 0x00B24770), marked running (+64 0x80) with object ; decompiled: src/obj/obj15_small.cpp
 005904EC Bank_Open                // (name?)
-005964B4 Bank_Start               // (name?)
+005964B4 Bank_Start               // void Bank_Start(Bank* b): clears the running bit, Bank_SetState(0), then the load steps (the +64 0x20 ones onl; decompiled: src/obj/obj15_small.cpp
 00596E3C Bank_Destroy             // (name?)
 0050C398 Tex_FindLoaded           // decompiled: src/uiload/more.cpp
 0051E68C Tex_LoadFile             // decompiled: src/uiload/more.cpp
@@ -864,7 +864,7 @@
 00723F2C strcasecmp               // libc (name?)
 007A71A4 GeomDef_New              // () -> ApeGeomDef (kind 20); decompiled: src/obj/class_geomdef.cpp
 005095C0 Topology_Copy            // (topo, copy table) (name?); decompiled: src/obj/obj6_topo.cpp
-0056E2EC Rsx_Copy                 // (src, dst, size, 1) (name?)
+0056E2EC Rsx_Copy                 // void Rsx_Copy(const void* src, void* dst, u64 size, u32 flags) Up to 64 bytes: memmove. Otherwise a copy job (; decompiled: src/obj/obj15_job.cpp
 007A0E98 Texture_SetWrap          // AglTexture vfunc +16 (s, t, 1) (name?); decompiled: src/gfx/gfx7_thunks.cpp
 00558F34 WorldObj_ReleaseRes      // (obj): empty in this build; decompiled: src/obj/obj13_misc.cpp
 0058049C WorldObj_SetBoundRadius  // (obj, f32 r in f1): class sphere and box; decompiled: src/obj/obj4.cpp
@@ -2467,7 +2467,7 @@
 0039FBD8 Probe_Update39FBD8                   // (Probe*, f32 dt): delay / active / pause timers, random pause 0x01164888, on toggle; decompiled: src/world/hevent10_f.cpp (name?)
 
 # Shader draws, part 6
-007A68DC Map_Find3                            // (Map*, const u32* key) -> value*: the third copy of the sorted-map lookup (0079DD10 Map_Find, 007399A4 HashMap_Find2), default compare 00F3CBF0; decompiled: src/gfx/shader6_util.cpp (renamed from Map_Find: that name is taken by 0079DD10)
+007A68DC LightDefMap_Find         // (map, const u32* key) -> slot; 007A7E68 its remove (name?); decompiled: src/gfx/shader6_util.cpp
 005CFDC0 SlyTerrainSnowDecal_Draw             // shader vtable 0x00B25F60 slot 12; decompiled: src/gfx/shader6_draw.cpp
 005CE6A0 SlyTerrainSnow_Draw                  // shader vtable 0x00B25F10 slot 12; decompiled: src/gfx/shader6_draw.cpp
 005CAE18 SlyProp_Draw                         // shader vtable 0x00B25D80 slot 12; decompiled: src/gfx/shader6_draw.cpp
@@ -2973,14 +2973,14 @@
 005A8284 WorldObj_SplinePointTangent // u32 WorldObj_SplinePointTangent(WorldObj* o, -, f32 pos[4], f32 tan[4], u32 seg, bool back; f1 t) (name?); decompiled: src/obj/obj14_small.cpp
 005A8C30 WorldObj_SetSplineRecord // Entry* WorldObj_SetSplineRecord(WorldObj* o, s32 i) (name?); decompiled: src/obj/obj14_small.cpp
 00565378 EventSlot_ThreadMain     // (slot): worker loop: wait flag +20, clear, call +32(+36), set flag +28; never returns (left recompiled: infinite loop, not testable in the harness) (name?)
-0056E4C0 WorkQueue_Fn56E4C0       // ({queue, handle}*, first, stride*, count*, counter*), DrawRecordList_Flush's callee (name?)
-005536F4 Debug_NewPrim            // (u32 kind, colour, 1) -> Prim*, Debug_Text3D's callee (name?)
+0056E4C0 WorkQueue_Fn56E4C0       // void WorkQueue_Fn56E4C0(QueueRef* r, u32 first, u32* stride, u32* count, u32* counter) DrawRecordList_Flush's ; decompiled: src/obj/obj15_job.cpp
+005536F4 Debug_NewPrim            // Prim* Debug_NewPrim(u32 kind, const u8 colour[4], u8 c) A prim from the current pool's free list (made with Me; decompiled: src/obj/obj15_small.cpp
 00562998 InputDevice_Fn562998     // (d), InputDevice_UpdateButtons's callee (name?)
 00571B90 Fn_571B90                // Fn_562944's callee (name?)
 0058C9B0 Records_Fn58C9B0         // (obj, record, x), Records_Process58CE24's callee (name?)
 005132D8 Fn_5132D8                // (list), Render_Pass575C34's callee (name?)
 005754E0 Fn_5754E0                // (u16 count), Render_Pass575C34's callee (name?)
-0057328C Fn_57328C                // (u16 count), Render_Pass575C34's callee (name?)
+0057328C Fn_57328C                // void Fn_57328C(): with command buffers pending: Fn_572908, waits for the busy word, runs every non-empty buffe; decompiled: src/obj/obj15_small.cpp
 
 # World event handler callees, part 11
 0048FCC0 Hud_UpdatePrompts48FCC0              // () -> user count: per-user action prompt (0x00F64D08) for the target in reach, abandon-job warning (0x00F64CCC); decompiled: src/world/hevent11_j.cpp (name?)
@@ -3016,7 +3016,7 @@
 0051F160 Countdown_Tick                     // void (this, f32 dt): while this->u8 +88 bit 0x80 is set, this->f32 +84 -= dt; at or below 0.0 (k at 0x0051F158) the bit and the u8 at +4 clear (name?); decompiled: src/gfx/gfx8.cpp
 007A4F3C PrimList_Destruct                  // ApeTFreeList<ApeDebug::Prim>::~ApeTFreeList (debug.cpp kPrimFreeListVtable) [vtable 00B24418[0]]; decompiled: src/gfx/gfx8.cpp
 007A4FF8 ChunkDescList_Destruct             // ApeTFreeList<IFF::ChunkDesc>::~ApeTFreeList (iff.cpp kFreeListVtable) [vtable 00B24438[0]]; decompiled: src/gfx/gfx8.cpp
-0050A14C SetAll_0050A14C                    // this (this, u32 v): this->+96 = v, then each of the this->u16 +52 entries of the 8-byte array at this->+48 gets ->+20 = this->+96 (all three re-rea... (name?); decompiled: src/gfx/gfx8.cpp
+0050A14C Mesh_Attach              // (mesh, x) (name?); decompiled: src/gfx/gfx8.cpp
 005AC7AC Call5A9DB0_005AC7AC                // u32 (s32 skip, a, b, c, d): skip ? d : f_005A9DB0(a, b, c, d) (name?); decompiled: src/gfx/gfx8.cpp
 007A07B8 Holder232C0_Destruct               // void (this): vtable 0x00B232C0, Holder_FreeData(this + 16), then the base vtable 0x00B232B0 (left in r3) [vtable 00B232C0[0]]; decompiled: src/gfx/gfx8.cpp
 007A2BA4 ShaderType241B0_Destruct           // ShaderType::~ShaderType as the derived 0x00B241B0 type inlines it: base vtable 0x00B23F00, PtrVector_Clear(this + 12), Nop(this + 12) [vtable 00B24...; decompiled: src/gfx/gfx8.cpp
@@ -3147,7 +3147,6 @@
 004BDD08 Set_RemoveName4BDD08                 // (Set*, const char* name, 0) (name?)
 004BE374 Set_AddArchive4BE374                 // (Set*, Archive*, 0) (name?)
 004A0EE0 SubObj_Init4A0EE0                    // (sub-object*) (name?)
-00590FEC Body_Attach590FEC                    // (body, 1) (name?)
 0034BDEC Ctl_Construct34BDEC                  // (ctl* 120 bytes, body) (name?)
 004A5C20 Body_SetMode4A5C20                   // (body, 13) (name?)
 00793080 Tree_Find793080                      // (tree, key, Node** out, root) -> non-zero when found (name?)
@@ -3162,3 +3161,134 @@
 00484BE0 User_Travel484BE0                    // (World*, UserBlock*, level, UserBlock* +16, 0, 0, 0, 0, 1) (name?)
 0049E038 Scene_Open49E038                     // (u32 handle) (name?)
 002DB70C Group_Start2DB70C                    // (Group*) (name?)
+
+# Engine core helpers, part 15 (job queue, banks, type registry, IFF loaders)
+0056E710 WorkQueue_Fn56E710       // void WorkQueue_Fn56E710(QueueRef* r, u32 a, u32* pb, u32* pc, u32 d) The same descriptor for binary 0x00DCDC80; decompiled: src/obj/obj15_job.cpp
+0056E854 WorkQueue_Submit56E710   // void WorkQueue_Submit56E710(u32 a, u32* pb, u32* pc, Obj* d) Under the job mutex: a descriptor from the queue,; decompiled: src/obj/obj15_job.cpp
+0056E970 WorkQueue_Fn56E970       // void WorkQueue_Fn56E970(Job* j, Worker* w, u32 c, u32 d, u32 n, u32 e) Binary 0x00CFF580 (0x1358 qwords), +16 ; decompiled: src/obj/obj15_job.cpp
+0056EA8C WorkQueue_Submit56E970   // void WorkQueue_Submit56E970(Worker* w, u32 b, u32 c, u32 n, u32 e) Under the job mutex: WorkQueue_Fn56E970(han; decompiled: src/obj/obj15_job.cpp
+0056EC80 WorkQueue_SubmitJobDesc  // void WorkQueue_SubmitJobDesc(JobOwner* o, u32 b, u32 c, u64 d) Under the job mutex: JobDesc_Init({queue, handl; decompiled: src/obj/obj15_job.cpp
+0056E1F0 JobChain_Kick            // void JobChain_Kick(JobChainOwner* o) Takes the pending command index (atomically zeroed), writes the "next" co; decompiled: src/obj/obj15_job.cpp
+0056ED88 WorkQueue_SubmitED88     // void WorkQueue_SubmitED88(u32 a, u64 b, u32* counter) Under the job mutex: a descriptor from the queue cleared; decompiled: src/obj/obj15_job.cpp
+0056EEF0 WorkQueue_Fn56EEF0       // void WorkQueue_Fn56EEF0(QueueRef* r, u32 a, u32 b, u32 n, u32 c) Binary 0x00DA0980 (0x2D2B qwords), +10 24, +2; decompiled: src/obj/obj15_job.cpp
+0056F158 WorkQueue_SubmitF158     // void WorkQueue_SubmitF158(Worker* w) Under the job mutex: a cleared descriptor, binary 0x00D73D80 (0x2CBC qwor; decompiled: src/obj/obj15_job.cpp
+0056F2C8 WorkQueue_SubmitF2C8     // void WorkQueue_SubmitF2C8(Worker* w) The same for binary 0x00DFF100 (0x25E6 qwords), +10 8, +16 1, +20 528, +4; decompiled: src/obj/obj15_job.cpp
+0056E088 JobChain_Push            // void JobChain_Push(JobChainOwner* o, u32 cmd) Under o's mutex: the next ring index (atomically, wrapping after; decompiled: src/obj/obj15_job.cpp
+0056F430 WorkQueue_SubmitWorkerRecords // void WorkQueue_SubmitWorkerRecords(Worker* w, Rec* recs, u64 count) Under the job mutex: a cleared descriptor,; decompiled: src/obj/obj15_job.cpp
+005699F0 FileReader_ReadVec3Swapped // u32 FileReader_ReadVec3Swapped(FileReader* r, f32 out[3]): 12 bytes read into out, then each word byte-reverse; decompiled: src/obj/obj15_small.cpp
+00570604 File_FsPath              // const char* File_FsPath(const char* path): "<content root>/<resolved path>" in the File_OpenFs buffer, backsla; decompiled: src/obj/obj15_small.cpp
+0059B288 QuadArray_Read           // bool QuadArray_Read(IffReader* r): a u8 and the u16 "numQuads"; unless the reader was loaded before (+12 bit 4; decompiled: src/obj/obj15_small.cpp
+005A13A0 GeomInstance_DrawAtSlot  // void GeomInstance_DrawAtSlot(obj): draws the object (lod 0, 255, 15) with the record list disabled, after copy; decompiled: src/obj/obj15_small.cpp
+0057DDDC ApeObj_Delete            // void ApeObj_Delete(ApeObj* o): the base ApeObj deleting destructor (vtable 0x00B24610 +4) (name?).; decompiled: src/obj/obj15_small.cpp
+00577680 Plane_StraddlesBox       // bool Plane_StraddlesBox(const f32 n[3], const f32 p[3], const f32 h[3]) The box centred on -p with half-extent; decompiled: src/obj/obj15_small.cpp
+00580388 WorldObj_FindByHashKind  // Obj* WorldObj_FindByHashKind(u32 hash, s32 kind) Points / splines (kinds 24 / 12, 25 / 13) come from the point; decompiled: src/obj/obj15_small.cpp
+00598A24 Quads_PrepareForView     // void Quads_PrepareForView(): the bank quads through Quads_Prepare for the current view into the 64-byte matric; decompiled: src/obj/obj15_small.cpp
+0059BC0C LodSet_ReadLevel         // bool LodSet_ReadLevel(IffReader* r, LodSet* o): a u8, the u32 "meshHash" and the f32 "switchDist"; the mesh fo; decompiled: src/obj/obj15_small.cpp
+00557568 Box_RandomPoint          // void Box_RandomPoint(const f32 box[8], f32 out[3]) A random point in the box: min + (max - min) * r * scale pe; decompiled: src/obj/obj15_small.cpp
+00554730 Matrix3_NearlyEqual      // bool Matrix3_NearlyEqual(const f32 a[3][4], const f32 b[3][4]; f1 eps) |a - b| < eps for the x, y, z of the th; decompiled: src/obj/obj15_small.cpp
+00569AE8 FileReader_ReadVec4Swapped // u32 FileReader_ReadVec4Swapped(FileReader* r, f32 out[4]): 16 bytes read into out, each word byte-reversed in ; decompiled: src/obj/obj15_small.cpp
+0056B57C Debug_FlushPrimPools     // void Debug_FlushPrimPools(): Debug_DrawPrimPool and then the inlined Debug_SwapPrimPools, twice (name?).; decompiled: src/obj/obj15_small.cpp
+0055E940 Plane_Transform          // void Plane_Transform(f32 plane[4], const f32 m[4][4]) The plane {n, d} through the matrix: n' = n's rows combi; decompiled: src/obj/obj15_small.cpp
+0055EB58 Plane_Intersect3         // bool Plane_Intersect3(f32 out[3], const f32 a[4], const f32 b[4], const f32 c[4]) The point on the three plane; decompiled: src/obj/obj15_small.cpp
+00599D14 DrawList_UpdateAllLightsA // void DrawList_UpdateAllLightsA() / B(): UpdateLights for the two draw lists (name?).; decompiled: src/obj/obj15_small.cpp
+0059A008 DrawList_UpdateAllLightsB // void DrawList_UpdateAllLightsA() / B(): UpdateLights for the two draw lists (name?).; decompiled: src/obj/obj15_small.cpp
+0059B51C QuadArray_ReadFlags      // bool QuadArray_ReadFlags(IffReader* r): per bank quad a u16 whose low four bits become the quad's +68 u16 flag; decompiled: src/obj/obj15_small.cpp
+0056F6A8 InputDevice_SetButtonMask // void InputDevice_SetButtonMask(InputDevice* d, u32 mask) Each of the 12 button levels (+48) to 1 when its mask; decompiled: src/obj/obj15_small.cpp
+00586148 GeomDef_Reset            // void GeomDef_Reset(ApeGeomDef* d): the box to the origin point, the default sphere, +64 / +96..104 zeroed, the; decompiled: src/obj/obj15_small.cpp
+005902B8 GroupList_SetLevels      // void GroupList_SetLevels(GroupList* l): l = {f32 level, u32 count, Obj** items}; for each object with a positi; decompiled: src/obj/obj15_small.cpp
+00558A48 ApeRoot_DestructVfn      // void ApeRoot_DestructVfn(ApeRoot* o): the root vtable's slot 0, the same body as ApeRoot_Destruct: the destroy; decompiled: src/obj/obj15_small.cpp
+0058492C GeomDef_Copy             // void GeomDef_Copy(ApeGeomDef* dst, const ApeGeomDef* src) (vtable 0x00B246B0 / 0x00B246D8 +16): the box, the s; decompiled: src/obj/obj15_small.cpp
+0059D578 LodTarget_Update         // bool LodTarget_Update(Obj* o, Rec* rec) o->+116's draw count, then (when its vfunc +28 says it is drawable and; decompiled: src/obj/obj15_small.cpp
+00561B34 Fios_CloseAsync          // FsOp* Fios_CloseAsync(Fs* fs, u64 a, u64 b, u64 c) A new 24-byte FsOp of type 2 for (a, b, c) handed to Fios_C; decompiled: src/obj/obj15_small.cpp
+005996BC Slots_UpdateA            // void Slots_UpdateA(Obj* o) With the jobs wanted and at least 512 slot records: (flag 0x01192780 set) o's vfunc; decompiled: src/obj/obj15_small.cpp
+0056D0E0 JobAttr_Build            // void JobAttr_Build(u64 out[5], u64 a, u64 b, u64 c, u32 d, u32 e) out = {1 when low(a) == 1 else ~0; {u8 127 /; decompiled: src/obj/obj15_small.cpp
+005A0000 SplineDef_GetDefault     // ApeSplineDef* SplineDef_GetDefault(): a spline definition from the ApeSplineDef free list, constructed on firs; decompiled: src/obj/obj15_small.cpp
+00556DB4 Registry_UpdateAll       // void Registry_UpdateAll(): the static item vector (0x01165028, on the default heap, 64 entries) set up on firs; decompiled: src/obj/obj15_small.cpp
+00562474 Fios_GetFileSizeAsync    // FsOp* Fios_GetFileSizeAsync(Fs* fs, u32 x, u64 a, u64 b, u64 c) A new 24-byte FsOp of type 5 for (a, b, c) han; decompiled: src/obj/obj15_small.cpp
+00577520 Zones_MaskForPoint       // bool Zones_MaskForPoint(Zones* z, const f32 p[3]) The bits (+4) of every zone whose box holds p (and, for prec; decompiled: src/obj/obj15_small.cpp
+0059C7B0 PointDef_Reset           // void PointDef_Reset(Def* d): DefResetBounds, then +112 the identity's three rows (+112 / +128 / +144 / +160, w; decompiled: src/obj/obj15_small.cpp
+005988C8 Bank_Tick                // void Bank_Tick(f32 dt) The tick state (0x011DE094) set up on first use; when its frame moved on: the frame and; decompiled: src/obj/obj15_small.cpp
+00558B84 ApeRoot_Delete           // void ApeRoot_Delete(ApeRoot* o): the root vtable's slot +4: RootDestruct and the object freed (name?).; decompiled: src/obj/obj15_small.cpp
+005A1EBC GeomInstance_FindLiveByHash // ApeGeomInstance* GeomInstance_FindLiveByHash(u32 hash) Walks the live ApeGeomInstance nodes of the free list (; decompiled: src/obj/obj15_small.cpp
+0056A578 Matrix_ObliqueClip       // void Matrix_ObliqueClip(f32 m[16], const f32 plane[4]) Turns the projection's near plane into the clip plane (; decompiled: src/obj/obj15_small.cpp
+005865D8 BankBase_Destruct        // void BankBase_Destruct(Bank* r) (the bank base vtable 0x00B24728) Its +60 pool buffer freed, its bank slot (+5; decompiled: src/obj/obj15_small.cpp
+00599E40 Slots_UpdateB            // void Slots_UpdateB(): Slots_UpdateA's second list: the records after the slot table's +6 index, through the jo; decompiled: src/obj/obj15_small.cpp
+005A5EA0 Camera_ApplyView         // void Camera_ApplyView(Obj* cam, RenderTarget* t) The camera's LOD / transform updated, then the view matrix (t; decompiled: src/obj/obj15_small.cpp
+0059A6DC Workers_SubmitRecords    // void Workers_SubmitRecords(Obj* o, Rec* recs, u32 n) Clears the work record's +128 (atomic exchange), then for; decompiled: src/obj/obj15_small.cpp
+0055E7C0 Platform_Shutdown        // bool Platform_Shutdown() Once the archives are ready: the mounted archive unmounted, the worker thread (if run; decompiled: src/obj/obj15_small.cpp
+0058CF08 Gcm_ResetColorMaskPolyOffset // void Gcm_ResetColorMaskPolyOffset(): color mask all channels and polygon offset fill off. (The original's othe; decompiled: src/obj/obj15_small.cpp
+00586744 BankBase_Delete          // void BankBase_Delete(Bank* r): the deleting destructor (name?).; decompiled: src/obj/obj15_small.cpp
+00562C58 InputDevice_IntegrateAxes // void InputDevice_IntegrateAxes(InputDevice* d) When active (+148): the two axes +132 / +136 advance by their r; decompiled: src/obj/obj15_small.cpp
+0056F7D8 Pad_MapButtons           // u32 Pad_MapButtons(-, u32 raw): the pad's raw button bits to the game's button mask (name?).; decompiled: src/obj/obj15_small.cpp
+0059E678 GeomDef_ReadHeader       // bool GeomDef_ReadHeader(IffReader* r, ApeGeomDef* d) A u8, "nameHash", the 32-byte "name" and the byte-swapped; decompiled: src/obj/obj15_small.cpp
+00556774 Pool_ReleaseEmptyBlocks  // void Pool_ReleaseEmptyBlocks(Pool* p) Every block (+28 list, unless its +12 bit 0 pins it) holding no live all; decompiled: src/obj/obj15_small.cpp
+00584C70 Bone_InitFromDesc        // void Bone_InitFromDesc(Bone* b, BoneDesc d) (d by value: r4..r10 and the caller's stack) +64 d's first word, +; decompiled: src/obj/obj15_small.cpp
+00590FEC Obj_CollectLodGroup      // void Obj_CollectLodGroup(Obj* o, u8 recurse) For kinds 8-14: an object with +321 bit 1 of kind 8 or 10 gets LO; decompiled: src/obj/obj15_small.cpp
+00586440 BankBase_Construct       // void BankBase_Construct(Bank* b, u32 flags) The bank base (vtable 0x00B24728): +36 a 16384-entry vector (+42 4; decompiled: src/obj/obj15_small.cpp
+0059DCC0 GeomDef_ReadHeaderAnim   // bool GeomDef_ReadHeaderAnim(IffReader* r, Def* d) A u8, the byte-swapped "bboxMin" / "bboxMax", "nameHash", "a; decompiled: src/obj/obj15_small.cpp
+00572908 Gcm_ResetDepthBlendState // void Gcm_ResetDepthBlendState() Fn_5E30D8(context, 2 x6), then: 0x0A70 0, depth mask (the cached bit), depth m; decompiled: src/obj/obj15_small.cpp
+005786C0 Planes_ClipRay           // bool Planes_ClipRay(const f32 planes[6][4], const f32 p[3], const f32 d[3], f32* t0, f32* t1) The ray p + t d ; decompiled: src/obj/obj15_small.cpp
+0059DB28 EmitterDef_Read          // bool EmitterDef_Read(IffReader* r) A new emitter definition, the definition list's callback (def, arg, 0) befo; decompiled: src/obj/obj15_small.cpp
+00566F1C StrBuf_Append            // char* StrBuf_Append(StrBuf* b, const char* s) Appends s (growing to twice the capacity when +12 allows, else t; decompiled: src/obj/obj15_small.cpp
+005A8F60 Splines_FindNearest      // s32 Splines_FindNearest(PtrVector* splines, const f32 p[3], f32* t, f32* dist, Opd* filter, arg) The spline (a; decompiled: src/obj/obj15_small.cpp
+00561714 Fios_OpenAsync           // FsOp* Fios_OpenAsync(Fs* fs, const char* path, u64 a, u64 b, u64 c) A new file handle and a 24-byte FsOp of ty; decompiled: src/obj/obj15_small.cpp
+005965BC LightRecList_Destroy     // void LightRecList_Destroy(RecList** pp) Removes every 80-byte record from the last (cls::RemoveRecord: owners'; decompiled: src/obj/obj15_small.cpp
+0059BD24 GeomDef_Destroy          // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+0059C5FC LightDef_Destroy         // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+0059D1A8 CameraDef_Destroy        // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+0059E7FC PointDef_Destroy         // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+0059FE4C SplineDef_Destroy        // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+005A664C CameraInstance_Destroy   // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+005A72EC PointInstance_Destroy    // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+005A89F0 SplineInstance_Destroy   // void <Type>_Destroy(T* o): DefDestroy for each type (definitions keyed by +96, instances by their +204 name ha; decompiled: src/obj/obj15_small.cpp
+005871E4 PointInstance_RegisterType // void <Type>_RegisterType(): RegisterType for the six object types (their chunk fourccs: PNTC/PNTH, PNDC/PNDH, ; decompiled: src/obj/obj15_small.cpp
+005873AC PointDef_RegisterType    // ; decompiled: src/obj/obj15_small.cpp
+00587574 EmitterInstance_RegisterType // ; decompiled: src/obj/obj15_small.cpp
+00587CC8 CameraInstance_RegisterType // ; decompiled: src/obj/obj15_small.cpp
+00588078 CameraDef_RegisterType   // ; decompiled: src/obj/obj15_small.cpp
+00588660 LightDef_RegisterType    // ; decompiled: src/obj/obj15_small.cpp
+00587E90 SplineDef_RegisterType   // ; decompiled: src/obj/obj15_small.cpp
+00588478 GeomDef_RegisterType     // ; decompiled: src/obj/obj15_small.cpp
+005A39A8 LightInstance_ReadHeader // bool LightInstance_ReadHeader(IffReader* r, Obj* o) / EmitterInstance_ReadHeader: ReadInstanceHeader; returns ; decompiled: src/obj/obj15_small.cpp
+005A4CE4 EmitterInstance_ReadHeader // ; decompiled: src/obj/obj15_small.cpp
+005A7070 PointInstance_ReadHeader // bool PointInstance_ReadHeader(IffReader* r, Obj* o) / SplineInstance_ReadHeader: ReadInstanceHeaderB with the ; decompiled: src/obj/obj15_small.cpp
+005A8774 SplineInstance_ReadHeader // ; decompiled: src/obj/obj15_small.cpp
+00598E60 Workers_Update           // void Workers_Update(Obj* o, Obj* player) Keeps the player; once per frame, when the work record, its count, th; decompiled: src/obj/obj15_small.cpp
+00573410 Matrix_PackShaderRows    // void Matrix_PackShaderRows(const f32 m[42], f32 out[42]) Copies the source words into the shader constant layo; decompiled: src/obj/obj15_small.cpp
+00572728 ShaderRec_Bind           // void ShaderRec_Bind(Rec* r) Binds r->+144's shader (Fn_5E4514 on its +16, Fn_5E3F18 with its +17 count) unless; decompiled: src/obj/obj15_small.cpp
+005784E8 Quad_IntersectSegment    // bool Quad_IntersectSegment(const f32 quad[4][4], const f32 a[3], const f32 b[3], f32* t) The segment a-b again; decompiled: src/obj/obj15_small.cpp
+0059578C WorldObj_CanBatch        // bool WorldObj_CanBatch(Obj* o) A visible (+164 0x8000) static object (+320 bits 9-12 == 1) with a class, no pa; decompiled: src/obj/obj15_small.cpp
+0073343C PointMap_Find            // (map = *(*0x00F8F154 +16), const u32* hash) -> ApePointDef** slot (name?)
+007A7C74 HashMap_Remove2          // (map, const u32* key): GeomDef map remove (name?)
+007A7E68 LightDefMap_Remove       // (name?)
+0073374C CameraDefMap_Find        // 007A805C its remove (name?)
+007A805C CameraDefMap_Remove      // (name?)
+007A6A64 PointDefMap_Find         // 007A8544 its remove (name?)
+007A8544 PointDefMap_Remove       // (name?)
+007936FC SplineDefMap_Find        // 007A8738 its remove (name?)
+007A8738 SplineDefMap_Remove      // (name?)
+007A8D40 CameraInstMap_Remove     // (MapA_Find's remove) (name?)
+007A8F34 PointInstMap_Remove      // (name?)
+007A92F4 SplineInstMap_Remove     // (name?)
+005792F0 Quads_Prepare            // (view +816, quads, u16 count, out matrices, u16* out count) (name?)
+004FED94 Mesh_FindByHash          // (hash) -> mesh (name?)
+00526300 Mesh_Default             // () -> mesh (name?)
+0056B2B8 Debug_DrawPrimPool       // () (name?)
+00527FEC LodTarget_Apply          // (target, rec, rec +64, u32 level) (name?)
+00589BC8 Slots_UpdateDirect       // (o): Slots_UpdateA's non-job path (name?)
+0058B128 Slots_PrepareB           // () (name?)
+0058B4B8 Slots_UpdateDirectB      // () (name?)
+0059845C Lights_Tick              // (list; f1 dt) (name?)
+005981D4 Lights_Tick2             // (list; f1 dt) (name?)
+00597158 Lights_TickB             // (list; f1 dt) (name?)
+0055E56C Archive_Ready            // () -> bool (name?)
+00566950 StrBuf_Grow              // (buf, s32 capacity) (name?)
+00580B18 WorldObj_ApplyHeader     // (obj, const InstanceHeader*) (name?)
+0057D3E8 WorldObj_ApplyHeaderB    // (obj, const InstanceHeader*): point / spline instances (name?)
+0059E9B0 PointDef_GetDefault      // () -> the default point definition (name?)
+005E30D8 Gcm_Fn5E30D8             // (context, 6 x u32) (name?)
+005E4514 Gcm_Fn5E4514             // (context, 0, shader +16) (name?)
+005E3F18 Gcm_Fn5E3F18             // (context, 0, 1, 0, u16, 0) (name?)
+005E3E88 Gcm_Fn5E3E88             // (context, 0, 0, u8, u8, 1) (name?)
+0051E824 Fn_51E824                // () Bank_Create's (name?)
+00588FFC Fn_588FFC                // (u32) Bank_Start / Bank_Tick (name?)
