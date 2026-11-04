@@ -123,9 +123,9 @@
 0056D3B0 JobChain_Init            // (JobChain*, CellSpurs*, nSpus, u8 prio[8]) "ApeSpurs" (name?)
 00550690 Mspace_Memalign          // dlmalloc
 0054EE9C Mspace_Free              // dlmalloc
-0072A88C memalign
-0072A8FC free
-0072A928 malloc
+0072A88C memalign // decompiled: src/common/alloc.cpp
+0072A8FC free // decompiled: src/common/alloc.cpp
+0072A928 malloc // decompiled: src/common/alloc.cpp
 007240F4 printf
 0071ED08 strlen
 0071EEF8 strstr
@@ -205,44 +205,44 @@
 00442C10 Emitter_Update           // decompiled: src/audio/emitter.cpp (name?)
 00784008 KeyMap_Find              // (Map*, const u32* key) -> s32 index or < 0; decompiled: src/audio/pool.cpp (name?)
 0078378C HandlePool_Remove        // decompiled: src/audio/pool.cpp (name?)
-00552420 SmallFree                // (p, size)
+00552420 SmallFree                // (p, size); decompiled: src/common/alloc.cpp
 
 # UI elements, allocators, free lists
 00762150 UiElem_Type              // +12 -> 100; decompiled: src/uielem/element.cpp
 00795E6C UiText_Type              // -> 3; decompiled: src/uielem/element.cpp
 00796528 UiElem5_Type             // -> 5 (name?) decompiled: src/uielem/element.cpp
 00761B14 UiElem_GetMatrix         // +16; decompiled: src/uielem/element.cpp
-00761B20 UiElem_SetMatrix         // +20
-00761B84 UiElem_GetPosition       // +24
-00761B90 UiElem_SetPosition       // +28
-00761BB4 UiElem_ScalePtr          // +36 (name?)
-00761BC0 UiElem_SetScale          // +40
-00761BDC UiElem_SizePtr           // +44 sret, zero vec2
-00761BF8 UiElem_SetSize           // +48 empty
-00761BFC UiElem_GetColor          // +52 sret
-00761C28 UiElem_SetColor          // +56
-00761C50 UiElem_GetFieldA         // +60 flags bits 22-23
-00761C5C UiElem_SetFieldA         // +64
-00761C6C UiElem_GetFieldB         // +68 bits 14-21
-00761C78 UiElem_SetFieldB         // +72
-00761C88 UiElem_GetFieldC         // +76 bits 6-13
-00761C94 UiElem_SetFieldC         // +80
-00761CA4 UiElem_IsActive          // +84 bit 31
-00761CBC UiElem_SetActive         // +88 (SetVisible)
-00761CD0 UiElem_IsFocusable       // +92
-00761CE8 UiElem_SetFocusable      // +96
-00761CF8 UiElem_GetFlag29         // +100
-00761D10 UiElem_SetFlag29         // +104
-00761D20 UiElem_GetFlag28         // +108
-00761D38 UiElem_SetFlag28         // +112
-00761D48 UiElem_GetFlag27         // +116
-00761D60 UiElem_SetFlag27         // +120
-00761D70 UiElem_GetFlag26         // +124
-00761D88 UiElem_SetFlag26         // +128
-00761D98 UiElem_GetFlag05         // +132
-00761DB0 UiElem_SetFlag05         // +136
+00761B20 UiElem_SetMatrix         // +20; decompiled: src/uielem/element.cpp
+00761B84 UiElem_GetPosition       // +24; decompiled: src/uielem/element.cpp
+00761B90 UiElem_SetPosition       // +28; decompiled: src/uielem/element.cpp
+00761BB4 UiElem_ScalePtr          // +36 (name?); decompiled: src/uielem/element.cpp
+00761BC0 UiElem_SetScale          // +40; decompiled: src/uielem/element.cpp
+00761BDC UiElem_SizePtr           // +44 sret, zero vec2; decompiled: src/uielem/element.cpp
+00761BF8 UiElem_SetSize           // +48 empty; decompiled: src/uielem/element.cpp
+00761BFC UiElem_GetColor          // +52 sret; decompiled: src/uielem/element.cpp
+00761C28 UiElem_SetColor          // +56; decompiled: src/uielem/element.cpp
+00761C50 UiElem_GetFieldA         // +60 flags bits 22-23; decompiled: src/uielem/element.cpp
+00761C5C UiElem_SetFieldA         // +64; decompiled: src/uielem/element.cpp
+00761C6C UiElem_GetFieldB         // +68 bits 14-21; decompiled: src/uielem/element.cpp
+00761C78 UiElem_SetFieldB         // +72; decompiled: src/uielem/element.cpp
+00761C88 UiElem_GetFieldC         // +76 bits 6-13; decompiled: src/uielem/element.cpp
+00761C94 UiElem_SetFieldC         // +80; decompiled: src/uielem/element.cpp
+00761CA4 UiElem_IsActive          // +84 bit 31; decompiled: src/uielem/element.cpp
+00761CBC UiElem_SetActive         // +88 (SetVisible); decompiled: src/uielem/element.cpp
+00761CD0 UiElem_IsFocusable       // +92; decompiled: src/uielem/element.cpp
+00761CE8 UiElem_SetFocusable      // +96; decompiled: src/uielem/element.cpp
+00761CF8 UiElem_GetFlag29         // +100; decompiled: src/uielem/element.cpp
+00761D10 UiElem_SetFlag29         // +104; decompiled: src/uielem/element.cpp
+00761D20 UiElem_GetFlag28         // +108; decompiled: src/uielem/element.cpp
+00761D38 UiElem_SetFlag28         // +112; decompiled: src/uielem/element.cpp
+00761D48 UiElem_GetFlag27         // +116; decompiled: src/uielem/element.cpp
+00761D60 UiElem_SetFlag27         // +120; decompiled: src/uielem/element.cpp
+00761D70 UiElem_GetFlag26         // +124; decompiled: src/uielem/element.cpp
+00761D88 UiElem_SetFlag26         // +128; decompiled: src/uielem/element.cpp
+00761D98 UiElem_GetFlag05         // +132; decompiled: src/uielem/element.cpp
+00761DB0 UiElem_SetFlag05         // +136; decompiled: src/uielem/element.cpp
 004D5870 Ui_DrawCallback0         // empty; decompiled: src/uielem/element.cpp
-004D5874 Ui_DrawCallback1         // empty
+004D5874 Ui_DrawCallback1         // empty; decompiled: src/uielem/element.cpp
 004645AC SysMsg_OnClose           // decompiled: src/uielem/sysmsg.cpp
 00464794 SysMsg_OnInput           // decompiled: src/uielem/sysmsg.cpp
 00464804 SysMsg_OnEvent           // decompiled: src/uielem/sysmsg.cpp
@@ -251,32 +251,32 @@
 0055322C LinearHeap_Free          // decompiled: src/common/alloc.cpp
 005514E0 DefaultHeap_Alloc        // -> 0 (name?) decompiled: src/common/alloc.cpp
 00551510 DefaultHeap_Free         // decompiled: src/common/alloc.cpp
-0056C89C Mem_Stub0                // -> 0 (name?)
-0054EE6C Mem_FreeFrom             // (p, pool)
-0055238C SmallAlloc               // (name?) -> 00551CC0
-005523AC DefaultAllocator_Alloc   // (this, size, clear)
-00552418 DefaultAllocator_Fn4     // -> 0
-005524D8 DefaultAllocator_Free    // (this, p, size)
-007245E4 Sprintf_Output           // vsprintf output fn (OPD 0x00F486A8)
+0056C89C Mem_Stub0                // -> 0 (name?); decompiled: src/common/alloc.cpp
+0054EE6C Mem_FreeFrom             // (p, pool); decompiled: src/common/alloc.cpp
+0055238C SmallAlloc               // (name?) -> 00551CC0; decompiled: src/common/alloc.cpp
+005523AC DefaultAllocator_Alloc   // (this, size, clear); decompiled: src/common/alloc.cpp
+00552418 DefaultAllocator_Fn4     // -> 0; decompiled: src/common/alloc.cpp
+005524D8 DefaultAllocator_Free    // (this, p, size); decompiled: src/common/alloc.cpp
+007245E4 Sprintf_Output           // vsprintf output fn (OPD 0x00F486A8); decompiled: src/common/alloc.cpp
 00556C04 FreeList_Alloc           // decompiled: src/common/freelist.cpp
 00556D18 FreeList_Free            // decompiled: src/common/freelist.cpp
 005568FC FreeList_Destroy         // decompiled: src/common/freelist.cpp
-007A2564 RtFreeList_Destruct
-007A25B8 RtFreeList_Delete
-007A2628 RtFreeList_Fn8           // empty
-0079EA84 RtFreeList_Alloc
-0079EAA8 RtFreeList_Free
-007A1018 RtFreeList_Init          // (count, heap) size 1840
-007A4E80 InputFreeList_Destruct
-007A4ECC InputFreeList_Delete
-007A4F38 InputFreeList_Fn8        // empty
-007A4A90 InputFreeList_Alloc
-007A4AB0 InputFreeList_Free
-007A4D1C InputFreeList_Init       // size 296
+007A2564 RtFreeList_Destruct // decompiled: src/common/freelist.cpp
+007A25B8 RtFreeList_Delete // decompiled: src/common/freelist.cpp
+007A2628 RtFreeList_Fn8           // empty; decompiled: src/common/freelist.cpp
+0079EA84 RtFreeList_Alloc // decompiled: src/common/freelist.cpp
+0079EAA8 RtFreeList_Free // decompiled: src/common/freelist.cpp
+007A1018 RtFreeList_Init          // (count, heap) size 1840; decompiled: src/common/freelist.cpp
+007A4E80 InputFreeList_Destruct // decompiled: src/common/freelist.cpp
+007A4ECC InputFreeList_Delete // decompiled: src/common/freelist.cpp
+007A4F38 InputFreeList_Fn8        // empty; decompiled: src/common/freelist.cpp
+007A4A90 InputFreeList_Alloc // decompiled: src/common/freelist.cpp
+007A4AB0 InputFreeList_Free // decompiled: src/common/freelist.cpp
+007A4D1C InputFreeList_Init       // size 296; decompiled: src/common/freelist.cpp
 00555F80 String_Assign            // strcpy; decompiled: src/common/misc.cpp
-0056DF78 Stub_True                // (name?)
-0055E284 Stub_CallTrue            // (name?)
-0049AF38 NpManager_OnStatus       // offline -> sysutil flag 0x80
+0056DF78 Stub_True                // (name?); decompiled: src/common/misc.cpp
+0055E284 Stub_CallTrue            // (name?); decompiled: src/common/misc.cpp
+0049AF38 NpManager_OnStatus       // offline -> sysutil flag 0x80; decompiled: src/common/misc.cpp
 00551CC0 SmallAlloc_Impl          // ApeMem::_BucketAlloc; decompiled: src/heap/bucket.cpp
 0072A470 _memalign_r
 007277D0 _free_r
@@ -570,40 +570,40 @@
 004E1368 UiElem_FindResourceBase  // +180; decompiled: src/uielem/class_base.cpp
 004E13B8 UiElem_FindResourceOfTypeBase // +184; decompiled: src/uielem/class_base.cpp
 00795EBC TlKey_Destruct           // vtbl 0x00B228B0; decompiled: src/uielem/class_timeline.cpp
-00795ECC TlKey_Delete
-00795F10 TlTrack_Destruct         // vtbl 0x00B228C4
-00795F20 TlTrack_Delete
-00795F64 TlKeyNop_Destruct        // vtbl 0x00B228D8
-00795F74 TlKeyNop_Delete
-00795FB8 TlKeyNop_Run
-00795FC0 TlKeyAnim_Destruct       // vtbl 0x00B228F0
-00795FD0 TlKeyAnim_Delete
-004E3CAC TlKeyAnim_Run
-00796058 TlKeyEvent_Destruct      // vtbl 0x00B22908
-00796068 TlKeyEvent_Delete
-004E4B40 TlKeyEvent_Run
+00795ECC TlKey_Delete // decompiled: src/uielem/class_timeline.cpp
+00795F10 TlTrack_Destruct         // vtbl 0x00B228C4; decompiled: src/uielem/class_timeline.cpp
+00795F20 TlTrack_Delete // decompiled: src/uielem/class_timeline.cpp
+00795F64 TlKeyNop_Destruct        // vtbl 0x00B228D8; decompiled: src/uielem/class_timeline.cpp
+00795F74 TlKeyNop_Delete // decompiled: src/uielem/class_timeline.cpp
+00795FB8 TlKeyNop_Run // decompiled: src/uielem/class_timeline.cpp
+00795FC0 TlKeyAnim_Destruct       // vtbl 0x00B228F0; decompiled: src/uielem/class_timeline.cpp
+00795FD0 TlKeyAnim_Delete // decompiled: src/uielem/class_timeline.cpp
+004E3CAC TlKeyAnim_Run // decompiled: src/uielem/class_timeline.cpp
+00796058 TlKeyEvent_Destruct      // vtbl 0x00B22908; decompiled: src/uielem/class_timeline.cpp
+00796068 TlKeyEvent_Delete // decompiled: src/uielem/class_timeline.cpp
+004E4B40 TlKeyEvent_Run // decompiled: src/uielem/class_timeline.cpp
 007964A8 UiText5_Destruct         // vtbl 0x00B22B78; decompiled: src/uielem/class_text5.cpp
-007964D4 UiText5_Delete
-004DC5E0 UiText5_Construct
-004E7A58 UiText5_Invalidate
-004E6D3C UiText5_Clone
-004DA4C0 UiText5_GetSize
+007964D4 UiText5_Delete // decompiled: src/uielem/class_text5.cpp
+004DC5E0 UiText5_Construct // decompiled: src/uielem/class_text5.cpp
+004E7A58 UiText5_Invalidate // decompiled: src/uielem/class_text5.cpp
+004E6D3C UiText5_Clone // decompiled: src/uielem/class_text5.cpp
+004DA4C0 UiText5_GetSize // decompiled: src/uielem/class_text5.cpp
 00794F20 Ref_Destruct             // vtbl 0x00B225E0; decompiled: src/font/res.cpp
-00794F30 Ref_Delete
-00794F74 Ref_Release
+00794F30 Ref_Delete // decompiled: src/font/res.cpp
+00794F74 Ref_Release // decompiled: src/font/res.cpp
 004D5274 UiRes_Construct          // vtbl 0x00B225F8; decompiled: src/font/res.cpp
-004D54D4 UiRes_ConstructThunk
-004D5878 UiRes_Destruct
-004D58E4 UiRes_Delete
-004D5990 UiRes_Unuse
+004D54D4 UiRes_ConstructThunk // decompiled: src/font/res.cpp
+004D5878 UiRes_Destruct // decompiled: src/font/res.cpp
+004D58E4 UiRes_Delete // decompiled: src/font/res.cpp
+004D5990 UiRes_Unuse // decompiled: src/font/res.cpp
 007952B0 FontSet_Destruct         // vtbl 0x00B22658; decompiled: src/font/fontset.cpp
-007953AC FontSet_Delete
-007954D0 FontSet_Load
-00795650 FontSet_Unload
+007953AC FontSet_Delete // decompiled: src/font/fontset.cpp
+007954D0 FontSet_Load // decompiled: src/font/fontset.cpp
+00795650 FontSet_Unload // decompiled: src/font/fontset.cpp
 004D71D0 FontSet_FromXml          // decompiled: src/font/fontset_load.cpp
 007950DC Font_Destruct            // vtbl 0x00B22638; decompiled: src/font/font.cpp
-007951B8 Font_Delete
-004D70B0 Font_Unload
+007951B8 Font_Delete // decompiled: src/font/font.cpp
+004D70B0 Font_Unload // decompiled: src/font/font.cpp
 004D601C Font_FromXml             // decompiled: src/font/font_load.cpp
 004F8944 XmlCursor_DocPath        // decompiled: src/uiload/desc.cpp
 004FEF30 Tex_GetDefault           // (name?) decompiled: src/uiload/desc.cpp
@@ -616,17 +616,17 @@
 004D6768 Font_Load                // Font vfunc +12; decompiled: src/font/bmp.cpp
 004E70D0 UiText5_Update           // vtbl 0xB22B78 +152; decompiled: src/uielem/t5update.cpp
 0045CAA0 StateMachine_Construct   // (this, levels, data size, u8 initial); decompiled: src/world/vt_statemachine.cpp
-0045CBE8 StateMachine_ConstructThunk
-00464A24 StateMachine_Destruct
-00464A6C StateMachine_Delete
-00464B18 StateMachine_Init        // vfunc +8
-00464B90 StateMachine_Shutdown    // vfunc +12
-00464BD4 StateMachine_Update      // vfunc +16 (f32 dt)
-00464CBC StateMachine_Tick        // vfunc +20 (f32 dt)
-007371E8 StateMachine_Advance     // vfunc +24
-00464D1C StateMachine_SetState    // vfunc +28 (level, id)
-0073726C StateMachine_GetState    // vfunc +32
-007435B8 StateMachine_HandleEvent // vfunc +36, returns 1
+0045CBE8 StateMachine_ConstructThunk // decompiled: src/world/vt_statemachine.cpp
+00464A24 StateMachine_Destruct // decompiled: src/world/vt_statemachine.cpp
+00464A6C StateMachine_Delete // decompiled: src/world/vt_statemachine.cpp
+00464B18 StateMachine_Init        // vfunc +8; decompiled: src/world/vt_statemachine.cpp
+00464B90 StateMachine_Shutdown    // vfunc +12; decompiled: src/world/vt_statemachine.cpp
+00464BD4 StateMachine_Update      // vfunc +16 (f32 dt); decompiled: src/world/vt_statemachine.cpp
+00464CBC StateMachine_Tick        // vfunc +20 (f32 dt); decompiled: src/world/vt_statemachine.cpp
+007371E8 StateMachine_Advance     // vfunc +24; decompiled: src/world/vt_statemachine.cpp
+00464D1C StateMachine_SetState    // vfunc +28 (level, id); decompiled: src/world/vt_statemachine.cpp
+0073726C StateMachine_GetState    // vfunc +32; decompiled: src/world/vt_statemachine.cpp
+007435B8 StateMachine_HandleEvent // vfunc +36, returns 1; decompiled: src/world/vt_statemachine.cpp
 0046B5DC World_GetState           // World vfunc +32; decompiled: src/world/vt_world.cpp
 00467004 World_Delete             // World vfunc +4; decompiled: src/world/vt_world.cpp
 004682C8 World_Init               // World vfunc +8, called by Game_Load; decompiled: src/world/vt_world.cpp
@@ -634,8 +634,8 @@
 00469D98 World_Update             // World vfunc +16; decompiled: src/world/wupdate.cpp
 00491710 World_HandleEvent        // World vfunc +36 (8211 instr)
 0047C5D8 SubMachine_Construct     // vtable 0x00B21AA0; decompiled: src/world/vt_submachine.cpp (name?)
-00490A88 SubMachine_Destruct
-00490AD0 SubMachine_Delete
+00490A88 SubMachine_Destruct // decompiled: src/world/vt_submachine.cpp
+00490AD0 SubMachine_Delete // decompiled: src/world/vt_submachine.cpp
 004FB0F0 Trophy_Construct         // decompiled: src/game/meta_trophy.cpp
 0049DC70 Upgrades_Load            // (path) -> bool; decompiled: src/game/meta_scripts.cpp
 000B2280 Awards_Load              // (path) -> bool; decompiled: src/game/meta_scripts.cpp
@@ -709,7 +709,7 @@
 00555EB0 String_CompareN          // strncasecmp -> -1/0/1; decompiled: src/uiload/more.cpp
 004D7F24 UiElem8_Construct        // decompiled: src/uiload/more.cpp
 004D8A80 UiElem_SetTexture        // decompiled: src/uiload/more.cpp
-004D8E88 UiElem6_Build            // (name?)
+004D8E88 UiElem6_Build            // type-6 vfunc +152 (Update, f1 dt); decompiled: src/uielem/build6.cpp
 004DD08C UiElem2_SetBlend         // decompiled: src/uiload/more.cpp
 00523B7C Tex_Acquire              // (Texture*) -> new AglMaterial on it; decompiled: src/uiload/more.cpp (name?)
 004DF88C Timeline_FromXml         // -> TimelineDef (vtbl 0xB22F60); decompiled: src/uiload/more.cpp
@@ -772,7 +772,7 @@
 0051D368 Texture_Alloc            // decompiled: src/font/texinit.cpp
 0053A640 Texture_Init             // decompiled: src/font/texinit.cpp
 0079DD10 Map_Find                 // sorted {key,value} map lookup; decompiled: src/obj/map.cpp
-004D8D48 UiElem6_AddSlice         // (name?)
+004D8D48 UiElem_InitDefaults      // base-element defaults; decompiled: src/uielem/build6.cpp
 
 # Draw state; World_Update, fades, post FX state; trophies, upgrades, awards
 0053585C Draw_BindDisplay         // decompiled: src/gfx/fx_draw.cpp
@@ -788,16 +788,16 @@
 004695A8 PostFx_UpdateSwap        // (s, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
 004697D8 PostFx_UpdateDof         // (s, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
 00469B90 Fade_Update              // (Fade*, f32 dt); decompiled: src/world/wupdate_fx.cpp
-00365E30 Handle_Resolve           // (handle) -> obj or 0 (obj+4 bit 2) (name?)
-004D4104 Display_GetSize          // (f32 out[2]) from config u16 +4,+6
-004E02DC Ui_BringToFront          // (ui, 1) (name?)
+00365E30 Handle_Resolve           // (handle) -> obj or 0 (obj+4 bit 2) (name?); decompiled: src/world/misc.cpp
+004D4104 Display_GetSize          // (f32 out[2]) from config u16 +4,+6; decompiled: src/world/misc.cpp
+004E02DC Ui_BringToFront          // (ui, 1) (name?); decompiled: src/world/misc.cpp
 0044D740 Audio_SetFilterScale     // (f32) (name?)
 004437CC Audio_IsEmitterValid     // (u32 handle) -> bool (name?)
 0044CCF8 Audio_SetEmitterFilter   // (u32 handle, f32 cutoff) (name?)
-00520368 View_SetFov              // (View*, f32) (name?)
-00787408 Ease                     // (f32 t, f32 shape) -> f32 (name?)
-000AE784 SaveData_Write           // (path, data, size) (name?)
-0044C43C Sound_Find               // (u32 hash) -> handle (name?)
+00520368 View_SetFov              // (View*, f32) (name?); decompiled: src/world/misc.cpp
+00787408 Ease                     // (f32 t, f32 shape) -> f32 (name?); decompiled: src/world/misc.cpp
+000AE784 SaveData_Write           // stub: returns 3; decompiled: src/world/misc.cpp
+0044C43C Sound_Find               // (u32 hash) -> handle (name?); decompiled: src/world/misc.cpp
 00550EE8 Mem_DefaultAllocator     // () -> Allocator* (name?)
 00558F38 Array_Init               // empty function (blr)
 0054EC94 Array_Destruct           // empty function (blr) (name?)
@@ -806,25 +806,25 @@
 005E7824 Thread_Create2           // (thread, attr, entry opd, arg) (name?)
 005E6D1C Event_Init               // (event, 0) (name?)
 0079BA10 Lock_Init                // (lock, 32) (name?)
-0056A6E0 Award_Register           // (u32 name hash) (name?)
+0056A6E0 Hash_ToString            // "0x%x" via String_Format; decompiled: src/world/misc.cpp
 
 # World objects, textures
-0057D000 WorldObj_UpdateMatrix    // (obj) (name?)
-00580708 WorldObj_Construct       // (obj, kind) (name?)
-005858D4 WorldClass_Copy          // (cls) -> cls (name?)
-00526494 WorldObj_MakeExtra       // () -> object for +288 (name?)
-007A6D74 MapA_Find                // same map template (name?)
-007A6BEC MapB_Find                // (name?)
-00793884 MapC_Find                // (name?)
-00793A0C MapD_Find                // (name?)
-0053A284 Texture_Construct        // (AglTexture*) (name?)
-00555D70 String_CompareNoCase2    // (a, b) -> 0 when equal (name?)
-0050A6C8 Image_FromBmp            // (data, size, Image*, path) (name?)
-0050ACAC Image_FromTga            // (name?)
-0053A448 Texture_FromGtf          // (tex, data, size, 0) (name?)
-0053A34C Texture_FromImage        // (tex, Image*, path) (name?)
-004DEF50 TlKeyEvent_FromXml       // (doc, node, def; f1 time) (name?)
-004DF0D0 TlKeyAnim_FromXml        // (doc, node, def; f1 time) (name?)
+0057D000 WorldObj_MarkDirty       // decompiled: src/obj/obj2.cpp
+00580708 WorldObj_Construct       // (obj, kind); decompiled: src/obj/obj2.cpp
+005858D4 WorldClass_Copy          // decompiled: src/obj/obj2.cpp
+00526494 Light_Alloc              // AglLight free list; decompiled: src/obj/obj2.cpp
+007A6D74 MapA_Find                // class map holder F8F150; decompiled: src/obj/obj2.cpp
+007A6BEC MapB_Find                // holder F8F144; decompiled: src/obj/obj2.cpp
+00793884 MapC_Find                // holder F8F148; decompiled: src/obj/obj2.cpp
+00793A0C MapD_Find                // holder F8F14C; decompiled: src/obj/obj2.cpp
+0053A284 Texture_Construct        // decompiled: src/font/image.cpp
+00555D70 String_CompareNoCase2    // strcasecmp wrapper; decompiled: src/font/image.cpp
+0050A6C8 Image_FromBmp            // decompiled: src/font/image.cpp
+0050ACAC Image_FromTga            // decompiled: src/font/image.cpp
+0053A448 Texture_FromGtf          // decompiled: src/font/image.cpp
+0053A34C Texture_FromImage        // decompiled: src/font/image.cpp
+004DEF50 TlKeyEvent_FromXml       // f1 = time; decompiled: src/uiload/tlbuild.cpp
+004DF0D0 TlKeyAnim_FromXml        // f1 = time; decompiled: src/uiload/tlbuild.cpp
 
 # Post-process effect draws
 0053C7EC Draw_SetTexture0Call     // thunk; decompiled: src/gfx/fx_draw.cpp
@@ -849,3 +849,405 @@
 00515750 VertexFormat_Get         // (name?)
 00554C28 Mat4_Sub554C28           // (a, out, src) (unknown)
 0051279C Trail_Sub51279C          // (unknown)
+
+# World objects 2-3; World construction
+007A9924 WorldObj_GetName         // vfunc +12; decompiled: src/obj/obj2_vt.cpp
+007A9A1C WorldObj_Get300          // vfunc +28 (name?); decompiled: src/obj/obj2_vt.cpp
+007A99F8 WorldObj_SetPerView      // vfunc +32 (name?); decompiled: src/obj/obj2_vt.cpp
+005A0158 WorldObj_Destruct        // vfunc +0; decompiled: src/obj/obj2_vt.cpp
+005A0268 WorldObj_DeletingDestruct // vfunc +4; decompiled: src/obj/obj2_vt.cpp
+005A02B0 WorldObj_Release         // vfunc +8; decompiled: src/obj/obj2_vt.cpp
+00582ED0 WorldObj_ShowAndNotify   // vfunc +16 (name?); decompiled: src/obj/obj2_vt.cpp
+00583DC8 WorldObj_SetByte320      // vfunc +48 (name?); decompiled: src/obj/obj2_vt.cpp
+00583EF0 WorldObj_SetByte168      // vfunc +52 (name?); decompiled: src/obj/obj2_vt.cpp
+005A14A0 WorldObj_ClassChanged    // vfunc +64 (name?); decompiled: src/obj/obj2_vt.cpp
+00723F2C strcasecmp               // libc (name?)
+007A71A4 WorldClass_Alloc         // () (name?)
+005095C0 Topology_Copy            // (topo, copy table) (name?)
+0056E2EC Rsx_Copy                 // (src, dst, size, 1) (name?)
+007A0E98 Texture_SetWrap          // AglTexture vfunc +16 (s, t, 1) (name?)
+00558F34 WorldObj_ReleaseRes      // (name?)
+0058049C WorldObj_ApplyClass      // reads f1 (name?)
+00582C6C WorldObj_ShowChildren    // (obj, 0) (name?)
+00580658 WorldObj_InitLinks       // decompiled: src/obj/obj3.cpp
+0057D688 WorldObj_InitTransform   // decompiled: src/obj/obj3.cpp
+0057A1D8 SlotEntry_Move           // (to, from); decompiled: src/obj/obj3.cpp
+0057A46C SlotEntry_UpdatePeer     // decompiled: src/obj/obj3.cpp
+0057FF98 WorldObj_Unlink          // decompiled: src/obj/obj3.cpp
+00580978 WorldObj_DestructBase    // decompiled: src/obj/obj3.cpp
+00584DFC SkeletonDef_Release      // decompiled: src/obj/obj3.cpp
+005082F4 DeferredDestroy          // (obj, destroy opd); decompiled: src/obj/obj3.cpp
+00583CC8 WorldObj_SetHidden       // vfunc +40 (name?); decompiled: src/obj/obj3.cpp
+005A0BCC WorldObj_Refresh         // vfunc +60 (name?); decompiled: src/obj/obj3.cpp
+0050A3E4 Texture_ConstructBase    // decompiled: src/font/image2.cpp
+00536E3C Texture_InitLayout       // decompiled: src/font/image2.cpp
+0050A2F0 Texture_ConstructRoot    // (name?)
+0050CAE8 Texture_ReleaseRef       // obj +288 (name?)
+005807D8 WorldObj_FreeExtra300    // (name?)
+0057DA68 WorldObj_DetachAll       // (name?)
+0057D8AC WorldObj_SetParent       // (obj, parent) (name?)
+00558CE8 WorldObj_DestructRoot    // (name?)
+00580094 WorldObj_RefreshSelf     // (obj, depth, flags) (name?)
+00584160 WorldObj_RefreshTree     // (obj, depth) (name?)
+0076611C SortedMap_Find3          // (map, const u32* key) -> value slot, map+16 if missing
+007845DC SortedMap_Find2          // same template (Sound_Find)
+000ADE04 SaveData_Reset           // defaults incl. high scores; decompiled: src/world/construct_members.cpp
+007865FC SaveData_Construct       // World +80; decompiled: src/world/construct_members.cpp
+0045C868 UserBlock_Construct      // World +4208, 9 x 0x20C80; decompiled: src/world/construct_members.cpp
+007866CC Fade_Construct           // World +0x128290; decompiled: src/world/construct_members.cpp
+00786724 ScaleBlend_Construct     // World +0x1282A4 / +0x1282C0; decompiled: src/world/construct_members.cpp
+00786758 Dof_Construct            // World +0x1282DC; decompiled: src/world/construct_members.cpp
+007867C8 Filter_Construct         // World +0x1283A8; decompiled: src/world/construct_members.cpp
+0078691C FrameRing_Construct      // (ring, size, size2): 3 x 224-byte buffers; decompiled: src/world/construct_members.cpp
+00734BA0 Vec3_Copy                // decompiled: src/world/construct_members.cpp
+00734CC8 Mat43_Copy               // 4 rows x 3 floats, stride 16; decompiled: src/world/construct_members.cpp
+00785BC4 AvlCmd_Insert                      // see file; decompiled: src/world/construct_animscript.cpp
+00786468 AvlVar_Insert                      // see file; decompiled: src/world/construct_animscript.cpp
+00785744 AvlCmd_InsertAt          // recursive insert (tree, key, value, node)
+00785FE8 AvlVar_InsertAt          //
+004B9CB8 AnimCmd_ConstructBase              // see file; decompiled: src/world/construct_animscript.cpp
+002EE304 Effects_Construct        // g 0x00F64C38 "Effects1"; decompiled: src/world/construct_globals.cpp (name?)
+0047C8A0 World_EnterLevel0        // HandleEvent enter, level 0 (name?)
+0050EB08 RenderBuffer_Construct   // 224 bytes (name?)
+
+# Anim-script commands and variables (World_Construct)
+0007AF18 AnimCmd_Clear12_24                 // see file; decompiled: src/world/construct_animscript.cpp
+007868D4 AnimCmd_D8D02D85_Construct         // AnimCmd (hash 0xD8D02D85); decompiled: src/world/construct_animscript.cpp
+000A7610 AnimVar_08D5E6EB_Construct         // AnimVar (hash 0x08D5E6EB); decompiled: src/world/construct_animscript.cpp
+000A78B4 AnimVar_String_Construct           // AnimVar "String" (hash 0x92685411); decompiled: src/world/construct_animscript.cpp
+000A7AAC AnimVar_Trigger_Construct          // AnimVar "Trigger" (hash 0xEB9EE198); decompiled: src/world/construct_animscript.cpp
+000A7C84 AnimVar_Spawner_Construct          // AnimVar "spawner" (hash 0xB2E59948); decompiled: src/world/construct_animscript.cpp
+000A7E5C AnimVar_SpawnerGroup_Construct     // AnimVar "SpawnerGroup" (hash 0xE89DF217); decompiled: src/world/construct_animscript.cpp
+000A8034 AnimVar_Laser_Construct            // AnimVar "Laser" (hash 0x044DC6AB); decompiled: src/world/construct_animscript.cpp
+000A820C AnimVar_LaserField_Construct       // AnimVar "LaserField" (hash 0xAB27550F); decompiled: src/world/construct_animscript.cpp
+000A83E4 AnimVar_AB39AA94_Construct         // AnimVar (hash 0xAB39AA94); decompiled: src/world/construct_animscript.cpp
+0006B6E0 AnimCmd_36DF0092_Construct         // AnimCmd (hash 0x36DF0092); decompiled: src/world/construct_animscript.cpp
+0006BAB0 AnimCmd_ActivateMixState_Construct // AnimCmd "ActivateMixState" (hash 0x5C27C9A8); decompiled: src/world/construct_animscript.cpp
+0006BD3C AnimCmd_37A78BFD_Construct         // AnimCmd (hash 0x37A78BFD); decompiled: src/world/construct_animscript.cpp
+0006C0C8 AnimCmd_B09EA328_Construct         // AnimCmd (hash 0xB09EA328); decompiled: src/world/construct_animscript.cpp
+0006C5B0 AnimCmd_794FCBAC_Construct         // AnimCmd (hash 0x794FCBAC); decompiled: src/world/construct_animscript.cpp
+0006CA38 AnimCmd_C495712B_Construct         // AnimCmd (hash 0xC495712B); decompiled: src/world/construct_animscript.cpp
+0006CBB0 AnimCmd_81E249E9_Construct         // AnimCmd (hash 0x81E249E9); decompiled: src/world/construct_animscript.cpp
+0006D3A0 AnimCmd_277F3268_Construct         // AnimCmd (hash 0x277F3268); decompiled: src/world/construct_animscript.cpp
+0006DD14 AnimCmd_Blast_Construct            // AnimCmd "Blast" (hash 0x03C599D8); decompiled: src/world/construct_animscript.cpp
+0006E9E4 AnimCmd_9A91BE79_Construct         // AnimCmd (hash 0x9A91BE79); decompiled: src/world/construct_animscript.cpp
+0006ECB8 AnimCmd_C04DBE16_Construct         // AnimCmd (hash 0xC04DBE16); decompiled: src/world/construct_animscript.cpp
+0006EDE4 AnimCmd_D1F7C236_Construct         // AnimCmd (hash 0xD1F7C236); decompiled: src/world/construct_animscript.cpp
+0006EFD4 AnimCmd_CameraShake_Construct      // AnimCmd "CameraShake" (hash 0xFC244EE1); decompiled: src/world/construct_animscript.cpp
+0006F614 AnimCmd_3D0E7A04_Construct         // AnimCmd (hash 0x3D0E7A04); decompiled: src/world/construct_animscript.cpp
+0006FCE0 AnimCmd_7F37BF6C_Construct         // AnimCmd (hash 0x7F37BF6C); decompiled: src/world/construct_animscript.cpp
+0006FE0C AnimCmd_F7635E87_Construct         // AnimCmd (hash 0xF7635E87); decompiled: src/world/construct_animscript.cpp
+0006F768 AnimCmd_B8B01DB7_Construct         // AnimCmd (hash 0xB8B01DB7); decompiled: src/world/construct_animscript.cpp
+0006FFF0 AnimCmd_CB291F57_Construct         // AnimCmd (hash 0xCB291F57); decompiled: src/world/construct_animscript.cpp
+0006F4B8 AnimCmd_A1D6F663_Construct         // AnimCmd (hash 0xA1D6F663); decompiled: src/world/construct_animscript.cpp
+000717B8 AnimCmd_Damage_Construct           // AnimCmd "Damage" (hash 0x77C17F6F); decompiled: src/world/construct_animscript.cpp
+00071C2C AnimCmd_852DA936_Construct         // AnimCmd (hash 0x852DA936); decompiled: src/world/construct_animscript.cpp
+00071ED4 AnimCmd_E127428A_Construct         // AnimCmd (hash 0xE127428A); decompiled: src/world/construct_animscript.cpp
+000720C0 AnimCmd_EFE548E4_Construct         // AnimCmd (hash 0xEFE548E4); decompiled: src/world/construct_animscript.cpp
+0007240C AnimCmd_B71440EF_Construct         // AnimCmd (hash 0xB71440EF); decompiled: src/world/construct_animscript.cpp
+000727DC AnimCmd_F32016BA_Construct         // AnimCmd (hash 0xF32016BA); decompiled: src/world/construct_animscript.cpp
+00072B64 AnimCmd_C99BEAB1_Construct         // AnimCmd (hash 0xC99BEAB1); decompiled: src/world/construct_animscript.cpp
+00072C6C AnimCmd_4E92FD25_Construct         // AnimCmd (hash 0x4E92FD25); decompiled: src/world/construct_animscript.cpp
+00072E38 AnimCmd_2BD82708_Construct         // AnimCmd (hash 0x2BD82708); decompiled: src/world/construct_animscript.cpp
+00073498 AnimCmd_C0F6B7A8_Construct         // AnimCmd (hash 0xC0F6B7A8); decompiled: src/world/construct_animscript.cpp
+00073598 AnimCmd_54836B14_Construct         // AnimCmd (hash 0x54836B14); decompiled: src/world/construct_animscript.cpp
+000738B0 AnimCmd_21595665_Construct         // AnimCmd (hash 0x21595665); decompiled: src/world/construct_animscript.cpp
+00073CB8 AnimCmd_3F74DF1A_Construct         // AnimCmd (hash 0x3F74DF1A); decompiled: src/world/construct_animscript.cpp
+00074058 AnimCmd_EnqueueSound_Construct     // AnimCmd "EnqueueSound" (hash 0x011DA807); decompiled: src/world/construct_animscript.cpp
+000744E8 AnimCmd_DE3DFE53_Construct         // AnimCmd (hash 0xDE3DFE53); decompiled: src/world/construct_animscript.cpp
+000747D8 AnimCmd_3CED7265_Construct         // AnimCmd (hash 0x3CED7265); decompiled: src/world/construct_animscript.cpp
+00074CDC AnimCmd_A21A00C2_Construct         // AnimCmd (hash 0xA21A00C2); decompiled: src/world/construct_animscript.cpp
+000750DC AnimCmd_53017FA7_Construct         // AnimCmd (hash 0x53017FA7); decompiled: src/world/construct_animscript.cpp
+00075424 AnimCmd_3E5144C6_Construct         // AnimCmd (hash 0x3E5144C6); decompiled: src/world/construct_animscript.cpp
+00075710 AnimCmd_9D57A511_Construct         // AnimCmd (hash 0x9D57A511); decompiled: src/world/construct_animscript.cpp
+00075A14 AnimCmd_1DDC65F3_Construct         // AnimCmd (hash 0x1DDC65F3); decompiled: src/world/construct_animscript.cpp
+000763A0 AnimCmd_719E1647_Construct         // AnimCmd (hash 0x719E1647); decompiled: src/world/construct_animscript.cpp
+00075D14 AnimCmd_02D3F78F_Construct         // AnimCmd (hash 0x02D3F78F); decompiled: src/world/construct_animscript.cpp
+00076ED4 AnimCmd_C583D95F_Construct         // AnimCmd (hash 0xC583D95F); decompiled: src/world/construct_animscript.cpp
+00077284 AnimCmd_5DA7E559_Construct         // AnimCmd (hash 0x5DA7E559); decompiled: src/world/construct_animscript.cpp
+00077630 AnimCmd_D5E698BB_Construct         // AnimCmd (hash 0xD5E698BB); decompiled: src/world/construct_animscript.cpp
+00077A8C AnimCmd_48AF45FB_Construct         // AnimCmd (hash 0x48AF45FB); decompiled: src/world/construct_animscript.cpp
+00077FE0 AnimCmd_060BD89F_Construct         // AnimCmd (hash 0x060BD89F); decompiled: src/world/construct_animscript.cpp
+00078E0C AnimCmd_F86D2B41_Construct         // AnimCmd (hash 0xF86D2B41); decompiled: src/world/construct_animscript.cpp
+000797A4 AnimCmd_11E4A454_Construct         // AnimCmd (hash 0x11E4A454); decompiled: src/world/construct_animscript.cpp
+0007A084 AnimCmd_Gadget_Construct           // AnimCmd "Gadget" (hash 0x7CDC084C); decompiled: src/world/construct_animscript.cpp
+0007A38C AnimCmd_E23B043C_Construct         // AnimCmd (hash 0xE23B043C); decompiled: src/world/construct_animscript.cpp
+0007A6E8 AnimCmd_55C11A40_Construct         // AnimCmd (hash 0x55C11A40); decompiled: src/world/construct_animscript.cpp
+0007AAA8 AnimCmd_599B5141_Construct         // AnimCmd (hash 0x599B5141); decompiled: src/world/construct_animscript.cpp
+0007B420 AnimCmd_9929642A_Construct         // AnimCmd (hash 0x9929642A); decompiled: src/world/construct_animscript.cpp
+0007B760 AnimCmd_98474D43_Construct         // AnimCmd (hash 0x98474D43); decompiled: src/world/construct_animscript.cpp
+0007B974 AnimCmd_C010ED68_Construct         // AnimCmd (hash 0xC010ED68); decompiled: src/world/construct_animscript.cpp
+0007B218 AnimCmd_E5B13789_Construct         // AnimCmd (hash 0xE5B13789); decompiled: src/world/construct_animscript.cpp
+0007BC80 AnimCmd_8D10E0C0_Construct         // AnimCmd (hash 0x8D10E0C0); decompiled: src/world/construct_animscript.cpp
+0007C298 AnimCmd_CFC9EE8E_Construct         // AnimCmd (hash 0xCFC9EE8E); decompiled: src/world/construct_animscript.cpp
+0007C4FC AnimCmd_9C86E926_Construct         // AnimCmd (hash 0x9C86E926); decompiled: src/world/construct_animscript.cpp
+0007C714 AnimCmd_FD0361CC_Construct         // AnimCmd (hash 0xFD0361CC); decompiled: src/world/construct_animscript.cpp
+0007C918 AnimCmd_553CAE39_Construct         // AnimCmd (hash 0x553CAE39); decompiled: src/world/construct_animscript.cpp
+0007CEFC AnimCmd_D22F2156_Construct         // AnimCmd (hash 0xD22F2156); decompiled: src/world/construct_animscript.cpp
+0007D154 AnimCmd_E573697F_Construct         // AnimCmd (hash 0xE573697F); decompiled: src/world/construct_animscript.cpp
+0007D340 AnimCmd_742543CF_Construct         // AnimCmd (hash 0x742543CF); decompiled: src/world/construct_animscript.cpp
+0007D678 AnimCmd_D1CD23E6_Construct         // AnimCmd (hash 0xD1CD23E6); decompiled: src/world/construct_animscript.cpp
+0007D83C AnimCmd_244FEDA4_Construct         // AnimCmd (hash 0x244FEDA4); decompiled: src/world/construct_animscript.cpp
+0007D9B4 AnimCmd_IfCollected_Construct      // AnimCmd "IfCollected" (hash 0x57A7C2AC); decompiled: src/world/construct_animscript.cpp
+0007E0A0 AnimCmd_IfEntity_Construct         // AnimCmd "IfEntity" (hash 0x905AD740); decompiled: src/world/construct_animscript.cpp
+0007E8D4 AnimCmd_0425A560_Construct         // AnimCmd (hash 0x0425A560); decompiled: src/world/construct_animscript.cpp
+0007EF7C AnimCmd_BFB3BF12_Construct         // AnimCmd (hash 0xBFB3BF12); decompiled: src/world/construct_animscript.cpp
+0007F5F0 AnimCmd_Impulse_Construct          // AnimCmd "Impulse" (hash 0x9D9B30D5); decompiled: src/world/construct_animscript.cpp
+0007FFA8 AnimCmd_70542137_Construct         // AnimCmd (hash 0x70542137); decompiled: src/world/construct_animscript.cpp
+000802E0 AnimCmd_96EE417F_Construct         // AnimCmd (hash 0x96EE417F); decompiled: src/world/construct_animscript.cpp
+0008058C AnimCmd_78811B3A_Construct         // AnimCmd (hash 0x78811B3A); decompiled: src/world/construct_animscript.cpp
+00080720 AnimCmd_0023335E_Construct         // AnimCmd (hash 0x0023335E); decompiled: src/world/construct_animscript.cpp
+00080A88 AnimCmd_BF775D1F_Construct         // AnimCmd (hash 0xBF775D1F); decompiled: src/world/construct_animscript.cpp
+00080B9C AnimCmd_F99C063E_Construct         // AnimCmd (hash 0xF99C063E); decompiled: src/world/construct_animscript.cpp
+00080CF8 AnimCmd_MapEntityToVar_Construct   // AnimCmd "MapEntityToVar" (hash 0xB45C81ED); decompiled: src/world/construct_animscript.cpp
+000812C0 AnimCmd_B54A6E29_Construct         // AnimCmd (hash 0xB54A6E29); decompiled: src/world/construct_animscript.cpp
+00081714 AnimCmd_27D06D5B_Construct         // AnimCmd (hash 0x27D06D5B); decompiled: src/world/construct_animscript.cpp
+00081800 AnimCmd_139E755D_Construct         // AnimCmd (hash 0x139E755D); decompiled: src/world/construct_animscript.cpp
+00081958 AnimCmd_OverrideColor_Construct    // AnimCmd "OverrideColor" (hash 0x3523AAF7); decompiled: src/world/construct_animscript.cpp
+00081E90 AnimCmd_3173666E_Construct         // AnimCmd (hash 0x3173666E); decompiled: src/world/construct_animscript.cpp
+00082D7C AnimCmd_72E44964_Construct         // AnimCmd (hash 0x72E44964); decompiled: src/world/construct_animscript.cpp
+00082F58 AnimCmd_694C0BD6_Construct         // AnimCmd (hash 0x694C0BD6); decompiled: src/world/construct_animscript.cpp
+00083154 AnimCmd_C18490E5_Construct         // AnimCmd (hash 0xC18490E5); decompiled: src/world/construct_animscript.cpp
+0008331C AnimCmd_F1F9B0AA_Construct         // AnimCmd (hash 0xF1F9B0AA); decompiled: src/world/construct_animscript.cpp
+000835A8 AnimCmd_EB05E07E_Construct         // AnimCmd (hash 0xEB05E07E); decompiled: src/world/construct_animscript.cpp
+000837B8 AnimCmd_PlaySound_Construct        // AnimCmd "PlaySound" (hash 0x37472E3B); decompiled: src/world/construct_animscript.cpp
+00084410 AnimCmd_F7E87759_Construct         // AnimCmd (hash 0xF7E87759); decompiled: src/world/construct_animscript.cpp
+00084624 AnimCmd_B38B0435_Construct         // AnimCmd (hash 0xB38B0435); decompiled: src/world/construct_animscript.cpp
+000848CC AnimCmd_QueueCutscene_Construct    // AnimCmd "QueueCutscene" (hash 0x8E523F7B); decompiled: src/world/construct_animscript.cpp
+00084CC0 AnimCmd_4EF98057_Construct         // AnimCmd (hash 0x4EF98057); decompiled: src/world/construct_animscript.cpp
+00084E34 AnimCmd_7C3AAA8B_Construct         // AnimCmd (hash 0x7C3AAA8B); decompiled: src/world/construct_animscript.cpp
+000852A8 AnimCmd_F22A1F1A_Construct         // AnimCmd (hash 0xF22A1F1A); decompiled: src/world/construct_animscript.cpp
+0008582C AnimCmd_F8D7BA3A_Construct         // AnimCmd (hash 0xF8D7BA3A); decompiled: src/world/construct_animscript.cpp
+000858F8 AnimCmd_299E87A1_Construct         // AnimCmd (hash 0x299E87A1); decompiled: src/world/construct_animscript.cpp
+00085608 AnimCmd_8D0B7E84_Construct         // AnimCmd (hash 0x8D0B7E84); decompiled: src/world/construct_animscript.cpp
+00085DB0 AnimCmd_7BA76B48_Construct         // AnimCmd (hash 0x7BA76B48); decompiled: src/world/construct_animscript.cpp
+0006E5CC AnimCmd_A80527F2_Construct         // AnimCmd (hash 0xA80527F2); decompiled: src/world/construct_animscript.cpp
+000864C8 AnimCmd_2FE3EEC7_Construct         // AnimCmd (hash 0x2FE3EEC7); decompiled: src/world/construct_animscript.cpp
+000868A0 AnimCmd_CB0BC14E_Construct         // AnimCmd (hash 0xCB0BC14E); decompiled: src/world/construct_animscript.cpp
+00086DD8 AnimCmd_881CF70D_Construct         // AnimCmd (hash 0x881CF70D); decompiled: src/world/construct_animscript.cpp
+00087034 AnimCmd_7B8C11AF_Construct         // AnimCmd (hash 0x7B8C11AF); decompiled: src/world/construct_animscript.cpp
+000871B0 AnimCmd_5E895638_Construct         // AnimCmd (hash 0x5E895638); decompiled: src/world/construct_animscript.cpp
+000872E8 AnimCmd_B5BFB042_Construct         // AnimCmd (hash 0xB5BFB042); decompiled: src/world/construct_animscript.cpp
+00087414 AnimCmd_060CB347_Construct         // AnimCmd (hash 0x060CB347); decompiled: src/world/construct_animscript.cpp
+0008762C AnimCmd_A58714CA_Construct         // AnimCmd (hash 0xA58714CA); decompiled: src/world/construct_animscript.cpp
+00086A34 AnimCmd_D73FDD6F_Construct         // AnimCmd (hash 0xD73FDD6F); decompiled: src/world/construct_animscript.cpp
+000877F0 AnimCmd_4023B405_Construct         // AnimCmd (hash 0x4023B405); decompiled: src/world/construct_animscript.cpp
+00087C14 AnimCmd_E39BD656_Construct         // AnimCmd (hash 0xE39BD656); decompiled: src/world/construct_animscript.cpp
+00087FFC AnimCmd_C4C20B66_Construct         // AnimCmd (hash 0xC4C20B66); decompiled: src/world/construct_animscript.cpp
+000882C8 AnimCmd_7C7D0917_Construct         // AnimCmd (hash 0x7C7D0917); decompiled: src/world/construct_animscript.cpp
+0008867C AnimCmd_DF50133E_Construct         // AnimCmd (hash 0xDF50133E); decompiled: src/world/construct_animscript.cpp
+00088D44 AnimCmd_6F88D96F_Construct         // AnimCmd (hash 0x6F88D96F); decompiled: src/world/construct_animscript.cpp
+000890DC AnimCmd_824684A7_Construct         // AnimCmd (hash 0x824684A7); decompiled: src/world/construct_animscript.cpp
+00089204 AnimCmd_270D8A8D_Construct         // AnimCmd (hash 0x270D8A8D); decompiled: src/world/construct_animscript.cpp
+000899A8 AnimCmd_DB38C585_Construct         // AnimCmd (hash 0xDB38C585); decompiled: src/world/construct_animscript.cpp
+00089D98 AnimCmd_C5EC47B7_Construct         // AnimCmd (hash 0xC5EC47B7); decompiled: src/world/construct_animscript.cpp
+00089F3C AnimCmd_72A5FAD0_Construct         // AnimCmd (hash 0x72A5FAD0); decompiled: src/world/construct_animscript.cpp
+0008A0E0 AnimCmd_C6D07177_Construct         // AnimCmd (hash 0xC6D07177); decompiled: src/world/construct_animscript.cpp
+00089BCC AnimCmd_AFAF3B97_Construct         // AnimCmd (hash 0xAFAF3B97); decompiled: src/world/construct_animscript.cpp
+0008A5D0 AnimCmd_AAECF6DB_Construct         // AnimCmd (hash 0xAAECF6DB); decompiled: src/world/construct_animscript.cpp
+0008B508 AnimCmd_7A1B655B_Construct         // AnimCmd (hash 0x7A1B655B); decompiled: src/world/construct_animscript.cpp
+0008B768 AnimCmd_A560F585_Construct         // AnimCmd (hash 0xA560F585); decompiled: src/world/construct_animscript2.cpp
+0008A818 AnimCmd_EC347D1E_Construct         // AnimCmd (hash 0xEC347D1E); decompiled: src/world/construct_animscript2.cpp
+0008ABE8 AnimCmd_72794E29_Construct         // AnimCmd (hash 0x72794E29); decompiled: src/world/construct_animscript2.cpp
+0008ADE4 AnimCmd_BE2D3C0A_Construct         // AnimCmd (hash 0xBE2D3C0A); decompiled: src/world/construct_animscript2.cpp
+0008AF24 AnimCmd_90F19CF0_Construct         // AnimCmd (hash 0x90F19CF0); decompiled: src/world/construct_animscript2.cpp
+0008B1C4 AnimCmd_5E2BDAD5_Construct         // AnimCmd (hash 0x5E2BDAD5); decompiled: src/world/construct_animscript2.cpp
+0008B968 AnimCmd_83B5EF3B_Construct         // AnimCmd (hash 0x83B5EF3B); decompiled: src/world/construct_animscript2.cpp
+0008BC34 AnimCmd_3FCA7434_Construct         // AnimCmd (hash 0x3FCA7434); decompiled: src/world/construct_animscript2.cpp
+0008BFB8 AnimCmd_7AEEF97E_Construct         // AnimCmd (hash 0x7AEEF97E); decompiled: src/world/construct_animscript2.cpp
+0008C2F0 AnimCmd_C3E53CB8_Construct         // AnimCmd (hash 0xC3E53CB8); decompiled: src/world/construct_animscript2.cpp
+0008C428 AnimCmd_SetMusic_Construct         // AnimCmd "SetMusic" (hash 0x83CB8F03); decompiled: src/world/construct_animscript2.cpp
+0008C6DC AnimCmd_851BFAA6_Construct         // AnimCmd (hash 0x851BFAA6); decompiled: src/world/construct_animscript2.cpp
+0008C8F0 AnimCmd_185B0922_Construct         // AnimCmd (hash 0x185B0922); decompiled: src/world/construct_animscript2.cpp
+0008C94C AnimCmd_8B4BC0F7_Construct         // AnimCmd (hash 0x8B4BC0F7); decompiled: src/world/construct_animscript2.cpp
+0008CC60 AnimCmd_19EA0BF7_Construct         // AnimCmd (hash 0x19EA0BF7); decompiled: src/world/construct_animscript2.cpp
+0008CE40 AnimCmd_7903D5A3_Construct         // AnimCmd (hash 0x7903D5A3); decompiled: src/world/construct_animscript2.cpp
+0008D16C AnimCmd_DF62E746_Construct         // AnimCmd (hash 0xDF62E746); decompiled: src/world/construct_animscript2.cpp
+0008D3B0 AnimCmd_80E15258_Construct         // AnimCmd (hash 0x80E15258); decompiled: src/world/construct_animscript2.cpp
+0008D6C0 AnimCmd_A1BA0E32_Construct         // AnimCmd (hash 0xA1BA0E32); decompiled: src/world/construct_animscript2.cpp
+0008DA24 AnimCmd_3292B062_Construct         // AnimCmd (hash 0x3292B062); decompiled: src/world/construct_animscript2.cpp
+0008FB3C AnimCmd_80866784_Construct         // AnimCmd (hash 0x80866784); decompiled: src/world/construct_animscript2.cpp
+0008FE28 AnimCmd_02C1266A_Construct         // AnimCmd (hash 0x02C1266A); decompiled: src/world/construct_animscript2.cpp
+00090124 AnimCmd_D1BB9067_Construct         // AnimCmd (hash 0xD1BB9067); decompiled: src/world/construct_animscript2.cpp
+000903F8 AnimCmd_ACE05706_Construct         // AnimCmd (hash 0xACE05706); decompiled: src/world/construct_animscript2.cpp
+000906E8 AnimCmd_908A1BE5_Construct         // AnimCmd (hash 0x908A1BE5); decompiled: src/world/construct_animscript2.cpp
+000909E4 AnimCmd_6F37AF4C_Construct         // AnimCmd (hash 0x6F37AF4C); decompiled: src/world/construct_animscript2.cpp
+00090E74 AnimCmd_92C1D3B7_Construct         // AnimCmd (hash 0x92C1D3B7); decompiled: src/world/construct_animscript2.cpp
+000910F4 AnimCmd_SetSoundRegister_Construct // AnimCmd "SetSoundRegister" (hash 0x71814B90); decompiled: src/world/construct_animscript2.cpp
+00091BBC AnimCmd_B6CD6FF1_Construct         // AnimCmd (hash 0xB6CD6FF1); decompiled: src/world/construct_animscript2.cpp
+00091CF0 AnimCmd_71AF687B_Construct         // AnimCmd (hash 0x71AF687B); decompiled: src/world/construct_animscript2.cpp
+00092168 AnimCmd_680DCBA4_Construct         // AnimCmd (hash 0x680DCBA4); decompiled: src/world/construct_animscript2.cpp
+0009241C AnimCmd_83F543E7_Construct         // AnimCmd (hash 0x83F543E7); decompiled: src/world/construct_animscript2.cpp
+00092628 AnimCmd_BE5506DB_Construct         // AnimCmd (hash 0xBE5506DB); decompiled: src/world/construct_animscript2.cpp
+00092870 AnimCmd_4151629E_Construct         // AnimCmd (hash 0x4151629E); decompiled: src/world/construct_animscript2.cpp
+00092B8C AnimCmd_C4162D5B_Construct         // AnimCmd (hash 0xC4162D5B); decompiled: src/world/construct_animscript2.cpp
+00092CAC AnimCmd_SmokeBomb_Construct        // AnimCmd "SmokeBomb" (hash 0x27DDC471); decompiled: src/world/construct_animscript2.cpp
+00093054 AnimCmd_2856A2FE_Construct         // AnimCmd (hash 0x2856A2FE); decompiled: src/world/construct_animscript2.cpp
+00093C80 AnimCmd_261AE896_Construct         // AnimCmd (hash 0x261AE896); decompiled: src/world/construct_animscript2.cpp
+000951C0 AnimCmd_SpawnRope_Construct        // AnimCmd "SpawnRope" (hash 0x8FEA4ECD); decompiled: src/world/construct_animscript2.cpp
+00095F10 AnimCmd_34F5E762_Construct         // AnimCmd (hash 0x34F5E762); decompiled: src/world/construct_animscript2.cpp
+000961F0 AnimCmd_E7024843_Construct         // AnimCmd (hash 0xE7024843); decompiled: src/world/construct_animscript2.cpp
+000963A0 AnimCmd_F5C11B05_Construct         // AnimCmd (hash 0xF5C11B05); decompiled: src/world/construct_animscript2.cpp
+000966D8 AnimCmd_F05E4B22_Construct         // AnimCmd (hash 0xF05E4B22); decompiled: src/world/construct_animscript2.cpp
+00096858 AnimCmd_0807A743_Construct         // AnimCmd (hash 0x0807A743); decompiled: src/world/construct_animscript2.cpp
+0009697C AnimCmd_0859822D_Construct         // AnimCmd (hash 0x0859822D); decompiled: src/world/construct_animscript2.cpp
+00096BD4 AnimCmd_98862C34_Construct         // AnimCmd (hash 0x98862C34); decompiled: src/world/construct_animscript2.cpp
+00096E00 AnimCmd_52FDEC56_Construct         // AnimCmd (hash 0x52FDEC56); decompiled: src/world/construct_animscript2.cpp
+00097188 AnimCmd_44873509_Construct         // AnimCmd (hash 0x44873509); decompiled: src/world/construct_animscript2.cpp
+000973A8 AnimCmd_7B192C82_Construct         // AnimCmd (hash 0x7B192C82); decompiled: src/world/construct_animscript2.cpp
+000975C8 AnimCmd_FA394507_Construct         // AnimCmd (hash 0xFA394507); decompiled: src/world/construct_animscript2.cpp
+000977E4 AnimCmd_1791056F_Construct         // AnimCmd (hash 0x1791056F); decompiled: src/world/construct_animscript2.cpp
+00097C58 AnimCmd_8A36758E_Construct         // AnimCmd (hash 0x8A36758E); decompiled: src/world/construct_animscript2.cpp
+00098B4C AnimCmd_986C30AA_Construct         // AnimCmd (hash 0x986C30AA); decompiled: src/world/construct_animscript2.cpp
+00099074 AnimCmd_A32A9127_Construct         // AnimCmd (hash 0xA32A9127); decompiled: src/world/construct_animscript2.cpp
+00099510 AnimCmd_844EA043_Construct         // AnimCmd (hash 0x844EA043); decompiled: src/world/construct_animscript2.cpp
+00099694 AnimCmd_4DBCDE4C_Construct         // AnimCmd (hash 0x4DBCDE4C); decompiled: src/world/construct_animscript2.cpp
+00099844 AnimCmd_E41C7FAC_Construct         // AnimCmd (hash 0xE41C7FAC); decompiled: src/world/construct_animscript2.cpp
+0009A340 AnimCmd_8B76ABE7_Construct         // AnimCmd (hash 0x8B76ABE7); decompiled: src/world/construct_animscript2.cpp
+0009A594 AnimCmd_A1DF0C27_Construct         // AnimCmd (hash 0xA1DF0C27); decompiled: src/world/construct_animscript2.cpp
+0009AF14 AnimCmd_FC622478_Construct         // AnimCmd (hash 0xFC622478); decompiled: src/world/construct_animscript2.cpp
+0009AC9C AnimCmd_91B5C0DD_Construct         // AnimCmd (hash 0x91B5C0DD); decompiled: src/world/construct_animscript2.cpp
+0009B170 AnimCmd_99F875FE_Construct         // AnimCmd (hash 0x99F875FE); decompiled: src/world/construct_animscript2.cpp
+0009B31C AnimCmd_053879BE_Construct         // AnimCmd (hash 0x053879BE); decompiled: src/world/construct_animscript2.cpp
+0009B78C AnimCmd_Climb_Construct            // AnimCmd "Climb" (hash 0x03D3CE95); decompiled: src/world/construct_animscript2.cpp
+0009B9A4 AnimCmd_467B546E_Construct         // AnimCmd (hash 0x467B546E); decompiled: src/world/construct_animscript2.cpp
+0009BCA4 AnimCmd_FF8D82F5_Construct         // AnimCmd (hash 0xFF8D82F5); decompiled: src/world/construct_animscript2.cpp
+0009BE48 AnimCmd_CB5C709B_Construct         // AnimCmd (hash 0xCB5C709B); decompiled: src/world/construct_animscript2.cpp
+0009C254 AnimCmd_76502F44_Construct         // AnimCmd (hash 0x76502F44); decompiled: src/world/construct_animscript2.cpp
+0009C420 AnimCmd_B164C699_Construct         // AnimCmd (hash 0xB164C699); decompiled: src/world/construct_animscript2.cpp
+0009C5B4 AnimCmd_F2F4B486_Construct         // AnimCmd (hash 0xF2F4B486); decompiled: src/world/construct_animscript2.cpp
+0009C818 AnimCmd_D6942D99_Construct         // AnimCmd (hash 0xD6942D99); decompiled: src/world/construct_animscript2.cpp
+0009CA50 AnimCmd_7148897C_Construct         // AnimCmd (hash 0x7148897C); decompiled: src/world/construct_animscript2.cpp
+0009CBB8 AnimCmd_9F872A66_Construct         // AnimCmd (hash 0x9F872A66); decompiled: src/world/construct_animscript2.cpp
+0009CDA0 AnimCmd_631AC87F_Construct         // AnimCmd (hash 0x631AC87F); decompiled: src/world/construct_animscript2.cpp
+0009CF34 AnimCmd_7B7D81C6_Construct         // AnimCmd (hash 0x7B7D81C6); decompiled: src/world/construct_animscript2.cpp
+0009D2A4 AnimCmd_4DFC58E3_Construct         // AnimCmd (hash 0x4DFC58E3); decompiled: src/world/construct_animscript2.cpp
+0009D514 AnimCmd_DDB84C75_Construct         // AnimCmd (hash 0xDDB84C75); decompiled: src/world/construct_animscript2.cpp
+0009D7C8 AnimCmd_E9BDD91F_Construct         // AnimCmd (hash 0xE9BDD91F); decompiled: src/world/construct_animscript2.cpp
+0009DBA0 AnimCmd_2D84F263_Construct         // AnimCmd (hash 0x2D84F263); decompiled: src/world/construct_animscript2.cpp
+0009DDF4 AnimCmd_7C2668C0_Construct         // AnimCmd (hash 0x7C2668C0); decompiled: src/world/construct_animscript2.cpp
+0009E4CC AnimCmd_D8B4387E_Construct         // AnimCmd (hash 0xD8B4387E); decompiled: src/world/construct_animscript2.cpp
+0009E78C AnimCmd_8318A329_Construct         // AnimCmd (hash 0x8318A329); decompiled: src/world/construct_animscript2.cpp
+0009EA0C AnimCmd_DE6B8CC1_Construct         // AnimCmd (hash 0xDE6B8CC1); decompiled: src/world/construct_animscript2.cpp
+0009EBA0 AnimCmd_LookAt_Construct           // AnimCmd "LookAt" (hash 0x862E9B12); decompiled: src/world/construct_animscript2.cpp
+0009EE54 AnimCmd_E5E03D0C_Construct         // AnimCmd (hash 0xE5E03D0C); decompiled: src/world/construct_animscript2.cpp
+0009F3FC AnimCmd_87E68E0C_Construct         // AnimCmd (hash 0x87E68E0C); decompiled: src/world/construct_animscript2.cpp
+0009F154 AnimCmd_D8F50A36_Construct         // AnimCmd (hash 0xD8F50A36); decompiled: src/world/construct_animscript2.cpp
+0009F750 AnimCmd_Pause_Construct            // AnimCmd "Pause" (hash 0x04862DD6); decompiled: src/world/construct_animscript2.cpp
+0009FDB0 AnimCmd_EC00CC0F_Construct         // AnimCmd (hash 0xEC00CC0F); decompiled: src/world/construct_animscript2.cpp
+0009F994 AnimCmd_C8982F97_Construct         // AnimCmd (hash 0xC8982F97); decompiled: src/world/construct_animscript2.cpp
+0009FAF0 AnimCmd_2D43CE4C_Construct         // AnimCmd (hash 0x2D43CE4C); decompiled: src/world/construct_animscript2.cpp
+0009FC54 AnimCmd_1A907D03_Construct         // AnimCmd (hash 0x1A907D03); decompiled: src/world/construct_animscript2.cpp
+0009FF10 AnimCmd_A6401484_Construct         // AnimCmd (hash 0xA6401484); decompiled: src/world/construct_animscript2.cpp
+000A045C AnimCmd_780316BB_Construct         // AnimCmd (hash 0x780316BB); decompiled: src/world/construct_animscript2.cpp
+000A0C5C AnimCmd_E37F3CE5_Construct         // AnimCmd (hash 0xE37F3CE5); decompiled: src/world/construct_animscript2.cpp
+000A19B0 AnimCmd_226C3AFD_Construct         // AnimCmd (hash 0x226C3AFD); decompiled: src/world/construct_animscript2.cpp
+000A220C AnimCmd_1FE37F1C_Construct         // AnimCmd (hash 0x1FE37F1C); decompiled: src/world/construct_animscript2.cpp
+000A2480 AnimCmd_SeqPlaySound_Construct     // AnimCmd "SeqPlaySound" (hash 0x22C0C4DC); decompiled: src/world/construct_animscript2.cpp
+000A2ADC AnimCmd_91949DE3_Construct         // AnimCmd (hash 0x91949DE3); decompiled: src/world/construct_animscript2.cpp
+000A2D14 AnimCmd_556D9F3B_Construct         // AnimCmd (hash 0x556D9F3B); decompiled: src/world/construct_animscript2.cpp
+000A2E88 AnimCmd_B34002B5_Construct         // AnimCmd (hash 0xB34002B5); decompiled: src/world/construct_animscript2.cpp
+000A3090 AnimCmd_58A0F34C_Construct         // AnimCmd (hash 0x58A0F34C); decompiled: src/world/construct_animscript2.cpp
+000A34C8 AnimCmd_6DBC265F_Construct         // AnimCmd (hash 0x6DBC265F); decompiled: src/world/construct_animscript2.cpp
+000A3688 AnimCmd_B39D2C46_Construct         // AnimCmd (hash 0xB39D2C46); decompiled: src/world/construct_animscript2.cpp
+000A39EC AnimCmd_5226D5B6_Construct         // AnimCmd (hash 0x5226D5B6); decompiled: src/world/construct_animscript2.cpp
+000A3B50 AnimCmd_AD4079D1_Construct         // AnimCmd (hash 0xAD4079D1); decompiled: src/world/construct_animscript2.cpp
+000A3D9C AnimCmd_FD97E64D_Construct         // AnimCmd (hash 0xFD97E64D); decompiled: src/world/construct_animscript2.cpp
+000A42C0 AnimCmd_CF110608_Construct         // AnimCmd (hash 0xCF110608); decompiled: src/world/construct_animscript2.cpp
+000A443C AnimCmd_E61291FE_Construct         // AnimCmd (hash 0xE61291FE); decompiled: src/world/construct_animscript2.cpp
+000A4878 AnimCmd_SetEntity_Construct        // AnimCmd "SetEntity" (hash 0xE79D5EA5); decompiled: src/world/construct_animscript2.cpp
+000A536C AnimCmd_35963BAE_Construct         // AnimCmd (hash 0x35963BAE); decompiled: src/world/construct_animscript2.cpp
+000A50E4 AnimCmd_A6FC4A0D_Construct         // AnimCmd (hash 0xA6FC4A0D); decompiled: src/world/construct_animscript2.cpp
+000A4DB4 AnimCmd_7BF7E38C_Construct         // AnimCmd (hash 0x7BF7E38C); decompiled: src/world/construct_animscript2.cpp
+000A4F4C AnimCmd_2CB7712F_Construct         // AnimCmd (hash 0x2CB7712F); decompiled: src/world/construct_animscript2.cpp
+000A5504 AnimCmd_SeqSetMusic_Construct      // AnimCmd "SeqSetMusic" (hash 0x8B642042); decompiled: src/world/construct_animscript2.cpp
+000A4710 AnimCmd_F6F2D4D6_Construct         // AnimCmd (hash 0xF6F2D4D6); decompiled: src/world/construct_animscript2.cpp
+000A4078 AnimCmd_9EAE7138_Construct         // AnimCmd (hash 0x9EAE7138); decompiled: src/world/construct_animscript2.cpp
+000A57EC AnimCmd_2C6A515D_Construct         // AnimCmd (hash 0x2C6A515D); decompiled: src/world/construct_animscript2.cpp
+000A5A04 AnimCmd_SetPosition_Construct      // AnimCmd "SetPosition" (hash 0x1F9E676B); decompiled: src/world/construct_animscript2.cpp
+000A45A4 AnimCmd_AC54A838_Construct         // AnimCmd (hash 0xAC54A838); decompiled: src/world/construct_animscript2.cpp
+000A5F08 AnimCmd_DAD61703_Construct         // AnimCmd (hash 0xDAD61703); decompiled: src/world/construct_animscript2.cpp
+000A60E4 AnimCmd_390D5F47_Construct         // AnimCmd (hash 0x390D5F47); decompiled: src/world/construct_animscript2.cpp
+000A629C AnimCmd_7EA392FC_Construct         // AnimCmd (hash 0x7EA392FC); decompiled: src/world/construct_animscript2.cpp
+000A63C0 AnimCmd_1BC5155F_Construct         // AnimCmd (hash 0x1BC5155F); decompiled: src/world/construct_animscript2.cpp
+000A6A3C AnimCmd_0DE7D203_Construct         // AnimCmd (hash 0x0DE7D203); decompiled: src/world/construct_animscript2.cpp
+000A6CA4 AnimCmd_B89DA664_Construct         // AnimCmd (hash 0xB89DA664); decompiled: src/world/construct_animscript2.cpp
+000A6E60 AnimCmd_F3813DE4_Construct         // AnimCmd (hash 0xF3813DE4); decompiled: src/world/construct_animscript2.cpp
+000A6FC0 AnimCmd_F831840C_Construct         // AnimCmd (hash 0xF831840C); decompiled: src/world/construct_animscript2.cpp
+000A71EC AnimCmd_FD7AAF5C_Construct         // AnimCmd (hash 0xFD7AAF5C); decompiled: src/world/construct_animscript2.cpp
+000A7488 AnimCmd_2D2232FC_Construct         // AnimCmd (hash 0x2D2232FC); decompiled: src/world/construct_animscript2.cpp
+0009C014 AnimCmd_7DE1DF64_Construct         // AnimCmd (hash 0x7DE1DF64); decompiled: src/world/construct_animscript2.cpp
+00099AFC AnimCmd_83F48558_Construct         // AnimCmd (hash 0x83F48558); decompiled: src/world/construct_animscript2.cpp
+00099CFC AnimCmd_2C1E0CC1_Construct         // AnimCmd (hash 0x2C1E0CC1); decompiled: src/world/construct_animscript2.cpp
+
+# Decompiled functions not listed above (added by tools/sync_symbols.py)
+00019210 Global_F557EC_Call       // decompiled: src/world/event_small.cpp
+000A884C Global_F9CDA8_Reset      // decompiled: src/world/event_small.cpp
+000A8868 Global_F558E1_SetIfPending // decompiled: src/world/event_small.cpp
+000AC83C Global_F558E4_Chain      // decompiled: src/world/event_small.cpp
+000ADDE8 Byte_Clear               // decompiled: src/world/construct_members.cpp
+000ADDF4 Bytes2_Clear             // decompiled: src/world/construct_members.cpp
+000B28F0 Trophy_GetValue200       // decompiled: src/world/event_small.cpp
+000CE0A8 Globals_ResetCE0A8       // decompiled: src/world/construct_globals.cpp
+000D949C Obj_Notify24             // decompiled: src/world/event_small.cpp
+000D94CC Obj_Notify26             // decompiled: src/world/event_small.cpp
+0029A40C Obj_Field244Clear        // decompiled: src/world/event_small.cpp
+002A3EBC Global_10592E8_Ensure    // decompiled: src/world/event_small.cpp
+002AAEA8 Global_F64A68_Clear      // decompiled: src/world/event_small.cpp
+002E8D74 TsaChunks_Register       // decompiled: src/world/construct_globals.cpp
+00346B84 Obj_Get4_280             // decompiled: src/world/event_small.cpp
+00346BB0 KvhChunks_Register       // decompiled: src/world/construct_globals.cpp
+0034CC30 Nop_0034CC30             // decompiled: src/world/event_small.cpp
+0037359C Obj_CurrentItem          // decompiled: src/world/event_small.cpp
+003A1808 Thunk_003A1500           // decompiled: src/world/event_small.cpp
+0043D9A4 Singleton658D4_Construct // decompiled: src/world/construct_globals.cpp
+00446960 Ptr_DerefNonZero         // decompiled: src/world/event_small.cpp
+0044D9C0 Global_10B0100_Set       // decompiled: src/world/event_small.cpp
+00454C88 Thunk_004545B0           // decompiled: src/world/event_small.cpp
+00476C30 World_Obj128164Is1       // decompiled: src/world/event_small.cpp
+004896F8 World_SetFlags44         // decompiled: src/world/event_small.cpp
+0048CEE0 Display_GetMode          // decompiled: src/world/event_small.cpp
+004A82DC Obj_Release36CDA8        // decompiled: src/world/event_small.cpp
+004BCE08 AnimScript_RegisterIffChunks // decompiled: src/world/construct_members.cpp
+004D2268 Obj_Get272_12            // decompiled: src/world/event_small.cpp
+004F4490 Nop_004F4490             // decompiled: src/world/event_small.cpp
+00735000 Obj_Bit192               // decompiled: src/world/event_small.cpp
+00735F7C Rgba_Set                 // decompiled: src/world/event_small.cpp
+00748C38 Obj_Bit172_18            // decompiled: src/world/event_small.cpp
+0074BFB0 Obj_Pair36Bit            // decompiled: src/world/event_small.cpp
+0074C5C4 Obj_SetBit2339_80        // decompiled: src/world/event_small.cpp
+0074DC34 Obj_Bit28                // decompiled: src/world/event_small.cpp
+0077B114 Mask_Test                // decompiled: src/world/event_small.cpp
+0077B170 Obj_SetBit4_8000         // decompiled: src/world/event_small.cpp
+00786658 PtrVector_ConstructInit  // decompiled: src/world/construct_members.cpp
+007867B0 Clear16_Construct        // decompiled: src/world/construct_members.cpp
+007867FC Obj1283C0_Construct      // decompiled: src/world/construct_members.cpp
+007868A4 Pair24_Construct         // decompiled: src/world/construct_members.cpp
+007868C4 View_SetFlag10           // decompiled: src/world/construct_members.cpp
+00787504 Obj_Bit360_31            // decompiled: src/world/event_small.cpp
+00787604 Obj_Bit216_24            // decompiled: src/world/event_small.cpp
+0078761C Obj_State160IsIdleA      // decompiled: src/world/event_small.cpp
+00787648 Obj_State160Is2or3       // decompiled: src/world/event_small.cpp
+00787674 Obj_Bit20                // decompiled: src/world/event_small.cpp
+0078779C Obj_SetBit136_400        // decompiled: src/world/event_small.cpp
+007877AC Obj_Bit52_29             // decompiled: src/world/event_small.cpp
+00787830 World_IsNotBusy          // decompiled: src/world/event_small.cpp
+0078784C Obj_Bit396_30            // decompiled: src/world/event_small.cpp
+00787864 Obj_SetBit396_40000000   // decompiled: src/world/event_small.cpp
+00787914 World_GetValue72IfFlag   // decompiled: src/world/event_small.cpp
+00787938 World_SetValue72IfFlag   // decompiled: src/world/event_small.cpp
+00787950 Obj_State160IsIdleB      // decompiled: src/world/event_small.cpp
+00787A2C Obj_Ptr100IsNull         // decompiled: src/world/event_small.cpp
+00787A48 Obj_Get100_8             // decompiled: src/world/event_small.cpp
+00787B6C Obj_State160IsIdleC      // decompiled: src/world/event_small.cpp
+00787B80 Obj_SetFlags40           // decompiled: src/world/event_small.cpp
+00787D2C Obj_State160Is3          // decompiled: src/world/event_small.cpp
+00787D44 World_TimeScaleOff       // decompiled: src/world/event_small.cpp
+00787D5C World_AudioScaleOff      // decompiled: src/world/event_small.cpp
+00787DB0 Obj_SetBit24128_80       // decompiled: src/world/event_small.cpp
+00787E30 Obj_Bit188_20            // decompiled: src/world/event_small.cpp
+00787E50 Obj_Byte656Bit6          // decompiled: src/world/event_small.cpp
+00788188 PtrVecRef_Count          // decompiled: src/world/event_small.cpp
+007881A4 Array60_At               // decompiled: src/world/event_small.cpp
+007881C4 Obj_Get2416              // decompiled: src/world/event_small.cpp
+007D3B80 Singleton_011DF320_Get   // decompiled: src/world/event_small.cpp

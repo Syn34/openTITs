@@ -35,7 +35,7 @@ constexpr u32 Mem_Alloc = 0x0054ED38;          // (size, pool, align)
 constexpr u32 Mem_FreeFrom = 0x0054EE6C;       // (p, pool)
 constexpr u32 String_Copy = 0x00553684;        // (dst, src, size)
 constexpr u32 qsort = 0x0071EC28;              // (base, count, size, compare opd)
-constexpr u32 Award_Register = 0x0056A6E0;     // (u32 name hash) (name?)
+constexpr u32 Hash_ToString = 0x0056A6E0;       // (u32 hash) -> "0x%x" (String_Format)
 }  // namespace mfn
 
 // sceNpTrophy import stubs.

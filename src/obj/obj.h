@@ -16,7 +16,7 @@ constexpr u32 String_Copy = 0x00553684;        // (dst, src, size): always termi
 constexpr u32 String_HashNoCase = 0x0056A710;
 constexpr u32 WorldObj_SetScale = 0x0057D100;
 constexpr u32 WorldObj_SetGroup = 0x00583E54;
-constexpr u32 WorldObj_UpdateMatrix = 0x0057D000;  // (obj) (name?)
+constexpr u32 WorldObj_MarkDirty = 0x0057D000;     // (obj) marks it and its parent dirty (0x800)
 constexpr u32 UiElem8_Attach = 0x004D7CF8;
 // The four class maps' lookups (same template as Map_Find, still recompiled).
 constexpr u32 MapA_Find = 0x007A6D74, MapB_Find = 0x007A6BEC, MapC_Find = 0x00793884, MapD_Find = 0x00793A0C;

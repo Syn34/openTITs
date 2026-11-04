@@ -136,7 +136,7 @@ DECOMP(004D7CF8, UiElem8_Attach) {
         store<f32>(c + 68, static_cast<f32>(y));
         store<f32>(c + 72, static_cast<f32>(z));
         // r4..r6 = root +148 / +152 / +144 here in the original; the callee reads only r3.
-        call(ctx, ofn::WorldObj_UpdateMatrix, {c});
+        call(ctx, ofn::WorldObj_MarkDirty, {c});
         if (recurse != 0) call(ctx, ofn::UiElem8_Attach, {e, c, recurse});
     }
 }
@@ -148,7 +148,7 @@ constexpr u32 Mem_Alloc = 0x0054ED38;
 constexpr u32 FreeList_Init = 0x00551A58;
 constexpr u32 WorldObj_Construct = 0x00580708;  // (obj, s32 kind) (name?)
 constexpr u32 WorldClass_Copy = 0x005858D4;     // (cls) -> a copy to instance from (name?)
-constexpr u32 WorldObj_MakeExtra = 0x00526494;  // () -> object for +288 (name?)
+constexpr u32 Light_Alloc = 0x00526494;         // () -> AglLight for +288
 }  // namespace ifn
 
 constexpr u32 kObjListVtbl = 0x00B0F008;     // ApeTFreeList<...> of 352-byte objects
@@ -217,7 +217,7 @@ DECOMP(005A05E8, WorldObj_Instance) {
     store<u32>(o + kObjClassData, load<u32>(cls + 104));
     if (extra != 0) store<u8>(extra + 212, static_cast<u8>(load<u8>(extra + 212) & 0x7F));
     if (load<u32>(o + kObjClassData) != 0 && load<u32>(o + kObjExtra) == 0) {
-        store<u32>(o + kObjExtra, static_cast<u32>(call(ctx, ifn::WorldObj_MakeExtra)));
+        store<u32>(o + kObjExtra, static_cast<u32>(call(ctx, ifn::Light_Alloc)));
         Vcall(ctx, o, kObjVfnChanged);
     }
     if (owns) Vcall(ctx, cls, kVfnRelease);

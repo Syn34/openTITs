@@ -192,7 +192,7 @@ DECOMP(000B2280, Awards_Load) {
             else if (g == kHashSilver)
                 points = kPointsSilver;
             store<u32>(entry + 4, points);
-            call(ctx, mfn::Award_Register, {load<u32>(name)});
+            call(ctx, mfn::Hash_ToString, {load<u32>(name)});
         }
     }
 

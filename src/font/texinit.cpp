@@ -10,7 +10,7 @@ constexpr u32 Mem_Alloc = 0x0054ED38;
 constexpr u32 FreeList_Init = 0x00551A58;        // (list, elem_size, count, heap, bool)
 constexpr u32 Texture_Construct = 0x0053A284;    // (AglTexture*) (name?)
 constexpr u32 Mem_GetDefaultStack = 0x005525FC;
-constexpr u32 String_CompareNoCase = 0x00555D70; // (a, b) -> 0 when equal (name?)
+constexpr u32 String_CompareNoCase2 = 0x00555D70; // strcasecmp wrapper
 constexpr u32 Image_FromBmp = 0x0050A6C8;        // (data, size, Image*, path) -> 1 on success (name?)
 constexpr u32 Image_FromTga = 0x0050ACAC;        // (data, size, Image*, path) -> 1 on success (name?)
 constexpr u32 Texture_FromGtf = 0x0053A448;      // (tex, data, size, 0) -> result (name?)
@@ -96,11 +96,11 @@ DECOMP(0053A640, Texture_Init) {
 
     u64 result;  // r3 as the decoder returned it
     bool upload = true;
-    if (static_cast<u32>(call(ctx, xfn::String_CompareNoCase, {ext, kExtBmp})) == 0) {
+    if (static_cast<u32>(call(ctx, xfn::String_CompareNoCase2, {ext, kExtBmp})) == 0) {
         result = call(ctx, xfn::Image_FromBmp, {data, size, img, path});
-    } else if (static_cast<u32>(call(ctx, xfn::String_CompareNoCase, {ext, kExtTga})) == 0) {
+    } else if (static_cast<u32>(call(ctx, xfn::String_CompareNoCase2, {ext, kExtTga})) == 0) {
         result = call(ctx, xfn::Image_FromTga, {data, size, img, path});
-    } else if (static_cast<u32>(call(ctx, xfn::String_CompareNoCase, {ext, kExtGtf})) == 0) {
+    } else if (static_cast<u32>(call(ctx, xfn::String_CompareNoCase2, {ext, kExtGtf})) == 0) {
         result = call(ctx, xfn::Texture_FromGtf, {t, data, size, 0});
         upload = false;
     } else {
