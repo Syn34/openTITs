@@ -1272,28 +1272,28 @@
 007A1210 RenderLayer_Delete       // decompiled: src/gfx/render_layer.cpp
 
 # World-object classes (light, emitter, camera instances)
-0057F5D8 WorldObj_ForEach         // (obj, fn opd, arg, bool recurse) (name?)
-0057F5CC WorldObj_SetRootCb       // node->+256 = arg; return 1
-0057A53C SlotEntry_Alloc          // (obj) (name?)
-00579C50 SlotEntry_Update         // (entry, obj) (name?)
-005816F0 Skeleton_Create          // (ApeSkeletonDef*) -> ApeSkeleton*
-00581B34 WorldObj_CopyFrom        // (dst, src, bool own_class) (name?)
-005A0394 WorldObj_AddToWorld      // (obj) (name?)
+0057F5D8 WorldObj_ForEach         // (obj, fn opd, arg, bool recurse) (name?); decompiled: src/obj/obj5.cpp
+0057F5CC WorldObj_SetRootCb       // node->+256 = arg; return 1; decompiled: src/obj/obj5.cpp
+0057A53C SlotEntry_Alloc          // (obj) (name?); decompiled: src/obj/obj5_slot.cpp
+00579C50 SlotEntry_Update         // (entry, obj) (name?); decompiled: src/obj/obj5_slot.cpp
+005816F0 Skeleton_Create          // (ApeSkeletonDef*) -> ApeSkeleton*; decompiled: src/obj/obj5.cpp
+00581B34 WorldObj_CopyFrom        // (dst, src, bool own_class) (name?); decompiled: src/obj/obj5.cpp
+005A0394 WorldObj_AddToWorld      // (obj) (name?); decompiled: src/obj/obj5.cpp
 0057EE00 WorldObj_UpdateLod       // (obj, 0, 0) (name?)
-00556F98 Box_Center               // (box, out) -> out
-00556F60 Box_SetPoint             // (box, p): min = max = p
-005570F0 Box_Transform            // (out, in, matrix) (name?)
-00557430 Box_Overlaps             // (name?)
-00576E28 Zone_Overlaps            // (name?)
-00577338 Zones_MaskFor            // (zones, obj) -> mask (name?)
-00583FBC Skeleton_DumpBone        // (skel, bone, depth, bits) (name?)
-005A2024 LightSlot_Move           // (u16 to, u16 from) (name?)
+00556F98 Box_Center               // (box, out) -> out; decompiled: src/obj/box.cpp
+00556F60 Box_SetPoint             // (box, p): min = max = p; decompiled: src/obj/box.cpp
+005570F0 Box_Transform            // (out, in, matrix) (name?); decompiled: src/obj/box.cpp
+00557430 Box_Overlaps             // (name?); decompiled: src/obj/box.cpp
+00576E28 Zone_Overlaps            // (name?); decompiled: src/obj/zone.cpp
+00577338 Zones_MaskFor            // (zones, obj) -> mask (name?); decompiled: src/obj/zone.cpp
+00583FBC Skeleton_DumpBone        // (skel, bone, depth, bits) (name?); decompiled: src/obj/obj5.cpp
+005A2024 LightSlot_Move           // (u16 to, u16 from) (name?); decompiled: src/obj/obj5_light.cpp
 005A2528 LightInstance_Register   // (name?)
-005A31C8 LightInstance_Update     // (name?)
-005A2BA8 LightInstance_New        // (ApeLightDef*)
-005A3FFC EmitterInstance_New      // (def, bool)
-0058E3E4 EmitterDef_Copy          // (def, bool) (name?)
-005A59AC CameraInstance_New       // (def)
+005A31C8 LightInstance_Update     // (name?); decompiled: src/obj/obj5_light.cpp
+005A2BA8 LightInstance_New        // (ApeLightDef*); decompiled: src/obj/obj5_new.cpp
+005A3FFC EmitterInstance_New      // (def, bool); decompiled: src/obj/obj5_new.cpp
+0058E3E4 EmitterDef_Copy          // (def, bool) (name?); decompiled: src/obj/obj5_new.cpp
+005A59AC CameraInstance_New       // (def); decompiled: src/obj/obj5_new.cpp
 
 # Decompiled functions not listed above (added by tools/sync_symbols.py)
 0057F794 WorldObj_AddChild        // decompiled: src/obj/obj4.cpp
@@ -1496,3 +1496,23 @@
 007A14F0 RenderLayerZ_Delete      // decompiled: src/gfx/layers3.cpp
 007A155C RenderLayerUI_Delete     // decompiled: src/gfx/layers3.cpp
 007A15C8 RenderLayerResolve_Delete // decompiled: src/gfx/layers3.cpp
+
+# World-object helpers (boxes, zones, skeletons, instance factories)
+00557690 Box_Corners              // (box, f32 out[8][4], matrix) (name?)
+00556F10 Box_FromSphere           // (box, sphere) (name?)
+005814A0 Skeleton_Init            // (skeleton, def) (name?)
+00580D70 Skeleton_CopyPose        // (dst, src) (name?)
+0057DEEC WorldObj_CopyBase        // (dst, src, flags) (name?)
+005947D0 World_AddObjects         // (world *0x01194598, collector*, 1) (name?)
+00597814 World_AddObject          // (world, obj) (name?)
+005A9AA8 Collector_Add            // ForEach callback (node, collector*) (name?)
+0055498C Debug_PrintBone          // empty stub (name?)
+0058E140 EmitterDef_New           // (0, 0) (name?)
+005000C8 EmitterData_Copy         // (data, bool) (name?)
+005003F4 EmitterData_Release      // (name?)
+00500714 EmitterSystem_Bind       // (system, data) (name?)
+00569388 PointInstance_Load       // (src, point) (name?)
+
+# Decompiled functions not listed above (added by tools/sync_symbols.py)
+005A6C48 PointInstance_Create     // decompiled: src/obj/obj5_new.cpp
+005A74A8 Kind13_Construct         // decompiled: src/obj/obj5_new.cpp
