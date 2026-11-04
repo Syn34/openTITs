@@ -889,8 +889,8 @@
 00558CE8 ApeRoot_Destruct         // root destructor, vtable 0xB242B8; decompiled: src/obj/obj4_res.cpp
 00580094 WorldObj_DumpTree        // (obj, depth, flags): debug dump, printing compiled out; decompiled: src/obj/obj4.cpp
 00584160 Skeleton_DumpTree        // (skel, depth); decompiled: src/obj/obj4.cpp
-0076611C SortedMap_Find3                   // already named; used by all Handle_Resolve* variants
-007845DC SortedMap_Find2          // same template (Sound_Find)
+0076611C SortedMap_Find3          // sorted map find (obj.h layout), default compare 0x00F35F90; decompiled: src/obj/obj16_map.cpp
+007845DC SortedMap_Find2          // sorted map find (obj.h layout), default compare 0x00F39AC0; decompiled: src/obj/obj16_map.cpp
 000ADE04 SaveData_Reset           // defaults incl. high scores; decompiled: src/world/construct_members.cpp
 007865FC SaveData_Construct       // World +80; decompiled: src/world/construct_members.cpp
 0045C868 UserBlock_Construct      // World +4208, 9 x 0x20C80; decompiled: src/world/construct_members.cpp
@@ -1330,7 +1330,7 @@
 0079CD0C Material_Bind            // (AglMaterial*, Shader*) anim, blend, depth/cull, textures, programs, shader slot 8; decompiled: src/gfx/layers4_material.cpp
 0052EFE0 Pool_DestructPart        // (part*) Mem_FreePool(p, +4&1 ? 5 : 4, +12>>28) unless +8&1 (name?); decompiled: src/gfx/layers4.cpp
 0036A5F0 SplitStyle_Set           // (SplitStyle** slot, SplitStyle*, 0) (name?)
-0075EA74 Map_Get                  // (Map*, const u32* key) -> value slot (name?)
+0075EA74 Map_Get                  // sorted map find (obj.h layout), default compare 0x00F35B20; decompiled: src/obj/obj16_map.cpp
 0050D744 RenderLayers_Register    // 17 per-layer blocks (name?); decompiled: src/gfx/layers3.cpp
 0052E164 RenderLayers_Construct   // 17 inlined RenderLayer constructors (name?); decompiled: src/gfx/layers3.cpp
 
@@ -1541,7 +1541,7 @@
 002E1DB0 Obj_Call2E0930ById                // (o, id, b, c..g) -> sub_002E0930(o, elem by +468, ..., 1); decompiled: src/world/hevent2_c.cpp (name?)
 002E0930 sub_002E0930                      // 9 args, the last on the stack (name?)
 00470660 Msg_Post                          // (msg, key, a, b): queue {msg, obj, a, b, flag} for key's subscribers (max 128); decompiled: src/world/hevent2_c.cpp (name?)
-00786C0C SortedMap_Find786C0C              // (map 0x010BB738, const u32* key) -> slot (name?)
+00786C0C SortedMap_Find786C0C     // sorted map find (obj.h layout), default compare 0x00F39E08; decompiled: src/obj/obj16_map.cpp
 
 # Render layer passes, pool, material bind
 005145C0 ResolveLayer_ItemRect    // (RenderLayer*, DrawItem*, f32* x0, y0, x1, y1) item bound -> screen rect (name?); decompiled: src/gfx/layers4_draw.cpp
@@ -1632,8 +1632,8 @@
 000CFA24 Objects_FinishJobA                // waits 0x01021D80, deletes job A's listed objects; decompiled: src/world/hevent3_k.cpp (name?)
 000AE78C SaveParams_Set                    // (dst, a, 128, b, 128, c, 1024, d, 64) (name?)
 00556038 String_Dup                        // (const char*) -> pooled copy (Mem_AllocPool / strcpy) (name?)
-00771DD0 SortedMap_Remove                  // (map, const u32* key) (name?)
-0073B608 SortedMap_Find73B608              // (map, const u32* key) -> value slot (name?)
+00771DD0 SortedMap_Remove         // sorted map remove (obj.h layout), default compare 0x00F35F90; decompiled: src/obj/obj16_map.cpp
+0073B608 SortedMap_Find73B608     // sorted map find (obj.h layout), default compare 0x00F2FD30; decompiled: src/obj/obj16_map.cpp
 0045C7A8 UserBlock_Reset45C7A8             // (UserBlock*) (name?)
 004D245C Ui_OpenScreen4D245C               // (name, a, b) -> Element* (name?)
 004D21B4 UiElem_SetX4D21B4                 // (Element*, s32 x, 0) (name?)
@@ -2517,7 +2517,7 @@
 00555CC0 Mem_FreeIfSet            // (p): Mem_FreePool(p, 0, 0) if p (name?); decompiled: src/obj/obj13_misc.cpp
 0055F27C Holder_FreeData          // (h): Mem_FreePool(h->+4, 0, 0) if set (name?); decompiled: src/obj/obj13_misc.cpp
 0056C8A4 GcmMem_Free              // (p): cellGcmUnmapEaIoAddress(p), Mem_FreePool(p, 6, 0) (name?); decompiled: src/obj/obj13_misc.cpp
-005616C8 FsOp_ResultData          // (op) -> op+8 if FsOp_GetError(op) == 0 else 0 (name?); decompiled: src/obj/obj13_misc.cpp
+005616C8 FsOp_ResultData          // (op) -> result (name?); decompiled: src/obj/obj13_misc.cpp
 0056510C MemStack_AllocTop        // (s, size) -> block from +16 downwards (16-aligned) within +0, or 0 (name?); decompiled: src/obj/obj13_misc.cpp
 005602F8 Bezier_Tangent           // void Bezier_Tangent(f32 out[4], const f32 ctrl[4][4], f32 u); decompiled: src/obj/obj14_small.cpp
 004FD2E0 DrawRecordList_Add       // void DrawRecordList_Add(ListOwner* o, const SubmitRecord* r); decompiled: src/obj/obj14_draw.cpp
@@ -2809,7 +2809,7 @@
 0079F810 SetHalf_0079F810         // void (this, const f32 v[3]): this->+48..+56 = v * 0.5 (k at 0x0079F808); decompiled: src/gfx/gfx7_misc.cpp (name?)
 0079FE28 SetHalf_0079FE28         // void (this, const f32 v[3]): this->+48..+56 = v * 0.5 (k at 0x0079FE20); decompiled: src/gfx/gfx7_misc.cpp (name?)
 007A5F20 FiosAllocator_Alloc      // void* FiosAllocator_Alloc(this, u32 size, u32 align_log2): memalign(1 << (align_log2 & 31), size); decompiled: src/gfx/gfx7_misc.cpp (name?)
-00523AA8 LoadShaders_00523AA8     // void (s32 which): Shader_LoadGroup(which == 1 ? 4 : 3); decompiled: src/gfx/gfx7_misc.cpp (name?)
+00523AA8 LoadShaders_00523AA8     // returns the shader group texture used by Debug_DrawLine; decompiled: src/gfx/gfx7_misc.cpp
 00536958 SetFlag_00536958         // u32 (bool on): the u8 at 0x00F671DC = on && config +35 (returned); decompiled: src/gfx/gfx7_misc.cpp (name?)
 00548900 Call_00548900            // void (): 00527D34(), then 005E31B8(gcm context, 0); decompiled: src/gfx/gfx7_misc.cpp (name?)
 00548B88 Call_00548B88            // void (): 00527DAC(mode) unless mem_stats +184 (mode) == 2; decompiled: src/gfx/gfx7_misc.cpp (name?)
@@ -2975,10 +2975,6 @@
 00565378 EventSlot_ThreadMain     // (slot): worker loop: wait flag +20, clear, call +32(+36), set flag +28; never returns (left recompiled: infinite loop, not testable in the harness) (name?)
 0056E4C0 WorkQueue_Fn56E4C0       // void WorkQueue_Fn56E4C0(QueueRef* r, u32 first, u32* stride, u32* count, u32* counter) DrawRecordList_Flush's ; decompiled: src/obj/obj15_job.cpp
 005536F4 Debug_NewPrim            // Prim* Debug_NewPrim(u32 kind, const u8 colour[4], u8 c) A prim from the current pool's free list (made with Me; decompiled: src/obj/obj15_small.cpp
-00562998 InputDevice_Fn562998     // (d), InputDevice_UpdateButtons's callee (name?)
-00571B90 Fn_571B90                // Fn_562944's callee (name?)
-0058C9B0 Records_Fn58C9B0         // (obj, record, x), Records_Process58CE24's callee (name?)
-005754E0 Fn_5754E0                // (u16 count), Render_Pass575C34's callee (name?)
 0057328C Fn_57328C                // void Fn_57328C(): with command buffers pending: Fn_572908, waits for the busy word, runs every non-empty buffe; decompiled: src/obj/obj15_small.cpp
 
 # World event handler callees, part 11
@@ -3252,34 +3248,31 @@
 00572728 ShaderRec_Bind           // void ShaderRec_Bind(Rec* r) Binds r->+144's shader (Fn_5E4514 on its +16, Fn_5E3F18 with its +17 count) unless; decompiled: src/obj/obj15_small.cpp
 005784E8 Quad_IntersectSegment    // bool Quad_IntersectSegment(const f32 quad[4][4], const f32 a[3], const f32 b[3], f32* t) The segment a-b again; decompiled: src/obj/obj15_small.cpp
 0059578C WorldObj_CanBatch        // bool WorldObj_CanBatch(Obj* o) A visible (+164 0x8000) static object (+320 bits 9-12 == 1) with a class, no pa; decompiled: src/obj/obj15_small.cpp
-0073343C Map_Find73343C                       // (map, const u32* key) -> value slot (name?)
-007A7C74 HashMap_Remove2          // (map, const u32* key): GeomDef map remove (name?)
-007A7E68 LightDefMap_Remove       // (name?)
-0073374C CameraDefMap_Find        // 007A805C its remove (name?)
-007A805C CameraDefMap_Remove      // (name?)
-007A6A64 PointDefMap_Find         // 007A8544 its remove (name?)
-007A8544 PointDefMap_Remove       // (name?)
-007936FC SplineDefMap_Find        // 007A8738 its remove (name?)
-007A8738 SplineDefMap_Remove      // (name?)
-007A8D40 CameraInstMap_Remove     // (MapA_Find's remove) (name?)
-007A8F34 PointInstMap_Remove      // (name?)
-007A92F4 SplineInstMap_Remove     // (name?)
+007A7C74 HashMap_Remove2          // HashMap_Remove2; decompiled: src/obj/obj16_map.cpp
+007A7E68 LightDefMap_Remove       // LightDefMap_Remove; decompiled: src/obj/obj16_map.cpp
+0073374C CameraDefMap_Find        // CameraDefMap_Find; decompiled: src/obj/obj16_map.cpp
+007A805C CameraDefMap_Remove      // CameraDefMap_Remove; decompiled: src/obj/obj16_map.cpp
+007A6A64 PointDefMap_Find         // PointDefMap_Find; decompiled: src/obj/obj16_map.cpp
+007A8544 PointDefMap_Remove       // PointDefMap_Remove; decompiled: src/obj/obj16_map.cpp
+007936FC SplineDefMap_Find        // SplineDefMap_Find; decompiled: src/obj/obj16_map.cpp
+007A8738 SplineDefMap_Remove      // SplineDefMap_Remove; decompiled: src/obj/obj16_map.cpp
+007A8D40 CameraInstMap_Remove     // CameraInstMap_Remove; decompiled: src/obj/obj16_map.cpp
+007A8F34 PointInstMap_Remove      // PointInstMap_Remove; decompiled: src/obj/obj16_map.cpp
+007A92F4 SplineInstMap_Remove     // SplineInstMap_Remove; decompiled: src/obj/obj16_map.cpp
 005792F0 Quads_Prepare            // (view +816, quads, u16 count, out matrices, u16* out count) (name?)
-004FED94 Mesh_FindByHash          // (hash) -> mesh (name?)
-00526300 Mesh_Default             // () -> mesh (name?)
-0056B2B8 Debug_DrawPrimPool       // () (name?)
-00527FEC LodTarget_Apply          // (target, rec, rec +64, u32 level) (name?)
+004FED94 Mesh_FindByHash          // Mesh* Mesh_FindByHash(u32 hash): *MeshMap_Find(*0x010DDC80, &hash) (name?); decompiled: src/obj/obj16_small.cpp
+00526300 Mesh_Default             // AglTopology* Mesh_Default(): default 4x4 sphere topology made on first use (name?); decompiled: src/obj/obj16_small.cpp
+00527FEC LodTarget_Apply          // void LodTarget_Apply(t, const f32 m[3][4], x, level): {-level, rec} into draw list A/B/C + 80-byte record (name?); decompiled: src/obj/obj16_small.cpp
 00589BC8 Slots_UpdateDirect       // (o): Slots_UpdateA's non-job path (name?)
-0058B128 Slots_PrepareB           // () (name?)
+0058B128 Slots_PrepareB           // void Slots_PrepareB(): fills the slot job parameter block 0x0118B180 (name?); decompiled: src/obj/obj16_small.cpp
 0058B4B8 Slots_UpdateDirectB      // () (name?)
 0059845C Lights_Tick              // (list; f1 dt) (name?)
-005981D4 Lights_Tick2             // (list; f1 dt) (name?)
+005981D4 Lights_Tick2             // void Lights_Tick2(List*): waits for the jobs, then per job Fn_597C9C + UpdateTransforms / AddGroup (name?); decompiled: src/obj/obj16_small.cpp
 00597158 Lights_TickB             // (list; f1 dt) (name?)
-0055E56C Archive_Ready            // () -> bool (name?)
 00566950 StrBuf_Grow              // (buf, s32 capacity) (name?)
-00580B18 WorldObj_ApplyHeader     // (obj, const InstanceHeader*) (name?)
-0057D3E8 WorldObj_ApplyHeaderB    // (obj, const InstanceHeader*): point / spline instances (name?)
-0059E9B0 PointDef_GetDefault      // () -> the default point definition (name?)
+00580B18 WorldObj_ApplyHeader     // void WorldObj_ApplyHeader(Obj*, const InstanceHeader*): ApplyHeaderB + +320..322 bits, kind 8/10 mode, light reference (name?); decompiled: src/obj/obj16_small.cpp
+0057D3E8 WorldObj_ApplyHeaderB    // bool WorldObj_ApplyHeaderB(Obj*, const InstanceHeader*): name, matrix (y = z x x), dirty, scale, flags, definition (vfunc +44) (name?); decompiled: src/obj/obj16_small.cpp
+0059E9B0 PointDef_GetDefault      // ApePointDef* PointDef_GetDefault(): from the free list, base + point ctor inlined, cached (name?); decompiled: src/obj/obj16_small.cpp
 005E30D8 Gcm_Fn5E30D8             // (context, 6 x u32) (name?)
 005E4514 Gcm_Fn5E4514             // (context, 0, shader +16) (name?)
 005E3F18 Gcm_Fn5E3F18             // (context, 0, 1, 0, u16, 0) (name?)
@@ -3365,3 +3358,94 @@
 002E3AEC Session_Start2E3AEC                  // (Session*, Entry*, 0) (name?)
 004651A0 Ctx_Init4651A0                       // (Ctx*, Object* player; f32 dt) (name?)
 000AE418 Save_Mark0AE418                      // (SaveSlot*, u8*) (name?)
+
+# Engine core helpers, part 16 (sorted-map template, input, light volumes)
+005754E0 LightVolumes_Draw        // void LightVolumes_Draw(): per light volume view/proj/viewproj/frustum corners, draws outside / stencil passes, resets stencil state (name?); decompiled: src/obj/obj16_draw.cpp
+0073343C PointMap_Find            // PointMap_Find: sorted map find (compare 0x00F2E1B0) (name?); decompiled: src/obj/obj16_map.cpp
+00732F38 SortedMap_Find732F38     // sorted map find (obj.h layout), default compare 0x00F2E0B8; decompiled: src/obj/obj16_map.cpp
+007330C0 SortedMap_Remove7330C0   // sorted map remove (obj.h layout), default compare 0x00F2E0C0; decompiled: src/obj/obj16_map.cpp
+007332B4 SortedMap_Find7332B4     // sorted map find (obj.h layout), default compare 0x00F2E0C8; decompiled: src/obj/obj16_map.cpp
+00733F8C SortedMap_Find733F8C     // sorted map find (obj.h layout), default compare 0x00F2E978; decompiled: src/obj/obj16_map.cpp
+00734750 SortedMap_Find734750     // sorted map find (obj.h layout), default compare 0x00F2E998; decompiled: src/obj/obj16_map.cpp
+00742EF4 SortedMap_Find742EF4     // sorted map find (obj.h layout), default compare 0x00F31078; decompiled: src/obj/obj16_map.cpp
+00744748 SortedMap_Remove744748   // sorted map remove (obj.h layout), default compare 0x00F31A10; decompiled: src/obj/obj16_map.cpp
+00744AC4 SortedMap_Find744AC4     // sorted map find (obj.h layout), default compare 0x00F2E0C0; decompiled: src/obj/obj16_map.cpp
+00744C4C SortedMap_Find744C4C     // sorted map find (obj.h layout), default compare 0x00F31A68; decompiled: src/obj/obj16_map.cpp
+00744DD4 SortedMap_Find744DD4     // sorted map find (obj.h layout), default compare 0x00F31A70; decompiled: src/obj/obj16_map.cpp
+00744F5C SortedMap_Find744F5C     // sorted map find (obj.h layout), default compare 0x00F31A78; decompiled: src/obj/obj16_map.cpp
+00749A14 SortedMap_Find749A14     // sorted map find (obj.h layout), default compare 0x00F32D40; decompiled: src/obj/obj16_map.cpp
+00749B9C SortedMap_Find749B9C     // sorted map find (obj.h layout), default compare 0x00F32D48; decompiled: src/obj/obj16_map.cpp
+007504F0 SortedMap_Find7504F0     // sorted map find (obj.h layout), default compare 0x00F33888; decompiled: src/obj/obj16_map.cpp
+00759654 SortedMap_Find759654     // sorted map find (obj.h layout), default compare 0x00F348A0; decompiled: src/obj/obj16_map.cpp
+007597DC SortedMap_Remove7597DC   // sorted map remove (obj.h layout), default compare 0x00F348A0; decompiled: src/obj/obj16_map.cpp
+0075C054 SortedMap_Find75C054     // sorted map find (obj.h layout), default compare 0x00F34E48; decompiled: src/obj/obj16_map.cpp
+0075DC84 SortedMap_Remove75DC84   // sorted map remove (obj.h layout), default compare 0x00F32D40; decompiled: src/obj/obj16_map.cpp
+0075DE78 SortedMap_Remove75DE78   // sorted map remove (obj.h layout), default compare 0x00F32D48; decompiled: src/obj/obj16_map.cpp
+0075E06C SortedMap_Remove75E06C   // sorted map remove (obj.h layout), default compare 0x00F35B00; decompiled: src/obj/obj16_map.cpp
+0075E260 SortedMap_Find75E260     // sorted map find (obj.h layout), default compare 0x00F35B00; decompiled: src/obj/obj16_map.cpp
+0075E3E8 SortedMap_Find75E3E8     // sorted map find (obj.h layout), default compare 0x00F35B08; decompiled: src/obj/obj16_map.cpp
+0075E570 SortedMap_Find75E570     // sorted map find (obj.h layout), default compare 0x00F35B10; decompiled: src/obj/obj16_map.cpp
+0075E6F8 SortedMap_Remove75E6F8   // sorted map remove (obj.h layout), default compare 0x00F35B18; decompiled: src/obj/obj16_map.cpp
+0075E8EC SortedMap_Find75E8EC     // sorted map find (obj.h layout), default compare 0x00F35B18; decompiled: src/obj/obj16_map.cpp
+0075EE10 SortedMap_Remove75EE10   // sorted map remove (obj.h layout), default compare 0x00F35B30; decompiled: src/obj/obj16_map.cpp
+0075F004 SortedMap_Find75F004     // sorted map find (obj.h layout), default compare 0x00F35B30; decompiled: src/obj/obj16_map.cpp
+0075F18C SortedMap_Remove75F18C   // sorted map remove (obj.h layout), default compare 0x00F35B38; decompiled: src/obj/obj16_map.cpp
+0075F380 SortedMap_Find75F380     // sorted map find (obj.h layout), default compare 0x00F35B38; decompiled: src/obj/obj16_map.cpp
+0075F508 SortedMap_Remove75F508   // sorted map remove (obj.h layout), default compare 0x00F35B40; decompiled: src/obj/obj16_map.cpp
+0075F6FC SortedMap_Find75F6FC     // sorted map find (obj.h layout), default compare 0x00F35B40; decompiled: src/obj/obj16_map.cpp
+0075F884 SortedMap_Remove75F884   // sorted map remove (obj.h layout), default compare 0x00F35B48; decompiled: src/obj/obj16_map.cpp
+0075FA78 SortedMap_Find75FA78     // sorted map find (obj.h layout), default compare 0x00F35B48; decompiled: src/obj/obj16_map.cpp
+0075FC00 SortedMap_Find75FC00     // sorted map find (obj.h layout), default compare 0x00F35B50; decompiled: src/obj/obj16_map.cpp
+0075FD88 SortedMap_Find75FD88     // sorted map find (obj.h layout), default compare 0x00F35B58; decompiled: src/obj/obj16_map.cpp
+00760538 SortedMap_Find760538     // sorted map find (obj.h layout), default compare 0x00F35C30; decompiled: src/obj/obj16_map.cpp
+0076116C SortedMap_Find76116C     // sorted map find (obj.h layout), default compare 0x00F35DC8; decompiled: src/obj/obj16_map.cpp
+0076673C SortedMap_Find76673C     // sorted map find (obj.h layout), default compare 0x00F35FB0; decompiled: src/obj/obj16_map.cpp
+00766DCC SortedMap_Find766DCC     // sorted map find (obj.h layout), default compare 0x00F36078; decompiled: src/obj/obj16_map.cpp
+00766F54 SortedMap_Find766F54     // sorted map find (obj.h layout), default compare 0x00F36080; decompiled: src/obj/obj16_map.cpp
+00768AC0 SortedMap_Find768AC0     // sorted map find (obj.h layout), default compare 0x00F36AB8; decompiled: src/obj/obj16_map.cpp
+0076AA2C SortedMap_Find76AA2C     // sorted map find (obj.h layout), default compare 0x00F37240; decompiled: src/obj/obj16_map.cpp
+0076ABB4 SortedMap_Find76ABB4     // sorted map find (obj.h layout), default compare 0x00F37248; decompiled: src/obj/obj16_map.cpp
+0076D6A0 SortedMap_Remove76D6A0   // sorted map remove (obj.h layout), default compare 0x00F375B8; decompiled: src/obj/obj16_map.cpp
+0076D894 SortedMap_Find76D894     // sorted map find (obj.h layout), default compare 0x00F375B8; decompiled: src/obj/obj16_map.cpp
+0076DA1C SortedMap_Remove76DA1C   // sorted map remove (obj.h layout), default compare 0x00F375C0; decompiled: src/obj/obj16_map.cpp
+0076DC10 SortedMap_Find76DC10     // sorted map find (obj.h layout), default compare 0x00F375C0; decompiled: src/obj/obj16_map.cpp
+0076DD98 SortedMap_Find76DD98     // sorted map find (obj.h layout), default compare 0x00F375C8; decompiled: src/obj/obj16_map.cpp
+0076DF20 SortedMap_Find76DF20     // sorted map find (obj.h layout), default compare 0x00F375D0; decompiled: src/obj/obj16_map.cpp
+0076E0A8 SortedMap_Find76E0A8     // sorted map find (obj.h layout), default compare 0x00F375D8; decompiled: src/obj/obj16_map.cpp
+0076E230 SortedMap_Find76E230     // sorted map find (obj.h layout), default compare 0x00F375E0; decompiled: src/obj/obj16_map.cpp
+00774154 SortedMap_Find774154     // sorted map find (obj.h layout), default compare 0x00F38238; decompiled: src/obj/obj16_map.cpp
+0077B1FC SortedMap_Find77B1FC     // sorted map find (obj.h layout), default compare 0x00F38980; decompiled: src/obj/obj16_map.cpp
+00783C8C SortedMap_Remove783C8C   // sorted map remove (obj.h layout), default compare 0x00F39AA8; decompiled: src/obj/obj16_map.cpp
+00783E80 SortedMap_Find783E80     // sorted map find (obj.h layout), default compare 0x00F39AA8; decompiled: src/obj/obj16_map.cpp
+00784308 SortedMap_Find784308     // sorted map find (obj.h layout), default compare 0x00F39AB8; decompiled: src/obj/obj16_map.cpp
+00784764 SortedMap_Find784764     // sorted map find (obj.h layout), default compare 0x00F39AD0; decompiled: src/obj/obj16_map.cpp
+00786A18 SortedMap_Remove786A18   // sorted map remove (obj.h layout), default compare 0x00F39E08; decompiled: src/obj/obj16_map.cpp
+00788B48 SortedMap_Remove788B48   // sorted map remove (obj.h layout), default compare 0x00F39F68; decompiled: src/obj/obj16_map.cpp
+00788D3C SortedMap_Find788D3C     // sorted map find (obj.h layout), default compare 0x00F39F68; decompiled: src/obj/obj16_map.cpp
+007890F8 SortedMap_Find7890F8     // sorted map find (obj.h layout), default compare 0x00F3A018; decompiled: src/obj/obj16_map.cpp
+0079A9F8 SortedMap_Find79A9F8     // sorted map find (obj.h layout), default compare 0x00F3B1D0; decompiled: src/obj/obj16_map.cpp
+0079AB80 SortedMap_Find79AB80     // sorted map find (obj.h layout), default compare 0x00F3B1E0; decompiled: src/obj/obj16_map.cpp
+0079AD08 SortedMap_Remove79AD08   // sorted map remove (obj.h layout), default compare 0x00F2E0C8; decompiled: src/obj/obj16_map.cpp
+0079AEFC SortedMap_Remove79AEFC   // sorted map remove (obj.h layout), default compare 0x00F3B1E0; decompiled: src/obj/obj16_map.cpp
+0079C8C4 MeshMap_Find             // sorted map find (obj.h layout), default compare 0x00F3BB88; decompiled: src/obj/obj16_map.cpp
+0079E4C8 SortedMap_Remove79E4C8   // sorted map remove (obj.h layout), default compare 0x00F3BB80; decompiled: src/obj/obj16_map.cpp
+0079E7B0 SortedMap_Remove79E7B0   // sorted map remove (obj.h layout), default compare 0x00F3BB88; decompiled: src/obj/obj16_map.cpp
+00562998 InputDevice_RecordOrPlay // void InputDevice_RecordOrPlay(InputDevice* d): controller.bin record (mode 1) / playback (mode 2) of the device's +4/+32/+128/+16 (name?); decompiled: src/obj/obj16_small.cpp
+00571B90 Fs_OpenRead              // FsHandle* Fs_OpenRead(path, FsOptions r4-r6): Fs_Open(path,"rb"), or with option bit 0x20 Fios_OpenAsync polled with sysutil callbacks (name?); decompiled: src/obj/obj16_small.cpp
+0058C9B0 Records_AddToViews       // void Records_AddToViews(-, Rec*, ViewSet*): sphere-vs-frusta cull, appends {src, owner, fade} per view (atomic cursor += 16) (name?); decompiled: src/obj/obj16_small.cpp
+0056B2B8 Debug_ReleasePrimPool    // void Debug_ReleasePrimPool(): frees every live prim of the current pool (was Debug_DrawPrimPool) (name?); decompiled: src/obj/obj16_small.cpp
+0055E56C InputMgr_Shutdown        // bool InputMgr_Shutdown(): destroys + frees every input device, then Archive_Return1A, returns 1 (was Archive_Ready) (name?); decompiled: src/obj/obj16_small.cpp
+00586BF4 Gcm_PrebuildPassCommands // void Gcm_PrebuildPassCommands(): records two 64-byte command buffers at 0x01195900, lengths at 0x01195980 (name?); decompiled: src/obj/obj16_small.cpp
+0056AD18 Debug_RetirePrims        // void Debug_RetirePrims(): prims of pool 0x01164E5C not of kind 3/7/8/9 become 9, then Stream_PutByteCmd (name?); decompiled: src/obj/obj16_small.cpp
+0059AB34 Jobs_SubmitF2C8          // bool Jobs_SubmitF2C8(Owner*, Worker*): fills the worker job block, WorkQueue_SubmitF2C8 (name?); decompiled: src/obj/obj16_small.cpp
+00576F28 Volume_SetFromBox        // void Volume_SetFromBox(Volume*, const Box*, const f32 q[4], const f32 off[3]) (name?); decompiled: src/obj/obj16_small.cpp
+00569CDC Debug_DrawLine           // void Debug_DrawLine(const Line*): a 2-vertex debug line when the draw buffer has room (name?); decompiled: src/obj/obj16_small.cpp
+00572228 Sysutil_StaticInit       // void Sysutil_StaticInit(): static initializer: sysutil mutex, job dispatcher mutexes / queues (name?); decompiled: src/obj/obj16_small.cpp
+00597C9C Fn_597C9C                // (list, u32, s32, u32* objs, u32* groups, u32* na, u32* nb): Lights_Tick2's (name?)
+00574370 LightVolume_DrawOutside  // (light, -, viewproj, proj, corners; f1 light +128) (name?)
+00573600 LightVolume_DrawStencil  // (light, mats, viewproj, proj, corners; f1 light +128) (name?)
+007A6EFC Sphere_FrustumFine       // (view, const f32 centre[3], const f32 extent[3], src +80) -> bool (name?)
+00576BD8 Obb_FromBox              // (out, const Box*, const f32 m[4][4]) (name?)
+0057CE08 Def_FindByHash57CE08     // (u32 hash) -> definition (name?)
+0059A84C Fn_59A84C                // (u32* items, u32 count) -> u32 (name?)
+00572D20 Fn_572D20                // (obj, -, out, -; f1): reads r3, r5, f1 only (name?)
