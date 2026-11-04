@@ -847,7 +847,7 @@
 004FDBA8 View_GetCurrent          // (name?); decompiled: src/view/view2.cpp
 0056A358 Mat4_Ortho               // (out, l, r, b, t, n, f) (name?); decompiled: src/view/view2.cpp
 00515750 VertexFormat_Get         // (name?); decompiled: src/gfx/render_state.cpp
-00554C28 Mat4_Sub554C28           // (a, out, src) (unknown)
+00554C28 Mat4_Invert              // (out, tmp, in): adjugate / det; decompiled: src/view/camera_mat.cpp
 0051279C Draw_InvalidateState     // invalidate cached render state; decompiled: src/gfx/render_state.cpp
 
 # World objects 2-3; World construction
@@ -1324,3 +1324,36 @@
 007A9A44 Instance_SetBoundRadius  // decompiled: src/obj/class_light.cpp
 007A9EE0 CameraInstance_ShowAndNotify // decompiled: src/obj/class_camera.cpp
 007A9EE4 CameraInstance_DeletingDestruct // decompiled: src/obj/class_camera.cpp
+
+# Render layers, camera split records
+0028E320 sub_0028E320             // () called first by Objects_EndFrame
+0079CD0C Material_Bind            // (Material*, Shader*) (name?)
+0052EFE0 Pool_DestructPart        // (obj+12) (name?)
+0036A5F0 SplitStyle_Set           // (SplitStyle** slot, SplitStyle*, 0) (name?)
+0075EA74 Map_Get                  // (Map*, const u32* key) -> value slot (name?)
+0050D744 RenderLayers_Register    // 17 per-layer blocks (name?)
+0052E164 RenderLayers_Construct   // 17 inlined RenderLayer constructors (name?)
+
+# Decompiled functions not listed above (added by tools/sync_symbols.py)
+000D0298 Objects_EndFrame         // decompiled: src/world/rjobs.cpp
+002AB920 Camera_SetSplitStyle     // decompiled: src/view/camera.cpp
+002AB9B0 Camera_GetSplitA         // decompiled: src/view/camera.cpp
+002AB9D0 Camera_GetSplitB         // decompiled: src/view/camera.cpp
+002AB9F0 Camera_GetSplitXform     // decompiled: src/view/camera.cpp
+002ABA10 Camera_GetSplitColourA   // decompiled: src/view/camera.cpp
+002ABAB8 Camera_GetSplitColourB   // decompiled: src/view/camera.cpp
+002F481C MainView_NotifyIfPending // decompiled: src/world/rjobs.cpp
+0036AA04 SplitStyle_GetColourA    // decompiled: src/view/camera.cpp
+0036AA68 SplitStyle_GetColourB    // decompiled: src/view/camera.cpp
+004291C8 ArenaPair_SwapIfRequested // decompiled: src/world/rjobs.cpp
+0042AD98 FrameUpdate_Nop          // decompiled: src/world/rjobs.cpp
+004583F8 View_DrawBackdrop        // decompiled: src/view/camera_backdrop.cpp
+00512C30 DrawItem_Draw            // decompiled: src/gfx/layer2.cpp
+00512DA0 RenderLayer_End          // decompiled: src/gfx/layer2.cpp
+00513394 RenderLayer_RadixSort    // decompiled: src/gfx/layer2.cpp
+0052DD00 RenderLayers_Destroy     // decompiled: src/gfx/layer2.cpp
+005539E4 Vec4_Transform           // decompiled: src/view/camera_mat.cpp
+00554A2C Mat4_Determinant         // decompiled: src/view/camera_mat.cpp
+0056A81C SortEntries              // decompiled: src/gfx/layer2.cpp
+005AC60C DoubleSlot_Flip          // decompiled: src/world/rjobs.cpp
+007A430C Mat4_Copy                // decompiled: src/view/camera_mat.cpp
