@@ -1745,17 +1745,17 @@
 0057E14C WorldObj_UpdateSphere    // (obj) -> &obj+240: world bounding sphere (name?); decompiled: src/obj/obj8_math.cpp
 005602BC Spline_PointAt           // (SplineData*, f1 t, f32 out[3], bool) (name?); decompiled: src/obj/obj8_math.cpp
 00560A40 Spline_Nearest           // (SplineData*, const f32 p[3], u32* seg, f32* dist) -> f1 (name?); decompiled: src/obj/obj8_math.cpp
-0059ECF8 SplineDef_Construct      // (ApeSplineDef*) (name?)
-0055F2BC SplineArray_Init         // (array +112, u32 count, bool, bool) (name?)
-00593630 Comps_QueryAnimA         // (peer, comps, s32 comp, s32 channel, bool) -> bool, 473 insns (name?)
-00592DA8 Comps_QueryAnimB         // (peer, comps, s32 comp, s32 channel, bool) -> bool: "%sPos..." props, 541 insns (name?)
-00592890 Comps_QueryAnimC         // (peer, comps, s32 comp, bool) -> bool, 322 insns (name?)
-0057E8D0 Skeleton_Update          // (ApeSkeleton*), 302 insns (name?)
-0057E260 WorldObj_UpdateChildLod  // (child, const f32 parent_scale[3]), recursive, 412 insns (name?)
+0059ECF8 SplineDef_Construct      // (ApeSplineDef*): kind 25, vtables 0x00B246B0 / 0x00B24830 (name?); decompiled: src/obj/obj9_spline.cpp
+0055F2BC SplineArray_Init         // (SplineArray*, u32 count, bool closed, bool flag30) -> header word: 64-byte points from pool 0 (name?); decompiled: src/obj/obj9_spline.cpp
+00593630 Comps_QueryAnimA         // (peer, comps, s32 comp, s32 channel, bool anim_only) -> bool: rotation oscillation peer +128 (name?); decompiled: src/obj/obj9_comps.cpp
+00592DA8 Comps_QueryAnimB         // (peer, comps, s32 comp, s32 channel, bool anim_only) -> bool: "%sPos..." position oscillation peer +132 (name?); decompiled: src/obj/obj9_comps.cpp
+00592890 Comps_QueryAnimC         // (peer, comps, s32 comp, bool anim_only) -> bool: spline animation block peer +136 (name?); decompiled: src/obj/obj9_comps.cpp
+0057E8D0 Skeleton_Update          // (ApeSkeleton*): dirty (+31 0x80) -> world matrices from local + parents (name?); decompiled: src/obj/obj9_skel.cpp
+0057E260 WorldObj_UpdateChildLod  // (child, const f32 parent_scale[3]) -> 1: world matrix, sphere, children, Show (name?); decompiled: src/obj/obj9_lod.cpp
 0057C408 Peer_GetMatrix           // (peer, f1, f32 out[4][4]) -> bool copy (name?), 618 insns
-005922A8 World_AddGroup           // (world, group root obj): reads r4 only (name?), 296 insns
-0055F008 Spline_NearestSeg        // (data, p, 0, u32 last, u32* seg, f32* dist) -> f1 (name?)
-00560058 Spline_Eval              // (data, f1 t, out, data+12, bool) (name?)
+005922A8 World_AddGroup           // (world unused, group root): world matrices of the tree + Finish tail (name?); decompiled: src/obj/obj9_world.cpp
+0055F008 Spline_NearestSeg        // (const SplineArray*, const f32 p[3], u32 first, u32 end, u32* seg, f32* dist) -> f1 curve parameter in [0,1] (name?); decompiled: src/obj/obj9_spline.cpp
+00560058 Spline_Eval              // (SplineArray*, f1 t, f32 out[3], u32 start seg, bool backward) -> r3 seg: cubic Bezier (name?); decompiled: src/obj/obj9_spline.cpp
 
 # Shader types and shaders
 0050E410 Render_Init                      // () render buffers, layers, heap (gfx.h Agl_Init50E410) (name?); decompiled: src/gfx/draw3.cpp
@@ -1956,3 +1956,10 @@
 00425980 Treasure_Finish425980                // (Treasure*) (name?)
 000D93FC Obj_Owner0D93FC                      // (Object*) -> Object* (name?)
 000C9FC8 Save_Profile0C9FC8                   // (save obj) -> profile, +976 u8 (name?)
+
+# World-object helpers, part 9 (splines, skeleton update)
+0055F244 SplineArray_Reset        // (SplineArray*): all four words 0 (name?); decompiled: src/obj/obj9_spline.cpp
+0055ED60 SplineSeg_Nearest        // (const f32 ctrl[4][4], const f32 p[3], f32* dist, s32 iterations) -> f1 t (name?)
+0056D374 Matrix_NormalizeInPlace  // (f32 m[4][4]) -> m: 0x0056D268(m, m) (name?); decompiled: src/obj/obj9_lod.cpp
+0056D268 Matrix_Normalize         // (f32 dst[4][4], const f32 src[4][4]) (name?)
+007335C4 SplineMap_Find           // (map = *(*0x00F8F158 +16), const u32* name hash) -> ApeSplineDef** slot (name?)
