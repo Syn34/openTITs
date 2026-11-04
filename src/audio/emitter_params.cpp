@@ -23,7 +23,7 @@ f32 tune(u32 obj) { return field<f32>(obj, kTuningValue).get(); }
 s32 low_word_fctiwz(f64 x) { return static_cast<s32>(static_cast<u32>(rt::fctiw(x, true))); }
 
 // (rand(range) / 90) * 360, with C truncating division (mulhw magic).
-u32 Random_Angle(PPUContext& ctx, s32 range) {
+u32 Spread_Angle(PPUContext& ctx, s32 range) {
     const s32 r = static_cast<s32>(call(ctx, kRandomize, {static_cast<u64>(static_cast<s64>(range))}));
     return static_cast<u32>(r / 90) * 360u;
 }
@@ -61,7 +61,7 @@ DECOMP(00441D68, Emitter_BuildParams) {
         field<u32>(p, 20) = field<u32>(cur, 44);
         u32 angle = field<u32>(cur, 52);
         if (ref<u8>(cur + 56) == 0) {
-            angle = Random_Angle(ctx, field<s32>(cur, 48));
+            angle = Spread_Angle(ctx, field<s32>(cur, 48));
             field<u32>(cur, 52) = angle;
         }
         field<u32>(p, 24) = angle;
@@ -140,7 +140,7 @@ DECOMP(00441D68, Emitter_BuildParams) {
         wanted = field<u32>(prev, 52);
     } else if (field<s32>(cur, 48) != field<s32>(prev, 48)) {
         field<s32>(cur, 48) = field<s32>(prev, 48);
-        wanted = Random_Angle(ctx, field<s32>(prev, 48));
+        wanted = Spread_Angle(ctx, field<s32>(prev, 48));
     }
     const u32 now = field<u32>(cur, 52);
     if (now != wanted) {

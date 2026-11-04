@@ -69,13 +69,13 @@ DECOMP(006D5EE0, Voice_Play) {
         return ret(ctx, 0u);
     }
     const u32 entry = static_cast<u32>(call(ctx, sfn::Bank_GetSounds, {bank})) + static_cast<u32>(id) * kSoundEntrySize;
-    const f64 gain = callf(ctx, sfn::Snd_DbToGain, {static_cast<u64>(static_cast<s64>(static_cast<s8>(ref<u8>(entry)))), 0}, {});
-    const u64 pitch = call(ctx, sfn::Snd_CentsToPitch, {static_cast<u64>(static_cast<s64>(static_cast<s16>(load<u16>(entry + 2))))});
+    const f64 volume = callf(ctx, sfn::Snd_VolumeCurve, {static_cast<u64>(static_cast<s64>(static_cast<s8>(ref<u8>(entry)))), 0}, {});
+    const u64 angle = call(ctx, sfn::Angle_Wrap360, {static_cast<u64>(static_cast<s64>(static_cast<s16>(load<u16>(entry + 2))))});
     const s64 b1 = static_cast<s8>(ref<u8>(entry + 1));
     // r6 is not set by the original here (Bank_StartSound doesn't read it).
-    ctx.fpr[1] = gain;
+    ctx.fpr[1] = volume;
     const u64 voice = call(ctx, sfn::Bank_StartSound,
-                           {bank, static_cast<u64>(static_cast<s64>(id)), static_cast<u64>(b1), 0, pitch, params, extra});
+                           {bank, static_cast<u64>(static_cast<s64>(id)), static_cast<u64>(b1), 0, angle, params, extra});
     call(ctx, sfn::Snd_Unlock);
     ctx.gpr[3] = voice;
 }

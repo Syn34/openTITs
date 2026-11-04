@@ -194,7 +194,7 @@ DECOMP(004DB828, UiText_Format) {
         }
 
         bool found = false;
-        if ((field<u32>(f.e, kTextFlags) & kTextNoGlyphs) == 0) {
+        if ((field<u32>(f.e, kTextFlags) & kTextMonospace) == 0) {
             const u32 s = field<u32>(f.e, kTextFontSet);
             const GlyphRef g = FontSet_FindGlyph(s, c);
             if (g.index < field<u32>(s, kSetFontCount)) {

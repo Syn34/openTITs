@@ -108,7 +108,7 @@ DECOMP(004DAEE8, UiText_MeasureLines) {
             }
             const u32 set = field<u32>(e, kTextFontSet);
             bool found = false;
-            if ((field<u32>(e, kTextFlags) & kTextNoGlyphs) == 0) {
+            if ((field<u32>(e, kTextFlags) & kTextMonospace) == 0) {
                 const GlyphRef g = FontSet_FindGlyph(set, c);
                 if (g.index < field<u32>(set, kSetFontCount)) {
                     const u32 font = load<u32>(set + kSetFonts + g.index * 4);

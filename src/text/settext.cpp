@@ -179,7 +179,7 @@ DECOMP(004DB378, UiText_Layout) {
         }
     }
 
-    field<u32>(e, kTextFlags) &= ~kTextNoGlyphs;
+    field<u32>(e, kTextFlags) &= ~kTextAutoLayout;
     if (lfs(e + kText224) > static_cast<f64>(kZero)) {
         stfs(e + kTextGlyphCount, lfs(kZeroVec2));
         stfs(e + kTextLineCount, lfs(kZeroVec2 + 4));

@@ -351,7 +351,7 @@
 006D50F0 Voice_SetParam           // decompiled: src/audio/voice_api.cpp
 006D5EE0 Voice_Play               // (bank, s16 id, params, arg); decompiled: src/audio/voice_api.cpp
 00441D68 Emitter_BuildParams      // decompiled: src/audio/emitter_params.cpp (name?)
-00442478 Emitter_Spatialise       // reads a 9th stack arg (name?)
+00442478 Emitter_Spatialise       // 9 args (9th on stack); decompiled: src/audio/spatial.cpp (name?)
 0044A3D4 Audio_FocusPlay          // decompiled: src/audio/emitter_focus.cpp (name?)
 00443424 Emitter_Stop             // (handle, bool fade); decompiled: src/audio/emitter_focus.cpp (name?)
 
@@ -364,7 +364,7 @@
 004F87C4 StringTable_Lookup       // (strings, id, fallback, quiet); decompiled: src/text/strings.cpp
 00550F5C DefaultHeap_AllocAligned // vtable 0x00B24278 +0; decompiled: src/heap/default_heap.cpp
 004DB828 UiText_Format            // escapes, $vars, word wrap (CJK kinsoku); decompiled: src/text/format.cpp
-004DAAA8 UiText_BuildGlyph        // (elem, quad, c, &x, &y, -, scale, line; f1 space) -> bool (name?)
+004DAAA8 UiText_BuildGlyph        // decompiled: src/text/glyph_build.cpp
 004E0648 UiElem_GetRect           // vfunc +160 (a, b, m); decompiled: src/text/glyph_transform.cpp
 
 # File I/O, caches, zip directory
@@ -402,35 +402,35 @@
 006E620C Handler_Stop             // (h, recurse, force, flag); decompiled: src/audio/voice_core.cpp
 006F6528 Snd_MutexLock            // (name?)
 006F6558 Snd_MutexUnlock          // (name?)
-006E45F8 Snd_Log                  // (fmt, file, line) (name?)
-006D8098 Bank_GetSounds           // (name?)
-006DBA20 Snd_DbToGain             // (name?)
-006DBAC8 Snd_CentsToPitch         // (name?)
-006D8E28 Bank_StartSound          // (name?)
-006D9584 Voice_StopHandler        // type-5 stop (name?)
-006E9780 Handler_Release          // (name?)
-006EA104 Handler_Detach           // (name?)
-006E322C Handler_Finish           // (name?)
-006E54B8 Handler_Free             // (name?)
-006E6AA0 Handler_First            // (name?)
-006E5F4C Handler_Pause            // (name?)
-006E60A4 Handler_Resume           // (name?)
-006EA9E0 Groups_Pause             // (name?)
-006EAAA0 Groups_Resume            // (name?)
-0071B054 Rand_Range               // (s32) -> s32 (name?)
-007848EC Map_Lookup               // (map, const u32* key) -> value slot (name?)
-00444610 Audio_StartFocusSound    // (u32* out, desc, PlayDesc*) (name?)
-00523310 Draw_SetTexture          // (name?)
-005218D8 Draw_SetState            // (name?)
-005236A0 Draw_BeginPrims          // (out, fb, 6, 4, height) (name?)
-00523748 Draw_EndPrims            // empty in retail
+006E45F8 Snd_Log                  // (fmt, ...); decompiled: src/audio/snd_handlers.cpp
+006D8098 Bank_GetSounds           // decompiled: src/audio/bank_util.cpp
+006DBA20 Snd_VolumeCurve          // (s8 vol, s8 curve) -> f32; decompiled: src/audio/bank_util.cpp
+006DBAC8 Angle_Wrap360            // decompiled: src/audio/bank_util.cpp
+006D8E28 Bank_StartSound          // decompiled: src/audio/bank_start.cpp (name?)
+006D9584 Voice_StopHandler        // decompiled: src/audio/snd_channels.cpp (name?)
+006E9780 Handler_Release          // decompiled: src/audio/snd_channels.cpp (name?)
+006EA104 Handler_Detach           // decompiled: src/audio/snd_channels.cpp (name?)
+006E322C Handler_UnlinkTracks     // decompiled: src/audio/snd_handlers.cpp (name?)
+006E54B8 Handler_Free             // decompiled: src/audio/snd_free.cpp
+006E6AA0 Handler_First            // decompiled: src/audio/snd_handlers.cpp
+006E5F4C Handler_Pause            // (h, recurse, reason); decompiled: src/audio/snd_handlers.cpp
+006E60A4 Handler_Resume           // decompiled: src/audio/snd_handlers.cpp
+006EA9E0 Groups_Pause             // decompiled: src/audio/snd_handlers.cpp
+006EAAA0 Groups_Resume            // decompiled: src/audio/snd_handlers.cpp
+0071B054 abs                      // decompiled: src/audio/bank_util.cpp
+007848EC Map_Lookup               // decompiled: src/audio/bank_util.cpp
+00444610 Audio_StartFocusSound    // (name?)
+00523310 Draw_SetTexture          // decompiled: src/world/draw.cpp
+005218D8 Draw_SetState            // decompiled: src/world/draw.cpp
+005236A0 Draw_BeginPrims          // decompiled: src/world/draw.cpp
+00523748 Draw_EndPrims            // empty; decompiled: src/world/draw.cpp
 004D7E70 UiElem_GetScale2         // vfunc +168, sret vec3, inherits parent's; decompiled: src/text/glyph_transform.cpp
 00522750 View_ProjectPoint        // (view, out vec4, in vec3) -> [0,1] screen; decompiled: src/text/glyph_transform.cpp
 005541F0 Matrix_Multiply          // (a_and_out, b) VMX (name?)
 005115F0 View_Update              // (view, 0) (name?)
-00553A2C Vec_TransformByMatrix    // (out, in, matrix) (name?)
-004E1B58 UiElem_GetSize2          // vfunc +140, sret vec2 (name?)
-004E0B30 UiElem_GetWorldMatrix    // vfunc +164, sret f32[16] (name?)
+00553A2C Vec_TransformByMatrix    // (out, in xyz, m); decompiled: src/view/vector.cpp
+004E1B58 UiElem_GetSize2          // vfunc +140, cached at +140; decompiled: src/uielem/vtbl_size.cpp
+004E0B30 UiElem_GetWorldMatrix    // vfunc +164; decompiled: src/uielem/vtbl_world.cpp
 
 # FIOS operations and wrappers
 00561270 String_HasChar           // decompiled: src/file/fsop.cpp
@@ -444,3 +444,34 @@
 005FFE10 fios_Stat                // (sched, attr, path, u64* out, 3) (name?)
 005DBCB0 crc32                    // zlib
 005DCAC8 inflate                  // zlib
+
+# Element vtable, sound library
+004E0228 UiElem_SetRotation       // vfunc +32 (f1 degrees); decompiled: src/uielem/vtbl_misc.cpp
+004E22DC UiElem_Invalidate        // vfunc +148; decompiled: src/uielem/vtbl_misc.cpp
+004E2BE4 UiElem_FindResource      // vfunc +180 (name?); decompiled: src/uielem/vtbl_misc.cpp
+004E2C78 UiElem_FindResourceOfType // vfunc +184 (name?); decompiled: src/uielem/vtbl_misc.cpp
+004E0FDC UiElem_GetWorldColor     // vfunc +172; decompiled: src/uielem/vtbl_misc.cpp
+004E17D4 UiText_Delete            // text vfunc +4; decompiled: src/uielem/vtbl_misc.cpp
+00553910 Vec4_TransformByMatrix   // VMX (name?)
+0056A410 Matrix_FromAxisAngle     // (out 3x4, axis; f1 radians) (name?)
+007948E4 HashMap_Find             // (map, const u32* key) -> value slot (name?)
+004E2178 UiElem_InvalidateLocal   // (name?)
+004E1604 UiText_Destruct          // text vfunc +0 (name?)
+0071F36C vsnprintf                // (name?)
+007241F4 snprintf                 // (name?)
+006E4DC8 Handler_Alloc            // 9 args (9th on stack) (name?)
+006E4910 Handler_SetParams        // (name?)
+006E51E0 Handler_Start            // (name?)
+006D81C0 Voice_Steal              // (entry, bool, Handler** out) (name?)
+006E6AAC Sound_Prepare            // (name?)
+006D5BFC Bank_GetSoundName        // (name?)
+006E80CC Channel_Free             // (ch, 0) (name?)
+006E7584 Handler_HasLiveChannels  // (name?)
+006D8494 Handler_NextSegment      // (name?)
+006E4780 Snd_SendEvent            // (120, 0, 0, 0, 0) (name?)
+006E5434 Family_Release           // (name?)
+006E9B40 Handler_OnPause          // (name?)
+006E9E0C Handler_OnResume         // (name?)
+005545B4 Matrix_NearlyEqual       // (a, b, f32 eps) (name?)
+005532E4 Listener_LocalDirection  // (out, pos, listener) (name?)
+006D7508 Snd_PitchFromSpeed       // (f32) -> u32 (name?)
