@@ -33,7 +33,7 @@ DECOMP(004E0228, UiElem_SetRotation) {
 // void UiElem_Invalidate(Element* e)  [vfunc +148]
 // Marks the element for a new layout and a new measurement, and does the
 // same for all its children.
-DECOMP(004E22DC, UiElem_Invalidate) {
+DECOMP(004E22DC, UiText_Invalidate) {
     const u32 e = arg<u32>(ctx, 0);
     field<u32>(e, kInvalidateClear) = 0;
     field<u32>(e, kTextFlags) |= kElemLayoutPending;

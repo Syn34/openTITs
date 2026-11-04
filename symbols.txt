@@ -53,7 +53,7 @@
 005DB13C Thread_IsSecond          // (name?) decompiled: src/game/load_util.cpp
 00724588 vsprintf                 // (name?) decompiled: src/game/load_util.cpp
 00551A58 FreeList_Init            // (list, elem_size, count, heap, bool); decompiled: src/game/load_util.cpp
-0045CC18 World_Construct          // (obj, 0) 6393 instr, object of 0x1286B0 bytes at Game+0 (name?)
+0045CC18 World_Construct          // (obj, initial state) object of 0x1286B0 bytes at Game+0
 0071C3F0 memmove
 00723884 strcmp
 00555D94 String_Compare           // strcmp; decompiled: src/string/string_misc.cpp
@@ -447,7 +447,7 @@
 
 # Element vtable, sound library
 004E0228 UiElem_SetRotation       // vfunc +32 (f1 degrees); decompiled: src/uielem/vtbl_misc.cpp
-004E22DC UiElem_Invalidate        // vfunc +148; decompiled: src/uielem/vtbl_misc.cpp
+004E22DC UiText_Invalidate        // vfunc +148; decompiled: src/uielem/vtbl_misc.cpp
 004E2BE4 UiElem_FindResource      // vfunc +180 (name?); decompiled: src/uielem/vtbl_misc.cpp
 004E2C78 UiElem_FindResourceOfType // vfunc +184 (name?); decompiled: src/uielem/vtbl_misc.cpp
 004E0FDC UiElem_GetWorldColor     // vfunc +172; decompiled: src/uielem/vtbl_misc.cpp
@@ -558,3 +558,88 @@
 007106BC Voice_SetStateAtomic     // ldarx/stdcx. loop (name?)
 0072B094 _FDnorm                  // libm
 007060A8 _Feraise                 // libm
+
+# UI classes, fonts, resources; StateMachine and World
+004DFF1C UiElem_Destruct          // base vtbl 0x00B22710 +0; decompiled: src/uielem/class_base.cpp
+004E0094 UiElem_Delete            // +4; decompiled: src/uielem/class_base.cpp
+007882F4 UiElem_CloneNone         // +8 returns 0; decompiled: src/uielem/class_base.cpp
+007318A4 PureVirtual              // -> 00732D44 abort; decompiled: src/uielem/class_base.cpp
+007882FC UiElem_GetBaseSize       // +140; decompiled: src/uielem/class_base.cpp
+004E0508 UiElem_InvalidateBase    // +148; decompiled: src/uielem/class_base.cpp
+004E05A4 UiElem_DrawChildren      // +156; decompiled: src/uielem/class_base.cpp
+004E1368 UiElem_FindResourceBase  // +180; decompiled: src/uielem/class_base.cpp
+004E13B8 UiElem_FindResourceOfTypeBase // +184; decompiled: src/uielem/class_base.cpp
+00795EBC TlKey_Destruct           // vtbl 0x00B228B0; decompiled: src/uielem/class_timeline.cpp
+00795ECC TlKey_Delete
+00795F10 TlTrack_Destruct         // vtbl 0x00B228C4
+00795F20 TlTrack_Delete
+00795F64 TlKeyNop_Destruct        // vtbl 0x00B228D8
+00795F74 TlKeyNop_Delete
+00795FB8 TlKeyNop_Run
+00795FC0 TlKeyAnim_Destruct       // vtbl 0x00B228F0
+00795FD0 TlKeyAnim_Delete
+004E3CAC TlKeyAnim_Run
+00796058 TlKeyEvent_Destruct      // vtbl 0x00B22908
+00796068 TlKeyEvent_Delete
+004E4B40 TlKeyEvent_Run
+007964A8 UiText5_Destruct         // vtbl 0x00B22B78; decompiled: src/uielem/class_text5.cpp
+007964D4 UiText5_Delete
+004DC5E0 UiText5_Construct
+004E7A58 UiText5_Invalidate
+004E6D3C UiText5_Clone
+004DA4C0 UiText5_GetSize
+00794F20 Ref_Destruct             // vtbl 0x00B225E0; decompiled: src/font/res.cpp
+00794F30 Ref_Delete
+00794F74 Ref_Release
+004D5274 UiRes_Construct          // vtbl 0x00B225F8; decompiled: src/font/res.cpp
+004D54D4 UiRes_ConstructThunk
+004D5878 UiRes_Destruct
+004D58E4 UiRes_Delete
+004D5990 UiRes_Unuse
+007952B0 FontSet_Destruct         // vtbl 0x00B22658; decompiled: src/font/fontset.cpp
+007953AC FontSet_Delete
+007954D0 FontSet_Load
+00795650 FontSet_Unload
+004D71D0 FontSet_FromXml          // decompiled: src/font/fontset_load.cpp
+007950DC Font_Destruct            // vtbl 0x00B22638; decompiled: src/font/font.cpp
+007951B8 Font_Delete
+004D70B0 Font_Unload
+004D601C Font_FromXml             // decompiled: src/font/font_load.cpp
+004F8944 XmlCursor_DocPath        // decompiled: src/uiload/desc.cpp
+004FEF30 Tex_GetDefault           // (name?) decompiled: src/uiload/desc.cpp
+004DC720 UiTextDesc_FromXml       // decompiled: src/uiload/desc.cpp
+004DCE7C UiText_FromXml           // decompiled: src/uiload/elem_text.cpp
+004DCA08 UiText5Desc_FromXml      // decompiled: src/uiload/elem_text.cpp
+004DCC04 UiText5_FromXml          // decompiled: src/uiload/elem_text.cpp
+004DE0F8 UiLoad_Elements          // main UI loader (name?)
+004DFA60 UiLoad_File              // (name?)
+004D6768 Font_Load                // (name?)
+004E70D0 UiText5_Update           // (name?)
+0045CAA0 StateMachine_Construct   // (this, levels, data size, u8 initial); decompiled: src/world/vt_statemachine.cpp
+0045CBE8 StateMachine_ConstructThunk
+00464A24 StateMachine_Destruct
+00464A6C StateMachine_Delete
+00464B18 StateMachine_Init        // vfunc +8
+00464B90 StateMachine_Shutdown    // vfunc +12
+00464BD4 StateMachine_Update      // vfunc +16 (f32 dt)
+00464CBC StateMachine_Tick        // vfunc +20 (f32 dt)
+007371E8 StateMachine_Advance     // vfunc +24
+00464D1C StateMachine_SetState    // vfunc +28 (level, id)
+0073726C StateMachine_GetState    // vfunc +32
+007435B8 StateMachine_HandleEvent // vfunc +36, returns 1
+0046B5DC World_GetState           // World vfunc +32; decompiled: src/world/vt_world.cpp
+00467004 World_Delete             // World vfunc +4; decompiled: src/world/vt_world.cpp
+004682C8 World_Init               // World vfunc +8, called by Game_Load; decompiled: src/world/vt_world.cpp
+00466860 World_Destruct           // World vfunc +0
+00469D98 World_Update             // World vfunc +16
+00491710 World_HandleEvent        // World vfunc +36 (8211 instr)
+0047C5D8 SubMachine_Construct     // vtable 0x00B21AA0; decompiled: src/world/vt_submachine.cpp (name?)
+00490A88 SubMachine_Destruct
+00490AD0 SubMachine_Delete
+004FB0F0 Trophy_Construct         // (mem, "NPWR03581", ...) (name?)
+0049DC70 Upgrades_Load            // (path) (name?)
+000B2280 Awards_Load              // (path) (name?)
+004EBE50 Levels_Load              // (path) (name?)
+004ECAC4 Levels_Count             // (name?)
+004ECC50 Levels_At                // (u32) (name?)
+004EBCF4 Level_Register           // (name?)
