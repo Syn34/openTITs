@@ -526,16 +526,16 @@
 00533054 Display_SetSize          // (display, Target** frame); decompiled: src/gfx/display.cpp
 
 # Sound library: handlers, voices, channels
-00440B48 Emitter_Init             // (Emitter*) (name?)
-0044385C KeyMap_Set               // (handle, key, s32 priority) (name?)
-007839B8 HandlePool_Grow          // (Pool*, s32 capacity) (name?)
-000DD258 Obj_CollectByType        // (s32 type, PtrVector*) (name?)
-0054EC1C PtrVector_Clear          // (name?)
-0054EC18 PtrVector_Free           // (name?)
-006D585C Snd_GetLastError         // returns s32 at 0x011D71B4 (name?)
-006EFE90 Channel_ReleaseVoice     // (hw voice) (name?)
-006E7EC0 Channel_Reset            // (ch) (name?)
-007062C8 Snd_Log2                 // (f32, -1) (name?)
+00440B48 Emitter_Init             // (Emitter*); decompiled: src/audio/more_emitter.cpp
+0044385C KeyMap_Set               // (u32 handle, u32 key, s32 priority) -> bool; decompiled: src/audio/more_emitter.cpp
+007839B8 HandlePool_Grow          // (Pool*, s32 capacity); decompiled: src/audio/more_emitter.cpp (name?)
+000DD258 Obj_CollectByType        // (s32 type, PtrVector*); decompiled: src/audio/more_containers.cpp (name?)
+0054EC1C PtrVector_Clear          // (PtrVector*); decompiled: src/audio/more_containers.cpp (name?)
+0054EC18 Nop                      // empty function shared by many callers; decompiled: src/audio/more_containers.cpp
+006D585C Snd_GetLastError         // decompiled: src/audio/more_snd.cpp (name?)
+006EFE90 Channel_ReleaseVoice     // (Voice*); decompiled: src/audio/more_snd.cpp (name?)
+006E7EC0 Channel_Reset            // (s32 ch); decompiled: src/audio/more_snd.cpp (name?)
+007062C8 _FLog                    // libm _FLog(f32, s32 base); decompiled: src/audio/more_math.cpp
 
 # UI element construction and update
 004D76D0 UiElem_Construct         // (elem, desc) base element, links into parent/root list; decompiled: src/uielem/ctor.cpp
@@ -548,3 +548,13 @@
 00530A9C Target_InitDepth         // (Target** out, w, h, 7, 0) depth target (name?)
 005311D8 Tiles_Unbind             // () unbinds display tiles/zcull (name?)
 0051AF28 RenderSurface_Alloc      // () -> AglRenderSurface* from free list at 0x00F8F110 (name?)
+
+# Emitters, key map, containers, sound channels
+00784194 KeyMap_Insert            // (Map*, const u32* key, u64 {handle,priority}); decompiled: src/audio/more_emitter.cpp (name?)
+00558F3C Array_Reserve            // (Array*, u16 capacity); decompiled: src/audio/more_containers.cpp (name?)
+006D4F74 Snd_GetTick              // decompiled: src/audio/more_snd.cpp (name?)
+006F2814 Effects_Set              // (dst, src); decompiled: src/audio/more_snd.cpp (name?)
+0071F668 _FDunscale               // libm; decompiled: src/audio/more_math.cpp
+007106BC Voice_SetStateAtomic     // ldarx/stdcx. loop (name?)
+0072B094 _FDnorm                  // libm
+007060A8 _Feraise                 // libm
