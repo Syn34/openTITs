@@ -197,7 +197,7 @@
 0001BEE8 View_Notify              // decompiled: src/game/frame_misc.cpp (name?)
 005E649C acosf                    // decompiled: src/math/trig.cpp
 005E665C atan2f                   // decompiled: src/math/trig.cpp
-0045A6F8 View_SubmitSplit         // VMX (name?)
+0045A6F8 View_SubmitSplit         // VMX (name?); decompiled: src/view/view2_split.cpp
 006D5E10 Voice_IsPlaying          // decompiled: src/audio/voice.cpp (name?)
 006D64AC Voice_GetValue           // decompiled: src/audio/voice.cpp (name?)
 006D60AC Voice_Stop               // decompiled: src/audio/voice.cpp (name?)
@@ -755,7 +755,7 @@
 00545B60 ThermalVision_Draw       // decompiled: src/gfx/fx_thermal.cpp
 0053F050 Monochrome_Draw          // decompiled: src/gfx/fx_mono.cpp
 0053F8A8 Dof_Draw                 // decompiled: src/gfx/fx_dof.cpp
-00540DD8 BloomNoise_Draw          // (name?)
+00540DD8 BloomNoise_Draw          // (name?); decompiled: src/gfx/bloomnoise.cpp
 
 # UI helpers, fonts, type-5 update
 004F899C XmlCursor_FirstChildRawAny // (cursor) first child of any tag; decompiled: src/uiload/more.cpp
@@ -833,7 +833,7 @@
 00543C44 PostProc_DrawOverlay     // decompiled: src/gfx/fx_post.cpp (name?)
 005402E4 Dof_BlurDown             // Dof vtable slot 24; decompiled: src/gfx/fx_post.cpp (name?)
 0053E3B8 PostProc_DrawBlur        // decompiled: src/gfx/fx_blur.cpp (name?)
-005356F4 Display_GetTargets       // (Target*** colour, Target*** depth) leaf
+005356F4 Display_GetTargets       // (Target*** colour, Target*** depth) leaf; decompiled: src/gfx/render_state.cpp
 00732BCC memcpy                   // (name?)
 005E5CB0 cellGcmSetVertexProgramConstants // (ctx, first, count, f32*) method 0x1EFC
 005E073C cellGcmSetFragmentProgramOffset  // (ctx, offset, location) method 0x8E4
@@ -844,11 +844,11 @@
 005E3C74 cellGcmSetClearSurface   // method 0x1D94
 005E47AC cellGcmSetTransferImage  // 13 args
 005E4F64 cellGcmSetDrawIndexArray // (ctx, mode, count, type, location, offset)
-004FDBA8 View_GetCurrent          // (name?)
-0056A358 Mat4_Ortho               // (out, l, r, b, t, n, f) (name?)
-00515750 VertexFormat_Get         // (name?)
+004FDBA8 View_GetCurrent          // (name?); decompiled: src/view/view2.cpp
+0056A358 Mat4_Ortho               // (out, l, r, b, t, n, f) (name?); decompiled: src/view/view2.cpp
+00515750 VertexFormat_Get         // (name?); decompiled: src/gfx/render_state.cpp
 00554C28 Mat4_Sub554C28           // (a, out, src) (unknown)
-0051279C Trail_Sub51279C          // (unknown)
+0051279C Draw_InvalidateState     // invalidate cached render state; decompiled: src/gfx/render_state.cpp
 
 # World objects 2-3; World construction
 007A9924 WorldObj_GetName         // vfunc +12; decompiled: src/obj/obj2_vt.cpp
@@ -1251,3 +1251,22 @@
 007881A4 Array60_At               // decompiled: src/world/event_small.cpp
 007881C4 Obj_Get2416              // decompiled: src/world/event_small.cpp
 007D3B80 Singleton_011DF320_Get   // decompiled: src/world/event_small.cpp
+
+# Decompiled functions not listed above (added by tools/sync_symbols.py)
+00458BAC World_RunRenderJobs      // decompiled: src/gfx/render_job.cpp
+00512EF4 Draw_SetStencilRef       // decompiled: src/gfx/render_layer.cpp
+0051384C RenderLayer_AddKeyed     // decompiled: src/gfx/render_layer.cpp
+00513868 RenderLayerBase_Add      // decompiled: src/gfx/render_layer.cpp
+00513894 RenderLayer_Sort         // decompiled: src/gfx/render_layer.cpp
+00513984 RenderLayer_Draw         // decompiled: src/gfx/render_layer.cpp
+0053755C Draw_SetDepthTarget      // decompiled: src/gfx/render_state.cpp
+00537C18 Display_SelectBuffer     // decompiled: src/gfx/render_state.cpp
+00554394 Matrix_ScaleRows         // decompiled: src/view/view2.cpp
+00737278 Job_Swap                 // decompiled: src/gfx/render_job.cpp
+0078896C Job_EndFrame             // decompiled: src/gfx/render_job.cpp
+0079C260 RenderLayer_Destruct     // decompiled: src/gfx/render_layer.cpp
+0079ECC4 RenderLayerBase_Destruct // decompiled: src/gfx/render_layer.cpp
+007A1080 RenderLayer_Reset        // decompiled: src/gfx/render_layer.cpp
+007A108C RenderLayerBase_Delete   // decompiled: src/gfx/render_layer.cpp
+007A1120 RenderLayer_Add          // decompiled: src/gfx/render_layer.cpp
+007A1210 RenderLayer_Delete       // decompiled: src/gfx/render_layer.cpp
