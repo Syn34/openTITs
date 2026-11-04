@@ -3507,18 +3507,11 @@
 005BB23C LoadParams_005BB23C                 // [ShaderType slot 1] texture d+16, m+120 top bits, params 0..3 = d+88..+100 (name?); decompiled: src/gfx/gfx10.cpp
 0052CB34 VertexFormat_Init_0052CB34          // (o) vertex format 0x010DD500 from template 0x00F66F98, children slot 2 (name?); decompiled: src/gfx/gfx10.cpp
 0052DB58 ShadowMap_LoadPrograms_0052DB58     // () once (0x00F671D4): ShadowMap_* vertex/fragment programs into 0x010F0AD0..0x010F0B18 (name?); decompiled: src/gfx/gfx10.cpp
-0053CA20 Fn_0053CA20                         // (0x010DDB88) called first by ShadowPass_Begin_00518490 (name?)
-005181E0 Fn_005181E0                         // () reads no argument registers; ShadowPass_Begin_00518490 (name?)
 005E0AF0 Gcm_PadNops_005E0AF0                // (context, words) libgcm, left recompiled (name?)
 005E0600 Gcm_SetCall_005E0600                // (context, offset) libgcm call command, left recompiled (name?)
 005E24F8 Gcm_SetReferenceCommand_005E24F8    // (context, value) libgcm, left recompiled (name?)
-00536290 Fn_00536290                         // (copy, m, mode, m, mode; f1, f2) reads r3/r4/r7/f1/f2; View_StereoMatrix_005483EC (name?)
-00544B4C Warp_BuildGrid_00544B4C             // (Warp*) first-time grid build from Warp_Update_00545A38 (name?)
-00544E08 Warp_Prepare_00544E08               // (Warp*) before Warp_Draw (name?)
-0052730C Fn_0052730C                         // () first call of Records_Init_00527484, still recompiled (94 instr) (name?)
-0052B688 Fn_0052B688                         // (o, x+32, s32, cam, y) reads r3..r7; Proj_Update_0052BB60 (name?)
-005BDD30 Fn_005BDD30                         // (0x01196EC0, m, d) -> bool; LoadParams_005C25B8 (name?)
-00516CD0 DrawQueue_Run_00516CD0              // (queue 0x011DE300) DrawQueue_Begin_00518610 (name?)
+00544B4C Warp_BuildGrid_00544B4C             // (Warp*) once (u8 +5776): two vertex buffers (n * 24, pool 5), u16 index buffer (pool 4) + strip indices (name?); decompiled: src/gfx/gfx11.cpp
+00516CD0 DrawQueue_Run_00516CD0              // (DrawQueue* 0x011DE300) programs, vconst 6 from the view near/far, format q+28, q+256 atomically 0, f_00516970(batch) (name?); decompiled: src/gfx/gfx11.cpp
 0060DE84 Edge_0060DE84                       // Edge SDK, 10 args (2 on the stack); left recompiled
 
 # Engine core helpers, part 17 (lights, banks, resource loaders)
@@ -3548,7 +3541,6 @@
 0059B788 GeomDef_ReadChunks       // (IffReader*): GeomDef_New, Iff_ReadChunks, LOD byte fix-ups (name?)
 004FD1E0 Render_FrameAlloc        // (u32 size): MemStack_Alloc(*(0x010DD600 +280), size) (name?)
 00735F28 Mem_NewArray             // (u32 size): Mem_Alloc(size, 0, 16) (name?)
-004FDEA0 Frustum_FromMatrix       // (f32 planes[6][4], const f32 m[16]) (name?)
 0055EA6C Plane_Transform          // (f32 plane[4], const f32 m[16]): by the inverse transpose (Mat4_Invert + Vec4_TransformByMatrix) (name?)
 00578F64 Quads_ClipSetup          // (out, planes, +16, +32, +48, near plane, -view dir) (name?)
 00578868 Quad_InClip              // (clip, quad) -> bool (name?)
@@ -3580,3 +3572,59 @@
 0001AC68 Scene_Keep1AC68                      // (*0x00F557F0) (name?)
 0001AC74 Scene_Drop1AC74                      // (*0x00F557F0) (name?)
 000DD02C Obj_SceneEnd0DD02C                   // (Object*, u8 drop, 0) (name?)
+
+# Renderer sweep part 5
+0053CA20 GpuTimer_Update_0053CA20            // (GpuTimer* 0x010DDB88) countdown +24; |timestamp(+4) - timestamp(+0)| ns / 1e6 (> 30 -> 0) switches u8 +32 on at >= +8 / off at <= +12 (config +34 forces off) (name?); decompiled: src/gfx/gfx11.cpp
+0052730C StencilShadow_InitQuad_0052730C     // () pool 0x010DF8B0: vertex format +176 from 0x00F671BC, stride 12, quad buffer +12 (Buffer_Alloc52F198, 4 xy corners) (name?); decompiled: src/gfx/gfx11.cpp
+005181E0 ShadowPass_CopyDepth_005181E0       // () scene depth -> depth target *0x011640D8 with PostProc_DownSampleDepth (inline state, quad thunks) (name?); decompiled: src/gfx/gfx11.cpp
+005BDD30 Material_SetupLit_005BDD30          // bool (ShaderType*, Material*, Desc*) textures d+16 / d+8 / d+12 (config +152 bits 0x80 / 0x40), params 0..2, 4, 7..12 by u8 d+84 (name?); decompiled: src/gfx/gfx11.cpp
+00544E08 Warp_FillGrid_00544E08              // (Warp*) current vertex buffer: grid positions, colour +5736, UVs with the parabola-sine wave (name?); decompiled: src/gfx/gfx11.cpp
+0052B688 ShadowProj_Build_0052B688           // (o, dir, sphere_fit, cam, range[8]) look-at, slice bounds (corners or sphere), snap, depth range, ortho * look-at -> o+48, slot 7 (name?); decompiled: src/gfx/gfx11.cpp
+00536290 Stereo_ProjectionMatrix_00536290    // (src, dst, -, -, eye; f1, f2) eye 0 copy; 1 / 2 off-axis stereo shift ("ParameterCheckError!"), other: dst transposed (name?); decompiled: src/gfx/gfx11.cpp
+00516970 DrawQueue_Build_00516970            // (Batch*: +0 list, +4 0x24000, +8..+24 0) reads r3 only; DrawQueue_Run_00516CD0 (name?)
+0052B4B8 Shadow_FrustumCorners_0052B4B8      // (cam, -, -, f32 out[32]; f1 near, f2 far) reads r3 / r6 / f1 / f2 (name?)
+0052B2EC Shadow_Bounds_0052B2EC              // (lo[3], hi[3], corners, cam+128, look-at) (name?)
+0052AF78 Shadow_SnapBounds_0052AF78          // (lo[3], hi[3], u16 w, u16 h) (name?)
+0052AA98 Shadow_DepthRange_0052AA98          // (f32* near, f32* far, bounds, look-at, dir, range rec) reads r3..r8 (name?)
+004FF008 Material_AddTexture_004FF008        // (Material*, Texture*) (name?)
+0051D210 Iff_HandleTexture_0051D210          // [IFF chunk handler] (r) texture chunks; loaded ones -> AglTexture allocator hook (*0x00F8F118 +8) and the list *0x010DDAF4 {hash, tex}; returns 1 (name?); decompiled: src/gfx/gfx11.cpp
+00522D18 RenderTarget_RunPasses_00522D18     // (rt, mask) u8 0x00F66FC0 set, config +152 bit 0x10 clear: rt+656 slot 0, passes +4.. by mask bits 0..9 (slot 3 -> slot 4), slot 1; Draw_InvalidateState (name?); decompiled: src/gfx/gfx11.cpp
+005012A4 VpConst_SetModelView_005012A4       // (a, m) vconsts 0..3 = (m or identity when a+24) * view +880, transposed (name?); decompiled: src/gfx/gfx11.cpp
+00523C98 Iff_HandleRecord_00523C98           // [IFF chunk handler] (r, o) 20-byte record onto o+92's list (f_004FD8D4 holder), +4 from the entry's +124 +16 for types 0xA359CDE9 / 0xC7DFEF69; null write quirk (name?); decompiled: src/gfx/gfx11.cpp
+005261A0 AglTopology_Delete_005261A0         // ApeTListAllocator<AglTopology> delete (key +80 out of map *0x010DDC80; 0x00F8F124, 112) (name?); decompiled: src/gfx/gfx11.cpp
+005AC64C EffectSlots_Clear_005AC64C          // () 200-byte slots 0x01194ED8 (count 0x01194FA0): Obj_SetSlot20, children slot 2, cleared (name?); decompiled: src/gfx/gfx11.cpp
+007A3700 Warp_Delete_007A3700                // [vtable 0x00B24070 deleting dtor] parts +5828/+5812/+5796 inline, Obj23650_DestructInline, Mem_FreeFrom (name?); decompiled: src/gfx/gfx11.cpp
+0051E1D8 AglTexture_Delete_0051E1D8          // ApeTListAllocator<AglTexture> delete (hash +48 out of map *0x010DDAF4; 0x00F8F118, 132) (name?); decompiled: src/gfx/gfx11.cpp
+005CD310 Lod_SelectShader_005CD310           // Shader* (t, m, item) SHO_DefaultType_SelectShader with distance LODs (m+124 +12 / +16), item u8 +69 = 1/3/7 (|8) (name?); decompiled: src/gfx/gfx11.cpp
+005124F4 Render_Phase_005124F4               // (s32 phase 0..3) pending flush 0x010E05D4, f_00548A10, prim pools, job kick, surface word rotation at 0x010DDA74 (name?); decompiled: src/gfx/gfx11.cpp
+005151E8 Record_Stencil_005151E8             // [record handler] (stream) {u8 on, u8 ref, u16 func}: stencil test/func inline (name?); decompiled: src/gfx/gfx11.cpp
+00532450 Draw_SetViewport_00532450           // (surface, viewport rect, scissor rect) Surface_DefaultRects, Gcm_SetViewport (scale/offset, 0..1), scissor inline (name?); decompiled: src/gfx/gfx11.cpp
+0079E2B8 Draw_SetDepthBounds_0079E2B8        // (f1 zmin, f2 zmax) DEPTH_BOUNDS_TEST_ENABLE / DEPTH_BOUNDS by depth format (+24: 4/6 * 65536, 5/7 * 2^24; else warn once 0x011DE2C4) (name?); decompiled: src/gfx/gfx11.cpp
+0051A79C RenderLayers_AddPreDraw_0051A79C    // (layer name, a, b, c, s8 order) sorted pre-draw callback insert (+20.., u8 +84) (name?); decompiled: src/gfx/gfx11.cpp
+0051EF28 Trail_Construct_0051EF28            // [ctor of vtable 0x00B23630] defaults from 0x0051EF08, +80 = +20 * steps (name?); decompiled: src/gfx/gfx11.cpp
+007A1B48 WarpEffect_Destruct_007A1B48        // [dtor of vtable 0x00B23690] member vtables, Warp +316 parts, child +336 slot 2; returns o+48 (name?); decompiled: src/gfx/gfx11.cpp
+007A1E4C WarpEffect_Destruct_007A1E4C        // identical copy of 007A1B48 (name?); decompiled: src/gfx/gfx11.cpp
+007A1CBC WarpEffect_Delete_007A1CBC          // deleting dtor: 007A1B48's body + Mem_FreeFrom(o, 0) (name?); decompiled: src/gfx/gfx11.cpp
+007A1FC0 WarpEffect_Delete_007A1FC0          // identical copy of 007A1CBC (name?); decompiled: src/gfx/gfx11.cpp
+0051E514 RenderTarget_ColourTexture_0051E514 // Texture* (rt, depth) "Color-RenderTarget" texture over rt's colour buffer, +108 = Target_Bind51B4C4 (name?); decompiled: src/gfx/gfx11.cpp
+00548A10 Query_PollResults_00548A10          // () u8 0x00F66FD5: query slots 0x010DFAD0 records take report results (*0x011640E8), ring +160 steps (name?); decompiled: src/gfx/gfx11.cpp
+00549860 Draw_ColourOnBoundsOff_00549860     // () COLOR_MASK on, depth bounds off (inlined 0079E2B8 with 0..0) (name?); decompiled: src/gfx/gfx11.cpp
+005B0AF0 Material_DepthBounds_005B0AF0       // (t, m) m+124 +16 != 0: depth bounds off (inlined 0079E2B8 with 0..0) (name?); decompiled: src/gfx/gfx11.cpp
+0052906C Iff_HandleForceTime_0052906C        // [IFF chunk handler] (r, o) u8, "force", "noForceTime" -> new force record o+120 (as 00528F20) (name?); decompiled: src/gfx/gfx11.cpp
+005CE368 LoadParams_005CE368                 // [ShaderType slot 1] params 0 (d+88 clamped 255), 1..6 = d+92..+112 or 0x005CE360 (name?); decompiled: src/gfx/gfx11.cpp
+00549410 View_RecordState_00549410           // (View*) history entry u8 +652 at +1280: rect, transposed matrix +48, viewport scale/offset (name?); decompiled: src/gfx/gfx11.cpp
+00500FD0 Emitter_Destruct_00500FD0           // [dtor of vtable 0x00B23308] ring +72 freed into ApeTMemClassFL<ApeTRingBuf<AglSimplePtl>,1024> (0x011DE4B4), EmitPropsRef_Set/Release (name?); decompiled: src/gfx/gfx11.cpp
+007A08CC Emitter_Destruct_007A08CC           // identical copy of 00500FD0 (name?); decompiled: src/gfx/gfx11.cpp
+007A0A58 Emitter_Delete_007A0A58             // deleting dtor: 00500FD0's body + Mem_FreeFrom(o, 0) (name?); decompiled: src/gfx/gfx11.cpp
+0052317C AglRenderTarget_New_0052317C        // (arg) ApeTListAllocator<AglRenderTarget> (0x00F8F11C, 1840) slot 3, f_00521110, vtable 0x00B240D0 + defaults (name?); decompiled: src/gfx/gfx11.cpp
+00523F74 Iff_HandleShadowMesh_00523F74       // [IFF chunk handler] (r, o) "numVerts"/"numEdges"/"isSkinned" -> buffers +4/+12/+16/+20, peak 0x010DD590 (name?); decompiled: src/gfx/gfx11.cpp
+0054664C ThermalVision_Update_0054664C       // (o) slot 3 on: default textures once, scene colour texture (0x00F67500/04 via 0051E514), ThermalVision_Draw, layer 16 draw (name?); decompiled: src/gfx/gfx11.cpp
+0051ED00 Trail_UpdateFade_0051ED00           // (o) f_0051E8E0, f_0051EB20 target, +88, +84 eased by SystemState +4 * 0.7 / 2.0 (name?); decompiled: src/gfx/gfx11.cpp
+0052173C FrameBuffer_SetScissor_0052173C     // (fb, rect) clamped scissor cached +164..+170, type-9 record into the stream (name?); decompiled: src/gfx/gfx11.cpp
+00501820 Sprite_Bind_00501820                // (a, m) Material_Bind, model-view by shader mode (billboard 0x010DD940), Stencil_SetEqual32 (name?); decompiled: src/gfx/gfx11.cpp
+00521110 RenderTarget_Init_00521110          // (rt, arg) reads r3 / r4; AglRenderTarget_New_0052317C (name?)
+004FD8D4 Owner_Create_004FD8D4               // (o) -> holder kept at o+92; Iff_HandleRecord_00523C98 (name?)
+0051E8E0 Trail_Fn_0051E8E0                   // (o, o+48, o+64, o+80) reads r4..r6; Trail_UpdateFade_0051ED00 (name?)
+0051EB20 Trail_Fn_0051EB20                   // (o) -> f1 fade target; Trail_UpdateFade_0051ED00 (name?)
+004FCC34 VpConst_Set_004FCC34                // (const f32 m[16]) Sprite_Bind_00501820's identity path (name?)
+004FDEA0 Frustum_FromMatrix       // (f32 planes[6][4], const f32 m[16]) (name?)
