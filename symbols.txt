@@ -862,13 +862,13 @@
 00583EF0 WorldObj_SetByte168      // vfunc +52 (name?); decompiled: src/obj/obj2_vt.cpp
 005A14A0 WorldObj_ClassChanged    // vfunc +64 (name?); decompiled: src/obj/obj2_vt.cpp
 00723F2C strcasecmp               // libc (name?)
-007A71A4 WorldClass_Alloc         // () (name?)
+007A71A4 GeomDef_New              // () -> ApeGeomDef (kind 20); decompiled: src/obj/class_geomdef.cpp
 005095C0 Topology_Copy            // (topo, copy table) (name?)
 0056E2EC Rsx_Copy                 // (src, dst, size, 1) (name?)
 007A0E98 Texture_SetWrap          // AglTexture vfunc +16 (s, t, 1) (name?)
 00558F34 WorldObj_ReleaseRes      // (name?)
-0058049C WorldObj_ApplyClass      // reads f1 (name?)
-00582C6C WorldObj_ShowChildren    // (obj, 0) (name?)
+0058049C WorldObj_SetBoundRadius  // (obj, f32 r in f1): class sphere and box; decompiled: src/obj/obj4.cpp
+00582C6C WorldObj_UpdateZoneMask  // (obj, bool lookup): +324 zone mask; decompiled: src/obj/obj4.cpp
 00580658 WorldObj_InitLinks       // decompiled: src/obj/obj3.cpp
 0057D688 WorldObj_InitTransform   // decompiled: src/obj/obj3.cpp
 0057A1D8 SlotEntry_Move           // (to, from); decompiled: src/obj/obj3.cpp
@@ -881,14 +881,14 @@
 005A0BCC WorldObj_Refresh         // vfunc +60 (name?); decompiled: src/obj/obj3.cpp
 0050A3E4 Texture_ConstructBase    // decompiled: src/font/image2.cpp
 00536E3C Texture_InitLayout       // decompiled: src/font/image2.cpp
-0050A2F0 Texture_ConstructRoot    // (name?)
-0050CAE8 Texture_ReleaseRef       // obj +288 (name?)
-005807D8 WorldObj_FreeExtra300    // (name?)
-0057DA68 WorldObj_DetachAll       // (name?)
-0057D8AC WorldObj_SetParent       // (obj, parent) (name?)
-00558CE8 WorldObj_DestructRoot    // (name?)
-00580094 WorldObj_RefreshSelf     // (obj, depth, flags) (name?)
-00584160 WorldObj_RefreshTree     // (obj, depth) (name?)
+0050A2F0 Texture_ConstructRoot    // (name?); decompiled: src/obj/obj4_res.cpp
+0050CAE8 Light_Free               // (AglLight*); decompiled: src/obj/obj4_res.cpp
+005807D8 Skeleton_Free            // (ApeSkeleton*); decompiled: src/obj/obj4_res.cpp
+0057DA68 WorldObj_ReleasePeers    // recursive removal of 160-byte peer records; decompiled: src/obj/obj4.cpp
+0057D8AC ApeObj_SetClass          // base +44: release old class / addref new; decompiled: src/obj/obj4.cpp
+00558CE8 ApeRoot_Destruct         // root destructor, vtable 0xB242B8; decompiled: src/obj/obj4_res.cpp
+00580094 WorldObj_DumpTree        // (obj, depth, flags): debug dump, printing compiled out; decompiled: src/obj/obj4.cpp
+00584160 Skeleton_DumpTree        // (skel, depth); decompiled: src/obj/obj4.cpp
 0076611C SortedMap_Find3          // (map, const u32* key) -> value slot, map+16 if missing
 007845DC SortedMap_Find2          // same template (Sound_Find)
 000ADE04 SaveData_Reset           // defaults incl. high scores; decompiled: src/world/construct_members.cpp
@@ -1270,3 +1270,57 @@
 007A108C RenderLayerBase_Delete   // decompiled: src/gfx/render_layer.cpp
 007A1120 RenderLayer_Add          // decompiled: src/gfx/render_layer.cpp
 007A1210 RenderLayer_Delete       // decompiled: src/gfx/render_layer.cpp
+
+# World-object classes (light, emitter, camera instances)
+0057F5D8 WorldObj_ForEach         // (obj, fn opd, arg, bool recurse) (name?)
+0057F5CC WorldObj_SetRootCb       // node->+256 = arg; return 1
+0057A53C SlotEntry_Alloc          // (obj) (name?)
+00579C50 SlotEntry_Update         // (entry, obj) (name?)
+005816F0 Skeleton_Create          // (ApeSkeletonDef*) -> ApeSkeleton*
+00581B34 WorldObj_CopyFrom        // (dst, src, bool own_class) (name?)
+005A0394 WorldObj_AddToWorld      // (obj) (name?)
+0057EE00 WorldObj_UpdateLod       // (obj, 0, 0) (name?)
+00556F98 Box_Center               // (box, out) -> out
+00556F60 Box_SetPoint             // (box, p): min = max = p
+005570F0 Box_Transform            // (out, in, matrix) (name?)
+00557430 Box_Overlaps             // (name?)
+00576E28 Zone_Overlaps            // (name?)
+00577338 Zones_MaskFor            // (zones, obj) -> mask (name?)
+00583FBC Skeleton_DumpBone        // (skel, bone, depth, bits) (name?)
+005A2024 LightSlot_Move           // (u16 to, u16 from) (name?)
+005A2528 LightInstance_Register   // (name?)
+005A31C8 LightInstance_Update     // (name?)
+005A2BA8 LightInstance_New        // (ApeLightDef*)
+005A3FFC EmitterInstance_New      // (def, bool)
+0058E3E4 EmitterDef_Copy          // (def, bool) (name?)
+005A59AC CameraInstance_New       // (def)
+
+# Decompiled functions not listed above (added by tools/sync_symbols.py)
+0057F794 WorldObj_AddChild        // decompiled: src/obj/obj4.cpp
+0057F9C0 WorldObj_RemoveChild     // decompiled: src/obj/obj4.cpp
+005A089C WorldObj_Clone           // decompiled: src/obj/obj4.cpp
+005A0A28 WorldObj_SetClass        // decompiled: src/obj/obj4.cpp
+005A0CD4 WorldObj_Changed         // decompiled: src/obj/obj4.cpp
+005A21B4 LightInstance_Destruct   // decompiled: src/obj/class_light.cpp
+005A22AC LightInstance_DeletingDestruct // decompiled: src/obj/class_light.cpp
+005A22FC LightInstance_Release    // decompiled: src/obj/class_light.cpp
+005A2E50 LightInstance_Clone      // decompiled: src/obj/class_light.cpp
+005A2FDC LightInstance_SetClass   // decompiled: src/obj/class_light.cpp
+005A30CC LightInstance_Dump       // decompiled: src/obj/class_light.cpp
+005A3448 LightInstance_Changed    // decompiled: src/obj/class_light.cpp
+005A3DC0 EmitterInstance_Destruct // decompiled: src/obj/class_emitter.cpp
+005A3ED0 EmitterInstance_DeletingDestruct // decompiled: src/obj/class_emitter.cpp
+005A3F18 EmitterInstance_Release  // decompiled: src/obj/class_emitter.cpp
+005A42D0 EmitterInstance_Clone    // decompiled: src/obj/class_emitter.cpp
+005A44A4 EmitterInstance_SetClass // decompiled: src/obj/class_emitter.cpp
+005A458C EmitterInstance_Dump     // decompiled: src/obj/class_emitter.cpp
+005A46FC EmitterInstance_Changed  // decompiled: src/obj/class_emitter.cpp
+005A58C8 CameraInstance_Release   // decompiled: src/obj/class_camera.cpp
+005A5B28 CameraInstance_Clone     // decompiled: src/obj/class_camera.cpp
+005A5C28 CameraInstance_SetClass  // decompiled: src/obj/class_camera.cpp
+005A5DC0 CameraInstance_Dump      // decompiled: src/obj/class_camera.cpp
+007A8D14 CameraInstance_Destruct  // decompiled: src/obj/class_camera.cpp
+007A9964 CameraInstance_Changed   // decompiled: src/obj/class_camera.cpp
+007A9A44 Instance_SetBoundRadius  // decompiled: src/obj/class_light.cpp
+007A9EE0 CameraInstance_ShowAndNotify // decompiled: src/obj/class_camera.cpp
+007A9EE4 CameraInstance_DeletingDestruct // decompiled: src/obj/class_camera.cpp

@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-1,049 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
+1,088 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -119,6 +119,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | UI file loader, element builders and clones (types 0-9), textures and includes | `src/uiload/`, `src/uielem/`, `src/font/` | 25 |
 | World construction: member constructors, save-data defaults, 270 anim-script command/variable types; World event helpers | `src/world/construct*.cpp`, `src/world/event_small.cpp`, `src/world/misc.cpp` | 360 |
 | World-object base class, vtable slots, slots/peers, deferred destruction; texture decoders (BMP, TGA, GTF); 9-slice UI element; timeline key builders | `src/obj/`, `src/font/image*.cpp`, `src/uielem/build6.cpp`, `src/uiload/tlbuild.cpp` | 40 |
+| World-object classes: child lists, clone, set-class, bound radius, zone mask; light, emitter and camera instances; GeomDef | `src/obj/obj4*.cpp`, `src/obj/class_*.cpp` | 39 |
 | Renderer: render layers and jobs, cached draw state, bloom/noise pass, split-screen views | `src/gfx/render*.cpp`, `src/gfx/bloomnoise.cpp`, `src/view/view2*.cpp` | 24 |
 | World objects (lookup, name, scale, instancing), maps, texture allocation/decoding, timeline keys | `src/obj/`, `src/font/`, `src/uiload/` | 11 |
 | XML cursor helpers, texture/material helpers, timelines, BMP font loading, type-5 text update | `src/uiload/`, `src/font/`, `src/uielem/` | 16 |
