@@ -1331,8 +1331,8 @@
 0052EFE0 Pool_DestructPart        // (obj+12) (name?)
 0036A5F0 SplitStyle_Set           // (SplitStyle** slot, SplitStyle*, 0) (name?)
 0075EA74 Map_Get                  // (Map*, const u32* key) -> value slot (name?)
-0050D744 RenderLayers_Register    // 17 per-layer blocks (name?)
-0052E164 RenderLayers_Construct   // 17 inlined RenderLayer constructors (name?)
+0050D744 RenderLayers_Register    // 17 per-layer blocks (name?); decompiled: src/gfx/layers3.cpp
+0052E164 RenderLayers_Construct   // 17 inlined RenderLayer constructors (name?); decompiled: src/gfx/layers3.cpp
 
 # Decompiled functions not listed above (added by tools/sync_symbols.py)
 000D0298 Objects_EndFrame         // decompiled: src/world/rjobs.cpp
@@ -1475,3 +1475,24 @@
 00456BA8 Job_Run456BA8                     // (name?)
 00456CF0 Job_Run456CF0                     // (name?)
 00447B70 PushStack_Changed                 // () after PushStack_Push / _Remove (name?)
+
+# Render layer setup
+00513B78 ZLayer_DrawBody          // (RenderLayer*) ZTranslucent item pass (name?)
+00514200 ResolveLayer_Pass1       // (RenderLayer*) WaterResolve/ScreenWarp (name?)
+00514838 ResolveLayer_Pass2       // (RenderLayer*) (name?)
+005485B4 Slot_Construct           // (176-byte slot at 0x010DFAD0+176*i) (name?)
+00526D18 Pool_Construct           // (0x010DF8B0) (name?)
+
+# Decompiled functions not listed above (added by tools/sync_symbols.py)
+00514074 RenderLayerZ_Draw        // decompiled: src/gfx/layers3.cpp
+00514B0C RenderLayerResolve_Draw  // decompiled: src/gfx/layers3.cpp
+0079C2B4 RenderLayerDepth_Destruct // decompiled: src/gfx/layers3.cpp
+0079C308 RenderLayerZ_Destruct    // decompiled: src/gfx/layers3.cpp
+0079C35C RenderLayerResolve_Destruct // decompiled: src/gfx/layers3.cpp
+0079C3B0 RenderLayerUI_Destruct   // decompiled: src/gfx/layers3.cpp
+007A1290 RenderLayerDepth_Add     // decompiled: src/gfx/layers3.cpp
+007A1380 RenderLayerDepth_Delete  // decompiled: src/gfx/layers3.cpp
+007A1400 RenderLayerZ_Add         // decompiled: src/gfx/layers3.cpp
+007A14F0 RenderLayerZ_Delete      // decompiled: src/gfx/layers3.cpp
+007A155C RenderLayerUI_Delete     // decompiled: src/gfx/layers3.cpp
+007A15C8 RenderLayerResolve_Delete // decompiled: src/gfx/layers3.cpp
