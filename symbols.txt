@@ -1752,7 +1752,7 @@
 00592890 Comps_QueryAnimC         // (peer, comps, s32 comp, bool anim_only) -> bool: spline animation block peer +136 (name?); decompiled: src/obj/obj9_comps.cpp
 0057E8D0 Skeleton_Update          // (ApeSkeleton*): dirty (+31 0x80) -> world matrices from local + parents (name?); decompiled: src/obj/obj9_skel.cpp
 0057E260 WorldObj_UpdateChildLod  // (child, const f32 parent_scale[3]) -> 1: world matrix, sphere, children, Show (name?); decompiled: src/obj/obj9_lod.cpp
-0057C408 Peer_GetMatrix           // (peer, f1, f32 out[4][4]) -> bool copy (name?), 618 insns
+0057C408 Peer_GetMatrix            // (peer, f1 dt, f32 out[4][4]) -> bool follower: rotation (+128) / position (+132) animators, follower (+136); decompiled: src/obj/obj10_peer.cpp
 005922A8 World_AddGroup           // (world unused, group root): world matrices of the tree + Finish tail (name?); decompiled: src/obj/obj9_world.cpp
 0055F008 Spline_NearestSeg        // (const SplineArray*, const f32 p[3], u32 first, u32 end, u32* seg, f32* dist) -> f1 curve parameter in [0,1] (name?); decompiled: src/obj/obj9_spline.cpp
 00560058 Spline_Eval              // (SplineArray*, f1 t, f32 out[3], u32 start seg, bool backward) -> r3 seg: cubic Bezier (name?); decompiled: src/obj/obj9_spline.cpp
@@ -1958,10 +1958,10 @@
 
 # World-object helpers, part 9 (splines, skeleton update)
 0055F244 SplineArray_Reset        // (SplineArray*): all four words 0 (name?); decompiled: src/obj/obj9_spline.cpp
-0055ED60 SplineSeg_Nearest        // (const f32 ctrl[4][4], const f32 p[3], f32* dist, s32 iterations) -> f1 t (name?)
+0055ED60 SplineSeg_Nearest        // (const f32 ctrl[4][4], const f32 p[3], f32* dist, u32 steps) -> f1 t; decompiled: src/obj/obj10.cpp
 0056D374 Matrix_NormalizeInPlace  // (f32 m[4][4]) -> m: 0x0056D268(m, m) (name?); decompiled: src/obj/obj9_lod.cpp
-0056D268 Matrix_Normalize         // (f32 dst[4][4], const f32 src[4][4]) (name?)
-007335C4 SplineMap_Find           // (map = *(*0x00F8F158 +16), const u32* name hash) -> ApeSplineDef** slot (name?)
+0056D268 Matrix_Normalize         // (f32 dst[4][4], const f32 src[4][4]): rows 0-2 to unit length (vrsqrtefp + Newton); decompiled: src/obj/obj10.cpp
+007335C4 SplineMap_Find           // (map = *(*0x00F8F158 +16), const u32* name hash) -> ApeSplineDef** slot; decompiled: src/obj/obj10.cpp
 
 # Shader bind and draw slots
 005BA7D0 SlyCaustics_Bind         // shader vtable 0x00B258B8 slot 8; decompiled: src/gfx/shader2_bind.cpp
@@ -2215,3 +2215,68 @@
 005E08E8 cellGcmReserveMethodSize             // (context, words): context callback when full; libgcm (name?)
 005BC8F8 SlyCharacter2_SetupDraw              // (Shader*, DrawItem*) transforms and lighting constants, 613 insns (name?)
 00553468 Vec3_ToItemSpace                     // (f32 v[3] in/out, DrawItem*) direction into item space (name?)
+
+# World-object helpers, part 10 (peer animators, def classes)
+00585890 GeomDef_Release          // ApeGeomDef +8; decompiled: src/obj/obj10_defs.cpp
+005863F8 LightDef_Release         // ApeLightDef (vtbl 0x00B24700) +8; decompiled: src/obj/obj10_defs.cpp
+0059CA84 CameraDef_Release        // ApeCameraDef (vtbl 0x00B247B8) +8; decompiled: src/obj/obj10_defs.cpp
+0059D52C EmitterDef_Release       // ApeEmitterDef (vtbl 0x00B247E0) +8; decompiled: src/obj/obj10_defs.cpp
+0059E1C0 PointDef_Release         // ApePointDef (vtbl 0x00B24808) +8; decompiled: src/obj/obj10_defs.cpp
+0059F204 SplineDef_Release        // ApeSplineDef (vtbl 0x00B24830) +8; decompiled: src/obj/obj10_defs.cpp
+005863EC LightDef_Vfn20           // +20: returns 0 (name?); decompiled: src/obj/obj10_defs.cpp
+0059CA7C CameraDef_Vfn20          // +20: returns 0 (name?); decompiled: src/obj/obj10_defs.cpp
+0058643C LightDef_Vfn24           // +24 (def, s32 depth): empty (name?); decompiled: src/obj/obj10_defs.cpp
+0059CAC8 CameraDef_Vfn24          // +24: empty (name?); decompiled: src/obj/obj10_defs.cpp
+0059D6B8 EmitterDef_Vfn24         // +24: empty (name?); decompiled: src/obj/obj10_defs.cpp
+0059E204 PointDef_Vfn24           // +24: empty (name?); decompiled: src/obj/obj10_defs.cpp
+0059F5CC SplineDef_Vfn24          // +24: empty (name?); decompiled: src/obj/obj10_defs.cpp
+0059D524 EmitterDef_SetIndex      // (def, u16): +122, the emitter table's moved callback (OPD 0x00F3C768); decompiled: src/obj/obj10_defs.cpp
+0059E028 EmitterDef_DeferredFree  // OPD 0x00F3C7A0: 0x0059DE50(def); decompiled: src/obj/obj10_defs.cpp
+0058AC6C BankSub_Vfn16            // vtbl 0x00B24728 +16: empty (name?); decompiled: src/obj/obj10_small.cpp
+0058C538 BankSub_Vfn32            // vtbl 0x00B24728 +32: empty (name?); decompiled: src/obj/obj10_small.cpp
+0059AF54 Bank_Vfn60               // vtbl 0x00B24770 +60: empty (name?); decompiled: src/obj/obj10_small.cpp
+005A8384 Obj_Nop5A8384            // empty leaf of 0x0010B348 (name?); decompiled: src/obj/obj10_small.cpp
+005913E0 Config_CopyLight108      // g::config +108 = +96 (name?); decompiled: src/obj/obj10_small.cpp
+00599024 World_SetFlags           // (u8): 0x01194570, 0x01194550, 0x010DDA70 (name?); decompiled: src/obj/obj10_small.cpp
+005A1E94 GeomInstance_DeferredFree // OPD 0x00F3C888: 0x005A1CE0(obj); decompiled: src/obj/obj10_small.cpp
+005A3DA0 LightInstance_DeferredFree // OPD 0x00F3C8D8: 0x005A3BEC(obj); decompiled: src/obj/obj10_small.cpp
+005A50DC EmitterInstance_DeferredFree // OPD 0x00F3C938: 0x005A4F28(obj); decompiled: src/obj/obj10_small.cpp
+005A1524 GeomInstance_Visit0      // OPD 0x00F3C860: 0x00583864(obj, 0) (name?); decompiled: src/obj/obj10_small.cpp
+005A48B8 EmitterInstance_Visit0   // OPD 0x00F3C918: 0x00583864(obj, 0) (name?); decompiled: src/obj/obj10_small.cpp
+005A1548 GeomInstance_Visit1      // OPD 0x00F3C868: 0x00583518, 0x005832FC, 0x005A13A0 (name?); decompiled: src/obj/obj10_small.cpp
+005A48DC EmitterInstance_Visit1   // OPD 0x00F3C920: 0x00583518, 0x005832FC, 0x0058C53C (name?); decompiled: src/obj/obj10_small.cpp
+0059AF58 Iff_HandlePvs            // chunk handler OPD 0x00F3C698: Iff_ReadChunks(r, 0), 1; decompiled: src/obj/obj10_small.cpp
+0059B25C Iff_HandleOccp           // chunk handler OPD 0x00F3C6B0: Iff_ReadChunks(r, 0), 1; decompiled: src/obj/obj10_small.cpp
+00580AF0 WorldObj_Set292          // (obj, u32): +292; light +212 bit 0x80 cleared (name?); decompiled: src/obj/obj10_small.cpp
+005A4890 EmitterInstance_Set340   // (obj, u32 v) -> class system +68 = v ? v + 8 : 0 (name?); decompiled: src/obj/obj10_small.cpp
+00583EB8 WorldObj_SeenThisFrame   // (obj) -> +304[view] >= frame (0x010DDA74 +20 / +8) (name?); decompiled: src/obj/obj10_small.cpp
+005801A0 GeomInstance_FindByHash  // (u32 hash) -> *MapB_Find(*(*0x00F8F144 +16)) (name?); decompiled: src/obj/obj10_small.cpp
+00599044 WorldList_Run548508      // (arg): 0x00548508(arg) when *0x011944D8 +8 != 0 (name?); decompiled: src/obj/obj10_small.cpp
+00599108 WorldList_Run548550      // (arg): 0x00548550(arg, 0) likewise (name?); decompiled: src/obj/obj10_small.cpp
+005A8BA8 SplineInstance_GetMode   // (inst) -> record +94 or 0; decompiled: src/obj/obj10_small.cpp
+0057BE98 Peer_GetVec              // (peer) -> 32-byte vector record (obj8.h PeerVec); decompiled: src/obj/obj10_small.cpp
+0057A428 WorldObj_GetPeer         // (obj) -> 160-byte peer record (+164) or 0; decompiled: src/obj/obj10_find.cpp
+0057FF50 WorldObj_GetPeer2        // identical copy of WorldObj_GetPeer; decompiled: src/obj/obj10_find.cpp
+00584888 SkeletonDef_FindBone     // (def, u32 hash) -> s32 index or -1; decompiled: src/obj/obj10_find.cpp
+005A93D8 Skeleton_FindBone        // (skeleton, u32 hash) -> s32 index or -1; decompiled: src/obj/obj10_find.cpp
+00580AA4 WorldObjBase_DeletingDestruct // vtbl 0x00B24660 +4; decompiled: src/obj/obj10_find.cpp
+00585848 GeomDef_DeletingDestruct // ApeGeomDef +4; decompiled: src/obj/obj10_find.cpp
+0059D4DC EmitterDef_DeletingDestruct // ApeEmitterDef +4; decompiled: src/obj/obj10_find.cpp
+005A8BE4 SplineInstance_FollowsParent // (inst) -> record +95 bit 0x40; decompiled: src/obj/obj10_find.cpp
+0057CDB8 Peer_RewindAnims         // (peer): animator times to 0, follower +64 = 0; decompiled: src/obj/obj10_find.cpp
+005A9420 Iff_HandleGeomDef        // (reader, obj) -> kind 20 ? Iff_ReadChunks, 1 : 0; decompiled: src/obj/obj10_find.cpp
+00579BCC ResTable_Reset           // (t): free +0, u16 +4 / +5136 / 0x01193000 = 0 (name?); decompiled: src/obj/obj10_find.cpp
+00582C10 GeomInstance_Replace292  // (obj, u32) -> bool (no direct callers) (name?); decompiled: src/obj/obj10_find.cpp
+005A9378 Skeleton_Watch           // (skeleton): append to *0x01194590 watch list, +31 |= 0x20; decompiled: src/obj/obj10_find.cpp
+0057C110 Peer_ApplyFollower       // (peer, follower, -, f32 out[4][4], bool rotated, bool moved; f1 dt) (name?)
+0057BA40 Follower_Update          // (follower; f1 dt) (name?)
+005556A4 Quat_Multiply            // (f32 out[4], const f32 a[4], const f32 b[4]) (name?)
+00553A90 Quat_ToMatrix            // (f32 out[4][4], const f32 q[4], const f32 pos[3]) (name?)
+007344E0 Math_Cosf                // (f1 x) -> f1: polynomial cosine, even fold (name?)
+0059DE50 EmitterDef_Free          // (def): back to the ApeEmitterDef free list (name?)
+005A1CE0 GeomInstance_Free        // (obj): ApeGeomInstance free list (name?)
+005A3BEC LightInstance_Free       // (obj): ApeLightInstance free list (name?)
+005A4F28 EmitterInstance_Free     // (obj): ApeEmitterInstance free list (name?)
+00585678 GeomDef_Destruct         // ApeGeomDef +0 (name?)
+0059D360 EmitterDef_Destruct      // ApeEmitterDef +0 (name?)
+00583864 WorldObj_Visit583864     // (obj, u32) (name?)
