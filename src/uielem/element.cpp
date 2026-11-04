@@ -52,7 +52,7 @@ DECOMP(00761B90, UiElem_SetPosition) {
 }
 
 // f32* UiElem_GetScale()  [+36]
-DECOMP(00761BB4, UiElem_GetScale) { ret(ctx, arg<u32>(ctx, 0) + kElemScale); }
+DECOMP(00761BB4, UiElem_ScalePtr) { ret(ctx, arg<u32>(ctx, 0) + kElemScale); }
 
 // void UiElem_SetScale(const f32 v[3])  [+40]
 DECOMP(00761BC0, UiElem_SetScale) {
@@ -61,7 +61,7 @@ DECOMP(00761BC0, UiElem_SetScale) {
 }
 
 // Vec2 UiElem_GetSize()  [+44]: returned through r3; the base class has no size.
-DECOMP(00761BDC, UiElem_GetSize) {
+DECOMP(00761BDC, UiElem_SizePtr) {
     const u32 out = arg<u32>(ctx, 0);
     Copy32(out, kZeroVec2);
     Copy32(out + 4, kZeroVec2 + 4);

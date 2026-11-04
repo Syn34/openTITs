@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-379 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
+390 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -103,6 +103,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | Sound handles and voices, emitter params/stop/focus, look-at, UI render; text format, boot check, element rect/scale | `src/audio/`, `src/world/`, `src/ui/`, `src/text/`, `src/system/` | 20 |
 | Sound library handlers, bank start, spatialisation, draw commands; glyph building, element world matrix/size/colour | `src/audio/`, `src/world/`, `src/text/`, `src/uielem/`, `src/view/` | 32 |
 | Sound library: handler alloc/start/params, voice stealing, channels, Doppler; focus sound start | `src/audio/` | 17 |
+| UI element construction, text constructors and buffers, typewriter and quad animation | `src/uielem/` | 11 |
 | UI element methods, system message box, heaps, allocators, free lists | `src/uielem/`, `src/common/` | 74 |
 | Platform, FIOS, archives, IFF, resources, debug and graphics start-up | `src/platform/`, `src/file/`, `src/resource/`, `src/debug/`, `src/gfx/` | 13 |
 | File layer (zip archives, disc files, archive streams), threads, tag map, shaders | `src/file/`, `src/platform/`, `src/resource/`, `src/gfx/` | 25 |
