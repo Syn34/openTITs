@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-558 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
+574 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -115,6 +115,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | Tiles and zcull, depth targets, render surfaces, shader groups, post-process and blur programs | `src/gfx/` | 23 |
 | Shader program loading, materials, post-process effect set-up (bloom, DOF, god rays, ...), copy/blur draws | `src/gfx/` | 19 |
 | UI file loader, element builders and clones (types 0-9), textures and includes | `src/uiload/`, `src/uielem/`, `src/font/` | 25 |
+| XML cursor helpers, texture/material helpers, timelines, BMP font loading, type-5 text update | `src/uiload/`, `src/font/`, `src/uielem/` | 16 |
 | Video mode selection and configuration, display targets, surfaces, render targets | `src/gfx/` | 9 |
 | Zip entry info and open, libgcm/RSX start-up, RSX memory pools, command buffers | `src/file/`, `src/gfx/` | 9 |
 | Text element classes (destruct, clone, update, draw), timelines, axis-angle matrix, hash map; zip local header, display and frame surfaces, RSX heap | `src/uielem/`, `src/view/`, `src/file/`, `src/gfx/` | 19 |

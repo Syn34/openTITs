@@ -613,8 +613,8 @@
 004DCC04 UiText5_FromXml          // decompiled: src/uiload/elem_text.cpp
 004DE0F8 Ui_LoadElement           // (doc, node, parent, arg) -> Element*; decompiled: src/uiload/loader.cpp
 004DFA60 Ui_LoadFile              // (include, doc, root) -> 1; decompiled: src/uiload/loader.cpp
-004D6768 Font_Load                // (name?)
-004E70D0 UiText5_Update           // (name?)
+004D6768 Font_Load                // Font vfunc +12; decompiled: src/font/bmp.cpp
+004E70D0 UiText5_Update           // vtbl 0xB22B78 +152; decompiled: src/uielem/t5update.cpp
 0045CAA0 StateMachine_Construct   // (this, levels, data size, u8 initial); decompiled: src/world/vt_statemachine.cpp
 0045CBE8 StateMachine_ConstructThunk
 00464A24 StateMachine_Destruct
@@ -704,22 +704,22 @@
 00795790 Include_Delete           // decompiled: src/font/include.cpp
 004DFD04 Include_Load             // decompiled: src/font/include.cpp
 004DFDDC Include_Unload           // decompiled: src/font/include.cpp
-004F9140 XmlCursor_FirstChildAny  // (name?)
-004F8D74 XmlCursor_NextSiblingAny // (name?)
-00555EB0 String_CompareN          // (name?)
-004D7F24 UiElem8_Construct        // (name?)
-004D8A80 UiElem_SetTexture        // (name?)
+004F9140 XmlCursor_FirstChildAny  // decompiled: src/uiload/more.cpp
+004F8D74 XmlCursor_NextSiblingAny // decompiled: src/uiload/more.cpp
+00555EB0 String_CompareN          // strncasecmp -> -1/0/1; decompiled: src/uiload/more.cpp
+004D7F24 UiElem8_Construct        // decompiled: src/uiload/more.cpp
+004D8A80 UiElem_SetTexture        // decompiled: src/uiload/more.cpp
 004D8E88 UiElem6_Build            // (name?)
-004DD08C UiElem2_SetBlend         // (name?)
-00523B7C Tex_Acquire              // (name?)
-004DF88C Timeline_FromXml         // (name?)
+004DD08C UiElem2_SetBlend         // decompiled: src/uiload/more.cpp
+00523B7C Tex_Acquire              // (Texture*) -> new AglMaterial on it; decompiled: src/uiload/more.cpp (name?)
+004DF88C Timeline_FromXml         // -> TimelineDef (vtbl 0xB22F60); decompiled: src/uiload/more.cpp
 005903F4 Bank_Create              // (name?)
 005904EC Bank_Open                // (name?)
 005964B4 Bank_Start               // (name?)
 00596E3C Bank_Destroy             // (name?)
-0050C398 Tex_FindLoaded           // (name?)
-0051E68C Tex_LoadFile             // (name?)
-004D5C64 Texture_MakePages        // (name?)
+0050C398 Tex_FindLoaded           // decompiled: src/uiload/more.cpp
+0051E68C Tex_LoadFile             // decompiled: src/uiload/more.cpp
+004D5C64 Texture_MakePages        // decompiled: src/uiload/more.cpp
 
 # Shader programs, post-process effects
 00534074 VProgram_Load            // decompiled: src/gfx/prog_pair.cpp
@@ -756,3 +756,20 @@
 0053F050 Monochrome_Draw          // (name?)
 0053F8A8 Dof_Draw                 // (name?)
 00540DD8 BloomNoise_Draw          // (name?)
+
+# UI helpers, fonts, type-5 update
+004F899C XmlCursor_FirstChildRawAny // (cursor) first child of any tag; decompiled: src/uiload/more.cpp
+004FA744 XmlCursor_Text           // (cursor) -> XMLB element +4; decompiled: src/uiload/more.cpp
+004D65EC Bmp_GetPixel             // (out, pix, pal, x, y, stride, h, bpp, topdown); decompiled: src/font/bmp.cpp
+004DF708 TimelineDef_KeyFromXml   // (doc, node, def) -> key or 0 (name?)
+005801DC WorldObj_FindByHash      // (hash, 0) -> object (name?)
+007399A4 HashMap_Find2            // (map, const u32* key) -> value slot (name?)
+005A05E8 WorldObj_Instance        // (class, 0) -> object (name?)
+0057D368 WorldObj_SetName         // (obj, name, 1) (name?)
+00583E54 WorldObj_Func583E54      // (obj, 12) (name?)
+0057D100 WorldObj_SetScale        // (obj, const f32[3], 0) (name?)
+004D7CF8 UiElem8_Attach           // (e, obj, 1) (name?)
+0051D368 Texture_Alloc            // () -> Texture* (name?)
+0053A640 Texture_Init             // (tex, data, size, ext, path) -> bool (name?)
+0079DD10 Map_Find                 // (map, const u32* key) -> value slot (name?)
+004D8D48 UiElem6_AddSlice         // (name?)
