@@ -1896,18 +1896,18 @@
 005D2C00 SlyWater_End                     // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
 005D3F84 SlyWater2_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
 005D5A68 SlyWater3_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
-0079D6F8 DrawItem_Create                  // (Mesh*, Material*, const ItemDesc*) -> 80-byte DrawItem from the frame arena (name?)
-00537824 Skin_BuildJob                    // (job record, desc*, part record, bones, flags) SPU skinning job (name?)
+0079D6F8 DrawItem_Create                      // decompiled: src/gfx/shader3.cpp
+00537824 Skin_BuildJob                        // decompiled: src/gfx/shader3.cpp
 005E0BA4 cellGcmSetVertexDataArray        // (context, index, freq, stride, size, type, location, offset) libgcm (name?)
 005E4394 cellGcmSetVertexDataArrayUnsafe  // same without the buffer check, libgcm (name?)
-0050D124 MaterialAnim_UploadUV            // (anim or 0, first constant, f32 su, f32 sv) 2 vertex constants (name?)
-0052F270 FProgram_SetConstant             // (index, const f32 v[4]) current fragment program constant, dirty on change (name?)
-0050CF50 Draw_SetParticleState            // (0, bool, 32) (unknown, name?)
+0050D124 MaterialAnim_UploadUV                // decompiled: src/gfx/shader3.cpp
+0052F270 FProgram_SetConstant                 // decompiled: src/gfx/shader3.cpp
+0050CF50 Draw_SetParticleState                // decompiled: src/gfx/shader3.cpp; really the view fog (View_SetFog?)
 005BD298 SlyCharacter2_Bind       // shader vtable 0x00B25958 slot 8; decompiled: src/gfx/shader2_bind.cpp
 00546EF4 Render_Init546EF4                // () called by Render_Init (unknown)
-005D9810 ShaderTypes_Construct            // static constructor of the 57 ShaderType statics at 0x01196A80 (name?)
-005D8E50 ShaderTypes_Destruct             // static destructor of the same (name?)
-0050B138 Shader_RegisterAll               // registers the ShaderType tables 0x00F88A08 / A4C / A68 / A8C by config flags (name?)
+005D9810 ShaderTypes_Construct                // decompiled: src/gfx/shader3_typeinit.cpp
+005D8E50 ShaderTypes_Destruct                 // decompiled: src/gfx/shader3_typeinit.cpp
+0050B138 Shader_RegisterAll                   // decompiled: src/gfx/shader3_registry.cpp
 
 # World event handler callees, part 5
 00458B1C Game_Exit458B1C                      // (Game*): Game_Shutdown, sub_004A8AC4, _exit(0); decompiled: src/world/hevent5_a.cpp (was Game_Reset458B1C) (name?)
@@ -1990,15 +1990,15 @@
 005AFBF8 Outline_Draw             // shader vtable 0x00B251A8 slot 12; decompiled: src/gfx/shader2_draw.cpp
 005B3148 Decal_Draw               // shader vtable 0x00B254B0 slot 12; decompiled: src/gfx/shader2_draw.cpp
 005AF730 ScreenWarp_Draw          // shader vtable 0x00B250F0 slot 12; decompiled: src/gfx/shader2_draw.cpp
-005AE648 TextureWarp_BuildMatrices // (Material*, f32 m1[16], f32 m2[16], f32 v[4]) two UV warp matrices + vec4; also used by Water / SlyWater* Bind (name?)
-005D12C8 SlyTextureWarp_BuildMatrices // the same for SlyTextureWarp_Bind (name?)
-00537BB8 Display_GetDepthTexture  // (g::mem_stats) scene depth texture for the current buffer set (mem_stats +132 / +104 / +108 / +88) (name?)
-005C6B20 SlyHeightFog_UploadFog   // (Material*) fog vertex constants (name?)
-00512940 Draw_GetScreenCopy       // () Draw_CopyScreen once per frame (layers4::g::copy_stamp / copy_texture) (name?)
-0050D1E0 MaterialAnim_UploadUVAlt // (anim, first, su [f1], sv [f2]) Water_Bind's variant of MaterialAnim_UploadUV (name?)
-0050D0E0 DrawItem_SetParticleState // (DrawItem*, u32) Draw_SetParticleState(item +68 bit 5, material +100 bit 5, arg) (name?)
-005D3180 SlyWater2_UploadWaves    // (Material*) vertex constants (name?)
-005D4A38 SlyWater3_UploadWaves    // (Material*) vertex constants (name?)
+005AE648 TextureWarp_BuildMatrices            // decompiled: src/gfx/shader3.cpp
+005D12C8 SlyTextureWarp_BuildMatrices         // decompiled: src/gfx/shader3.cpp
+00537BB8 Display_GetDepthTexture              // decompiled: src/gfx/shader3.cpp
+005C6B20 SlyHeightFog_UploadFog               // decompiled: src/gfx/shader3.cpp
+00512940 Draw_GetScreenCopy                   // decompiled: src/gfx/shader3.cpp
+0050D1E0 MaterialAnim_UploadUVAlt             // decompiled: src/gfx/shader3.cpp
+0050D0E0 DrawItem_SetParticleState            // decompiled: src/gfx/shader3.cpp; DrawItem fog (name?)
+005D3180 SlyWater2_UploadWaves                // decompiled: src/gfx/shader3.cpp
+005D4A38 SlyWater3_UploadWaves                // decompiled: src/gfx/shader3.cpp
 005E3F80 cellGcmSetMethod1FF8     // (context, value) libgcm inline writer, NV4097 method 0x1FF8 (name?)
 005E4124 cellGcmSetVertexProgramParameterBlock // (context, first, vec4 count, const f32*) method 0x1EFC (name?)
 
@@ -2023,3 +2023,195 @@
 0044A0C0 Emitters_Reset44A0C0                 // (): emitter stop + voices / music / mixer reset; decompiled: src/world/hevent6_i.cpp (name?)
 004549D0 Spawners_Reset4549D0                 // (SpawnerMgr*); decompiled: src/world/hevent6_i.cpp (name?)
 004473C0 Music_SetTime4473C0                  // (; f32) (name?)
+
+# Shader types, registry, fog, shader draws
+005AE0F0 SimpleColorTxrUV_Draw                // decompiled: src/gfx/shader3_draw.cpp
+005B9D0C Sly2UV_Draw                          // decompiled: src/gfx/shader3_draw.cpp
+005BA8BC SlyCaustics_Draw                     // decompiled: src/gfx/shader3_draw.cpp
+005C4C3C SlyDecal4_Draw                       // decompiled: src/gfx/shader3_draw.cpp
+005CD6F0 SlyScreenWarp_Draw                   // decompiled: src/gfx/shader3_draw.cpp
+005B7260 SAC_Environment_Draw                 // decompiled: src/gfx/shader3_draw.cpp
+005B78A8 SAC_Prop_Draw                        // decompiled: src/gfx/shader3_draw.cpp
+005B7F18 SAC_LitProp_Draw                     // decompiled: src/gfx/shader3_draw.cpp
+005B8640 SAC_FastProp_Draw                    // decompiled: src/gfx/shader3_draw.cpp
+005BD3B0 SlyCharacter2_Draw                   // decompiled: src/gfx/shader3_draw.cpp
+005C1EB8 SlyCharacterFakeFur_Draw             // decompiled: src/gfx/shader3_draw.cpp
+007ABEF4 DebugType_Create                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AC178 PrimTxrType_Create                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AC2E4 PrimNoTxrType_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AC498 SimpleColorTxrType_Create            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AC64C SimpleColorTxrUVType_Create          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005AF080 TextureWarpType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AC8B8 ScreenWarpType_Create                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005AFAD4 LineOutlineType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005AFF0C OutlineType_Create                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007ACE20 ParticleMaterialType_Create          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AD05C GeoParticleType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AD210 SprParticleType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AD484 ShadowType_Create                    // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B155C ProjTxrType_Create                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AD614 ProjTxr_DeferredType_Create          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B1C6C ZPassType_Create                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B2940 DiffuseType_Create                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007ADAD0 DecalType_Create                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B4004 EnvMapType_Create                    // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B4EC8 SelfLightType_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B56B0 AngleIndexType_Create                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B6424 WaterType_Create                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B6F54 SAC_SkinnedType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B7780 SAC_EnvironmentType_Create           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B7DEC SAC_PropType_Create                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B8518 SAC_LitPropType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B8C60 SAC_FastPropType_Create              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005B9924 SAC_EnvMapType_Create                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AE8D0 SAC_PanoramaType_Create              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AE9AC SAC_ParticleType_Create              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005BA1DC Sly2UVType_Create                    // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005BAD8C SlyCausticsType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005BC030 SlyCharacterType_Create              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005BD7A0 SlyCharacter2Type_Create             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005BF148 SlyCharacterEyeType_Create           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C0C28 SlyCharacterFurType_Create           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C1A10 SlyCharacterFurFinType_Create        // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C22A8 SlyCharacterFakeFurType_Create       // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C320C SlyCharacterCollectibleType_Create   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C4120 SlyDecalType_Create                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C5104 SlyDecal4Type_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C6328 SlyEnvMapType_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C7B84 SlyHeightFogType_Create              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005C914C SlyMirrorType_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005CA368 SlyPanoramaType_Create               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005CAA98 SlyProjTxrType_Create                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005CB9D8 SlyPropType_Create                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005CCDF0 SlyTerrainType_Create                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AF7A4 SlyScreenWarpType_Create             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AFB94 SlyShadowMapType_Create              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005CE264 SlyShrubType_Create                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005CF28C SlyTerrainSnowType_Create            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005D0974 SlyTerrainSnowDecalType_Create       // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005D1EC4 SlyTextureWarpType_Create            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005D2C04 SlyWaterType_Create                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005D3F88 SlyWater2Type_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+005D5A6C SlyWater3Type_Create                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 0
+007AA82C DebugType_Destruct                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AA87C PrimTxrType_Destruct                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AA8CC PrimNoTxrType_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AA91C SimpleColorTxrType_Destruct          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AA96C SimpleColorTxrUVType_Destruct        // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AA9BC TextureWarpType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAA0C ScreenWarpType_Destruct              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAA5C LineOutlineType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAAAC OutlineType_Destruct                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAAFC ParticleMaterialType_Destruct        // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAB4C GeoParticleType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAB9C SprParticleType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AABEC ShadowType_Destruct                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAC3C ProjTxrType_Destruct                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAC8C ProjTxr_DeferredType_Destruct        // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAD2C ZPassType_Destruct                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAD7C DiffuseType_Destruct                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AADCC DecalType_Destruct                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAE1C EnvMapType_Destruct                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAE6C SelfLightType_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAEBC AngleIndexType_Destruct              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAF0C WaterType_Destruct                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAF5C SAC_SkinnedType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAFAC SAC_EnvironmentType_Destruct         // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AAFFC SAC_PropType_Destruct                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB04C SAC_LitPropType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB09C SAC_FastPropType_Destruct            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB0EC SAC_EnvMapType_Destruct              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB13C SAC_PanoramaType_Destruct            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB18C SAC_ParticleType_Destruct            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB1DC Sly2UVType_Destruct                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB22C SlyCausticsType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB27C SlyCharacterType_Destruct            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB2CC SlyCharacter2Type_Destruct           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB31C SlyCharacterEyeType_Destruct         // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB36C SlyCharacterFurType_Destruct         // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB3BC SlyCharacterFurFinType_Destruct      // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB40C SlyCharacterFakeFurType_Destruct     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB45C SlyCharacterCollectibleType_Destruct // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB4AC SlyDecalType_Destruct                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB4FC SlyDecal4Type_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB54C SlyEnvMapType_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB59C SlyHeightFogType_Destruct            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB5EC SlyMirrorType_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB63C SlyPanoramaType_Destruct             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB68C SlyProjTxrType_Destruct              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB6DC SlyPropType_Destruct                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB81C SlyTerrainType_Destruct              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB72C SlyScreenWarpType_Destruct           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB77C SlyShadowMapType_Destruct            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB7CC SlyShrubType_Destruct                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB86C SlyTerrainSnowType_Destruct          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB8BC SlyTerrainSnowDecalType_Destruct     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB90C SlyTextureWarpType_Destruct          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB95C SlyWaterType_Destruct                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB9AC SlyWater2Type_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AB9FC SlyWater3Type_Destruct               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 8
+007AC0BC DebugType_Delete                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AC270 PrimTxrType_Delete                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AC3DC PrimNoTxrType_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AC590 SimpleColorTxrType_Delete            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AC748 SimpleColorTxrUVType_Delete          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AC800 TextureWarpType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007ACC34 ScreenWarpType_Delete                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007ACCF0 LineOutlineType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007ACDAC OutlineType_Delete                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007ACFA0 ParticleMaterialType_Delete          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AD158 GeoParticleType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AD410 SprParticleType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AD49C ShadowType_Delete                    // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AD558 ProjTxrType_Delete                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AD7E4 ProjTxr_DeferredType_Delete          // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AD95C ZPassType_Delete                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007ADA14 DiffuseType_Delete                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE108 DecalType_Delete                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE1C4 EnvMapType_Delete                    // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE280 SelfLightType_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE33C AngleIndexType_Delete                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE3F4 WaterType_Delete                     // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE4B0 SAC_SkinnedType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE56C SAC_EnvironmentType_Delete           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE628 SAC_PropType_Delete                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE6E4 SAC_LitPropType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE7A0 SAC_FastPropType_Delete              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE85C SAC_EnvMapType_Delete                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE938 SAC_PanoramaType_Delete              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AE9CC SAC_ParticleType_Delete              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AEA88 Sly2UVType_Delete                    // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AEB44 SlyCausticsType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AEBFC SlyCharacterType_Delete              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AECB4 SlyCharacter2Type_Delete             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AED6C SlyCharacterEyeType_Delete           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AEE24 SlyCharacterFurType_Delete           // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AEEDC SlyCharacterFurFinType_Delete        // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AEF94 SlyCharacterFakeFurType_Delete       // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF04C SlyCharacterCollectibleType_Delete   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF108 SlyDecalType_Delete                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF1C4 SlyDecal4Type_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF280 SlyEnvMapType_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF33C SlyHeightFogType_Delete              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF3F8 SlyMirrorType_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF4B4 SlyPanoramaType_Delete               // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF574 SlyProjTxrType_Delete                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF630 SlyPropType_Delete                   // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AF6EC SlyTerrainType_Delete                // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFB20 SlyScreenWarpType_Delete             // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFBD8 SlyShadowMapType_Delete              // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFC94 SlyShrubType_Delete                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFD50 SlyTerrainSnowType_Delete            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFE0C SlyTerrainSnowDecalType_Delete       // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFEC4 SlyTextureWarpType_Delete            // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007AFF7C SlyWaterType_Delete                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007B0034 SlyWater2Type_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+007B00EC SlyWater3Type_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
+0050BE5C MaterialAnim_GetUV                   // (anim; f1 su, f2 sv) -> const f32[8]: two UV rows for MaterialAnim_UploadUV (name?)
+0050BF48 MaterialAnim_GetUVAlt                // (anim, f32 out[4]) MaterialAnim_UploadUVAlt's source (name?)
+0050AFDC Shader_Construct                     // (Shader*) base Shader vtable 0x00B233A0 (name?)
+0053A9D8 Shader_Load                          // (Shader*, vp name, fp name or 0, vparams, fparams): System\Shaders\%s_V.vpo / %s.fpo (name?)
+0053ABB8 Shader_SetFpControl                  // (Shader*, u32 bits 20..25 of the fragment program control word) (name?)
+005E08E8 cellGcmReserveMethodSize             // (context, words): context callback when full; libgcm (name?)
+005BC8F8 SlyCharacter2_SetupDraw              // (Shader*, DrawItem*) transforms and lighting constants, 613 insns (name?)
+00553468 Vec3_ToItemSpace                     // (f32 v[3] in/out, DrawItem*) direction into item space (name?)
