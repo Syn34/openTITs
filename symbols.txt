@@ -3259,17 +3259,17 @@
 007A8D40 CameraInstMap_Remove     // CameraInstMap_Remove; decompiled: src/obj/obj16_map.cpp
 007A8F34 PointInstMap_Remove      // PointInstMap_Remove; decompiled: src/obj/obj16_map.cpp
 007A92F4 SplineInstMap_Remove     // SplineInstMap_Remove; decompiled: src/obj/obj16_map.cpp
-005792F0 Quads_Prepare            // (view +816, quads, u16 count, out matrices, u16* out count) (name?)
+005792F0 Quads_Prepare            // (cam, quads, u16 n, out planes, u16* count): nearest visible quads (sorted 0x01192E00) -> 5 clip planes each (name?); decompiled: src/obj/obj17.cpp
 004FED94 Mesh_FindByHash          // Mesh* Mesh_FindByHash(u32 hash): *MeshMap_Find(*0x010DDC80, &hash) (name?); decompiled: src/obj/obj16_small.cpp
 00526300 Mesh_Default             // AglTopology* Mesh_Default(): default 4x4 sphere topology made on first use (name?); decompiled: src/obj/obj16_small.cpp
 00527FEC LodTarget_Apply          // void LodTarget_Apply(t, const f32 m[3][4], x, level): {-level, rec} into draw list A/B/C + 80-byte record (name?); decompiled: src/obj/obj16_small.cpp
 00589BC8 Slots_UpdateDirect       // (o): Slots_UpdateA's non-job path (name?)
 0058B128 Slots_PrepareB           // void Slots_PrepareB(): fills the slot job parameter block 0x0118B180 (name?); decompiled: src/obj/obj16_small.cpp
 0058B4B8 Slots_UpdateDirectB      // () (name?)
-0059845C Lights_Tick              // (list; f1 dt) (name?)
+0059845C Lights_Tick              // (List*; f1 dt): submits the per-64-object transform jobs (WorkQueue_SubmitF158), busy word 0x0116BD80 (name?); decompiled: src/obj/obj17.cpp
 005981D4 Lights_Tick2             // void Lights_Tick2(List*): waits for the jobs, then per job Fn_597C9C + UpdateTransforms / AddGroup (name?); decompiled: src/obj/obj16_small.cpp
-00597158 Lights_TickB             // (list; f1 dt) (name?)
-00566950 StrBuf_Grow              // (buf, s32 capacity) (name?)
+00597158 Lights_TickB             // (LightList*; f1 dt): advances the 80-byte light animation records, distance-culled (name?); decompiled: src/obj/obj17.cpp
+00566950 StrBuf_Grow              // (buf, s32 cap): grows +0/+8 (pooled +20 allocates the OLD capacity: original bug kept) (name?); decompiled: src/obj/obj17.cpp
 00580B18 WorldObj_ApplyHeader     // void WorldObj_ApplyHeader(Obj*, const InstanceHeader*): ApplyHeaderB + +320..322 bits, kind 8/10 mode, light reference (name?); decompiled: src/obj/obj16_small.cpp
 0057D3E8 WorldObj_ApplyHeaderB    // bool WorldObj_ApplyHeaderB(Obj*, const InstanceHeader*): name, matrix (y = z x x), dirty, scale, flags, definition (vfunc +44) (name?); decompiled: src/obj/obj16_small.cpp
 0059E9B0 PointDef_GetDefault      // ApePointDef* PointDef_GetDefault(): from the free list, base + point ctor inlined, cached (name?); decompiled: src/obj/obj16_small.cpp
@@ -3277,7 +3277,6 @@
 005E4514 Gcm_Fn5E4514             // (context, 0, shader +16) (name?)
 005E3F18 Gcm_Fn5E3F18             // (context, 0, 1, 0, u16, 0) (name?)
 005E3E88 Gcm_Fn5E3E88             // (context, 0, 0, u8, u8, 1) (name?)
-00588FFC Fn_588FFC                // (u32) Bank_Start / Bank_Tick (name?)
 
 # Renderer sweep part 3 (IFF handlers, render targets, query slots)
 0050A404 TextureBase_Destruct               // [vtable 00B23380[0]] the Texture_DestructBody body compiled separately; decompiled: src/gfx/gfx9.cpp
@@ -3440,14 +3439,11 @@
 00576F28 Volume_SetFromBox        // void Volume_SetFromBox(Volume*, const Box*, const f32 q[4], const f32 off[3]) (name?); decompiled: src/obj/obj16_small.cpp
 00569CDC Debug_DrawLine           // void Debug_DrawLine(const Line*): a 2-vertex debug line when the draw buffer has room (name?); decompiled: src/obj/obj16_small.cpp
 00572228 Sysutil_StaticInit       // void Sysutil_StaticInit(): static initializer: sysutil mutex, job dispatcher mutexes / queues (name?); decompiled: src/obj/obj16_small.cpp
-00597C9C Fn_597C9C                // (list, u32, s32, u32* objs, u32* groups, u32* na, u32* nb): Lights_Tick2's (name?)
 00574370 LightVolume_DrawOutside  // (light, -, viewproj, proj, corners; f1 light +128) (name?)
 00573600 LightVolume_DrawStencil  // (light, mats, viewproj, proj, corners; f1 light +128) (name?)
-007A6EFC Sphere_FrustumFine       // (view, const f32 centre[3], const f32 extent[3], src +80) -> bool (name?)
-00576BD8 Obb_FromBox              // (out, const Box*, const f32 m[4][4]) (name?)
-0057CE08 Def_FindByHash57CE08     // (u32 hash) -> definition (name?)
-0059A84C Fn_59A84C                // (u32* items, u32 count) -> u32 (name?)
-00572D20 Fn_572D20                // (obj, -, out, -; f1): reads r3, r5, f1 only (name?)
+007A6EFC Sphere_FrustumFine       // (view, c[3], e[3], m[3][4]) -> bool: the oriented box inside the view's 8 planes (+96 / +160 SoA) (name? really an OBB test); decompiled: src/obj/obj17.cpp
+00576BD8 Obb_FromBox              // (f32 out[6][4], const Box*, const f32 m[4][4]): the box's 6 face planes transformed (corner table 0x00F8897C); decompiled: src/obj/obj17.cpp
+0057CE08 Def_FindByHash57CE08     // (u32 hash, s32 kind) -> def: the kind's map (8/20 geom, 9/21 light, 10/22 emitter, 11/23 camera, 12/24 point, 13/25 spline), others geom -> light -> emitter; decompiled: src/obj/obj17.cpp
 
 # World event handler callees, part 14
 0012C250 Player_Respawn12C250                 // (Object* player) -> 0: owner reset, grind save restore, physics restart, transform from entry anchor (+2328, +2364 height) or named point, slots, release / grind spline, camera target blends, clears +188 bit 23; decompiled: src/world/hevent14_d.cpp (name?)
@@ -3530,3 +3526,40 @@
 005BDD30 Fn_005BDD30                         // (0x01196EC0, m, d) -> bool; LoadParams_005C25B8 (name?)
 00516CD0 DrawQueue_Run_00516CD0              // (queue 0x011DE300) DrawQueue_Begin_00518610 (name?)
 0060DE84 Edge_0060DE84                       // Edge SDK, 10 args (2 on the stack); left recompiled
+
+# Engine core helpers, part 17 (lights, banks, resource loaders)
+0059A84C Jobs_BuildItemMatrices   // (Item** items, u32 n) -> frame buffer of n (slot / +80 matrix) x view_proj matrices, identity for null (name?); decompiled: src/obj/obj17.cpp
+00588FFC WorldObj_FlushDirty      // (bool all): 0 drains the dirty list (UpdateLod, clear 0x400); else UpdateLod for dirty geom/light/emitter instances (name?); decompiled: src/obj/obj17.cpp
+00597C9C Objs_UpdateTransforms    // (l, recs, n, outA, outB, na*, nb*): Lights_Tick2's per-job step (Peer_GetMatrix + combine) (name?); decompiled: src/obj/obj17.cpp
+00572D20 LightCam_Setup           // (cam, -, out; f1 scale): look-at x projection, colour, depths, 6 normalized planes (name?); decompiled: src/obj/obj17.cpp
+005900BC Bank_ComputeBounds       // (): the box of all geometry instances' +128 points into bank globals +5328/+5344 (name?); decompiled: src/obj/obj17.cpp
+00585480 GeomDef_FromRecord       // (GeomDef*, const GeomRec*): box, sphere, name, hashes, shadow / fade params (clamped) (name?); decompiled: src/obj/obj17.cpp
+00586FEC Resources_InitSplineInsts // (): spline instance holder *0x00F8F158 + map, 0x01194580 array, 'SIPS'/'HIPS' chunks (name?); decompiled: src/obj/obj17.cpp
+00588240 Resources_InitEmitterDefs // (): emitter def holder *0x00F8F138 + map, 0x01194570 array, 'TIME'/'HIME' chunks (name?); decompiled: src/obj/obj17.cpp
+00585268 Skeleton_ReadBones       // (IffReader*, Skeleton**) -> 1: per bone desc -> Bone_InitFromDesc, parent index +100 (name?); decompiled: src/obj/obj17.cpp
+00569EC8 Debug_DrawRect           // (const Rect*): Debug_DrawLine's 4-vertex quad sibling (name?); decompiled: src/obj/obj17.cpp
+0059CF98 CameraDef_Read           // (IffReader*, Def*) -> 1: xBasis/zBasis/pos/fov/nameHash/animHash/name (name?); decompiled: src/obj/obj17.cpp
+0058F8C4 GeomInstances_Refresh    // (): vfn40(0,0) for geometry instances with no LODs or a single eligible one (name?); decompiled: src/obj/obj17.cpp
+00588C3C Bank_FreeAll             // () -> 1: frees the bank's vectors / objects / slot records / dirty list (name?); decompiled: src/obj/obj17.cpp
+005A96E8 AttachPoint_Read         // (IffReader*, Owner*) -> bool: one 80-byte attach point (quat rows, pos, bone index) (name?); decompiled: src/obj/obj17.cpp
+0059AD20 Bank_PreRender           // (Obj*): work record slot range, Workers_Update, render jobs kick, light volume worker blocks (name?); decompiled: src/obj/obj17.cpp
+00586DB4 LightVolumes_Init        // () -> bool: shaders, 64-entry array, material blend state, vertex format 0x0116BE00 (name?); decompiled: src/obj/obj17.cpp
+0058D6E0 Bank_DrawViewports       // (Obj*): per work item viewport + inline scissor, Bank_DrawItem (name?); decompiled: src/obj/obj17.cpp
+0059B9CC GeomDef_Read             // (IffReader*, GeomDef*) -> 1: the versioned geometry definition chunk -> GeomDef_FromRecord (name?); decompiled: src/obj/obj17.cpp
+0059A49C Slots_CopyForJob         // (o, Obj** objs, n) -> o->vfn44(o, buf, n): the objects' 128-byte slot records copied to a frame buffer (name?); decompiled: src/obj/obj17.cpp
+0059B018 ZoneRegion_Read          // (IffReader*) -> 1: one zone region (id/mask shifted, Volume_SetFromBox, name, hash) into the bank zone set (name?); decompiled: src/obj/obj17.cpp
+00590DA0 Lights_CollectGlobal     // (): config +176 ambient / +192 sun colour / +208 sun dir from placed type-0 / type-1 light instances (name?); decompiled: src/obj/obj17.cpp
+00585EF0 LightDef_FromRecord      // (LightDef*, const LightRec*): sphere, name, colour /255, sqrt intensity, ranges, clamps, box (name?); decompiled: src/obj/obj17.cpp
+0059C294 LightDef_Read            // (IffReader*, LightDef*) -> calls LightDef_FromRecord (name?)
+0059B788 GeomDef_ReadChunks       // (IffReader*): GeomDef_New, Iff_ReadChunks, LOD byte fix-ups (name?)
+004FD1E0 Render_FrameAlloc        // (u32 size): MemStack_Alloc(*(0x010DD600 +280), size) (name?)
+00735F28 Mem_NewArray             // (u32 size): Mem_Alloc(size, 0, 16) (name?)
+004FDEA0 Frustum_FromMatrix       // (f32 planes[6][4], const f32 m[16]) (name?)
+0055EA6C Plane_Transform          // (f32 plane[4], const f32 m[16]): by the inverse transpose (Mat4_Invert + Vec4_TransformByMatrix) (name?)
+00578F64 Quads_ClipSetup          // (out, planes, +16, +32, +48, near plane, -view dir) (name?)
+00578868 Quad_InClip              // (clip, quad) -> bool (name?)
+00577E40 Quad_InFrustum           // (quad, near plane, viewproj, planes) -> bool (name?)
+00598B3C Bank_PreUpdate           // (Obj*) (name?)
+0058D448 Bank_DrawPrepare         // (Obj*) (name?)
+0058D088 Bank_DrawItem            // (Obj*, item) (name?)
+005E4068 Gcm_SetViewport          // inlined libgcm cellGcmSetViewport: (ctx, x, y, w, h; f1 min, f2 max; scale[4], offset[4]) (name?)
