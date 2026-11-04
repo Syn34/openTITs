@@ -1279,7 +1279,7 @@
 005816F0 Skeleton_Create          // (ApeSkeletonDef*) -> ApeSkeleton*; decompiled: src/obj/obj5.cpp
 00581B34 WorldObj_CopyFrom        // (dst, src, bool own_class) (name?); decompiled: src/obj/obj5.cpp
 005A0394 WorldObj_AddToWorld      // (obj) (name?); decompiled: src/obj/obj5.cpp
-0057EE00 WorldObj_UpdateLod       // (obj, 0, 0) (name?)
+0057EE00 WorldObj_UpdateLod       // (obj, unused, bool keep_skel_sphere): dirty update; decompiled: src/obj/obj8_lod.cpp
 00556F98 Box_Center               // (box, out) -> out; decompiled: src/obj/box.cpp
 00556F60 Box_SetPoint             // (box, p): min = max = p; decompiled: src/obj/box.cpp
 005570F0 Box_Transform            // (out, in, matrix) (name?); decompiled: src/obj/box.cpp
@@ -1503,7 +1503,7 @@
 005814A0 Skeleton_Init            // (skeleton, def) (name?); decompiled: src/obj/obj6.cpp
 00580D70 Skeleton_CopyPose        // (dst, src): local/world matrices + entry pointers; decompiled: src/obj/obj6.cpp
 0057DEEC WorldObj_CopyBase        // (dst, src, flags) (name?); decompiled: src/obj/obj6.cpp
-005947D0 World_AddObjects         // (world *0x01194598, collector*, 1) (name?)
+005947D0 World_AddObjects         // (world *0x01194598, Collector*, bool attach_all); decompiled: src/obj/obj8_world.cpp
 00597814 WorldObj_UpdateTransforms // (world unused, obj): world matrices of a subtree (was "World_AddObject"); decompiled: src/obj/obj6_xform.cpp
 005A9AA8 Collector_Add            // ForEach callback (node, collector*) (name?); decompiled: src/obj/obj6.cpp
 0055498C Debug_PrintBone          // empty stub; decompiled: src/obj/obj6.cpp
@@ -1571,7 +1571,7 @@
 0079CB94 EmitPropsRef_Set         // (AglEmitProperties** slot, p) ref-counted assign (name?); decompiled: src/obj/obj6_emitter.cpp
 00580EA0 Skeleton_Compose         // (skeleton, out matrices): world x bind per bone; decompiled: src/obj/obj7_skel.cpp
 00558E24 ObjComps_Assign          // decompiled: src/obj/obj7.cpp
-00593DA8 Comps_Query              // (0, comps, 1) -> bool, 649 insns (name?)
+00593DA8 Comps_Query              // (PeerRecord*, comps, bool anim_only) -> bool; decompiled: src/obj/obj8_comps.cpp
 004FFA98 EmitProps_Destruct       // decompiled: src/obj/obj7.cpp
 004FFFF0 EmitProps_Construct      // decompiled: src/obj/obj7.cpp
 004FE3DC EmitProps_CopyFrom       // decompiled: src/obj/obj7.cpp
@@ -1655,7 +1655,7 @@
 007AA128 PointInstance_ShowAndNotify // 0xB24998 +16: empty; decompiled: src/obj/obj7_vt.cpp
 005A6B28 PointInstance_Clone      // 0xB24998 +56; decompiled: src/obj/obj7_vt.cpp
 005A6C28 PointInstance_Dump       // 0xB24998 +60: WorldObj_DumpTree; decompiled: src/obj/obj7_vt.cpp
-005A68EC PointInstance_New        // (ApePointDef*) -> ApePointInstance* (name?)
+005A68EC PointInstance_New        // (ApePointDef*) -> ApePointInstance*; decompiled: src/obj/obj8.cpp
 005A7680 SplineInstance_Destruct  // 0xB249E8 +0 (kind 13 = ApeSplineInstance); decompiled: src/obj/obj7_vt.cpp
 005A77A4 SplineInstance_DeletingDestruct // 0xB249E8 +4; decompiled: src/obj/obj7_vt.cpp
 005A7A54 SplineInstance_Release   // 0xB249E8 +8 (destroy OPD 0x00F3C9F8); decompiled: src/obj/obj7_vt.cpp
@@ -1664,13 +1664,13 @@
 005A782C SplineInstance_SyncRecord // (inst): its 96-byte record from the owner; decompiled: src/obj/obj7_vt.cpp
 005A7E80 SplineInstance_Clone     // 0xB249E8 +56; decompiled: src/obj/obj7_vt.cpp
 005A8388 SplineInstance_Dump      // 0xB249E8 +60: WorldObj_DumpTree; decompiled: src/obj/obj7_vt.cpp
-005A7CB4 SplineInstance_New       // (ApeSplineDef*) -> ApeSplineInstance* (free list "ApeSplineInstance")
-0059F248 SplineDef_Copy           // (ApeSplineDef*) -> copy (free list "ApeSplineDef") (name?)
-005A7B38 SplineInstance_SetMode   // (inst, u8 record +94) (name?)
-007A9128 SplineList_Remove        // (list 0x01194580, s32 index) (name?)
-0057DCF0 ApeObj_Destruct          // base +0 (0xB24610) (name?)
-00591410 LightAnim_Setup          // (record, comps, s32 slot, s32 light type) (name?)
-0058DE4C EmitterDef_Init          // (ApeEmitterDef*): the remaining fields (name?)
+005A7CB4 SplineInstance_New       // (ApeSplineDef*) -> ApeSplineInstance*; decompiled: src/obj/obj8.cpp
+0059F248 SplineDef_Copy           // (ApeSplineDef*) -> copy (free list "ApeSplineDef"); decompiled: src/obj/obj8.cpp
+005A7B38 SplineInstance_SetMode   // (inst, u8 mode): record refresh + mode at +94; decompiled: src/obj/obj8.cpp
+007A9128 SplineList_Remove        // (list 0x01194580, s32 index): last record moved in; decompiled: src/obj/obj8.cpp
+0057DCF0 ApeObj_Destruct          // base vtable 0xB24610 +0; decompiled: src/obj/obj8.cpp
+00591410 LightAnim_Setup          // (record, comps, s32 slot, s32 light type); decompiled: src/obj/obj8.cpp
+0058DE4C EmitterDef_Init          // (ApeEmitterDef*): reset box/sphere/shared/data/system; decompiled: src/obj/obj8.cpp
 
 # Stencil shadows, occlusion queries
 00501410 MaterialAnim_SetState    // (track*, s32 state) 0 random delay / 1 hold / 2 stopped (name?); decompiled: src/gfx/pool.cpp
@@ -1740,3 +1740,24 @@
 0045C6AC Game_Check45C6AC                     // (Game*, 1) (name?)
 00458B1C Game_Reset458B1C                     // (Game*) (name?)
 005DBC18 Thread_Release5DBC18                 // (u64 thread id) (name?)
+
+# World-object helpers, part 8 (LOD, world add, splines)
+0057BEE0 Peer_Bind                // (PeerRecord*, obj): matrix/sphere into the record (name?); decompiled: src/obj/obj8_world.cpp
+00557A20 Vec3_Add                 // (f32 dst[3], const f32 src[3]); decompiled: src/obj/obj8_math.cpp
+00556FE8 Box_AddPoint             // (f32 box[8], const f32 p[3]); decompiled: src/obj/obj8_math.cpp
+005577E0 Sphere_FromBox           // (f32 sphere[4], const f32 box[8]); decompiled: src/obj/obj8_math.cpp
+00557900 Sphere_Transform         // (f32 sphere[4], const Matrix*, bool scale_radius); decompiled: src/obj/obj8_math.cpp
+0057E14C WorldObj_UpdateSphere    // (obj) -> &obj+240: world bounding sphere (name?); decompiled: src/obj/obj8_math.cpp
+005602BC Spline_PointAt           // (SplineData*, f1 t, f32 out[3], bool) (name?); decompiled: src/obj/obj8_math.cpp
+00560A40 Spline_Nearest           // (SplineData*, const f32 p[3], u32* seg, f32* dist) -> f1 (name?); decompiled: src/obj/obj8_math.cpp
+0059ECF8 SplineDef_Construct      // (ApeSplineDef*) (name?)
+0055F2BC SplineArray_Init         // (array +112, u32 count, bool, bool) (name?)
+00593630 Comps_QueryAnimA         // (peer, comps, s32 comp, s32 channel, bool) -> bool, 473 insns (name?)
+00592DA8 Comps_QueryAnimB         // (peer, comps, s32 comp, s32 channel, bool) -> bool: "%sPos..." props, 541 insns (name?)
+00592890 Comps_QueryAnimC         // (peer, comps, s32 comp, bool) -> bool, 322 insns (name?)
+0057E8D0 Skeleton_Update          // (ApeSkeleton*), 302 insns (name?)
+0057E260 WorldObj_UpdateChildLod  // (child, const f32 parent_scale[3]), recursive, 412 insns (name?)
+0057C408 Peer_GetMatrix           // (peer, f1, f32 out[4][4]) -> bool copy (name?), 618 insns
+005922A8 World_AddGroup           // (world, group root obj): reads r4 only (name?), 296 insns
+0055F008 Spline_NearestSeg        // (data, p, 0, u32 last, u32* seg, f32* dist) -> f1 (name?)
+00560058 Spline_Eval              // (data, f1 t, out, data+12, bool) (name?)
