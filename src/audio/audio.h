@@ -45,8 +45,8 @@ constexpr u32 Obj_GetOcclusion = 0x00213870;  // (obj, const f32 pos[3]) -> f32 
 constexpr u32 SortCompare = 0x0071EC28;     // qsort(base, count, size, cmp) (name?)
 constexpr u32 memmove = 0x0071C3F0;
 constexpr u32 Pool_Free = 0x00552420;       // (ptr, size)
-constexpr u32 Audio_FocusRelease = 0x0044A3D4;  // () (name?)
-constexpr u32 Audio_FocusUpdate = 0x00443424;   // (u32 handle, u8) (name?)
+constexpr u32 Audio_FocusPlay = 0x0044A3D4;  // () (name?)
+constexpr u32 Emitter_Stop = 0x00443424;   // (u32 handle, u8) (name?)
 }  // namespace afn
 
 // ---------------------------------------------------------------- globals

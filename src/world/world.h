@@ -26,7 +26,7 @@ constexpr u32 View_SetF2C8 = 0x005202C8;       // (View*, f32) (name?)
 constexpr u32 View_SetF338 = 0x00520338;       // (View*, f32) (name?)
 constexpr u32 View_SetF094 = 0x00520094;       // (View*, f32) (name?)
 constexpr u32 View_Set5115F0 = 0x005115F0;     // (View*, 0) (name?)
-constexpr u32 Matrix_Build = 0x0056A0D0;       // (f32 out[16], const ?, const ?, const ?) (name?)
+constexpr u32 Matrix_LookAt = 0x0056A0D0;       // (f32 out[16], const ?, const ?, const ?) (name?)
 constexpr u32 Ui_Render = 0x004D4E28;          // (u8 flag, View*) (name?)
 }  // namespace wfn
 
@@ -54,7 +54,7 @@ constexpr u32 kLayerAll = 255;
 
 // World fields.
 constexpr u32 kWorldViews = 0x128168;      // View*[4]: main, +4, +8, +12
-constexpr u32 kWorld1281B0 = 0x1281B0;     // given to Matrix_Build
+constexpr u32 kWorld1281B0 = 0x1281B0;     // given to Matrix_LookAt
 constexpr u32 kWorld1281C4 = 0x1281C4;     // u32 obj*: 00459E10 runs when *obj != 0
 constexpr u32 kViewCamera = 656;           // View +: u32 obj, its +8 holds camera settings (name?)
 constexpr u32 kViewFlags = 1776;           // u8: 0x20 set by the 3D steps (name?)

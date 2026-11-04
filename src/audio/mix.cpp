@@ -193,7 +193,7 @@ DECOMP(0044A970, Audio_UpdateMix) {
         const f32 left = fsubs(timer, dt);
         store<f32>(kFocusTimer, left);
         if (left <= kZero) {
-            call(ctx, afn::Audio_FocusRelease);
+            call(ctx, afn::Audio_FocusPlay);
             store<u32>(kFocusTimer, 0);
         }
         return;
@@ -211,6 +211,6 @@ DECOMP(0044A970, Audio_UpdateMix) {
         if (a == load<u32>(pending)) return Mix_ReleasePending(ctx, pending);
     }
     Mix_CountFocus(ctx);
-    call(ctx, afn::Audio_FocusUpdate, {load<u32>(kFocusHandle), ref<u8>(kFocusArg)});
-    if (ref<u8>(kFocusBusy) == 0) call(ctx, afn::Audio_FocusRelease);
+    call(ctx, afn::Emitter_Stop, {load<u32>(kFocusHandle), ref<u8>(kFocusArg)});
+    if (ref<u8>(kFocusBusy) == 0) call(ctx, afn::Audio_FocusPlay);
 }

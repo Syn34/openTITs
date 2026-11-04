@@ -55,7 +55,7 @@ constexpr u32 kQuadSize = 32;
 
 // Virtual functions (byte offsets into the vtable).
 constexpr u32 kVfnTextChanged = 148;  // ()
-constexpr u32 kVfnGetScale = 168;     // sret f32[2] (x, y) (name?)
+constexpr u32 kVfnGetScale = 168;     // sret scale, inherited from the parent (UiElem_GetScale 0x004D7E70)
 
 // ---------------------------------------------------------------- fonts
 constexpr u32 kSetScale = 92;        // f32

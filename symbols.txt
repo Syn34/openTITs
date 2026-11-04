@@ -98,8 +98,8 @@
 007B4990 Bink_Pause               // RAD BinkPause(HBINK, s32) (name?)
 0045B1E8 Player_Update            // (Player*, f32 dt) stick directions, repeat, cursor; decompiled: src/game/player.cpp (name?)
 004D4538 Ui_Update                // (f32 dt) focus, button events, timelines, roots; decompiled: src/ui/update.cpp (name?)
-006D530C Pad_EnableBits           // (u32 bits) "src/common/api.cpp" (name?)
-006D53F0 Pad_DisableBits          // (u32 bits) "src/common/api.cpp" (name?)
+006D530C Snd_PauseGroups          // (u32 bits); decompiled: src/audio/voice_api.cpp (name?)
+006D53F0 Snd_ResumeGroups         // (u32 bits); decompiled: src/audio/voice_api.cpp (name?)
 
 # Memory, strings, files, system start-up
 007A3DD8 Mem_New                  // operator new(size) = pool 0, align 16; decompiled: src/memory/alloc.cpp
@@ -161,7 +161,7 @@
 005DBB60 SystemState_CallHook     // calls SystemState+20 opd with SystemState+24 (name?)
 00559310 Iff_InitTags             // ATAG/TAG2/TAGG; decompiled: src/resource/tags.cpp
 0056F5BC Thread_Create            // decompiled: src/platform/thread.cpp
-0056C8E4 Game_BootCheck           // cellGameBootCheck/PatchCheck/ContentPermit (name?)
+0056C8E4 Game_BootCheck           // decompiled: src/system/boot.cpp
 00570B88 Image_Nop                // empty
 007A46EC SortedMap_Find           // decompiled: src/resource/tags_map.cpp
 007A44F8 SortedMap_Erase          // decompiled: src/resource/tags_map.cpp
@@ -341,19 +341,19 @@
 005E68D0 _FDtest                  // decompiled: src/math/trig.cpp
 005E693C sqrtf                    // decompiled: src/math/trig.cpp
 005E6830 _Atan                    // atanf kernel (f32, flags); decompiled: src/math/trig.cpp
-00565154 Arena_Restore            // (Arena*, u32) (name?)
-00521A5C FrameBuffer_BeginLayer   // (fb, view, u8 layer) (name?)
-0056A0D0 Matrix_Build             // (out[16], a, b, c) (name?)
-004D4E28 Ui_Render                // (u8, View*) (name?)
-006EFD10 Voice_Lock               // (name?)
-006EFD34 Voice_Unlock             // (name?)
-006E5B6C Voice_Lookup             // (handle) -> Voice* (name?)
-006D50F0 Voice_SetParam           // (voice, which, s32) (name?)
-006D5EE0 Voice_Play               // (bank, s16 id, params*, -2) -> handle (name?)
-00441D68 Emitter_BuildParams      // (name?)
-00442478 Emitter_Spatialise       // (name?)
-0044A3D4 Audio_FocusRelease       // (name?)
-00443424 Audio_FocusUpdate        // (handle, u8) (name?)
+00565154 Arena_Restore            // decompiled: src/world/render.cpp (name?)
+00521A5C FrameBuffer_BeginLayer   // VMX (name?)
+0056A0D0 Matrix_LookAt            // (out, eye, target, up); decompiled: src/world/render.cpp
+004D4E28 Ui_Render                // (bool, -); decompiled: src/ui/render.cpp (name?)
+006EFD10 Snd_Lock                 // decompiled: src/audio/voice_core.cpp
+006EFD34 Snd_Unlock               // decompiled: src/audio/voice_core.cpp
+006E5B6C Snd_Lookup               // (handle) -> Handler*; decompiled: src/audio/voice_core.cpp
+006D50F0 Voice_SetParam           // decompiled: src/audio/voice_api.cpp
+006D5EE0 Voice_Play               // (bank, s16 id, params, arg); decompiled: src/audio/voice_api.cpp
+00441D68 Emitter_BuildParams      // decompiled: src/audio/emitter_params.cpp (name?)
+00442478 Emitter_Spatialise       // reads a 9th stack arg (name?)
+0044A3D4 Audio_FocusPlay          // decompiled: src/audio/emitter_focus.cpp (name?)
+00443424 Emitter_Stop             // (handle, bool fade); decompiled: src/audio/emitter_focus.cpp (name?)
 
 # Text, heaps
 004DB378 UiText_Layout            // (elem, bool force); decompiled: src/text/settext.cpp
@@ -363,9 +363,9 @@
 004D3700 Ui_BuildPath             // (elem, char** cursor) ".a.b"; decompiled: src/text/strings.cpp
 004F87C4 StringTable_Lookup       // (strings, id, fallback, quiet); decompiled: src/text/strings.cpp
 00550F5C DefaultHeap_AllocAligned // vtable 0x00B24278 +0; decompiled: src/heap/default_heap.cpp
-004DB828 UiText_Format            // (elem, text, buf, 4096, 8 out ptrs) (name?)
+004DB828 UiText_Format            // escapes, $vars, word wrap (CJK kinsoku); decompiled: src/text/format.cpp
 004DAAA8 UiText_BuildGlyph        // (elem, quad, c, &x, &y, -, scale, line; f1 space) -> bool (name?)
-004E0648 UiElem_GetScale2         // vfunc +168, sret f32[2] (name?)
+004E0648 UiElem_GetRect           // vfunc +160 (a, b, m); decompiled: src/text/glyph_transform.cpp
 
 # File I/O, caches, zip directory
 00570B9C FsOp_Init                // (op, target, kind, options r6-r8)
@@ -396,3 +396,38 @@
 0055C780 Zip_FindEndRecord        // (zip, bool sca) -> offset (name?)
 00559534 Zip_ReadU32              // (zip, u32* out) (name?)
 0056736C Zip_ReadRaw              // (zip, buf, size) (name?)
+
+# Sound library, text format, boot check
+006E6718 Handler_CountActive      // decompiled: src/audio/voice_core.cpp (name?)
+006E620C Handler_Stop             // (h, recurse, force, flag); decompiled: src/audio/voice_core.cpp
+006F6528 Snd_MutexLock            // (name?)
+006F6558 Snd_MutexUnlock          // (name?)
+006E45F8 Snd_Log                  // (fmt, file, line) (name?)
+006D8098 Bank_GetSounds           // (name?)
+006DBA20 Snd_DbToGain             // (name?)
+006DBAC8 Snd_CentsToPitch         // (name?)
+006D8E28 Bank_StartSound          // (name?)
+006D9584 Voice_StopHandler        // type-5 stop (name?)
+006E9780 Handler_Release          // (name?)
+006EA104 Handler_Detach           // (name?)
+006E322C Handler_Finish           // (name?)
+006E54B8 Handler_Free             // (name?)
+006E6AA0 Handler_First            // (name?)
+006E5F4C Handler_Pause            // (name?)
+006E60A4 Handler_Resume           // (name?)
+006EA9E0 Groups_Pause             // (name?)
+006EAAA0 Groups_Resume            // (name?)
+0071B054 Rand_Range               // (s32) -> s32 (name?)
+007848EC Map_Lookup               // (map, const u32* key) -> value slot (name?)
+00444610 Audio_StartFocusSound    // (u32* out, desc, PlayDesc*) (name?)
+00523310 Draw_SetTexture          // (name?)
+005218D8 Draw_SetState            // (name?)
+005236A0 Draw_BeginPrims          // (out, fb, 6, 4, height) (name?)
+00523748 Draw_EndPrims            // empty in retail
+004D7E70 UiElem_GetScale2         // vfunc +168, sret vec3, inherits parent's; decompiled: src/text/glyph_transform.cpp
+00522750 View_ProjectPoint        // (view, out vec4, in vec3) -> [0,1] screen; decompiled: src/text/glyph_transform.cpp
+005541F0 Matrix_Multiply          // (a_and_out, b) VMX (name?)
+005115F0 View_Update              // (view, 0) (name?)
+00553A2C Vec_TransformByMatrix    // (out, in, matrix) (name?)
+004E1B58 UiElem_GetSize2          // vfunc +140, sret vec2 (name?)
+004E0B30 UiElem_GetWorldMatrix    // vfunc +164, sret f32[16] (name?)

@@ -24,7 +24,7 @@ void World_Setup3DView(PPUContext& ctx, u32 world, u32 view) {
     ctx.fpr[1] = field<f32>(kTuneFov, kTuningValue);
     call(ctx, wfn::View_SetFov, {view, kTuneFar, kTuneFov});
     Stack frame(ctx, 64);
-    call(ctx, wfn::Matrix_Build, {frame.addr(), world + kWorld1281B0, kMatrixArgA, kMatrixArgB});
+    call(ctx, wfn::Matrix_LookAt, {frame.addr(), world + kWorld1281B0, kMatrixArgA, kMatrixArgB});
     call(ctx, wfn::View_SetMatrix, {view, frame.addr()});
     call(ctx, wfn::View_Set5115F0, {view, 0});
 }

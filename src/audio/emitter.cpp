@@ -98,7 +98,7 @@ DECOMP(00442C10, Emitter_Update) {
     ctx.fpr[1] = dt;
     call(ctx, afn::Emitter_Spatialise,
          {e + kEmVolume, listener, pos, e + kEmVelocity, field<u32>(e, kEmDef), field<u32>(e, kEmBank),
-          field<u32>(e, kEmSpatial), 0});
+          field<u32>(e, kEmSpatial), 0, 0});  // the 9th (stack) argument is 0, as the original stores
 
     if (ref<u8>(e + kEmDoppler) != 0 &&
         (ref<u8>(e + kEmForced) != 0 || ref<u8>(e + kEmMoving) != 0 || still != 0)) {
