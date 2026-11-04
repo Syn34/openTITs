@@ -43,8 +43,8 @@ inline u32 chunk_size(u32 p) { return load<u32>(p - 4) & ~0xFu; }
 
 // A dlmalloc mspace with byte accounting.
 struct MemPool {
-    be_u32 unk0;
-    be_u32 unk4;
+    be_u32 base;     // +0 start of the pool memory
+    be_u32 size;     // +4 bytes
     gptr mspace;      // +8
     be_u32 used;      // +12 bytes allocated
     be_u32 free;      // +16 bytes still free (no lower bound check)

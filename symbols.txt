@@ -115,7 +115,7 @@
 0050F520 Graphics_Init            // decompiled: src/gfx/graphics.cpp
 00588828 Resources_Init           // decompiled: src/resource/resources.cpp (name?)
 0056A944 Debug_Init               // ApeDebug font, prims, material, meshes; decompiled: src/debug/debug.cpp
-0053AC38 Gcm_Init                 // "Error initializing libgcm" (name?)
+0053AC38 Gcm_Init                 // decompiled: src/gfx/gcm.cpp
 0055902C Iff_RegisterChunk        // (fourcc, opd, arg, name, flags); decompiled: src/resource/iff.cpp
 0055BA70 Archive_Contains         // (Archive*, path, mode); decompiled: src/file/archive.cpp
 0055B87C File_OpenArchived        // decompiled: src/file/archive.cpp
@@ -156,7 +156,7 @@
 007239D8 strcpy
 005706FC File_OpenFs              // decompiled: src/file/fs.cpp
 0055B3C8 Archive_Find             // (zip, path, mode) -> 1 / 0 / -100; decompiled: src/file/zip.cpp
-00559D5C Archive_Prepare          // (Archive*) -> 1 (name?)
+00559D5C Archive_Prepare          // unzOpenCurrentFile; decompiled: src/file/prepare.cpp
 0055D494 ZipArchive_Open          // (zip, path, prefix); decompiled: src/file/zip.cpp
 005DBB60 SystemState_CallHook     // calls SystemState+20 opd with SystemState+24 (name?)
 00559310 Iff_InitTags             // ATAG/TAG2/TAGG; decompiled: src/resource/tags.cpp
@@ -302,7 +302,7 @@
 005681A4 ArchiveFile_Seek         // decompiled: src/file/archivefile.cpp
 0056829C ArchiveFile_Size         // decompiled: src/file/archivefile.cpp
 0071EC28 qsort
-0055A8E4 Zip_LocateEntry          // unzlocal_GetCurrentFileInfoInternal
+0055A8E4 Zip_LocateEntry          // unzlocal_GetCurrentFileInfoInternal; decompiled: src/file/zipinfo.cpp
 0055CF1C Zip_ReadDirectory        // decompiled: src/file/zipread.cpp
 0055C01C Zip_BuildIndex           // decompiled: src/file/zipread_index.cpp
 00567938 Zip_StreamRead           // decompiled: src/file/zipread.cpp
@@ -475,3 +475,24 @@
 005545B4 Matrix_NearlyEqual       // (a, b, f32 eps) (name?)
 005532E4 Listener_LocalDirection  // (out, pos, listener) (name?)
 006D7508 Snd_PitchFromSpeed       // (f32) -> u32 (name?)
+
+# Zip entries, GCM start-up
+0056C020 Sysmodule_Require        // decompiled: src/gfx/gcm_mem.cpp
+0056C428 RsxLocal_Init            // pool 4; decompiled: src/gfx/gcm_mem.cpp
+0056C49C RsxMain_Init             // pool 5; decompiled: src/gfx/gcm_mem.cpp
+0052F670 CommandBuffer_Construct  // decompiled: src/gfx/gcm_mem.cpp
+0056DF80 Heap_InitRegion          // decompiled: src/gfx/gcm_mem.cpp
+00565AA8 Pool_Create              // create_mspace_with_base; decompiled: src/gfx/gcm_mem.cpp
+005596F0 Zip_CheckLocalHeader     // (zip, u32* extra, u32* extra_off, u32* extra_size) -> 1 (name?)
+005DC638 inflateInit2_            // zlib
+005504F4 init_user_mstate         // dlmalloc (name?)
+005E0530 Gcm_InitBody             // (cmd size, io size, io addr) -> 0 / error (name?)
+0060E0B4 JobQueue_Init            // (queue, 5, spurs, prio[8], 251, buf, 22528) (name?)
+00530318 Surface_GetSize          // (w, h, 3, 0, 0, info*) (name?)
+0052FD2C Gfx_Init52FD2C           // (unknown)
+00531084 Gfx_Init531084           // (unknown)
+005312E4 Gfx_Init5312E4           // (u8, 0, 1) (unknown)
+005333CC Gfx_Init5333CC           // (unknown)
+00537F28 Gfx_Init537F28           // (obj) (unknown)
+005E403C Gfx_Init5E403C           // (u32, 1, 1) (unknown)
+00723FEC fprintf
