@@ -1575,22 +1575,22 @@
 005A9914 Collector_Accepts        // (obj, bool visible_only) -> bool (name?); decompiled: src/obj/obj6.cpp
 0050061C EmitProps_BlendKind      // (blend state) -> 0/2/3/4 (name?); decompiled: src/obj/obj6.cpp
 0079CB94 EmitPropsRef_Set         // (AglEmitProperties** slot, p) ref-counted assign (name?); decompiled: src/obj/obj6_emitter.cpp
-00580EA0 Skeleton_Compose         // (skeleton, +44 matrices) (name?)
-00558E24 ObjComps_Assign          // (dst, src): ref-counted obj +12 copy (name?)
+00580EA0 Skeleton_Compose         // (skeleton, out matrices): world x bind per bone; decompiled: src/obj/obj7_skel.cpp
+00558E24 ObjComps_Assign          // decompiled: src/obj/obj7.cpp
 00593DA8 Comps_Query              // (0, comps, 1) -> bool, 649 insns (name?)
-004FFA98 EmitProps_Destruct       // (AglEmitProperties*) (name?)
-004FFFF0 EmitProps_Construct      // (AglEmitProperties*) (name?)
-004FE3DC EmitProps_CopyFrom       // (dst, src) (name?)
-0058DF94 EmitterDef_Construct     // (ApeEmitterDef*) (name?)
-007A78C4 PtrTable_Grow            // (table, u32 by) (name?)
-00569108 Iff_NextChunk            // (reader) -> chunk header* (name?)
-00582F3C WorldObj_UpdateKind8     // (obj): kinds 8/10 after a transform update (name?)
-00508690 Topology_Construct       // (AglTopology*) (name?)
-00508B94 Topology_AddDraw         // (topo, u32, AglMaterial*) (name?)
-005084CC TopoShared_Release       // (topo +88 object) (name?)
-0079C668 TopoRecord_Set           // (record, src record +0) (name?)
-00591948 Light_Accepts            // (LightInstance*, 0) -> bool (name?)
-00591820 LightAnim_Init           // (anim record, LightInstance*) (name?)
+004FFA98 EmitProps_Destruct       // decompiled: src/obj/obj7.cpp
+004FFFF0 EmitProps_Construct      // decompiled: src/obj/obj7.cpp
+004FE3DC EmitProps_CopyFrom       // decompiled: src/obj/obj7.cpp
+0058DF94 EmitterDef_Construct     // decompiled: src/obj/obj7.cpp
+007A78C4 PtrTable_Grow            // decompiled: src/obj/obj7.cpp
+00569108 Iff_NextChunk            // decompiled: src/obj/obj7.cpp
+00582F3C WorldObj_UpdateKind8     // (obj): world matrix -> slot entry; decompiled: src/obj/obj7.cpp
+00508690 Topology_Construct       // decompiled: src/obj/obj7.cpp
+00508B94 Topology_AddDraw         // (topo, mesh, material); decompiled: src/obj/obj7_draw.cpp
+005084CC TopoShared_Release       // decompiled: src/obj/obj7.cpp
+0079C668 TopoRecord_Set           // (ref, record) -> ref; decompiled: src/obj/obj7.cpp
+00591948 Light_Accepts            // decompiled: src/obj/obj7.cpp
+00591820 LightAnim_Init           // decompiled: src/obj/obj7.cpp
 
 # World event handler callees, part 3
 000D4D30 Scene_SortAndRunCallbacks         // qsort 0x01013B04 when dirty, 4 frame steps, {a,b,opd} list 0x01013B84; decompiled: src/world/hevent3_a.cpp (name?)
@@ -1647,3 +1647,33 @@
 004BDA70 Set_AddXml                        // (Set*, path, XmlDoc*, 0) (name?)
 000CDFB0 Obj_Init22                        // 22 arguments, 2 floats; used by Obj_InitDefault (name?)
 003651F0 Hashed_Make                       // (u32 hash) -> Object* stored at 0x00F64CBC (name?)
+
+# World-object helpers, part 7 (point and spline instances)
+007A9918 ApeObj_GetSkeleton       // base +28: returns 0; decompiled: src/obj/obj7_vt.cpp
+007A9920 ApeObj_SetPerView        // base +32: empty; decompiled: src/obj/obj7_vt.cpp
+0057FC40 ApeObj_Changed           // base +36: peer anchor copy only; decompiled: src/obj/obj7_vt.cpp
+0057FCD4 ApeObj_SetHidden         // base +40: +164 bit 0x8000, children, vfunc +36; decompiled: src/obj/obj7_vt.cpp
+0057FE40 ApeObj_SetByte320        // base +48: children only; decompiled: src/obj/obj7_vt.cpp
+0057FEC8 ApeObj_SetByte168        // base +52: children only; decompiled: src/obj/obj7_vt.cpp
+007A9F38 PointInstance_Destruct   // 0xB24998 +0; decompiled: src/obj/obj7_vt.cpp
+007AA024 PointInstance_DeletingDestruct // 0xB24998 +4; decompiled: src/obj/obj7_vt.cpp
+005A6808 PointInstance_Release    // 0xB24998 +8 (destroy OPD 0x00F3C9A8); decompiled: src/obj/obj7_vt.cpp
+007AA128 PointInstance_ShowAndNotify // 0xB24998 +16: empty; decompiled: src/obj/obj7_vt.cpp
+005A6B28 PointInstance_Clone      // 0xB24998 +56; decompiled: src/obj/obj7_vt.cpp
+005A6C28 PointInstance_Dump       // 0xB24998 +60: WorldObj_DumpTree; decompiled: src/obj/obj7_vt.cpp
+005A68EC PointInstance_New        // (ApePointDef*) -> ApePointInstance* (name?)
+005A7680 SplineInstance_Destruct  // 0xB249E8 +0 (kind 13 = ApeSplineInstance); decompiled: src/obj/obj7_vt.cpp
+005A77A4 SplineInstance_DeletingDestruct // 0xB249E8 +4; decompiled: src/obj/obj7_vt.cpp
+005A7A54 SplineInstance_Release   // 0xB249E8 +8 (destroy OPD 0x00F3C9F8); decompiled: src/obj/obj7_vt.cpp
+005A77F0 SplineInstance_ShowAndNotify // 0xB249E8 +16: vfunc +36; decompiled: src/obj/obj7_vt.cpp
+005A79A4 SplineInstance_Changed   // 0xB249E8 +36; decompiled: src/obj/obj7_vt.cpp
+005A782C SplineInstance_SyncRecord // (inst): its 96-byte record from the owner; decompiled: src/obj/obj7_vt.cpp
+005A7E80 SplineInstance_Clone     // 0xB249E8 +56; decompiled: src/obj/obj7_vt.cpp
+005A8388 SplineInstance_Dump      // 0xB249E8 +60: WorldObj_DumpTree; decompiled: src/obj/obj7_vt.cpp
+005A7CB4 SplineInstance_New       // (ApeSplineDef*) -> ApeSplineInstance* (free list "ApeSplineInstance")
+0059F248 SplineDef_Copy           // (ApeSplineDef*) -> copy (free list "ApeSplineDef") (name?)
+005A7B38 SplineInstance_SetMode   // (inst, u8 record +94) (name?)
+007A9128 SplineList_Remove        // (list 0x01194580, s32 index) (name?)
+0057DCF0 ApeObj_Destruct          // base +0 (0xB24610) (name?)
+00591410 LightAnim_Setup          // (record, comps, s32 slot, s32 light type) (name?)
+0058DE4C EmitterDef_Init          // (ApeEmitterDef*): the remaining fields (name?)
