@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-274 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
+302 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory must be identical with and without the decompiled code.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -105,6 +105,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | Platform, FIOS, archives, IFF, resources, debug and graphics start-up | `src/platform/`, `src/file/`, `src/resource/`, `src/debug/`, `src/gfx/` | 13 |
 | File layer (zip archives, disc files, archive streams), threads, tag map, shaders | `src/file/`, `src/platform/`, `src/resource/`, `src/gfx/` | 25 |
 | File I/O on FIOS, read cache, write buffer, archive mounting, zip directory and index | `src/file/` | 18 |
+| FIOS operations and wrappers, read-ahead cache slots, zip end record and raw reads | `src/file/` | 28 |
 
 `symbols.txt` names many more functions that haven't been decompiled yet. See [docs/DECOMP.md](docs/DECOMP.md) to help.
 

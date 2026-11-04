@@ -16,7 +16,7 @@ constexpr u32 FsOp_Init = 0x00570B9C;       // (op, target, kind, options in r6-
 constexpr u32 FsOp_Wait = 0x00570BD4;       // (op)
 constexpr u32 FsOp_Cancel = 0x00570C0C;     // (op) (name?)
 constexpr u32 FsOp_GetError = 0x00570C38;   // (op) -> s32
-constexpr u32 FsOp_Report = 0x00570C98;     // (op) logs the failure (name?)
+constexpr u32 FsOp_ErrorName = 0x00570C98;  // (op) -> name of its error status
 constexpr u32 FsOp_GetResult = 0x00570D54;  // (op) -> u32 bytes transferred
 constexpr u32 FsOp_GetPath = 0x00570D80;    // (op) -> const char* or 0; result unused here (name?)
 constexpr u32 FsOp_Destruct = 0x00570DA8;   // (op)
@@ -100,7 +100,7 @@ inline void op_finish(PPUContext& ctx, u32 op) {
     for (u32 i = 0; i < kOpNameCount && !known; ++i) known = load<s32>(kOpNames + 8 * i) == kind;
     if (!known) call(ctx, fn::String_Format, {kStrUnknown, static_cast<u64>(static_cast<s64>(kind))});
     call(ctx, fn::FsOp_GetPath, {op});
-    call(ctx, fn::FsOp_Report, {op});
+    call(ctx, fn::FsOp_ErrorName, {op});
 }
 
 // FsOp_Destruct + free; returns what Mem_FreePool left in r3.

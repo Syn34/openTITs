@@ -302,7 +302,7 @@
 005681A4 ArchiveFile_Seek         // decompiled: src/file/archivefile.cpp
 0056829C ArchiveFile_Size         // decompiled: src/file/archivefile.cpp
 0071EC28 qsort
-0055A8E4 Zip_LocateEntry          // (zip) -> 1 (name?)
+0055A8E4 Zip_LocateEntry          // unzlocal_GetCurrentFileInfoInternal
 0055CF1C Zip_ReadDirectory        // decompiled: src/file/zipread.cpp
 0055C01C Zip_BuildIndex           // decompiled: src/file/zipread_index.cpp
 00567938 Zip_StreamRead           // decompiled: src/file/zipread.cpp
@@ -319,7 +319,7 @@
 005682B4 ReadCache_Destruct       // decompiled: src/file/cache.cpp
 007A5840 ReadCache_Read           // decompiled: src/file/cache.cpp
 007A5B58 WriteBuffer_Write        // decompiled: src/file/cache.cpp
-00567F2C Archive_MountMemory      // (data, prefix) -> u16 index; decompiled: src/file/mount.cpp
+00567F2C Archive_MountMemory      // (File*, prefix) -> u16 index; decompiled: src/file/mount.cpp
 0055D684 Archive_MountFile        // (path, prefix) -> u16 index; decompiled: src/file/mount.cpp
 0055E350 Archive_Unmount          // (u16 index); decompiled: src/file/mount.cpp
 0050F0F0 Shader_LoadGroup         // (group 0..5) (name?)
@@ -368,34 +368,34 @@
 004E0648 UiElem_GetRect           // vfunc +160 (a, b, m); decompiled: src/text/glyph_transform.cpp
 
 # File I/O, caches, zip directory
-00570B9C FsOp_Init                // (op, target, kind, options r6-r8)
-00570BD4 FsOp_Wait
-00570C0C FsOp_Cancel              // (name?)
-00570C38 FsOp_GetError
-00570C98 FsOp_Report              // (name?)
-00570D54 FsOp_GetResult           // bytes transferred
-00570D80 FsOp_GetPath             // (name?)
-00570DA8 FsOp_Destruct
-00561450 FsOp_Sync                // (name?)
-00561514 FsOp_Release             // (name?)
-00571178 Fios_OpenFile            // (op, handle obj, path, mode, options r7-r9) (name?)
-00571350 Fios_CloseFile           // (name?)
-00571688 Fios_WriteFile           // (name?)
-00571858 Fios_GetFileSize         // (name?)
-00561FE8 Fs_Read                  // (handle, buf, size, u64 pos, options r7-r9) (name?)
-005F886C Fios_Wait                // (count, ops*, timeout) (name?)
-005FCA64 Fios_CancelOp            // (scheduler, op) (name?)
-005FE784 Fios_FreeOp              // (scheduler, op) (name?)
-00571D80 FsHandle_Construct
-00571D98 FsHandle_Destruct        // empty
-00568A28 Cache_Find               // (cache, pos, wait) -> slot (name?)
-00568E74 Cache_PickSlot           // (cache, pos, hint) (name?)
-00568D30 Cache_NextPrefetch       // (cache, pos, hint, u64* out) (name?)
-007A5684 Cache_Prefetch           // (cache, file, pos, slot) (name?)
-005677A4 ZipArchive_OpenMemory    // (zip, data, prefix) (name?)
-0055C780 Zip_FindEndRecord        // (zip, bool sca) -> offset (name?)
-00559534 Zip_ReadU32              // (zip, u32* out) (name?)
-0056736C Zip_ReadRaw              // (zip, buf, size) (name?)
+00570B9C FsOp_Init                // decompiled: src/file/fsop.cpp
+00570BD4 FsOp_Wait                // decompiled: src/file/fsop.cpp
+00570C0C FsOp_Cancel              // decompiled: src/file/fsop.cpp
+00570C38 FsOp_GetError            // decompiled: src/file/fsop.cpp
+00570C98 FsOp_ErrorName           // decompiled: src/file/fsop.cpp
+00570D54 FsOp_GetResult           // decompiled: src/file/fsop.cpp
+00570D80 FsOp_GetPath             // decompiled: src/file/fsop.cpp
+00570DA8 FsOp_Destruct            // decompiled: src/file/fsop.cpp
+00561450 FsOp_Sync                // wait + report; decompiled: src/file/fsop.cpp
+00561514 FsOp_Release             // decompiled: src/file/fsop.cpp
+00571178 Fios_OpenFile            // decompiled: src/file/fioswrap.cpp
+00571350 Fios_CloseFile           // decompiled: src/file/fioswrap.cpp
+00571688 Fios_WriteFile           // decompiled: src/file/fioswrap.cpp
+00571858 Fios_GetFileSize         // decompiled: src/file/fioswrap.cpp
+00561FE8 Fs_Read                  // decompiled: src/file/fioswrap.cpp
+005F886C fios_Wait                // (count, ops*, timeout) (name?)
+005FCA64 fios_Cancel              // (scheduler, op) (name?)
+005FE784 fios_Free                // (scheduler, op) (name?)
+00571D80 FsHandle_Construct       // decompiled: src/file/fsop.cpp
+00571D98 FsHandle_Destruct        // decompiled: src/file/fsop.cpp
+00568A28 Cache_Find               // decompiled: src/file/slot.cpp
+00568E74 Cache_PickSlot           // decompiled: src/file/slot.cpp
+00568D30 Cache_NextPrefetch       // decompiled: src/file/slot.cpp
+007A5684 Cache_Prefetch           // decompiled: src/file/slot.cpp
+005677A4 ZipArchive_OpenMemory    // (zip, File*, prefix); decompiled: src/file/zipentry.cpp
+0055C780 Zip_FindEndRecord        // decompiled: src/file/zipentry.cpp
+00559534 Zip_ReadU32              // decompiled: src/file/zipentry.cpp
+0056736C Zip_ReadRaw              // unzReadCurrentFile; decompiled: src/file/zipentry.cpp
 
 # Sound library, text format, boot check
 006E6718 Handler_CountActive      // decompiled: src/audio/voice_core.cpp (name?)
@@ -431,3 +431,16 @@
 00553A2C Vec_TransformByMatrix    // (out, in, matrix) (name?)
 004E1B58 UiElem_GetSize2          // vfunc +140, sret vec2 (name?)
 004E0B30 UiElem_GetWorldMatrix    // vfunc +164, sret f32[16] (name?)
+
+# FIOS operations and wrappers
+00561270 String_HasChar           // decompiled: src/file/fsop.cpp
+005714B8 Fios_ReadFile            // decompiled: src/file/fioswrap.cpp
+00561E74 Fs_ReadAsync             // decompiled: src/file/fioswrap.cpp
+005F8AF4 fios_GetResult           // (name?)
+005FEF14 fios_OpenFile            // (sched, attr, path, flags, FsHandle*) (name?)
+006001D4 fios_CloseFile           // (name?)
+00603514 fios_ReadFile            // (sched, attr, fh, buf, size, pos) (name?)
+0060381C fios_WriteFile           // (name?)
+005FFE10 fios_Stat                // (sched, attr, path, u64* out, 3) (name?)
+005DBCB0 crc32                    // zlib
+005DCAC8 inflate                  // zlib

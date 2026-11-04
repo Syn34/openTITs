@@ -75,6 +75,7 @@ DECOMP(007A5840, ReadCache_Read) {
     s32 slot = -1, hint = -1;
     Stack frame(ctx, 16);
     const u32 op_list = frame.addr(), next_pos = frame.addr() + 8;
+    store<u64>(next_pos, 0);  // the original zeroes Cache_NextPrefetch's out-parameter
     while (n != 0) {
         if (slot < 0) slot = static_cast<s32>(call(ctx, io::fn::Cache_Find, {cache, pos, 1}));
         if (slot < 0) {
