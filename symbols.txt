@@ -419,7 +419,7 @@
 006EAAA0 Groups_Resume            // decompiled: src/audio/snd_handlers.cpp
 0071B054 abs                      // decompiled: src/audio/bank_util.cpp
 007848EC Map_Lookup               // decompiled: src/audio/bank_util.cpp
-00444610 Audio_StartFocusSound    // (name?)
+00444610 Audio_StartFocusSound    // (u32* out, SoundDesc*, PlayDesc*); decompiled: src/audio/focus_start.cpp
 00523310 Draw_SetTexture          // decompiled: src/world/draw.cpp
 005218D8 Draw_SetState            // decompiled: src/world/draw.cpp
 005236A0 Draw_BeginPrims          // decompiled: src/world/draw.cpp
@@ -459,22 +459,22 @@
 004E1604 UiText_Destruct          // decompiled: src/uielem/text_slots.cpp
 0071F36C vsnprintf                // (name?)
 007241F4 snprintf                 // (name?)
-006E4DC8 Handler_Alloc            // 9 args (9th on stack) (name?)
-006E4910 Handler_SetParams        // (name?)
-006E51E0 Handler_Start            // (name?)
-006D81C0 Voice_Steal              // (entry, bool, Handler** out) (name?)
-006E6AAC Sound_Prepare            // (name?)
-006D5BFC Bank_GetSoundName        // (name?)
-006E80CC Channel_Free             // (ch, 0) (name?)
-006E7584 Handler_HasLiveChannels  // (name?)
-006D8494 Handler_NextSegment      // (name?)
-006E4780 Snd_SendEvent            // (120, 0, 0, 0, 0) (name?)
-006E5434 Family_Release           // (name?)
-006E9B40 Handler_OnPause          // (name?)
-006E9E0C Handler_OnResume         // (name?)
-005545B4 Matrix_NearlyEqual       // (a, b, f32 eps) (name?)
-005532E4 Listener_LocalDirection  // (out, pos, listener) (name?)
-006D7508 Snd_PitchFromSpeed       // (f32) -> u32 (name?)
+006E4DC8 Handler_Alloc            // 9 args, 9th on stack; decompiled: src/audio/lib_handlers.cpp
+006E4910 Handler_SetParams        // decompiled: src/audio/lib_handlers.cpp
+006E51E0 Handler_Start            // decompiled: src/audio/lib_handlers.cpp
+006D81C0 Voice_Steal              // decompiled: src/audio/lib_voice.cpp (name?)
+006E6AAC Handler_StopOwnedBy      // (owner, force, flag); decompiled: src/audio/lib_voice.cpp
+006D5BFC Bank_GetSoundName        // decompiled: src/audio/lib_voice.cpp
+006E80CC Channel_Free             // (ch, keep_voice); decompiled: src/audio/lib_channels.cpp
+006E7584 Handler_HasLiveChannels  // decompiled: src/audio/lib_voice.cpp
+006D8494 Handler_NextSegment      // decompiled: src/audio/lib_voice.cpp (name?)
+006E4780 Snd_SendEvent            // (cause, a, b, c, d) -> callback 0x00F8E538; decompiled: src/audio/lib_handlers.cpp
+006E5434 Family_Release           // decompiled: src/audio/lib_handlers.cpp (name?)
+006E9B40 Handler_OnPause          // decompiled: src/audio/lib_channels.cpp
+006E9E0C Handler_OnResume         // decompiled: src/audio/lib_channels.cpp
+005545B4 Matrix_NearlyEqual       // decompiled: src/audio/lib_math.cpp
+005532E4 Listener_LocalDirection  // decompiled: src/audio/lib_math.cpp
+006D7508 Snd_PitchFromSpeed       // doppler, (f32) -> s32; decompiled: src/audio/lib_voice.cpp
 
 # Zip entries, GCM start-up
 0056C020 Sysmodule_Require        // decompiled: src/gfx/gcm_mem.cpp
@@ -524,3 +524,15 @@
 00532E70 Target_Attach            // (out, target, w, h, 0, 0) (name?)
 00532D5C Surface_SetBuffer        // (surface, buffer) (name?)
 00533054 Display_SetSize          // (display, w) (name?)
+
+# Sound library: handlers, voices, channels
+00440B48 Emitter_Init             // (Emitter*) (name?)
+0044385C KeyMap_Set               // (handle, key, s32 priority) (name?)
+007839B8 HandlePool_Grow          // (Pool*, s32 capacity) (name?)
+000DD258 Obj_CollectByType        // (s32 type, PtrVector*) (name?)
+0054EC1C PtrVector_Clear          // (name?)
+0054EC18 PtrVector_Free           // (name?)
+006D585C Snd_GetLastError         // returns s32 at 0x011D71B4 (name?)
+006EFE90 Channel_ReleaseVoice     // (hw voice) (name?)
+006E7EC0 Channel_Reset            // (ch) (name?)
+007062C8 Snd_Log2                 // (f32, -1) (name?)
