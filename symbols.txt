@@ -631,14 +631,14 @@
 00467004 World_Delete             // World vfunc +4; decompiled: src/world/vt_world.cpp
 004682C8 World_Init               // World vfunc +8, called by Game_Load; decompiled: src/world/vt_world.cpp
 00466860 World_Destruct           // World vfunc +0; decompiled: src/world/vt2_world_destruct.cpp
-00469D98 World_Update             // World vfunc +16
+00469D98 World_Update             // World vfunc +16; decompiled: src/world/wupdate.cpp
 00491710 World_HandleEvent        // World vfunc +36 (8211 instr)
 0047C5D8 SubMachine_Construct     // vtable 0x00B21AA0; decompiled: src/world/vt_submachine.cpp (name?)
 00490A88 SubMachine_Destruct
 00490AD0 SubMachine_Delete
-004FB0F0 Trophy_Construct         // (mem, "NPWR03581", ...) (name?)
-0049DC70 Upgrades_Load            // (path) (name?)
-000B2280 Awards_Load              // (path) (name?)
+004FB0F0 Trophy_Construct         // decompiled: src/game/meta_trophy.cpp
+0049DC70 Upgrades_Load            // (path) -> bool; decompiled: src/game/meta_scripts.cpp
+000B2280 Awards_Load              // (path) -> bool; decompiled: src/game/meta_scripts.cpp
 004EBE50 Levels_Load              // (xml path) -> u32; decompiled: src/game/levels.cpp
 004ECAC4 Levels_Count             // decompiled: src/game/levels.cpp
 004ECC50 Levels_At                // (s32) -> Level*; decompiled: src/game/levels.cpp
@@ -738,12 +738,12 @@
 0051F0FC MotionTrail_Load         // decompiled: src/gfx/effect_init.cpp
 005433AC PostProc_DrawCopyBlend   // decompiled: src/gfx/effect_draw.cpp
 00542D2C Blur03_Draw              // decompiled: src/gfx/effect_draw.cpp
-00536AC0 Draw_SetTexture0         // (Target*, u32, u32) reads r4/r5 (name?)
-005373A8 Draw_SetTarget           // (Target*, u32) (name?)
-005355D8 Draw_SetDepthMode        // (u32, u32) (name?)
-0053539C Draw_FullscreenQuad      // () (name?)
-00535294 Draw_EndQuad             // () (name?)
-00513038 Draw_Sub513038           // (effect) (unknown)
+00536AC0 Draw_SetTexture0         // (Target*, unit, filter); decompiled: src/gfx/draw_state.cpp
+005373A8 Draw_SetTarget           // (Target*, slot); decompiled: src/gfx/draw_state.cpp
+005355D8 Draw_ResetState          // (bool disable_blend, colour mask); decompiled: src/gfx/draw_state.cpp
+0053539C Draw_PrepareQuad         // decompiled: src/gfx/draw_state.cpp
+00535294 Draw_RestoreDepth        // decompiled: src/gfx/draw_state.cpp
+00513038 Draw_BindScreenTargets   // decompiled: src/gfx/draw_state.cpp
 0053CBD0 Bloom_Apply              // (name?)
 00543530 PostProc_CopyScale       // (name?)
 00542960 PostProc_DownSampleDepth // (name?)
@@ -773,3 +773,37 @@
 0053A640 Texture_Init             // (tex, data, size, ext, path) -> bool (name?)
 0079DD10 Map_Find                 // (map, const u32* key) -> value slot (name?)
 004D8D48 UiElem6_AddSlice         // (name?)
+
+# Draw state; World_Update, fades, post FX state; trophies, upgrades, awards
+0053585C Draw_BindDisplay         // () (name?)
+00532090 Draw_BindTargets         // (Target* depth, Target* colour, 0) (name?)
+0052F4F0 FProgram_Upload          // (FProgram** current) (name?)
+004665C0 World_RequestState       // (World*, level, u8 id) -> 1; decompiled: src/world/wupdate_fx.cpp
+00468760 Cutscene_ApplyCamera     // (Cutscene*); decompiled: src/world/wupdate_fx.cpp (name?)
+00468944 MsgDialog_Open           // (msg, s32 kind) -> bool; decompiled: src/world/wupdate_fx.cpp
+00468A38 World_UpdateAudioFilter  // (World*, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
+00468C40 Fade_Start               // (Fade*, from[4], to[4], f32, bool hide, bool force); decompiled: src/world/wupdate_fx.cpp
+00468EF8 PostFx_UpdateFilter      // (s, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
+004691E8 PostFx_UpdateTint        // (s, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
+004695A8 PostFx_UpdateSwap        // (s, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
+004697D8 PostFx_UpdateDof         // (s, f32 dt); decompiled: src/world/wupdate_fx.cpp (name?)
+00469B90 Fade_Update              // (Fade*, f32 dt); decompiled: src/world/wupdate_fx.cpp
+00365E30 Handle_Resolve           // (handle) -> obj or 0 (obj+4 bit 2) (name?)
+004D4104 Display_GetSize          // (f32 out[2]) from config u16 +4,+6
+004E02DC Ui_BringToFront          // (ui, 1) (name?)
+0044D740 Audio_SetFilterScale     // (f32) (name?)
+004437CC Audio_IsEmitterValid     // (u32 handle) -> bool (name?)
+0044CCF8 Audio_SetEmitterFilter   // (u32 handle, f32 cutoff) (name?)
+00520368 View_SetFov              // (View*, f32) (name?)
+00787408 Ease                     // (f32 t, f32 shape) -> f32 (name?)
+000AE784 SaveData_Write           // (path, data, size) (name?)
+0044C43C Sound_Find               // (u32 hash) -> handle (name?)
+00550EE8 Mem_DefaultAllocator     // () -> Allocator* (name?)
+00558F38 Array_Init               // empty function (blr)
+0054EC94 Array_Destruct           // empty function (blr) (name?)
+005E6944 ThreadAttr_Init          // (attr): copies 32-byte defaults
+005E69A4 ThreadAttr_Destroy       // (name?)
+005E7824 Thread_Create2           // (thread, attr, entry opd, arg) (name?)
+005E6D1C Event_Init               // (event, 0) (name?)
+0079BA10 Lock_Init                // (lock, 32) (name?)
+0056A6E0 Award_Register           // (u32 name hash) (name?)
