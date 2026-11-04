@@ -426,7 +426,7 @@
 00523748 Draw_EndPrims            // empty; decompiled: src/world/draw.cpp
 004D7E70 UiElem_GetScale          // vfunc +168, sret vec3, inherits parent's; decompiled: src/text/glyph_transform.cpp
 00522750 View_ProjectPoint        // (view, out vec4, in vec3) -> [0,1] screen; decompiled: src/text/glyph_transform.cpp
-005541F0 Matrix_Multiply          // (a_and_out, b) VMX (name?)
+005541F0 Matrix_Multiply          // (Matrix* a, const Matrix* b): a = rows(a) x b, w lanes from stack junk; decompiled: src/obj/obj12_math.cpp
 005115F0 View_Update              // (view, 0) (name?)
 00553A2C Vec_TransformByMatrix    // (out, in xyz, m); decompiled: src/view/vector.cpp
 004E1B58 UiElem_GetSize           // vfunc +140, cached at +140; decompiled: src/uielem/vtbl_size.cpp
@@ -2333,29 +2333,22 @@
 005842E4 WorldObjBase_Dump        // vtbl 0x00B24660 +60 (obj, depth, flags): DumpTree, skeleton (name?); decompiled: src/obj/obj11_small.cpp
 005A8034 SplineInstance_TangentAt // (inst, f1 t, f32 out[4], bool): 0x00560690 then rows 0-2 of +80 (name?); decompiled: src/obj/obj11_small.cpp
 0059B474 Iff_HandleRecKeys        // chunk OPD 0x00F3C6C8: one word per world record into +64 (name?); decompiled: src/obj/obj11_small.cpp
-00555478 Quat_FromMatrix          // (f32 out[4], const f32 m[4][4]) (name?)
-0057A770 Follower_Advance         // (follower, -, f32* t, f32 out[3]; f1 dt) (follower +108 bit 0x40 clear) (name?)
+00555478 Quat_FromMatrix          // (f32 out[4], const f32 m[4][4]); decompiled: src/obj/obj12_math.cpp
+0057A770 Follower_Advance         // (follower, -, f32* t, f32 out[3]; f1 dt) (follower +108 bit 0x40 clear) (name?); decompiled: src/obj/obj12_follow.cpp
 0057AF20 Follower_AdvanceAlt      // the same for +108 bit 0x40 (name?)
-00560690 Spline_TangentAt         // (SplineData*, f1 t, f32 out[4], bool) (name?)
-0050A268 Topology_Radius          // (AglTopology*) -> f1 (name?)
-0050A19C Topology_Dump            // (AglTopology*, s32 depth) (name?)
-007A8444 PtrTable_Remove          // (PtrTable*, s32 index) (name?)
-0075C1DC MapE_Find                // emitter-def name map lookup (name?)
-007A8250 MapE_Remove              // (map, const u32* key) (name?)
-007A7A80 MapB_Remove              // (map, const u32* key) (name?)
-007A892C MapC_Remove              // (map, const u32* key) (name?)
-007A8B20 MapD_Remove              // (map, const u32* key) (name?)
-00585B98 GeomDef_FindTopo         // (def, key) -> entry* or 0 (name?)
-005099B8 Topology_Apply           // (AglTopology*, arg) (name?)
-0055FB88 SplineArray_Finish       // (SplineArray*) (name?)
-0055FE00 SplineArray_Bounds       // (SplineArray*, f32 box[8], f32 sphere[4]) (name?)
-005642AC Iff_ReadNamedU32         // (reader, u32* out, const char* name) (name?)
-00564340 Iff_ReadNamedU16         // (reader, u16* out, const char* name) (name?)
-005643C4 Iff_Read5643C4           // (reader, u32* out, 0) (name?)
-005637D4 Iff_Read5637D4           // (reader) (name?)
-00584FD4 SkeletonDef_New          // (u32 bones) -> ApeSkeletonDef* (name?)
-0058AC70 GeomCmd_Simple           // (obj, u8, u8, s32) (name?)
-005A0E68 GeomCmd_Full             // (obj, u8, u8, s32, u32, u8, u32, rec*, u8 on stack) (name?)
+00560690 Spline_TangentAt         // (SplineData*, f1 t, f32 out[4], bool) -> Spline_TangentEval(d, -, out, d+12, flag); decompiled: src/obj/obj12_small.cpp
+0050A268 Topology_Radius          // (AglTopology*) -> f1: shared block +16 radius or 0; decompiled: src/obj/obj12_small.cpp
+0050A19C Topology_Dump            // (AglTopology*, s32 depth): Topology_DumpDraw per draw record; decompiled: src/obj/obj12_small.cpp
+007A8444 PtrTable_Remove          // (PtrTable*, u32 index): swap-with-last, moved callback (name?); decompiled: src/obj/obj12_small.cpp
+0075C1DC MapE_Find                // emitter-def name map lookup (default compare 0x00F34E50); decompiled: src/obj/obj12_small.cpp
+007A8250 MapE_Remove              // (map, const u32* key); decompiled: src/obj/obj12_small.cpp
+007A7A80 MapB_Remove              // (map, const u32* key); decompiled: src/obj/obj12_small.cpp
+007A892C MapC_Remove              // (map, const u32* key); decompiled: src/obj/obj12_small.cpp
+007A8B20 MapD_Remove              // (map, const u32* key); decompiled: src/obj/obj12_small.cpp
+005099B8 Topology_Apply           // (AglTopology*, DrawPacket*): queue draws into buckets (name?); decompiled: src/obj/obj12.cpp
+0055FB88 SplineArray_Finish       // (SplineArray*): arc-length parameters, +8 total, +12 = 0 (name?); decompiled: src/obj/obj12_spline.cpp
+0055FE00 SplineArray_Bounds       // (SplineArray*, f32 box[8], f32 sphere[4]) (name?); decompiled: src/obj/obj12_spline.cpp
+00584FD4 SkeletonDef_New          // (u32 bones) -> ApeSkeletonDef* (ApeTMemClassFL<ApeSkeletonDef,64>); decompiled: src/obj/obj12.cpp
 
 # Shader draws, part 4
 005533EC Vec3_RotateTo                        // (f32 out[3], const f32 v[3], const f32 m[3][4]) out = m rows . v; decompiled: src/gfx/shader4.cpp (name?)
@@ -2406,3 +2399,31 @@
 005E62E8 libm_tanf                            // f1 -> f1 (libm; leave recompiled) (name?)
 005D4FF0 SlyWater3_UploadFragment             // (Material*) SlyWater3's fragment constant 3 (name?)
 005C6EB8 SlyHeightFog_BuildMatrices           // (Material*, f32 a[3][4], f32 b[3][4]) via Matrix_FromAxisAngle / Matrix_ScaleRows (name?)
+
+# World-object helpers, part 12 (draw submission, lights, IFF readers)
+005637D4 Iff_ChunkSize            // (IffReader*) -> top chunk size (empty stack reads address 8) (was Iff_Read5637D4); decompiled: src/obj/obj12_small.cpp
+005643C4 Iff_ReadU8               // (IffReader*, u8* out) -> bytes read (was Iff_Read5643C4); decompiled: src/obj/obj12_small.cpp
+00564340 Iff_ReadU16              // (IffReader*, u16* out, name unused): little-endian (was Iff_ReadNamedU16); decompiled: src/obj/obj12_small.cpp
+005642AC Iff_ReadU32              // (IffReader*, u32* out, name unused): little-endian (was Iff_ReadNamedU32); decompiled: src/obj/obj12_small.cpp
+00585B98 GeomDef_SelectLod        // (def, item) -> LOD entry or 0; scales item +69 fade (was GeomDef_FindTopo) (name?); decompiled: src/obj/obj12.cpp
+0055F8D0 Bezier_Split             // (const f32 c[4][4], left, right): halves at t=0.5 (joint quirk) (name?); decompiled: src/obj/obj12_spline.cpp
+0055FA30 Bezier_Length            // (const f32 c[4][4]; f1 tol) -> f1 recursive length (name?); decompiled: src/obj/obj12_spline.cpp
+005832FC WorldObj_UpdateLight     // (obj): once-a-frame light cache refresh (was Obj_Visit5832FC) (name?); decompiled: src/obj/obj12.cpp
+0058303C WorldObj_SubmitDraw      // (obj): draw packet to class vfunc +20 (was Obj_Visit58303C) (name?); decompiled: src/obj/obj12.cpp
+0058AC70 GeomInstance_DrawLod     // (obj, u8 lod, u8, u8): packet through Topology_Apply (was GeomCmd_Simple) (name?); decompiled: src/obj/obj12.cpp
+00583518 LightGrid_Rebuild        // (): 8x8 light grid once a frame (was Obj_Visit583518) (name?); decompiled: src/obj/obj12.cpp
+005A0E68 GeomInstance_DrawLodEx   // (obj, lod, b69, b70, recv**, mode, bits, w84, u8 b89 on stack) (was GeomCmd_Full) (name?); decompiled: src/obj/obj12.cpp
+00560430 Spline_TangentEval       // (SplineData*, -, f32 out[4], u32 seg, bool; f1 t) (name?)
+00539874 Topology_DumpDraw        // (draw record +0) (name?)
+00581D48 ObjLight_Collect         // (obj) (name?)
+00582290 ObjLight_Sort            // (obj) (name?)
+00582848 ObjLight_Blend           // (obj) (name?)
+00582A84 ObjLight_Apply           // (obj) (name?)
+00572AB0 WorldObj_AnimMatrix      // (obj) -> f32[4][4]* for +164 bits 6-7 (name?)
+0050CD58 DrawPacket_SetTexture    // (packet, u32, u16) (name?)
+0079D920 DrawPacket_Begin         // (packet) (name?)
+004FDBB8 DrawRecord_Submit        // (topology record, packet) (name?)
+004FD214 DrawRecordList_Init      // (0x011DE300) (name?)
+00509CEC Topology_ApplyRecv       // (AglTopology*, packet, receiver) (name?)
+00509F08 Topology_ApplyTo         // (AglTopology*, packet, receiver**) (name?)
+005820E0 LightSlot_CellRange      // (slot, s32* x0, s32* x1, s32* y0, s32* y1) (name?)
