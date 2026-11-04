@@ -34,7 +34,7 @@
 0055BD3C File_Open                // (path, mode) -> File*; decompiled: src/file/open.cpp
 0055D78C File_Exists              // decompiled: decomp/src/file/file.cpp
 00560B90 File_LoadWhole           // (path, u32* size) -> buffer; main: "System\Shaders.Zip" (name?)
-00562944 Archive_Mount            // (path, options by value); main: Sly4.psarc (name?)
+00562944 Archive_Mount            // (path, options by value); main: Sly4.psarc (name?); decompiled: src/obj/obj14_small.cpp
 00567034 Archive_OpenZip          // (data, size, name); main: "RamDisk" (name?)
 
 # Game start-up (Game_Load subtree)
@@ -452,7 +452,7 @@
 004E2C78 UiElem_FindResourceOfType // vfunc +184 (name?); decompiled: src/uielem/vtbl_misc.cpp
 004E0FDC UiElem_GetWorldColor     // vfunc +172; decompiled: src/uielem/vtbl_misc.cpp
 004E17D4 UiText_Delete            // text vfunc +4; decompiled: src/uielem/vtbl_misc.cpp
-00553910 Vec4_TransformByMatrix               // (f32 out[4], const f32 v[4], const f32 m[16]) VMX (already listed)
+00553910 Vec4_TransformByMatrix               // (f32 out[4], const f32 v[4], const f32 m[16]) VMX (already listed); decompiled: src/obj/obj14_small.cpp
 0056A410 Matrix_FromAxisAngle     // decompiled: src/view/matrix.cpp
 007948E4 HashMap_Find             // sorted map lookup; decompiled: src/view/matrix.cpp
 004E2178 UiText_CountGlyphs       // -> +212; decompiled: src/uielem/text_slots.cpp
@@ -798,7 +798,7 @@
 00787408 Ease                     // (f32 t, f32 shape) -> f32 (name?); decompiled: src/world/misc.cpp
 000AE784 SaveData_Write           // stub: returns 3; decompiled: src/world/misc.cpp
 0044C43C Sound_Find               // (u32 hash) -> handle (name?); decompiled: src/world/misc.cpp
-00550EE8 Mem_DefaultAllocator     // () -> Allocator* (name?)
+00550EE8 Mem_DefaultAllocator     // Allocator* Mem_DefaultHeap() / Mem_DefaultAllocator() / Mem_Allocator552588():; decompiled: src/obj/obj14_small.cpp
 00558F38 Array_Init               // (Array*): empty in this build; decompiled: src/obj/obj13_misc.cpp
 0054EC94 Array_Destruct           // empty function (blr) (name?); decompiled: src/gfx/gfx7_stubs.cpp
 005E6944 ThreadAttr_Init          // (attr): copies 32-byte defaults
@@ -2519,10 +2519,10 @@
 0056C8A4 GcmMem_Free              // (p): cellGcmUnmapEaIoAddress(p), Mem_FreePool(p, 6, 0) (name?); decompiled: src/obj/obj13_misc.cpp
 005616C8 FsOp_ResultData          // (op) -> op+8 if FsOp_GetError(op) == 0 else 0 (name?); decompiled: src/obj/obj13_misc.cpp
 0056510C MemStack_AllocTop        // (s, size) -> block from +16 downwards (16-aligned) within +0, or 0 (name?); decompiled: src/obj/obj13_misc.cpp
-005602F8 Bezier_Tangent           // (f32 out[4], const f32 ctrl[4][4]; f1 u) (name?)
-004FD2E0 DrawRecordList_Add       // (draw record +0, const SubmitRecord* 160 bytes) (name?)
-0056E048 RingSlot_Next            // (o) -> o+512 + 128 * atomic(o+532: wraps at 2047) (name?) (left recompiled: lwarx/stwcx RMW)
-00575D18 Fn_575D18                // (name?)
+005602F8 Bezier_Tangent           // void Bezier_Tangent(f32 out[4], const f32 ctrl[4][4], f32 u); decompiled: src/obj/obj14_small.cpp
+004FD2E0 DrawRecordList_Add       // void DrawRecordList_Add(ListOwner* o, const SubmitRecord* r); decompiled: src/obj/obj14_draw.cpp
+0056E048 RingSlot_Next            // (left recompiled: lwarx/stwcx RMW) (name?)
+00575D18 Fn_575D18                // 935-insn render pass (View_GetCurrent, FProgram_SetConstant/Upload, cellGcmSetDrawIndexArray), called by Fn_576BB4 (not decompiled) (name?)
 0071EDAC Libc_71EDAC              // String_Thunk71EDAC's callee (name?)
 0072354C Libc_72354C              // String_Append's callee (strcat?) (name?)
 00721D18 Libc_strtol              // (s, end, base) (name?)
@@ -2871,3 +2871,113 @@
 0036742C Handle_Notify36742C                  // (u32 hash, 0, 1, 0) (name?)
 003250A0 Loader_Tick3250A0                    // (x, 1) (name?)
 002E2D44 Session_FindMovie2E2D44              // (Session*, u32 hash) -> movie entry (+8 subtitle text) (name?)
+
+# Engine core helpers (matrix, box, file readers, input, memory)
+00550E70 Mem_DefaultHeap          // Allocator* Mem_DefaultHeap() / Mem_DefaultAllocator() / Mem_Allocator552588():; decompiled: src/obj/obj14_small.cpp
+00552588 Mem_Allocator552588      // Allocator* Mem_DefaultHeap() / Mem_DefaultAllocator() / Mem_Allocator552588():; decompiled: src/obj/obj14_small.cpp
+00553074 Mem_DefaultStackAlloc    // void* Mem_DefaultStackAlloc(-, u32 size, u8 zero): MemStack_Alloc from (name?); decompiled: src/obj/obj14_small.cpp
+005530F0 Mem_DefaultHeapVfn8      // void Mem_DefaultHeapVfn8(-, x): the default heap's vfunc +8 (heap, x) (name?); decompiled: src/obj/obj14_small.cpp
+00553368 Vec_ToLocal              // void Vec_ToLocal(f32 v[3], const f32 m[4][4]): v - m's row 3 dotted (name?); decompiled: src/obj/obj14_small.cpp
+00553868 Debug_Text3D             // void Debug_Text3D(const f32 pos[3], const char* text, u32 colour, f32 scale) (name?); decompiled: src/obj/obj14_small.cpp
+00553B4C Matrix_FromRows          // void Matrix_FromRows(f32 out[4][4], const f32 rows[3][4], const f32 pos[3]):; decompiled: src/obj/obj14_small.cpp
+00553BC4 Matrix_ScaleDiag         // void Matrix_ScaleDiag(f32 m[4][4], const f32 s[3]): rows 0-2 the unit (name?); decompiled: src/obj/obj14_small.cpp
+00553C70 Matrix_Translation       // void Matrix_Translation(f32 m[4][4], const f32 pos[3]): rows 0-2 the (name?); decompiled: src/obj/obj14_small.cpp
+00553D18 Matrix_RotationX         // f32 Matrix_RotationX(f32 m[4][4], f32 a) / Matrix_RotationY: the; decompiled: src/obj/obj14_small.cpp
+00553E18 Matrix_RotationY         // f32 Matrix_RotationX(f32 m[4][4], f32 a) / Matrix_RotationY: the; decompiled: src/obj/obj14_small.cpp
+005540F8 Matrix_ScaleAxes         // void Matrix_ScaleAxes(f32 m[4][4], const f32 s[3]): every row's x, y, z (name?); decompiled: src/obj/obj14_small.cpp
+00554414 Matrix_Scale3            // void Matrix_Scale3(f32 m[4][4], f32 s): rows 0-2 (x, y, z) times s,; decompiled: src/obj/obj14_small.cpp
+005544FC Matrix_IsScaled          // bool Matrix_IsScaled(const f32 m[4][4], f32 eps): a row (0-2) whose (name?); decompiled: src/obj/obj14_small.cpp
+00555718 Quat_Mul                 // void Quat_Mul(f32 a[4], const f32 b[4]): a = the quaternion product; decompiled: src/obj/obj14_small.cpp
+00555CF4 String_FormatN           // s32 String_FormatN(char* buf, u32 size, const char* fmt, ...) (name?); decompiled: src/obj/obj14_small.cpp
+005565A0 String_ToLower           // void String_ToLower(char* s): A-Z to a-z in place (every byte is; decompiled: src/obj/obj14_small.cpp
+005565F0 String_FindFirstOf       // const char* String_FindFirstOf(const char* s, const char* set): strpbrk (name?); decompiled: src/obj/obj14_small.cpp
+00557064 Box_Union                // void Box_Union(Box* b, const Box* o): b.min = min, b.max = max per lane; decompiled: src/obj/obj14_small.cpp
+005571C0 Box_TransformInPlace     // void Box_TransformInPlace(Box* b, const f32 m[4][4]) (name?); decompiled: src/obj/obj14_small.cpp
+00557284 Box_Translate            // (Box* b, const f32 v[3]): min/max xyz += v (name?); decompiled: src/obj/obj14_small.cpp
+005572E8 Box_Offset               // void Box_Offset(Box* out, const Box* b, const f32 v[3]): out = b + v; decompiled: src/obj/obj14_small.cpp
+00557358 Box_Scale                // (Box* b, const f32 v[3]): min/max xyz *= v (name?); decompiled: src/obj/obj14_small.cpp
+005573D0 Box_ContainsPoint        // bool Box_ContainsPoint(const Box* b, const f32 p[4]); decompiled: src/obj/obj14_small.cpp
+005574A0 Box_Intersects           // bool Box_Intersects(const Box* a, const Box* b): no axis (x, y, z) on (name?); decompiled: src/obj/obj14_small.cpp
+00557870 Box_BoundingSphere       // void Box_BoundingSphere(f32 out[4], const Box* b): the centre (min + (name?); decompiled: src/obj/obj14_small.cpp
+00557C80 RefBlock_Release         // void RefBlock_Release(RefBlock* b): u16 +0 down by one; at zero or (name?); decompiled: src/obj/obj14_small.cpp
+0055E2AC EventSlot_Wait           // void EventSlot_Wait(u32 i): when slot i is pending (+40), waits for its (name?); decompiled: src/obj/obj14_small.cpp
+0055EC98 Bezier_Point             // void Bezier_Point(f32 out[3], const f32 ctrl[4][4], f32 u): the cubic (name?); decompiled: src/obj/obj14_small.cpp
+00560B38 FileBase_Delete          // void FileBase_Delete(File* f) / InputDevice_Delete(InputDevice* d): the; decompiled: src/obj/obj14_small.cpp
+00561374 FsOp_Finish              // void FsOp_Finish(FsOp* op) (name?); decompiled: src/obj/obj14_small.cpp
+00562BAC InputDevice_Reset        // void InputDevice_Reset(InputDevice* d): the button words, the 96-byte (name?); decompiled: src/obj/obj14_small.cpp
+00562EC0 InputDevice_Delete       // void FileBase_Delete(File* f) / InputDevice_Delete(InputDevice* d): the; decompiled: src/obj/obj14_small.cpp
+00562F18 InputDevice_UpdateButtons // void InputDevice_UpdateButtons(InputDevice* d) (name?); decompiled: src/obj/obj14_small.cpp
+00562F88 InputDevice_AxisPair     // bool InputDevice_AxisPair(const InputDevice* d, s32 i) (name?); decompiled: src/obj/obj14_small.cpp
+00563000 InputDevice_SetAxis      // void InputDevice_SetAxis(InputDevice* d, s32 i, f32 v, f32 dt) (name?); decompiled: src/obj/obj14_small.cpp
+00563768 FileReader_Read          // u32 FileReader_Read(FileReader* r, void* buf, u32 size): the file's (name?); decompiled: src/obj/obj14_small.cpp
+0056424C ChunkReader_Remaining    // s32 ChunkReader_Remaining(const ChunkReader* r): the current chunk's (name?); decompiled: src/obj/obj14_small.cpp
+00564F60 Registry_Set             // void Registry_Set(s32 i, void* v): 0x01164DEC[i] = v and v pushed onto (name?); decompiled: src/obj/obj14_small.cpp
+00564FF8 PairBuffer_Push          // void PairBuffer_Push(PairBuffer* b, u32 x, u32 y) (name?); decompiled: src/obj/obj14_small.cpp
+00565044 PairBuffer_PushData      // u32 PairBuffer_PushData(PairBuffer* b, u32 x, const void* src, u32 size) (name?); decompiled: src/obj/obj14_small.cpp
+005651B0 CallbackList_Invoke      // void CallbackList_Invoke(-, const CallbackList* l): calls each of the (name?); decompiled: src/obj/obj14_small.cpp
+00565228 PairBuffer_Flush         // Obj* PairBuffer_Flush(PairBuffer* b, bool reset) (name?); decompiled: src/obj/obj14_small.cpp
+00565304 EventSlot_Set            // u32 EventSlot_Set(u32 i, u64 v): slot i's +32 = v and its event flag (name?); decompiled: src/obj/obj14_small.cpp
+005662A0 PoolBuffer_Free          // void PoolBuffer_Free(PoolBuffer* b): the data back to pool 0 (or 1 when (name?); decompiled: src/obj/obj14_small.cpp
+00567124 MemFile_Close            // bool MemFile_Close(MemFile* f): +280, the position and the size 0, then (name?); decompiled: src/obj/obj14_small.cpp
+00567184 MemFile_Read             // s32 MemFile_Read(MemFile* f, void* buf, u64 size, u8* done) (name?); decompiled: src/obj/obj14_small.cpp
+0056724C MemFile_Write            // s32 MemFile_Write(MemFile* f, const void* buf, u64 size, u8* done) (name?); decompiled: src/obj/obj14_small.cpp
+0056731C MemFile_Seek             // s64 MemFile_Seek(MemFile* f, s64 off, s32 whence) (name?); decompiled: src/obj/obj14_small.cpp
+00569280 Bank_AllocHeader         // void Bank_AllocHeader(Bank* b): +4 = 0, then a 248-byte header (+0 = (name?); decompiled: src/obj/obj14_small.cpp
+005692E8 Mem_FreeAndClear         // void Mem_FreeAndClear(void** p): Mem_FreePool(*p, 0, 0) and *p = 0 if (name?); decompiled: src/obj/obj14_small.cpp
+005695C4 Iff_ReadFile             // bool Iff_ReadFile(IffReader* r, File* f, Obj* o): +4 = f, +8 = 0, +12 = (name?); decompiled: src/obj/obj14_small.cpp
+005698F4 FileReader_ReadF32Swapped // u32 FileReader_ReadF32Swapped(FileReader* r, f32* out): 4 bytes read (name?); decompiled: src/obj/obj14_small.cpp
+0056998C FileReader_ReadByte      // u32 FileReader_ReadByte(FileReader* r, void* buf): the same for one byte (name?). (name?); decompiled: src/obj/obj14_small.cpp
+00569C10 FileReader_Read32        // u32 FileReader_Read32(FileReader* r, void* buf) / FileReader_ReadU32: (name?); decompiled: src/obj/obj14_small.cpp
+00569C74 FileReader_ReadU32       // u32 FileReader_Read32(FileReader* r, void* buf) / FileReader_ReadU32: (name?); decompiled: src/obj/obj14_small.cpp
+0056A2D8 Matrix_PerspectiveWH     // void Matrix_PerspectiveWH(f32 m[4][4], f32 w, f32 h, f32 n, f32 f) (name?); decompiled: src/obj/obj14_small.cpp
+0056A7AC Data_Hash31              // u32 Data_Hash31(const u8* p, u32 n): h = h * 31 + byte over n bytes; 0 (name?); decompiled: src/obj/obj14_small.cpp
+0056AC78 Debug_FreePrimPools      // bool Debug_FreePrimPools(): both pools freed (Mem_FreePool(p, 0, 0)) and (name?); decompiled: src/obj/obj14_small.cpp
+0056B4E8 Debug_SwapPrimPools      // void Debug_SwapPrimPools(): the current pool becomes the previous one (name?); decompiled: src/obj/obj14_small.cpp
+0056C274 Sysutil_UnregisterCallback // s32 Sysutil_UnregisterCallback(s32 slot): cellSysutilUnregisterCallback (name?); decompiled: src/obj/obj14_small.cpp
+0056D068 Callback_56D068          // s32 Callback_56D068(-, Obj* o, u8 kind) (name?); decompiled: src/obj/obj14_small.cpp
+0056DC64 JobChain_Destroy         // void JobChain_Destroy(JobChainOwner* o): shuts down and joins the SPURS (name?); decompiled: src/obj/obj14_small.cpp
+0056E610 DrawRecordList_Flush     // void DrawRecordList_Flush(Entry* first, u32* stride, u32* count, u32** counter) (name?); decompiled: src/obj/obj14_small.cpp
+0056EBB8 JobDesc_Init             // void JobDesc_Init(JobOwner* o, u32 a, u32 b, u32 c, u64 d) (name?); decompiled: src/obj/obj14_small.cpp
+0056F95C PadDevice_Reset          // void PadDevice_Reset(PadDevice* d): f_00562BAC, then the motors stopped (name?). (name?); decompiled: src/obj/obj14_small.cpp
+0056FB88 PadDevice_Destruct       // void PadDevice_Destruct(PadDevice* d): vtable reset, then the input; decompiled: src/obj/obj14_small.cpp
+0056FBB8 PadDevice_Delete         // void PadDevice_Delete(PadDevice* d): the deleting destructor.; decompiled: src/obj/obj14_small.cpp
+005704A0 PadDevice_AxisActive     // bool PadDevice_AxisActive(const PadDevice* d, s32 i): enabled, +292 > 0 (name?); decompiled: src/obj/obj14_small.cpp
+00570520 PadDevice_ClearAxis      // void PadDevice_ClearAxis(PadDevice* d, u32 i): Obj_ClearPair(d, i), (name?); decompiled: src/obj/obj14_small.cpp
+00570590 PadDevice_SetEnabled     // void PadDevice_SetEnabled(PadDevice* d, u8 on): Obj_SetEmpty148(d, on), (name?); decompiled: src/obj/obj14_small.cpp
+005721C4 Sysutil_StaticDestroy    // void Sysutil_StaticDestroy(): an atexit destructor: two statics back to (name?); decompiled: src/obj/obj14_small.cpp
+00575C34 Render_Pass575C34        // void Render_Pass575C34(): when enabled (0x0119509C) and the current view (name?); decompiled: src/obj/obj14_small.cpp
+0057711C Obj577200_Construct      // void Obj577200_Construct(Obj* o) (name?); decompiled: src/obj/obj14_small.cpp
+00577200 Obj577200_Destruct       // void Obj577200_Destruct(Obj* o): vtable 0x00B245F8, then ApeRoot_Destruct (name?). (name?); decompiled: src/obj/obj14_small.cpp
+00577230 Obj577200_Delete         // void Obj577200_Delete(Obj* o): the deleting destructor (name?). (name?); decompiled: src/obj/obj14_small.cpp
+00577288 RefObj_Release           // void RefObj_Release(RefObj* o): u16 +4 down by one; at zero or below (name?); decompiled: src/obj/obj14_small.cpp
+005772E4 WorldObj_WorldBounds     // f32* WorldObj_WorldBounds(const WorldObj* o, Box* out): the bounds (name?); decompiled: src/obj/obj14_small.cpp
+00577D8C Matrix2_TransformPoint   // void Matrix2_TransformPoint(const f32 m[2][4][4], const f32 p[3], f32 a[4], f32 b[4]) (name?); decompiled: src/obj/obj14_small.cpp
+00583B48 WorldObj_Shutdown        // void WorldObj_Shutdown(WorldObj* o): unlinked, then each child handed to (name?); decompiled: src/obj/obj14_small.cpp
+00583C04 WorldObj_SetDrawCallback // void WorldObj_SetDrawCallback(WorldObj* o, -, OPD* cb, void* arg, bool deep) (name?); decompiled: src/obj/obj14_small.cpp
+00584B14 GeomBase_Delete          // (ApeGeomBase*): deleting dtor, vtbl 0x00B246B0 +4; decompiled: src/obj/obj14_small.cpp
+00586324 LightDef_Delete          // (ApeLightDef*): deleting dtor, vtbl 0x00B24700 +4 (GeomBase body); decompiled: src/obj/obj14_small.cpp
+00586B3C Resources_InitBoundsCube // void Resources_InitBoundsCube() (name?); decompiled: src/obj/obj14_small.cpp
+00588E70 KindList_Add             // void KindList_Add(Obj* o, KindList* l, s32 mode) (name?); decompiled: src/obj/obj14_small.cpp
+00588F44 KindList_Remove          // void KindList_Remove(Obj* o): takes o off its kind's list (by o +8 (name?); decompiled: src/obj/obj14_small.cpp
+0058AF94 DrawList_DrawGeomInstances // void DrawList_DrawGeomInstances(): GeomInstance_DrawLod(obj, +8, +9, (name?); decompiled: src/obj/obj14_small.cpp
+0058B05C DrawList_UpdateLightsA   // void DrawList_UpdateLightsA() / DrawList_UpdateLightsB(): for each entry (name?); decompiled: src/obj/obj14_small.cpp
+0058C8D8 DrawList_UpdateLightsB   // void DrawList_UpdateLightsA() / DrawList_UpdateLightsB(): for each entry (name?); decompiled: src/obj/obj14_small.cpp
+0058CE24 Records_Process58CE24    // void Records_Process58CE24(Obj* o, Record* base, u32 n) (name?); decompiled: src/obj/obj14_small.cpp
+00592748 WorldObj_SplinePointAt   // u32 WorldObj_SplinePointAt(WorldObj* o, -, f32 out[4], bool b; f1 t) (name?); decompiled: src/obj/obj14_small.cpp
+0059C9B4 CameraDef_Delete         // (ApeCameraDef*): deleting dtor, vtbl 0x00B247B8 +4 (GeomBase body); decompiled: src/obj/obj14_small.cpp
+0059E0F8 PointDef_Delete          // (ApePointDef*): deleting dtor, vtbl 0x00B24808 +4 (GeomBase body); decompiled: src/obj/obj14_small.cpp
+0059EF6C SplineDef_Destruct       // void SplineDef_Destruct(ApeSplineDef* d): the spline's points (+112 (name?); decompiled: src/obj/obj14_small.cpp
+0059F030 SplineDef_Delete         // void SplineDef_Delete(ApeSplineDef* d): the deleting destructor (name?). (name?); decompiled: src/obj/obj14_small.cpp
+005A80D8 WorldObj_SplinePointTangentAt // u32 WorldObj_SplinePointTangentAt(WorldObj* o, -, f32 pos[4], f32 tan[4], bool back; f1 t) (name?); decompiled: src/obj/obj14_small.cpp
+005A81CC WorldObj_SplineEval      // u32 WorldObj_SplineEval(WorldObj* o, -, f32 out[4], u32 seg, bool back; f1 t) (name?); decompiled: src/obj/obj14_small.cpp
+005A8284 WorldObj_SplinePointTangent // u32 WorldObj_SplinePointTangent(WorldObj* o, -, f32 pos[4], f32 tan[4], u32 seg, bool back; f1 t) (name?); decompiled: src/obj/obj14_small.cpp
+005A8C30 WorldObj_SetSplineRecord // Entry* WorldObj_SetSplineRecord(WorldObj* o, s32 i) (name?); decompiled: src/obj/obj14_small.cpp
+00565378 EventSlot_ThreadMain     // (slot): worker loop: wait flag +20, clear, call +32(+36), set flag +28; never returns (left recompiled: infinite loop, not testable in the harness) (name?)
+0056E4C0 WorkQueue_Fn56E4C0       // ({queue, handle}*, first, stride*, count*, counter*), DrawRecordList_Flush's callee (name?)
+005536F4 Debug_NewPrim            // (u32 kind, colour, 1) -> Prim*, Debug_Text3D's callee (name?)
+00562998 InputDevice_Fn562998     // (d), InputDevice_UpdateButtons's callee (name?)
+00571B90 Fn_571B90                // Fn_562944's callee (name?)
+0058C9B0 Records_Fn58C9B0         // (obj, record, x), Records_Process58CE24's callee (name?)
+005132D8 Fn_5132D8                // (list), Render_Pass575C34's callee (name?)
+005754E0 Fn_5754E0                // (u16 count), Render_Pass575C34's callee (name?)
+0057328C Fn_57328C                // (u16 count), Render_Pass575C34's callee (name?)
