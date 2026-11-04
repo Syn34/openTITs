@@ -3011,3 +3011,132 @@
 00367758 Prompt_Fade367758                    // (Object*; f32) (name?)
 00271C08 Target_Next271C08                    // (from, 3, prev) -> next target or 0 (name?)
 002B79F8 Target_InReach2B79F8                 // (def, const Mat34*, reach) -> non-zero (name?)
+
+# Renderer sweep part 2 (free lists, effects, queries, command stream, sync)
+0051F160 Countdown_Tick                     // void (this, f32 dt): while this->u8 +88 bit 0x80 is set, this->f32 +84 -= dt; at or below 0.0 (k at 0x0051F158) the bit and the u8 at +4 clear (name?); decompiled: src/gfx/gfx8.cpp
+007A4F3C PrimList_Destruct                  // ApeTFreeList<ApeDebug::Prim>::~ApeTFreeList (debug.cpp kPrimFreeListVtable) [vtable 00B24418[0]]; decompiled: src/gfx/gfx8.cpp
+007A4FF8 ChunkDescList_Destruct             // ApeTFreeList<IFF::ChunkDesc>::~ApeTFreeList (iff.cpp kFreeListVtable) [vtable 00B24438[0]]; decompiled: src/gfx/gfx8.cpp
+0050A14C SetAll_0050A14C                    // this (this, u32 v): this->+96 = v, then each of the this->u16 +52 entries of the 8-byte array at this->+48 gets ->+20 = this->+96 (all three re-rea... (name?); decompiled: src/gfx/gfx8.cpp
+005AC7AC Call5A9DB0_005AC7AC                // u32 (s32 skip, a, b, c, d): skip ? d : f_005A9DB0(a, b, c, d) (name?); decompiled: src/gfx/gfx8.cpp
+007A07B8 Holder232C0_Destruct               // void (this): vtable 0x00B232C0, Holder_FreeData(this + 16), then the base vtable 0x00B232B0 (left in r3) [vtable 00B232C0[0]]; decompiled: src/gfx/gfx8.cpp
+007A2BA4 ShaderType241B0_Destruct           // ShaderType::~ShaderType as the derived 0x00B241B0 type inlines it: base vtable 0x00B23F00, PtrVector_Clear(this + 12), Nop(this + 12) [vtable 00B24...; decompiled: src/gfx/gfx8.cpp
+007A344C ShaderType_Destruct                // ShaderType::~ShaderType: vtable 0x00B23F00, PtrVector_Clear(this + 12), Nop(this + 12) [vtable 00B23F00[2]]; decompiled: src/gfx/gfx8.cpp
+00512BE0 SignalRender_00512BE0              // void (): sys_event_flag_set(obj->+20, 1) on the object at 0x010C5A10, then obj->u8 +48 = 1 (obj re-read; left in r3) (name?); decompiled: src/gfx/gfx8.cpp
+00548D44 Obj24130_Destruct                  // The 0x00B24130 object's destructor (Ctor_00548D14 builds it): for each of the surfaces at +644 and +648 (52-byte records, +0 buffer part, +40 Targe...; decompiled: src/gfx/gfx8.cpp
+007A23D4 SurfaceList_Destruct               // The other ApeTFreeList<T> destructors (vtable slot 0 each). <AglRenderSurface>; decompiled: src/gfx/gfx8.cpp
+007A249C TextureList_Destruct               // <AglTexture>; decompiled: src/gfx/gfx8.cpp
+007A262C SubMeshList_Destruct               // The other ApeTFreeList<T> destructors (vtable slot 0 each).; decompiled: src/gfx/gfx8.cpp
+007A26F4 TopologyList_Destruct              // The other ApeTFreeList<T> destructors (vtable slot 0 each).; decompiled: src/gfx/gfx8.cpp
+007A27BC MeshMtlTableList_Destruct          // The other ApeTFreeList<T> destructors (vtable slot 0 each).; decompiled: src/gfx/gfx8.cpp
+007A2884 FreeList23E40_Destruct             // 144-byte elements; decompiled: src/gfx/gfx8.cpp
+007A294C LightList_Destruct                 // The other ApeTFreeList<T> destructors (vtable slot 0 each).; decompiled: src/gfx/gfx8.cpp
+007A2A14 EmitPropsList_Destruct             // The other ApeTFreeList<T> destructors (vtable slot 0 each).; decompiled: src/gfx/gfx8.cpp
+007A2ADC DeferredFreeList_Destruct          // The other ApeTFreeList<T> destructors (vtable slot 0 each).; decompiled: src/gfx/gfx8.cpp
+007A0F90 Material_Delete                    // Material deleting destructor: when set, vtable 0x00B233D0, f_0050C118 (the base destructor body), then Mem_FreeFrom(this, 0) [vtable 00B233D0[1]]; decompiled: src/gfx/gfx8.cpp
+00500548 EmitPropsHolder_Destruct           // void (this): vtable 0x00B232D8, EmitPropsRef_Set(this + 4, 0), then f_0079CA4C(this + 4) [vtable 00B232D8[0]]; decompiled: src/gfx/gfx8.cpp
+00524400 ReadChunk16_00524400               // u32 (IffReader* r, Obj* o): FileReader_Read(r, o->+16, Iff_ChunkSize(r)), returns 1 (an IFF chunk handler) (name?); decompiled: src/gfx/gfx8.cpp
+00524454 ReadChunk20_00524454               // u32 (IffReader* r, Obj* o): FileReader_Read(r, o->+20, Iff_ChunkSize(r)), returns 1 (an IFF chunk handler) (name?); decompiled: src/gfx/gfx8.cpp
+005488AC Call_005488AC                      // void (): f_00527C4C(), then f_005E31B8(gcm context, 1) and f_005E337C(gcm context, *(u32*)0x011640E4) (name?); decompiled: src/gfx/gfx8.cpp
+0053A2F4 TextureBase_Delete                 // Texture deleting destructor (the Texture_DestructBase body inlined: vtable 0x00B23EE0, f_0050A5E4) [vtable 00B23EE0[1]]; decompiled: src/gfx/gfx8.cpp
+0053C8A0 RenderSurface_Delete               // RenderSurface deleting destructor: vtable 0x00B23F20, f_0051AD90 [vtable 00B23F20[1]]; decompiled: src/gfx/gfx8.cpp
+007A2338 Obj23D28_Delete                    // The 0x00B23D28 object's deleting destructor (Destruct_0079E9B4 inlined: vtable, Thunk_00549140 -> Obj24130_Destruct) [vtable 00B23D28[1]]; decompiled: src/gfx/gfx8.cpp
+007A38A4 RenderTarget_Delete                // RenderTarget deleting destructor (load.h kRenderTargetVtbl 0x00B240D0, f_0052163C) [vtable 00B240D0[1]]; decompiled: src/gfx/gfx8.cpp
+007A4C94 FreeListBase_Delete                // ApeTFreeList<T> base deleting destructor: when set, vtable 0x00B24298, FreeList_Destroy, then Mem_FreePool(this, 0, 0) [vtable 00B24298[1]]; decompiled: src/gfx/gfx8.cpp
+007A3B1C Buffer24180_Destruct               // The pool.h Buffer's sibling with vtable 0x00B24180: frees +8 (Mem_FreePool pool 4, tag 1; no null check), then the BufferBase vtable 0x00B24110 (le...; decompiled: src/gfx/gfx8.cpp
+005244A8 DrawRecordList_Wait                // void (DrawRecordList* l): sleeps 300 us (sys_timer_usleep) until the list's +256 counter (obj12.h kTrList) is 0 (name?); decompiled: src/gfx/gfx8.cpp
+00537ED0 CmdBuf_OnOverflow                  // u32 (CmdBuf* b, u32 needed_words): formats "AglPs3CmndBuf: Overflow: ..." (0x00AF3428) into a 256-byte stack buffer with f_00724304 (sprintf): the ... (name?); decompiled: src/gfx/gfx8.cpp
+005428B0 Effect23FF0_InitOnce               // Slot 6 of the effect vtable 0x00B23FF0: slot 7 (Effect23FF0_GetTargets) once, guarded by the u8 at 0x00F67A00 [vtable 00B23FF0[6]] (name?); decompiled: src/gfx/gfx8.cpp
+00543BAC Effect24038_InitOnce               // Slot 6 of the effect vtable 0x00B24038: slot 7 once, guarded by the u8 at 0x00F67A01 [vtable 00B24038[6]] (name?); decompiled: src/gfx/gfx8.cpp
+00542908 Effect23FF0_GetTargets             // void (this): copies seven globals of the 0x01164040 block (fx.h work targets) into +132..+156: +132 = [0x01164078], +136 = work1, +148 = work0, +14... (name?); decompiled: src/gfx/gfx8.cpp
+00548974 Query_InitReports                  // void (): f_00527B28(), the occlusion report ring reset (report_next and the u32 at 0x011640E4 = 0), report_base = cellGcmGetReportDataAddressLocati... (name?); decompiled: src/gfx/gfx8.cpp
+005176F8 FurLight_Update                    // void (): when the u8 at 0x00F66FD4 is set and the object at 0x00F66FD0 (shader6_draw.cpp kFurLight, hevent3_g.cpp kCamRig) exists, its virtual slot... (name?); decompiled: src/gfx/gfx8.cpp
+00527A70 Slots_MarkFree                     // bool (Slot* s): finds s among the 16 query slots (layers3::g::slots, 176 bytes each) and clears its u8 +4 (in use); 0 when not found (name?); decompiled: src/gfx/gfx8.cpp
+00527ACC Slot_ReleaseChild                  // void (Slot* s): when s->+8 is set, its virtual slot 2 on itself, then s->+8 = 0 (returns 0) (name?); decompiled: src/gfx/gfx8.cpp
+0053DF38 Bloom_Run                          // void (BloomParams* b): unless b->f32 +16 (strength) < 0.01 (k at 0x0053DF30; NaN runs), the u8 at 0x00F67948 = 1 and Bloom_Chain(b) (name?); decompiled: src/gfx/gfx8.cpp
+007A0F08 Shader_GetName                     // const char* (Shader*): the name from this->+20's virtual slot 3, or "NULL" (0x00B233C0) when +20 is 0 [vtable 00B233A0[7], 00B233D0[3]] (name?); decompiled: src/gfx/gfx8.cpp
+00518180 ResetGcmState_00518180             // void (): f_005E24F8(gcm context, 2043), then f_00517FB8() and Draw_InvalidateState() unless the u8 at 0x010DDBB0 is set and the one at 0x010DDBA8 (... (name?); decompiled: src/gfx/gfx8.cpp
+0051F09C Countdown_Set                      // void (this, bool on): on: this->u8 +4 = on, the countdown (+84) = 0 and the u8 +88 gets bit 0x40, loses 0x80. Off: when no countdown runs (+88 bit ... (name?); decompiled: src/gfx/gfx8.cpp
+0050A28C InitFromHeader_0050A28C            // u32 (this, const Header* h): +52 = u16 h+4, +48 = h+0, +54 = u16 h+6, String_CopyN(this + 16, h + 11, 32), +47 = 0; returns 0 (name?); decompiled: src/gfx/gfx8.cpp
+00520030 Bind_00520030                      // void (this): f_0053B668(this->+512, 1) unless +512 is the u32 at 0x00F66FBC already, then f_00532450(this->+512, this + 96, this + 104) (name?); decompiled: src/gfx/gfx8.cpp
+00537040 Surface_InitTarget_00537040        // void (Surface* s, u32 w, u32 h, u32 unused, s32 format, Target** out): Target_Init(&t, w, h, format, 0, 0) into a stack slot, Surface_SetBuffer(s, ... (name?); decompiled: src/gfx/gfx8.cpp
+00548550 Sync_00548550                      // void (Surface* s): f_00522140(s->+672), the draw-record list at 0x011DE300 built on first use (DrawRecordList_Init, guard u8 at 0x011DE480), then D... (name?); decompiled: src/gfx/gfx8.cpp
+007A6878 Call60DA10_007A6878                // (this, a, b, c, d, e, f, g, h, i): f_0060DA10(this->+11980, a + 2, b - 2, c, d & 0xFFFF, e, f & 0xFFFF, g, h, i & 0xFFFF, 1) (the Edge zlib queue w... (name?); decompiled: src/gfx/gfx8.cpp
+0054A930 ConvertState_0054A930              // bool (?, State* dst, const u8* src): dst->+0 = [0x00F67A08 + 8 * src[0]], +4 = [0x00F67A54 + 20 * src[2] + 4 * src[3]], u8 +8 = src word +8, +9 = s... (name?); decompiled: src/gfx/gfx8.cpp
+0079ED18 PoolBase_Destruct                  // PoolBase::~PoolBase: base vtable 0x00B236E8 (layers4.h kPoolBaseVtable), the buffers at +4 and +304 freed (no null check), then Pool_DestructPart(t...; decompiled: src/gfx/gfx8.cpp
+007A0808 Holder232C0_Delete                 // The 0x00B232C0 holder's deleting destructor: when set, vtable, Holder_FreeData(this + 16), base vtable 0x00B232B0, Mem_FreeFrom(this, 0) [vtable 00...; decompiled: src/gfx/gfx8.cpp
+00517048 WaitThen_00517048                  // void (this): sleeps 300 us (sys_timer_usleep) until this->+128 is 0, then f_00516CD0(this) (name?); decompiled: src/gfx/gfx8.cpp
+0051F3C0 Obj23650_Destruct                  // [vtable 00B23650[0]]; decompiled: src/gfx/gfx8.cpp
+0051F4B0 Obj23650_DestructInline            // The same body, called directly by f_007A3700.; decompiled: src/gfx/gfx8.cpp
+007A4F88 PrimList_Delete                    // [vtable 00B24418[1]]; decompiled: src/gfx/gfx8.cpp
+007A5044 ChunkDescList_Delete               // [vtable 00B24438[1]]; decompiled: src/gfx/gfx8.cpp
+005202C8 SetFactor_005202C8                 // void (this, f32 v): this->f32 +64 = v clamped by the .text pair at 0x005202C0 {hi 5000.0, lo 10.0}: m = v < hi ? v : hi, then m > lo ? m : lo (NaN ... (name?); decompiled: src/gfx/gfx8.cpp
+0052DAEC Calc_0052DAEC                      // u32 (Obj* o, u32 flags, s32 n): flags bit 1 -> 10. Otherwise with base = bit 0 ? 2 : 4 and lo = bit 0: x = base - n * ((base + 1) / u8 o->+20) (div... (name?); decompiled: src/gfx/gfx8.cpp
+00535C84 Display_BindScreenTargets          // void (): sets the display's u8 +136 when its +52 bits 22..24 exceed 1 (signed), then Draw_BindTargets(*depth, *colour, 0) from Display_GetTargets (... (name?); decompiled: src/gfx/gfx8.cpp
+007A2428 SurfaceList_Delete                 // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A24F0 TextureList_Delete                 // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A2680 SubMeshList_Delete                 // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A2748 TopologyList_Delete                // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A2810 MeshMtlTableList_Delete            // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A28D8 FreeList23E40_Delete               // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A29A0 LightList_Delete                   // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A2A68 EmitPropsList_Delete               // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+007A2B30 DeferredFreeList_Delete            // The renderer's ApeTFreeList<T> deleting destructors (vtable slot 1 each).; decompiled: src/gfx/gfx8.cpp
+00523F04 ReadChunkEntry_00523F04            // u32 (IffReader* r, Obj* o): appends a zeroed 24-byte entry to o's array (++u16 +12; entry = +0 + 24 * (count - 1): u16 +0, u32 +4, u16 +8, u32 +12 ... (name?); decompiled: src/gfx/gfx8.cpp
+0054A420 Update_0054A420                    // void (this): when u8 +20 and +28 are set: f_00549F30(this) unless the u8 +96 has bit 0x40 or 0x80, then f_0052CC88(this) [vtable 00B23D50[4], 00B24... (name?); decompiled: src/gfx/gfx8.cpp
+005B8D58 SAC_FastPropType_SetupMaterial     // bool (ShaderType*, Material* m, Mesh* mesh): unless g::config +152 bit 0x80, Material_ParamSlot(m, 0) = mesh->u8 +84 ? mesh->+88 : -1; returns 1 [v... (name?); decompiled: src/gfx/gfx8.cpp
+0052D018 SetList_0052D018                   // void (this, const u32* src, u8 n): this->u8 +20 = n, then +4 + 4 * i = src[i] while (u8) i < this->u8 +20 (re-read before each store) (name?); decompiled: src/gfx/gfx8.cpp
+007A34A4 ShaderType_Delete                  // [vtable 00B23F00[3]]; decompiled: src/gfx/gfx8.cpp
+007A3D44 ShaderType241B0_Delete             // [vtable 00B241B0[3]]; decompiled: src/gfx/gfx8.cpp
+007A3B74 Buffer24180_Delete                 // Buffer24180_Destruct, then Mem_FreeFrom(this, 0); null returns 0 [vtable 00B24180[1]]; decompiled: src/gfx/gfx8.cpp
+007A5208 IffChunk_ReadSized_007A5208        // u32 (IffReader* r, Obj* o): the u32 at 0x01164E48 = the size of the chunk on top of r's stack (Iff_ChunkSize inlined, with its read of address 8 fo... (name?); decompiled: src/gfx/gfx8.cpp
+0051D198 ReadName_0051D198                  // u32 (x): f_00569638(x, buf) into a 256-byte stack buffer; when that returns nonzero, String_Dup(buf) is appended to the u32 list at 0x010DDADC (+28... (name?); decompiled: src/gfx/gfx8.cpp
+00527D34 Gcm_ResetMaskCull_00527D34         // void (): three RSX commands written inline at the gcm context's current pointer (no space check): colour mask 0x01010101, cull face enable 1, front... (name?); decompiled: src/gfx/gfx8.cpp
+00537D5C CmdBuf_Call_00537D5C               // void (CallRec* rec): f_005E0600(gcm context, the RSX offset of rec->+0), then *rec->+4 = the offset of the context's current pointer | 0x20000000 (... (name?); decompiled: src/gfx/gfx8.cpp
+0053A94C Texture_LoadFromHeader_0053A94C    // void (Texture* t, const Header* h): InitFromHeader_0050A28C(t, h), then, when the u32 at 0x01164DEC (obj13 kBankState) is set, Texture_FromGtf(t, b... (name?); decompiled: src/gfx/gfx8.cpp
+005D7064 SHO_DefaultType_SelectShader       // u32 (ShaderType* t, Material* m, DrawItem* item): item->u8 +69 = 1 when its material (+28) has u8 +100 bit 0x80 and item->+44 is set (sel = *item->... (name?); decompiled: src/gfx/gfx8.cpp
+0050059C EmitPropsHolder_Delete             // The 0x00B232D8 holder's deleting destructor: when set, vtable, EmitPropsRef_Set(this + 4, 0), f_0079CA4C(this + 4), then Mem_FreeFrom(this, 0) [vta...; decompiled: src/gfx/gfx8.cpp
+0052F8A0 Display_SetGamma                   // void (f32 gamma): clamped to [0.8, 1.2] (k at 0x0052F898; NaN stays); when it differs from render::g::mem_stats +56 it is stored there and cellVide... (name?); decompiled: src/gfx/gfx8.cpp
+00515168 Stream_Read4x16_00515168           // u16 (Stream* s, u32* a, u32* b, u32* c, bool* d): skips a 12-byte header (wrapping at +4 to +0), then reads a u64 at the cursor (+12, += 8) and sto... (name?); decompiled: src/gfx/gfx8.cpp
+00515544 Stream_ReadPair_00515544           // u32 (Stream* s, u32* out): skips a 12-byte header (wrapping at +4 to +0), then reads two u32 words at the cursor (+12, each wrapping the same way);... (name?); decompiled: src/gfx/gfx8.cpp
+00522C98 GetForThread_00522C98              // u32 (): the thread-id static (load.h kThreadIds, zeroed and guarded on first use); on the main thread (ThreadId_005DB070 == the first u64) the u32 ... (name?); decompiled: src/gfx/gfx8.cpp
+00527B28 Query_InitProxyMaterial            // void (): the u32 at 0x010E0614 (gfx7_thunks.cpp kList010E05D4Count) = 0; a material copied from Shader_LoadGroup(0)'s (Material_Alloc, +16 = the gr... (name?); decompiled: src/gfx/gfx8.cpp
+007A2194 PoolBase_Delete                    // PoolBase deleting destructor: PoolBase_Destruct inlined, then Mem_FreeFrom(this, 0) [vtable 00B236E8[3]]; decompiled: src/gfx/gfx8.cpp
+0051F42C Obj23650_Delete                    // The 0x00B23650 object's deleting destructor: Obj23650_Destruct inlined, then Mem_FreeFrom(this, 0) [vtable 00B23650[1]]; decompiled: src/gfx/gfx8.cpp
+0051265C WaitRender_0051265C                // void (): when the render object at 0x010C5A10 (SignalRender_00512BE0) has u8 +48 set: sys_event_flag_wait(obj->+28, 1, mode 1, 0, 0) and, when that... (name?); decompiled: src/gfx/gfx8.cpp
+00536A38 SetClamps_00536A38                 // void (f32 a, f32 b): mem_stats +168 = clamp(a, 0.1, 150), +172 = clamp(b, 0.01, 0.1) (k at 0x00536A2C: 0.1, 0.01, 150; NaN stays) -- the two SetCla... (name?); decompiled: src/gfx/gfx8.cpp
+0053EC58 Effect23F60_Run                    // void (Effect* e): unless e->f32 +24 < 0.01 (k at 0x0053EC50; NaN runs), virtual slots 6 and 8 on e [vtable 00B23F60[4]] (name?); decompiled: src/gfx/gfx8.cpp
+00540D1C Effect23F90_Run                    // void (Effect* e): e->+68 / +72 = View_GetCurrent() +60 / +64 (raw), then virtual slots 6 and 8 on e [vtable 00B23F90[4]] (name?); decompiled: src/gfx/gfx8.cpp
+00543304 Effect23FF0_Pass                   // void (Effect* e, u32 src, u32 dst): Draw_SetTarget(e->+136[dst], 0), cellGcmSetInvalidateTextureCache(gcm context, 1), Draw_SetTexture0(e->+148[src... (name?); decompiled: src/gfx/gfx8.cpp
+007A601C Call12Then20_007A601C              // (File* f, x): r = virtual slot 3 (f, x), then virtual slot 5 (f, r, x + 24) [vtable 00B245A4[2]] (name?); decompiled: src/gfx/gfx8.cpp
+00510554 Stats_ResetCounters_00510554       // void (): for the stats object at 0x010DDBBC: +220 = min(+220, [+384] - +240) and +224 = min(+224, [+512] - +244) (signed), the counters at +384 and... (name?); decompiled: src/gfx/gfx8.cpp
+00514CC8 Stream_ReadTwo_00514CC8            // u32 (Stream* s, u32* a, u32* b): skips a 12-byte header (wrapping at +4 to +0), reads a word into *a, then another (wrapping when the cursor + 7 pa... (name?); decompiled: src/gfx/gfx8.cpp
+00515018 Stream_SetLineWidth_00515018       // void (Stream* s): skips a 12-byte header (wrapping at +4 to +0), reads an f32 width, then writes the RSX command SET_LINE_WIDTH (0x000403B8) = (s32... (name?); decompiled: src/gfx/gfx8.cpp
+0054DAB4 ShaderType241B0_SelectShader       // Shader* (ShaderType* t, Material*, DrawItem* item): item->u8 +69 = 0; returns t->+12 [skinned + 2 * colour], where skinned = mesh (item->+12) +112 ... (name?); decompiled: src/gfx/gfx8.cpp
+00501780 MaterialAnim3_Update_00501780      // void (Anims* a): once per frame (a->+0 != layers4 g::anim_stamp): +0 = the stamp, then MaterialAnim_Update on the tracks at +8, +56 and +104 with d... (name?); decompiled: src/gfx/gfx8.cpp
+0051AC50 SurfaceBase_Destruct               // [vtable 00B234B0[0]]; decompiled: src/gfx/gfx8.cpp
+0051AD90 SurfaceBase_DestructBody           // The same body, called directly by RenderSurface_Destruct / _Delete.; decompiled: src/gfx/gfx8.cpp
+005B5880 AngleIndexType_SetupMaterial       // bool (ShaderType*, Material* m, const Desc* d): t = Tex_FindLoaded(d->+4); when found, t's virtual slot 4 (t, 3, 3, 1) and f_004FF008(m, t), return... (name?); decompiled: src/gfx/gfx8.cpp
+00542598 Effect23FC0_Run                    // void (Effect* e): when virtual slot 3 (e) returns nonzero, slots 7 and 8 on e [vtable 00B23FC0[4]] (name?); decompiled: src/gfx/gfx8.cpp
+007A60A0 InflateQueue_Destruct              // The Edge zlib inflate queue wrapper's destructor (vtable 0x00B24558): u8 +11992 = 0; when the event flag is attached (+11972), cellSpursEventFlagDe...; decompiled: src/gfx/gfx8.cpp
+00518574 View_Restore_00518574              // void (): when the current surface's view (draw::g::current_surface ->+672) shows the display at 0x00F66FBC and that display's u8 +148 lacks bit 0x8... (name?); decompiled: src/gfx/gfx8.cpp
+005206F8 Camera_FovScale_005206F8           // f32 (Camera* c): tanf(c->f32 +56 * 0.5) / tanf(0.48) (the latter cached once at 0x010F0DD0, guard u8 0x010F0DC8), capped at 1.0 by fsel (NaN passes... (name?); decompiled: src/gfx/gfx8.cpp
+0053A8B0 Texture_LoadFile_0053A8B0          // Texture* (Texture* t, const char* path): File_LoadWhole(path, &size, 0); with data and a nonzero size, r = Texture_FromGtf(t, data, size, 0), Mem_F... (name?); decompiled: src/gfx/gfx8.cpp
+005D8060 Bind_005D8060                      // void (ShaderType*, Material* m): MaterialAnim_UploadUV(m->+128, 4, 1.0, 1.0) when m has one, then vertex constant 6 = {1, 1, 1, 1} (a static f32[4]... (name?); decompiled: src/gfx/gfx8.cpp
+005485F4 Slot_Setup                         // void (Slot* s, u32 a, const f32 m[16]): one occlusion-query slot (pool.h query): +8 = a, +16.. = m's rows 0..3, three words each at a 16-byte strid... (name?); decompiled: src/gfx/gfx8.cpp
+005C1D1C SlyCharacterFurFinType_SetupMaterial // bool (ShaderType*, Material* m, Mesh* mesh): unless g::config +152 bit 0x80, Material_ParamSlot(m, 0) = mesh->+88 and (m, 1) = mesh->+92 (raw f32 w... (name?); decompiled: src/gfx/gfx8.cpp
+00527BA8 Query_CollectSlots_00527BA8        // void (): the proxy material at 0x010DFAC0 (Query_InitProxyMaterial) released (virtual slot 2) and cleared, then every query slot in use (u8 +4 of t... (name?); decompiled: src/gfx/gfx8.cpp
+005126E4 WaitRenderIdle_005126E4            // void (): WaitRender_0051265C inlined (when the render object's u8 +48 is set: event flag wait / clear, +48 = 0), f_0053BF70(), then f_00512148() un... (name?); decompiled: src/gfx/gfx8.cpp
+0051F660 Random_Pair_0051F660               // void (this): two steps of the game's random generator (update.h Random_Step, inlined with one store each at the end): this->f32 +64 = the previous ... (name?); decompiled: src/gfx/gfx8.cpp
+005234DC Stream_PutByteCmd_005234DC         // void (Stream* w, u8 v): unless v is w->u8 +200 already: +200 = v, then a 12-byte record {0x11000000, v, 0} and the byte v are appended at the curso... (name?); decompiled: src/gfx/gfx8.cpp
+0053BE94 Gcm_FlipContext_0053BE94           // void (): f_0053BC14(), f_005E0600(gcm context, the u32 at 0x010F0E1C), the gcm context pointer (fx::g::state) = the u32 at 0x011972EC; when the dou... (name?); decompiled: src/gfx/gfx8.cpp
+0051ACE4 SurfaceBase_Delete                 // SurfaceBase deleting destructor: SurfaceBase_Destruct inlined, then Mem_FreeFrom(this, 0) [vtable 00B234B0[1]]; decompiled: src/gfx/gfx8.cpp
+00542804 EnsureTextures_00542804            // void (): makes the texture for the active mode once: with g::config +34 set, the u32 at 0x00F67504 = f_0051E514(mem_stats +100, 0) unless set or +1... (name?); decompiled: src/gfx/gfx8.cpp
+005B0280 OutlineType_SetupMaterial          // bool (ShaderType*, Material* m, Mesh* mesh): m->u16 +46 = 4095, +112 bits 1..16 (IBM) = 513, Material_ParamSlot(m, 0) = w * w with w = mesh->+88 wh... (name?); decompiled: src/gfx/gfx8.cpp
+0050C118 Material_DestructBody              // (Material*) the body Material_Destruct / Material_Delete call after setting vtable 0x00B233D0 (name?)
+0050A5E4 Texture_DestructBody               // (Texture*) after vtable 0x00B23EE0 (Texture_DestructBase, TextureBase_Delete) (name?)
+0052163C RenderTarget_DestructBody          // (RenderTarget*) after vtable 0x00B240D0 (name?)
+00537684 Handle_Release                     // (u32* slot) releases the handle in a surface's +16 / +20 / +24 slot (name?)
+00569638 Iff_ReadString                     // (x, char buf[256]) -> nonzero on success; ReadName_0051D198 dups the text (name?)
+00724304 sprintf                            // (buf, fmt, ...) libc; CmdBuf_OnOverflow (name?)
+0060DA10 EdgeInflateQueue_Submit            // Edge zlib SDK (edgezlib_inflate_queue.cpp), called by Call60DA10_007A6878; leave recompiled (name?)
+0054F6FC dlmalloc_InitFailure               // dlmalloc init_mparams + errno = ENOMEM (0x80010004), returns 0; libc, left recompiled (name?)
