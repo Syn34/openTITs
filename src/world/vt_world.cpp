@@ -140,8 +140,7 @@ DECOMP(004682C8, World_Init) {
         vcall(ctx, w, kVfnEvent, {w, ev});
     }
 
-    // Start the session. String_HashNoCase and kDefaultName read r5, which
-    // is still what the previous call left, as in the original.
+    // Start the session.
     call(ctx, kSessionNotify, {load<u32>(kSession)});
     const u32 p = kPlayers;
     u32 hash = load<u32>(p + kStartHash);

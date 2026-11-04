@@ -61,9 +61,6 @@ DECOMP(0045CAA0, StateMachine_Construct) {
     store<u32>(sm + kSmData, size_arg != 0 ? mem + data_off : 0);
     call(ctx, kMemset, {mem, 0, load<u32>(sm + kSmBytes)});
     ref<u8>(load<u32>(sm + kSmIds)) = initial;
-    // r5 is left as memset left it (or as the caller passed it when levels
-    // is 0): 0x000D3578 calls String_HashNoCase after this, without setting
-    // r5, and that reads it. Nothing here may touch r5 after the memset.
 }
 
 // bool StateMachine_Shutdown(StateMachine* sm): SetState(0, none).

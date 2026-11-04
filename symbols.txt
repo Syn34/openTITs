@@ -630,7 +630,7 @@
 0046B5DC World_GetState           // World vfunc +32; decompiled: src/world/vt_world.cpp
 00467004 World_Delete             // World vfunc +4; decompiled: src/world/vt_world.cpp
 004682C8 World_Init               // World vfunc +8, called by Game_Load; decompiled: src/world/vt_world.cpp
-00466860 World_Destruct           // World vfunc +0
+00466860 World_Destruct           // World vfunc +0; decompiled: src/world/vt2_world_destruct.cpp
 00469D98 World_Update             // World vfunc +16
 00491710 World_HandleEvent        // World vfunc +36 (8211 instr)
 0047C5D8 SubMachine_Construct     // vtable 0x00B21AA0; decompiled: src/world/vt_submachine.cpp (name?)
@@ -639,7 +639,24 @@
 004FB0F0 Trophy_Construct         // (mem, "NPWR03581", ...) (name?)
 0049DC70 Upgrades_Load            // (path) (name?)
 000B2280 Awards_Load              // (path) (name?)
-004EBE50 Levels_Load              // (path) (name?)
-004ECAC4 Levels_Count             // (name?)
-004ECC50 Levels_At                // (u32) (name?)
-004EBCF4 Level_Register           // (name?)
+004EBE50 Levels_Load              // (xml path) -> u32; decompiled: src/game/levels.cpp
+004ECAC4 Levels_Count             // decompiled: src/game/levels.cpp
+004ECC50 Levels_At                // (s32) -> Level*; decompiled: src/game/levels.cpp
+004EBCF4 Level_Register           // (Level*) -> u8 loaded; decompiled: src/game/levels.cpp
+
+# Sub-machine, World destruct, levels
+00490B80 SubMachine_Init          // vfunc +8; decompiled: src/world/vt2_submachine.cpp
+00490E40 SubMachine_Shutdown      // vfunc +12; decompiled: src/world/vt2_submachine.cpp
+0077D8F8 SubMachine_HandleEvent   // vfunc +36, returns 1; decompiled: src/world/vt2_submachine.cpp
+004EB904 Levels_Parse             // (XmlElement*) (name?)
+004F8C30 Xml_FindChild            // (node, name): hash + 0x004F8ACC (name?)
+004F936C Xml_FindChildren         // (node, name) (name?)
+005566A8 String_Append            // strcat (name?)
+004BCE90 Set_Find                 // (u32 name) -> Set* (name?)
+004C7A68 Effect_Construct         // (mem 140 bytes, def) (name?)
+004C753C Effect_Start             // (name?)
+004CF710 Effect_SetTime           // (Effect*, f32) (name?)
+004CF3C4 Effect_Release           // (Effect*, 0x10CBB) (name?)
+00365A54 Game_SetPaused           // (bool resume, 0) (name?)
+0077D92C SubMachine_GetWorld      // vfunc +76: returns +48
+0077D910 SubMachine_WantsPause    // vfunc +56 base: returns 1
