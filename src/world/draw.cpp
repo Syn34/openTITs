@@ -46,6 +46,9 @@ DECOMP(00523310, Draw_SetTexture) {
     u32 cursor = field<u32>(fb, 16);
     u32 at = cursor + 12;
     if (cursor + 19 > field<u32>(fb, 4)) at = field<u32>(fb, 0);
+    // The original returns with this (unaligned) cursor in r7, and
+    // Draw_BeginPrims ORs r7 into its command word when callers don't set it.
+    ctx.gpr[7] = at;
     at = (at + 3) & ~3u;
     field<u32>(fb, 16) = at;
     store<u32>(at, tex);

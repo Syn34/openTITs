@@ -109,9 +109,9 @@ DECOMP(0053AC38, Gcm_Init) {
         call(ctx, gc::fn::String_Format, {kStrScreenSizeFailed});
         field<u8>(kConfig, 35) = 0;
     }
-    call(ctx, gc::fn::Gfx_Init531084);
+    call(ctx, gc::fn::Display_InitSurfaces);
     call(ctx, gc::fn::Gfx_Init5312E4, {ref<u8>(kStats + 8), 0, 1});
-    call(ctx, gc::fn::Gfx_Init5333CC);
+    call(ctx, gc::fn::Gfx_InitFrameSurfaces);
 
     // Render command buffer of half the I/O size.
     {
@@ -206,7 +206,7 @@ DECOMP(0053AC38, Gcm_Init) {
         call(ctx, gc::imp::cellSpursRunJobChain, {jc});
     }
     store<u32>(kStats + 364, 0);
-    call(ctx, gc::fn::Gfx_Init537F28, {kGfxObj});
+    call(ctx, gc::fn::RsxHeap_Init, {kGfxObj});
     call(ctx, gc::fn::Gfx_Init5E403C, {load<u32>(kVBlankCounter), 1, 1});
 
     // Surface heap.

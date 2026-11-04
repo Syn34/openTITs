@@ -75,6 +75,14 @@ Only the 32-bit addresses the game uses are valid guest pointers. Keep them as `
    ```
    Some bytes differ between any two runs because of timing. The VBlank counter at 0x010F0E00 is one of them: run `--no-decomp` twice to see the rest. A byte that differs only when your function is switched on is a bug.
 
+## Leftover registers
+
+Compiled code sometimes reads a register that its caller never set, so it sees whatever the previous call left there. `Draw_BeginPrims`, for example, ORs r7 into a command word, and its callers rely on the r7 that `Draw_SetTexture` returns with. A decompiled function doesn't naturally leave its volatile registers the way the original did.
+
+When you decompile a function:
+- check what its callees read before writing;
+- when a known caller depends on a register your function leaves behind, set it explicitly (`ctx.gpr[7] = ...`) and add a comment.
+
 ## Conventions
 
 - **Names:** `Subsystem_Verb` for functions (`File_Exists`, `Np_Init`), `g::name` for globals, and PascalCase for structs.

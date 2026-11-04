@@ -19,7 +19,7 @@ u32 Map_Lookup(PPUContext& ctx, u32 map, u32 name, u32 key_slot) {
 // 0x01164B70 (the position is read and written back unchanged).
 DECOMP(004E0228, UiElem_SetRotation) {
     const u32 e = arg<u32>(ctx, 0);
-    Stack frame(ctx, 48);
+    Stack frame(ctx, 64);  // Matrix_FromAxisAngle writes out+48..56 too
     const u32 m = frame.addr();
     const f64 rad = static_cast<f64>(static_cast<f32>(farg(ctx, 0) * static_cast<f64>(kDegToRad)));
     callf(ctx, vfn::Matrix_FromAxisAngle, {m, kRotationAxis}, {rad});

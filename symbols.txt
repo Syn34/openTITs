@@ -453,10 +453,10 @@
 004E0FDC UiElem_GetWorldColor     // vfunc +172; decompiled: src/uielem/vtbl_misc.cpp
 004E17D4 UiText_Delete            // text vfunc +4; decompiled: src/uielem/vtbl_misc.cpp
 00553910 Vec4_TransformByMatrix   // VMX (name?)
-0056A410 Matrix_FromAxisAngle     // (out 3x4, axis; f1 radians) (name?)
-007948E4 HashMap_Find             // (map, const u32* key) -> value slot (name?)
-004E2178 UiElem_InvalidateLocal   // (name?)
-004E1604 UiText_Destruct          // text vfunc +0 (name?)
+0056A410 Matrix_FromAxisAngle     // decompiled: src/view/matrix.cpp
+007948E4 HashMap_Find             // sorted map lookup; decompiled: src/view/matrix.cpp
+004E2178 UiText_CountGlyphs       // -> +212; decompiled: src/uielem/text_slots.cpp
+004E1604 UiText_Destruct          // decompiled: src/uielem/text_slots.cpp
 0071F36C vsnprintf                // (name?)
 007241F4 snprintf                 // (name?)
 006E4DC8 Handler_Alloc            // 9 args (9th on stack) (name?)
@@ -483,16 +483,44 @@
 0052F670 CommandBuffer_Construct  // decompiled: src/gfx/gcm_mem.cpp
 0056DF80 Heap_InitRegion          // decompiled: src/gfx/gcm_mem.cpp
 00565AA8 Pool_Create              // create_mspace_with_base; decompiled: src/gfx/gcm_mem.cpp
-005596F0 Zip_CheckLocalHeader     // (zip, u32* extra, u32* extra_off, u32* extra_size) -> 1 (name?)
+005596F0 Zip_CheckLocalHeader     // unzlocal_CheckCurrentFileCoherencyHeader; decompiled: src/file/localhdr.cpp
 005DC638 inflateInit2_            // zlib
 005504F4 init_user_mstate         // dlmalloc (name?)
 005E0530 Gcm_InitBody             // (cmd size, io size, io addr) -> 0 / error (name?)
 0060E0B4 JobQueue_Init            // (queue, 5, spurs, prio[8], 251, buf, 22528) (name?)
-00530318 Surface_GetSize          // (w, h, 3, 0, 0, info*) (name?)
+00530318 Surface_GetSize          // decompiled: src/gfx/init_surface.cpp
 0052FD2C Gfx_Init52FD2C           // (unknown)
-00531084 Gfx_Init531084           // (unknown)
+00531084 Display_InitSurfaces     // decompiled: src/gfx/init_surface.cpp (name?)
 005312E4 Gfx_Init5312E4           // (u8, 0, 1) (unknown)
-005333CC Gfx_Init5333CC           // (unknown)
-00537F28 Gfx_Init537F28           // (obj) (unknown)
+005333CC Gfx_InitFrameSurfaces    // decompiled: src/gfx/init_surface.cpp (name?)
+00537F28 RsxHeap_Init             // decompiled: src/gfx/init_surface.cpp (name?)
 005E403C Gfx_Init5E403C           // (u32, 1, 1) (unknown)
 00723FEC fprintf
+
+# Text element classes, display surfaces
+004E181C UiText_DestructThunk     // decompiled: src/uielem/text_slots.cpp
+004E2480 UiText_Update            // text +152 (f1 dt); decompiled: src/uielem/text_slots.cpp
+004E2628 UiText_Draw              // text +156; decompiled: src/uielem/text_draw.cpp
+004E1840 UiText_Clone             // text +8; decompiled: src/uielem/slots.cpp
+0024F2C8 UiText2_Destruct         // vtbl 0x00B1C9D0 +0; decompiled: src/uielem/slots.cpp
+0024F328 UiText2_Delete           // +4; decompiled: src/uielem/slots.cpp
+0024F3A0 UiText2_Clone            // +8; decompiled: src/uielem/slots.cpp
+0024FA84 UiText2_SetText          // +192; decompiled: src/uielem/slots.cpp
+0024FBA8 UiText2_Update           // +152 (name?)
+004E3528 Timeline_Destruct        // vtbl 0x00B228A0 +0; decompiled: src/uielem/text_slots.cpp
+004E3648 Timeline_Delete          // +4; decompiled: src/uielem/text_slots.cpp
+004E1454 UiQuad_Update            // (quad; f1 dt, f2 e+232, r5 mode) (name?)
+004DC430 UiText_Construct         // (elem, desc) (name?)
+004DC5BC UiText2_Construct        // (elem, desc) (name?)
+004D7634 UiElem_CloneChildren     // (from, to, arg) (name?)
+004DB780 UiText_ReserveText       // (elem, bytes) (name?)
+004DB6CC UiText_ReserveQuads      // (elem, glyphs) (name?)
+004E23A0 UiText2_UpdateBase       // called first by 0024FBA8 (name?)
+004D89CC UiElem_UpdateChildren    // called last by 0024FBA8 (name?)
+0051B228 Display_CreateTargets    // (w, h, 29, max w, max h) (name?)
+005304D4 Surface_Create           // (desc*, buffer*, w, h, 0, 0, 1) (name?)
+0053074C Display_Finish           // (display) (name?)
+00530DB4 Target_Init              // (target, w, h, 3, 0, 0) (name?)
+00532E70 Target_Attach            // (out, target, w, h, 0, 0) (name?)
+00532D5C Surface_SetBuffer        // (surface, buffer) (name?)
+00533054 Display_SetSize          // (display, w) (name?)
