@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-1,424 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
+1,447 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -120,7 +120,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | World construction: member constructors, save-data defaults, 270 anim-script command/variable types; World event helpers | `src/world/construct*.cpp`, `src/world/event_small.cpp`, `src/world/misc.cpp` | 360 |
 | World-object base class, vtable slots, slots/peers, deferred destruction; texture decoders (BMP, TGA, GTF); 9-slice UI element; timeline key builders | `src/obj/`, `src/font/image*.cpp`, `src/uielem/build6.cpp`, `src/uiload/tlbuild.cpp` | 40 |
 | World-object classes: child lists, clone, set-class, bound radius, zone mask; light, emitter and camera instances; GeomDef | `src/obj/obj4*.cpp`, `src/obj/class_*.cpp` | 39 |
-| World event handler callees: handle resolvers, save-thread polls, message dialogs, brightness/gamma, object-list jobs; remaining anim-script constructors; timed callbacks, job runners, push stack, material copy, message posting; level start, save tasks, job queue, sessions, layer stacks | `src/world/hevent*.cpp`, `src/world/construct2_animscript.cpp` | 177 |
+| World event handler callees: handle resolvers, save-thread polls, message dialogs, brightness/gamma, object-list jobs; remaining anim-script constructors; timed callbacks, job runners, push stack, material copy, message posting; level start, save tasks, job queue, sessions, layer stacks; push-stack blend, language switch, level progress, loading finish | `src/world/hevent*.cpp`, `src/world/construct2_animscript.cpp` | 200 |
 | World-object helpers: box and zone tests, tree walk, copy, skeleton creation, slot entries, light slots, instance factories, skeleton init/copy, emitter properties, topology copy, IFF chunk loop, light animation; point and spline instances, ApeObj base slots, topology draws, skeleton compose | `src/obj/box.cpp`, `src/obj/zone.cpp`, `src/obj/obj5*.cpp`, `src/obj/obj6*.cpp`, `src/obj/obj7*.cpp` | 77 |
 | Stencil shadows (cap and silhouette volumes, z-fail/z-pass), occlusion queries, clears, sphere projection, material animation | `src/gfx/pool*.cpp` | 25 |
 | Renderer: render layers and jobs, cached draw state, bloom/noise pass, split-screen views, layer sorting, backdrop, camera split records, 4x4 inverse, render-layer construction and registration, derived layers, depth/resolve passes, material bind, render pool | `src/gfx/render*.cpp`, `src/gfx/layer2.cpp`, `src/gfx/layers3.cpp`, `src/gfx/layers4*.cpp`, `src/gfx/bloomnoise.cpp`, `src/view/`, `src/world/rjobs.cpp` | 81 |
