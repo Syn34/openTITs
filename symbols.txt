@@ -1903,7 +1903,7 @@
 0050D124 MaterialAnim_UploadUV            // (anim or 0, first constant, f32 su, f32 sv) 2 vertex constants (name?)
 0052F270 FProgram_SetConstant             // (index, const f32 v[4]) current fragment program constant, dirty on change (name?)
 0050CF50 Draw_SetParticleState            // (0, bool, 32) (unknown, name?)
-005BD298 SlyCharacter2_Bind               // Shader vtable 0x00B25958 slot 8, 69 insns (name?)
+005BD298 SlyCharacter2_Bind       // shader vtable 0x00B25958 slot 8; decompiled: src/gfx/shader2_bind.cpp
 00546EF4 Render_Init546EF4                // () called by Render_Init (unknown)
 005D9810 ShaderTypes_Construct            // static constructor of the 57 ShaderType statics at 0x01196A80 (name?)
 005D8E50 ShaderTypes_Destruct             // static destructor of the same (name?)
@@ -1963,3 +1963,42 @@
 0056D374 Matrix_NormalizeInPlace  // (f32 m[4][4]) -> m: 0x0056D268(m, m) (name?); decompiled: src/obj/obj9_lod.cpp
 0056D268 Matrix_Normalize         // (f32 dst[4][4], const f32 src[4][4]) (name?)
 007335C4 SplineMap_Find           // (map = *(*0x00F8F158 +16), const u32* name hash) -> ApeSplineDef** slot (name?)
+
+# Shader bind and draw slots
+005BA7D0 SlyCaustics_Bind         // shader vtable 0x00B258B8 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005C38C0 SlyDecal_Bind            // shader vtable 0x00B25B50 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005B1E88 Diffuse_Bind             // shader vtable 0x00B25490 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005AE9A0 TextureWarp_Bind         // shader vtable 0x00B250D0 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005CE508 SlyTerrainSnow_Bind      // shader vtable 0x00B25F10 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005C6D38 SlyHeightFog_Bind        // shader vtable 0x00B25C40 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005D1628 SlyTextureWarp_Bind      // shader vtable 0x00B25FE8 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005AF518 ScreenWarp_Bind          // shader vtable 0x00B250F0 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005CD480 SlyScreenWarp_Bind       // shader vtable 0x00B25DC8 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005C49C0 SlyDecal4_Bind           // shader vtable 0x00B25BA0 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005CFA68 SlyTerrainSnowDecal_Bind // shader vtable 0x00B25F60 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005D2360 SlyWater_Bind            // shader vtable 0x00B26038 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005D33C8 SlyWater2_Bind           // shader vtable 0x00B26088 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005D4C80 SlyWater3_Bind           // shader vtable 0x00B260D8 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005B5990 Water_Bind               // shader vtable 0x00B25618 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005B06B0 SprParticle_Bind         // shader vtable 0x00B25278 slot 8; decompiled: src/gfx/shader2_bind.cpp
+005ADD54 PrimTxr_Draw             // shader vtable 0x00B24F58 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005B1830 ProjTxr_Deferred_Draw    // shader vtable 0x00B25358 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005B1AE8 ZPass_Draw               // shader vtable 0x00B25420 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005B095C SprParticle_Draw         // shader vtable 0x00B25278 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005ADEE4 SimpleColorTxr_Draw      // shader vtable 0x00B24FD8 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005B0440 GeoParticle_Draw         // shader vtable 0x00B25220 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005ADA18 Debug_Draw               // shader vtable 0x00B24EF8 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005AFBF8 Outline_Draw             // shader vtable 0x00B251A8 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005B3148 Decal_Draw               // shader vtable 0x00B254B0 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005AF730 ScreenWarp_Draw          // shader vtable 0x00B250F0 slot 12; decompiled: src/gfx/shader2_draw.cpp
+005AE648 TextureWarp_BuildMatrices // (Material*, f32 m1[16], f32 m2[16], f32 v[4]) two UV warp matrices + vec4; also used by Water / SlyWater* Bind (name?)
+005D12C8 SlyTextureWarp_BuildMatrices // the same for SlyTextureWarp_Bind (name?)
+00537BB8 Display_GetDepthTexture  // (g::mem_stats) scene depth texture for the current buffer set (mem_stats +132 / +104 / +108 / +88) (name?)
+005C6B20 SlyHeightFog_UploadFog   // (Material*) fog vertex constants (name?)
+00512940 Draw_GetScreenCopy       // () Draw_CopyScreen once per frame (layers4::g::copy_stamp / copy_texture) (name?)
+0050D1E0 MaterialAnim_UploadUVAlt // (anim, first, su [f1], sv [f2]) Water_Bind's variant of MaterialAnim_UploadUV (name?)
+0050D0E0 DrawItem_SetParticleState // (DrawItem*, u32) Draw_SetParticleState(item +68 bit 5, material +100 bit 5, arg) (name?)
+005D3180 SlyWater2_UploadWaves    // (Material*) vertex constants (name?)
+005D4A38 SlyWater3_UploadWaves    // (Material*) vertex constants (name?)
+005E3F80 cellGcmSetMethod1FF8     // (context, value) libgcm inline writer, NV4097 method 0x1FF8 (name?)
+005E4124 cellGcmSetVertexProgramParameterBlock // (context, first, vec4 count, const f32*) method 0x1EFC (name?)
