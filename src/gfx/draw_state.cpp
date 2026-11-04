@@ -202,7 +202,7 @@ DECOMP(00513038, Draw_BindScreenTargets) {
         return;
     }
     const u32 w52 = load<u32>(s + 52);
-    const u32 k = ((w52 >> 28) & 3) * 4;
+    const u32 k = (w52 >> 28) & 0xC;  // rlwinm 4,28,29: bits 30..31 * 4
     auto alt = [&] { return (ref<u8>(s + 148) >> 7) != 0; };
     auto stereo = [] { return field<u8>(kConfig, 35) != 0 && field<u8>(kConfig, 34) != 0; };
     u32 colour, depth;

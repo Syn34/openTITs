@@ -9,7 +9,7 @@ namespace {
 constexpr u32 kStats = sly4::g::mem_stats;
 constexpr u32 kConfig = sly4::g::config;
 
-u32 eye_offset(u32 disp) { return ((load<u32>(disp + 52) >> 28) & 3) << 2; }  // rlwinm 4,28,29
+u32 eye_offset(u32 disp) { return (load<u32>(disp + 52) >> 28) & 0xC; }  // rlwinm 4,28,29: bits 30..31 * 4
 bool per_eye(u32 disp) { return ((load<u32>(disp + 52) >> 25) & 1) != 0; }    // rlwinm 7,31,31
 bool alternate(u32 disp) { return (ref<u8>(disp + 148) >> 7) != 0; }          // rlwinm 25,31,31
 

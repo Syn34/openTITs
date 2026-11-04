@@ -2,7 +2,7 @@
 // render-state cache reset and the BloomNoise post effect.
 //
 // The display (draw::g::display, 0x00F66FBC): +16.. / +64.. / +100.. /
-// +108.. Target* per eye (index ((+52 >> 28) & 3)), +24 / +72 / +88 /
+// +108.. Target* per eye (index +52 >> 30; +52 bits 28..29 are the eye count), +24 / +72 / +88 /
 // +120 / +124 depth targets, +52 u32 flags (0x02000000: per-eye buffers),
 // +84 alternate colour target, +148 u8 bit 7: alternate buffer set.
 // g::mem_stats (0x010F0E20) +92.. / +112.. / +120.. / +128 hold the

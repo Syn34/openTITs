@@ -192,7 +192,7 @@ inline u32 scene_colour() {
     constexpr u32 kStats = sly4::g::mem_stats, kConfig = sly4::g::config;
     const u32 disp = load<u32>(draw::g::display);
     if ((ref<u8>(disp + 148) >> 7) != 0) return load<u32>(kStats + 128);
-    const u32 k = ((load<u32>(disp + 52) >> 28) & 3) << 2;
+    const u32 k = (load<u32>(disp + 52) >> 28) & 0xC;  // rlwinm 4,28,29: bits 30..31 * 4
     if (field<u8>(kConfig, 34) != 0) return load<u32>(kStats + k + (load<u32>(kStats + 184) == 1 ? 112 : 120));
     return load<u32>(kStats + k + 92);
 }

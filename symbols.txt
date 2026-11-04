@@ -863,7 +863,7 @@
 005A14A0 WorldObj_ClassChanged    // vfunc +64 (name?); decompiled: src/obj/obj2_vt.cpp
 00723F2C strcasecmp               // libc (name?)
 007A71A4 GeomDef_New              // () -> ApeGeomDef (kind 20); decompiled: src/obj/class_geomdef.cpp
-005095C0 Topology_Copy            // (topo, copy table) (name?)
+005095C0 Topology_Copy            // (topo, copy table) (name?); decompiled: src/obj/obj6_topo.cpp
 0056E2EC Rsx_Copy                 // (src, dst, size, 1) (name?)
 007A0E98 Texture_SetWrap          // AglTexture vfunc +16 (s, t, 1) (name?)
 00558F34 WorldObj_ReleaseRes      // (name?)
@@ -1288,7 +1288,7 @@
 00577338 Zones_MaskFor            // (zones, obj) -> mask (name?); decompiled: src/obj/zone.cpp
 00583FBC Skeleton_DumpBone        // (skel, bone, depth, bits) (name?); decompiled: src/obj/obj5.cpp
 005A2024 LightSlot_Move           // (u16 to, u16 from) (name?); decompiled: src/obj/obj5_light.cpp
-005A2528 LightInstance_Register   // (name?)
+005A2528 LightInstance_Register   // (instance): animation record (name?); decompiled: src/obj/obj6_light.cpp
 005A31C8 LightInstance_Update     // (name?); decompiled: src/obj/obj5_light.cpp
 005A2BA8 LightInstance_New        // (ApeLightDef*); decompiled: src/obj/obj5_new.cpp
 005A3FFC EmitterInstance_New      // (def, bool); decompiled: src/obj/obj5_new.cpp
@@ -1327,8 +1327,8 @@
 
 # Render layers, camera split records
 0028E320 sub_0028E320             // () called first by Objects_EndFrame
-0079CD0C Material_Bind            // (Material*, Shader*) (name?)
-0052EFE0 Pool_DestructPart        // (obj+12) (name?)
+0079CD0C Material_Bind            // (AglMaterial*, Shader*) anim, blend, depth/cull, textures, programs, shader slot 8; decompiled: src/gfx/layers4_material.cpp
+0052EFE0 Pool_DestructPart        // (part*) Mem_FreePool(p, +4&1 ? 5 : 4, +12>>28) unless +8&1 (name?); decompiled: src/gfx/layers4.cpp
 0036A5F0 SplitStyle_Set           // (SplitStyle** slot, SplitStyle*, 0) (name?)
 0075EA74 Map_Get                  // (Map*, const u32* key) -> value slot (name?)
 0050D744 RenderLayers_Register    // 17 per-layer blocks (name?); decompiled: src/gfx/layers3.cpp
@@ -1477,11 +1477,11 @@
 00447B70 PushStack_Changed                 // (f32 time): rebuild target block, blend or snap; decompiled: src/world/hevent2_a.cpp (name?)
 
 # Render layer setup
-00513B78 ZLayer_DrawBody          // (RenderLayer*) ZTranslucent item pass (name?)
-00514200 ResolveLayer_Pass1       // (RenderLayer*) WaterResolve/ScreenWarp (name?)
-00514838 ResolveLayer_Pass2       // (RenderLayer*) (name?)
-005485B4 Slot_Construct           // (176-byte slot at 0x010DFAD0+176*i) (name?)
-00526D18 Pool_Construct           // (0x010DF8B0) (name?)
+00513B78 ZLayer_DrawBody          // (RenderLayer*) ZTranslucent: per key run, depth pre-pass then normal draw; decompiled: src/gfx/layers4_draw.cpp
+00514200 ResolveLayer_Pass1       // (RenderLayer*) alpha clear + alpha-only item pass; decompiled: src/gfx/layers4_draw.cpp
+00514838 ResolveLayer_Pass2       // (RenderLayer*) scene copy (rects or whole screen) + item draw; decompiled: src/gfx/layers4_draw.cpp
+005485B4 Slot_Construct           // (slot*) base ctor, vtable 0x00B240F8 (name?); decompiled: src/gfx/layers4.cpp
+00526D18 Pool_Construct           // (pool*) base part of 0x010DF8B0, vtable 0x00B236E8 (name?); decompiled: src/gfx/layers4.cpp
 
 # Decompiled functions not listed above (added by tools/sync_symbols.py)
 00514074 RenderLayerZ_Draw        // decompiled: src/gfx/layers3.cpp
@@ -1498,20 +1498,20 @@
 007A15C8 RenderLayerResolve_Delete // decompiled: src/gfx/layers3.cpp
 
 # World-object helpers (boxes, zones, skeletons, instance factories)
-00557690 Box_Corners              // (box, f32 out[8][4], matrix) (name?)
-00556F10 Box_FromSphere           // (box, sphere) (name?)
-005814A0 Skeleton_Init            // (skeleton, def) (name?)
-00580D70 Skeleton_CopyPose        // (dst, src) (name?)
-0057DEEC WorldObj_CopyBase        // (dst, src, flags) (name?)
+00557690 Box_Corners              // (box, f32 out[8][4], matrix); decompiled: src/obj/obj6.cpp
+00556F10 Box_FromSphere           // (box, sphere): centre -/+ radius; decompiled: src/obj/obj6.cpp
+005814A0 Skeleton_Init            // (skeleton, def) (name?); decompiled: src/obj/obj6.cpp
+00580D70 Skeleton_CopyPose        // (dst, src): local/world matrices + entry pointers; decompiled: src/obj/obj6.cpp
+0057DEEC WorldObj_CopyBase        // (dst, src, flags) (name?); decompiled: src/obj/obj6.cpp
 005947D0 World_AddObjects         // (world *0x01194598, collector*, 1) (name?)
-00597814 World_AddObject          // (world, obj) (name?)
-005A9AA8 Collector_Add            // ForEach callback (node, collector*) (name?)
-0055498C Debug_PrintBone          // empty stub (name?)
-0058E140 EmitterDef_New           // (0, 0) (name?)
-005000C8 EmitterData_Copy         // (data, bool) (name?)
-005003F4 EmitterData_Release      // (name?)
-00500714 EmitterSystem_Bind       // (system, data) (name?)
-00569388 PointInstance_Load       // (src, point) (name?)
+00597814 WorldObj_UpdateTransforms // (world unused, obj): world matrices of a subtree (was "World_AddObject"); decompiled: src/obj/obj6_xform.cpp
+005A9AA8 Collector_Add            // ForEach callback (node, collector*) (name?); decompiled: src/obj/obj6.cpp
+0055498C Debug_PrintBone          // empty stub; decompiled: src/obj/obj6.cpp
+0058E140 EmitterDef_New           // (props, system) -> ApeEmitterDef (name?); decompiled: src/obj/obj6_emitter.cpp
+005000C8 EmitterData_Copy         // (AglEmitProperties*, bool) -> copy (name?); decompiled: src/obj/obj6_emitter.cpp
+005003F4 EmitterData_Release      // (AglEmitProperties*) ref drop + free list (name?); decompiled: src/obj/obj6_emitter.cpp
+00500714 EmitterSystem_Bind       // (system, AglEmitProperties*) (name?); decompiled: src/obj/obj6.cpp
+00569388 Iff_ReadChunks           // (reader, obj) child-chunk loop (was "PointInstance_Load"); decompiled: src/obj/obj6_iff.cpp
 
 # Decompiled functions not listed above (added by tools/sync_symbols.py)
 005A6C48 PointInstance_Create     // decompiled: src/obj/obj5_new.cpp
@@ -1542,3 +1542,52 @@
 002E0930 sub_002E0930                      // 9 args, the last on the stack (name?)
 00470660 Msg_Post                          // (msg, key, a, b): queue {msg, obj, a, b, flag} for key's subscribers (max 128); decompiled: src/world/hevent2_c.cpp (name?)
 00786C0C SortedMap_Find786C0C              // (map 0x010BB738, const u32* key) -> slot (name?)
+
+# Render layer passes, pool, material bind
+005145C0 ResolveLayer_ItemRect    // (RenderLayer*, DrawItem*, f32* x0, y0, x1, y1) item bound -> screen rect (name?); decompiled: src/gfx/layers4_draw.cpp
+00536D28 Stats_ResolveTexture     // (MemStats*) +100 if config+34 else +84 (name?); decompiled: src/gfx/layers4_draw.cpp
+00537CB8 Display_SelectTarget     // (table*) Display_SelectBuffer(table)->+40 (name?); decompiled: src/gfx/layers4_draw.cpp
+00536C3C Draw_CopyRect            // (Texture* dst, Target* src, sx, sy, dx, dy, w, h) transfer image (name?); decompiled: src/gfx/layers4_draw.cpp
+00536D4C Draw_CopyScreen          // () colour target -> Stats_ResolveTexture texture, returns it (name?); decompiled: src/gfx/layers4_draw.cpp
+005276AC SlotBase_Construct       // (slot*) vtable 0x00B23720, +4 = 0 (name?); decompiled: src/gfx/layers4.cpp
+0079C414 Pool_Destruct            // pool vtable 0x00B241E8 slot 2 (name?); decompiled: src/gfx/layers4.cpp
+007A3BE8 Pool_Delete              // pool vtable slot 3 (name?); decompiled: src/gfx/layers4.cpp
+007A2214 Pool_Nop4                // pool vtable slot 4: blr (name?); decompiled: src/gfx/layers4.cpp
+0054BD38 Pool_ResetState          // pool vtable slot 9: Draw_ApplyView + default stencil/depth/cull/colour state (name?); decompiled: src/gfx/layers4.cpp
+00527150 Pool_Refresh             // pool vtable slot 10: vslot 9 then vslot 11 (name?); decompiled: src/gfx/layers4.cpp
+0050F9A0 Pool_Nop11               // pool vtable slot 11: blr (name?); decompiled: src/gfx/layers4.cpp
+00527108 Draw_ApplyView           // () current View (current_surface+672) vslot 20 (name?); decompiled: src/gfx/layers4.cpp
+00531F80 Draw_Clear               // (u32 mask, u32 colour, f32 depth [f1], u32 stencil, u32 stencil mask) (name?)
+00538FA0 DrawItem_DrawDepth       // (Material* item+12, DrawItem*) ZLayer pre-pass draw, 3248-byte frame (name?)
+00554484 DrawItem_GetScale        // (DrawItem*, f32 out[3]) (name?)
+00557A90 View_ProjectSphere       // (f32 sphere[4], view matrix 0x010DD840, view+1008, f32* x0, y0, x1, y1) 0..1 rect (name?)
+00501520 MaterialAnim_Update      // (track*, f32 step [f1]) (name?)
+00526650 Pool_Slot0               // pool vtable slot 0, 193 insns (unknown)
+00526A84 Pool_Slot1               // pool vtable slot 1, 165 insns (unknown)
+0054B3D8 Pool_Slot5               // pool vtable slot 5, 192 insns (unknown)
+00526D98 Pool_Slot6               // pool vtable slot 6, 220 insns (unknown)
+0054A998 Pool_Slot7               // pool vtable slot 7, 656 insns (unknown)
+0054B6E0 Pool_Slot8               // pool vtable slot 8, 406 insns (unknown)
+
+# World-object helpers, part 6
+005812F0 Bone_InitEntry           // (entry, bone def, local, world, vec3*): inverse bind matrix (name?); decompiled: src/obj/obj6.cpp
+0058142C Skeleton_Layout          // (skeleton, block, size): carves the bone arrays (name?); decompiled: src/obj/obj6.cpp
+005A9914 Collector_Accepts        // (obj, bool visible_only) -> bool (name?); decompiled: src/obj/obj6.cpp
+0050061C EmitProps_BlendKind      // (blend state) -> 0/2/3/4 (name?); decompiled: src/obj/obj6.cpp
+0079CB94 EmitPropsRef_Set         // (AglEmitProperties** slot, p) ref-counted assign (name?); decompiled: src/obj/obj6_emitter.cpp
+00580EA0 Skeleton_Compose         // (skeleton, +44 matrices) (name?)
+00558E24 ObjComps_Assign          // (dst, src): ref-counted obj +12 copy (name?)
+00593DA8 Comps_Query              // (0, comps, 1) -> bool, 649 insns (name?)
+004FFA98 EmitProps_Destruct       // (AglEmitProperties*) (name?)
+004FFFF0 EmitProps_Construct      // (AglEmitProperties*) (name?)
+004FE3DC EmitProps_CopyFrom       // (dst, src) (name?)
+0058DF94 EmitterDef_Construct     // (ApeEmitterDef*) (name?)
+007A78C4 PtrTable_Grow            // (table, u32 by) (name?)
+00569108 Iff_NextChunk            // (reader) -> chunk header* (name?)
+00582F3C WorldObj_UpdateKind8     // (obj): kinds 8/10 after a transform update (name?)
+00508690 Topology_Construct       // (AglTopology*) (name?)
+00508B94 Topology_AddDraw         // (topo, u32, AglMaterial*) (name?)
+005084CC TopoShared_Release       // (topo +88 object) (name?)
+0079C668 TopoRecord_Set           // (record, src record +0) (name?)
+00591948 Light_Accepts            // (LightInstance*, 0) -> bool (name?)
+00591820 LightAnim_Init           // (anim record, LightInstance*) (name?)
