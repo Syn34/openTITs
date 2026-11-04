@@ -2207,14 +2207,14 @@
 007AFF7C SlyWaterType_Delete                  // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
 007B0034 SlyWater2Type_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
 007B00EC SlyWater3Type_Delete                 // decompiled: src/gfx/shader3_types.cpp; ShaderType slot 12
-0050BE5C MaterialAnim_GetUV                   // (anim; f1 su, f2 sv) -> const f32[8]: two UV rows for MaterialAnim_UploadUV (name?)
-0050BF48 MaterialAnim_GetUVAlt                // (anim, f32 out[4]) MaterialAnim_UploadUVAlt's source (name?)
-0050AFDC Shader_Construct                     // (Shader*) base Shader vtable 0x00B233A0 (name?)
-0053A9D8 Shader_Load                          // (Shader*, vp name, fp name or 0, vparams, fparams): System\Shaders\%s_V.vpo / %s.fpo (name?)
-0053ABB8 Shader_SetFpControl                  // (Shader*, u32 bits 20..25 of the fragment program control word) (name?)
+0050BE5C MaterialAnim_GetUV                   // (anim; f1 su, f2 sv) -> f32[8] at 0x010C5C80 from MaterialAnim_GetMatrix; decompiled: src/gfx/shader4.cpp
+0050BF48 MaterialAnim_GetUVAlt                // (anim, f32 out[2]) U/V offsets snapped to 1/steps, wrap flag +4; decompiled: src/gfx/shader4.cpp
+0050AFDC Shader_Construct                     // (Shader*) base Shader vtable 0x00B233A0; decompiled: src/gfx/shader4.cpp
+0053A9D8 Shader_Load                          // (Shader*, vp name, fp name or 0, fp bindings): +12 name, +4 / +8 programs from the maps or System\Shaders\%s_V.vpo / %s.fpo; decompiled: src/gfx/shader4.cpp
+0053ABB8 Shader_SetFpControl                  // (Shader*, u32 bits): fp input mask = vp output mask with bits 0xFC0 from bits, then Gcm_SetFragmentProgramLoad; decompiled: src/gfx/shader4.cpp
 005E08E8 cellGcmReserveMethodSize             // (context, words): context callback when full; libgcm (name?)
-005BC8F8 SlyCharacter2_SetupDraw              // (Shader*, DrawItem*) transforms and lighting constants, 613 insns (name?)
-00553468 Vec3_ToItemSpace                     // (f32 v[3] in/out, DrawItem*) direction into item space (name?)
+005BC8F8 SlyCharacter2_SetupDraw              // (Shader*, DrawItem*) transform, fog, lights, layers, ambient, camera; decompiled: src/gfx/shader4_setup.cpp
+00553468 Vec3_ToItemSpace                     // (f32 v[3] in/out, const f32 m[3][4]) v = m rows . v; decompiled: src/gfx/shader4.cpp
 
 # World-object helpers, part 10 (peer animators, def classes)
 00585890 GeomDef_Release          // ApeGeomDef +8; decompiled: src/obj/obj10_defs.cpp
@@ -2268,18 +2268,17 @@
 00579BCC ResTable_Reset           // (t): free +0, u16 +4 / +5136 / 0x01193000 = 0 (name?); decompiled: src/obj/obj10_find.cpp
 00582C10 GeomInstance_Replace292  // (obj, u32) -> bool (no direct callers) (name?); decompiled: src/obj/obj10_find.cpp
 005A9378 Skeleton_Watch           // (skeleton): append to *0x01194590 watch list, +31 |= 0x20; decompiled: src/obj/obj10_find.cpp
-0057C110 Peer_ApplyFollower       // (peer, follower, -, f32 out[4][4], bool rotated, bool moved; f1 dt) (name?)
-0057BA40 Follower_Update          // (follower; f1 dt) (name?)
-005556A4 Quat_Multiply            // (f32 out[4], const f32 a[4], const f32 b[4]) (name?)
-00553A90 Quat_ToMatrix            // (f32 out[4][4], const f32 q[4], const f32 pos[3]) (name?)
+0057C110 Peer_ApplyFollower       // (peer, follower, -, f32 out[4][4], bool rotated, bool moved; f1 dt): follower rotation/position into out, then out *= peer matrix; decompiled: src/obj/obj11_peer.cpp
+0057BA40 Follower_Update          // (follower; f1 dt): delay countdown, advance, face the travel direction; decompiled: src/obj/obj11_peer.cpp
+005556A4 Quat_Multiply            // (f32 out[4], const f32 a[4], const f32 b[4]) out = a*b {x,y,z,w}; decompiled: src/obj/obj11_math.cpp
+00553A90 Quat_ToMatrix            // (f32 out[4][4], const f32 q[4], const f32 pos[3]) w lanes untouched; decompiled: src/obj/obj11_math.cpp
 007344E0 Math_Cosf                // (f1 x) -> f1: polynomial cosine, even fold (name?)
-0059DE50 EmitterDef_Free          // (def): back to the ApeEmitterDef free list (name?)
-005A1CE0 GeomInstance_Free        // (obj): ApeGeomInstance free list (name?)
-005A3BEC LightInstance_Free       // (obj): ApeLightInstance free list (name?)
-005A4F28 EmitterInstance_Free     // (obj): ApeEmitterInstance free list (name?)
-00585678 GeomDef_Destruct         // ApeGeomDef +0 (name?)
-0059D360 EmitterDef_Destruct      // ApeEmitterDef +0 (name?)
-00583864 WorldObj_Visit583864     // (obj, u32) (name?)
+0059DE50 EmitterDef_Free          // (def): table index +122, name map (key +96), destruct, free list; decompiled: src/obj/obj11.cpp
+005A1CE0 GeomInstance_Free        // (obj): class map B, destruct, ApeGeomInstance free list (352); decompiled: src/obj/obj11.cpp
+005A3BEC LightInstance_Free       // (obj): class map C, destruct, ApeLightInstance free list; decompiled: src/obj/obj11.cpp
+005A4F28 EmitterInstance_Free     // (obj): class map D, destruct, ApeEmitterInstance free list; decompiled: src/obj/obj11.cpp
+00585678 GeomDef_Destruct         // ApeGeomDef +0: topologies, skeleton def, then the geometry base; decompiled: src/obj/obj11.cpp
+0059D360 EmitterDef_Destruct      // ApeEmitterDef +0: data, particle system, then the geometry base; decompiled: src/obj/obj11.cpp
 
 # World event handler callees, part 7
 002E4AAC Hud_Refresh2E4AAC                    // () "InGame.HUD" scale / dirty entries; decompiled: src/world/hevent7_e.cpp (name?)
@@ -2307,3 +2306,76 @@
 0046C3B8 World_StartScene46C3B8               // (World*, a, 0, 0, args, b, 0, 1, u8, 0) (name?)
 007665B4 Map_Find7665B4                       // (Map*, const u32* key) -> value* (name?)
 002DFAA0 Ev_ApplyGroup2DFAA0                  // (Event*, Group*, SaveSlot +204, u8 main) (name?)
+
+# World-object helpers, part 11
+00583864 WorldObj_VisitInView     // (obj, u32 flags): view-plane sphere test + camera distance, then 0x00583518/0x005832FC/0x0058303C (was WorldObj_Visit583864) (name?); decompiled: src/obj/obj11.cpp
+00584A6C GeomBase_Destruct        // vtbl 0x00B246B0 +0: +108 shared block, ApeRoot_Destruct; decompiled: src/obj/obj11.cpp
+0058627C LightDef_Destruct        // vtbl 0x00B24700 +0 (geometry-base body); decompiled: src/obj/obj11.cpp
+0059C90C CameraDef_Destruct       // vtbl 0x00B247B8 +0 (geometry-base body); decompiled: src/obj/obj11.cpp
+0059E050 PointDef_Destruct        // vtbl 0x00B24808 +0 (geometry-base body); decompiled: src/obj/obj11.cpp
+00585DEC GeomDef_Vfn20            // ApeGeomDef +20 (def, key) -> bool: 0x00585B98 then 0x005099B8 (name?); decompiled: src/obj/obj11_small.cpp
+00585E3C GeomDef_Vfn24            // ApeGeomDef +24 (def, s32 depth): Topology_Dump(depth-1) per topology (name?); decompiled: src/obj/obj11_small.cpp
+005848CC Rec80_Find               // ({?, data, u16 count}*, key) -> 80-byte record with +64 == key (name?); decompiled: src/obj/obj11_small.cpp
+0059B724 World_FindRec            // (key) -> 0x01193060 +64 112-byte record with +64 == key (name?); decompiled: src/obj/obj11_small.cpp
+00599804 Bank_WaitA               // vtbl 0x00B24770 +16: usleep(300) while *0x0117E200 (threaded load) (name?); decompiled: src/obj/obj11_small.cpp
+00599FA8 Bank_WaitB               // vtbl 0x00B24770 +32: likewise *0x0118BF80 (name?); decompiled: src/obj/obj11_small.cpp
+005A5864 World_FreeBlock40        // frees 0x01193060 +40, zeroes +40 / u16 +44 (name?); decompiled: src/obj/obj11_small.cpp
+0059F110 SplineDef_Rebuild        // (def, bool keep): 0x0055FB88 unless keep, 0x0055FE00 bounds (name?); decompiled: src/obj/obj11_small.cpp
+00584BDC Def_SetName              // (def, name, bool hash): +64 name (32), +96 hash; decompiled: src/obj/obj11_small.cpp
+00584F54 Iff_HandleSkeletonRef    // chunk OPD 0x00F3C530 (reader, def): +164 skeleton def (name?); decompiled: src/obj/obj11_small.cpp
+005851E8 Iff_HandleSkeletonDef    // chunk OPD 0x00F3C538 (reader, out): "numBones" -> 0x00584FD4 (name?); decompiled: src/obj/obj11_small.cpp
+005927FC SplineInstance_Nearest   // (inst, p[3], u32* seg, f32* dist) -> f1: p to local, Spline_Nearest (name?); decompiled: src/obj/obj11_small.cpp
+00599080 WorldList_VisitAll       // WorldObj_VisitInView(obj, 2) over *0x011944D8, last first (name?); decompiled: src/obj/obj11_small.cpp
+0057FDB4 WorldObj_SetFlag4000     // (obj, u8 on, bool recurse): +164 bit 0x4000, subtree (name?); decompiled: src/obj/obj11_small.cpp
+0059F174 SplineDef_Load           // (def, src): name (31) + hash, SplineArray_Init(src +34, +32 bits) (name?); decompiled: src/obj/obj11_small.cpp
+005A1584 GeomInstance_Visit2      // OPD 0x00F3C870 (cmd): 0x00583518, 0x005832FC, 0x0058AC70 / 0x005A0E68 (name?); decompiled: src/obj/obj11_small.cpp
+0059AF84 Iff_HandleRegions        // chunk OPD 0x00F3C6A0: zones +17 = +16, "numRegions", zones +18 += 1 (name?); decompiled: src/obj/obj11_small.cpp
+005842E4 WorldObjBase_Dump        // vtbl 0x00B24660 +60 (obj, depth, flags): DumpTree, skeleton (name?); decompiled: src/obj/obj11_small.cpp
+005A8034 SplineInstance_TangentAt // (inst, f1 t, f32 out[4], bool): 0x00560690 then rows 0-2 of +80 (name?); decompiled: src/obj/obj11_small.cpp
+0059B474 Iff_HandleRecKeys        // chunk OPD 0x00F3C6C8: one word per world record into +64 (name?); decompiled: src/obj/obj11_small.cpp
+00555478 Quat_FromMatrix          // (f32 out[4], const f32 m[4][4]) (name?)
+0057A770 Follower_Advance         // (follower, -, f32* t, f32 out[3]; f1 dt) (follower +108 bit 0x40 clear) (name?)
+0057AF20 Follower_AdvanceAlt      // the same for +108 bit 0x40 (name?)
+00560690 Spline_TangentAt         // (SplineData*, f1 t, f32 out[4], bool) (name?)
+0050A268 Topology_Radius          // (AglTopology*) -> f1 (name?)
+0050A19C Topology_Dump            // (AglTopology*, s32 depth) (name?)
+007A8444 PtrTable_Remove          // (PtrTable*, s32 index) (name?)
+0075C1DC MapE_Find                // emitter-def name map lookup (name?)
+007A8250 MapE_Remove              // (map, const u32* key) (name?)
+007A7A80 MapB_Remove              // (map, const u32* key) (name?)
+007A892C MapC_Remove              // (map, const u32* key) (name?)
+007A8B20 MapD_Remove              // (map, const u32* key) (name?)
+00585B98 GeomDef_FindTopo         // (def, key) -> entry* or 0 (name?)
+005099B8 Topology_Apply           // (AglTopology*, arg) (name?)
+0055FB88 SplineArray_Finish       // (SplineArray*) (name?)
+0055FE00 SplineArray_Bounds       // (SplineArray*, f32 box[8], f32 sphere[4]) (name?)
+005642AC Iff_ReadNamedU32         // (reader, u32* out, const char* name) (name?)
+00564340 Iff_ReadNamedU16         // (reader, u16* out, const char* name) (name?)
+005643C4 Iff_Read5643C4           // (reader, u32* out, 0) (name?)
+005637D4 Iff_Read5637D4           // (reader) (name?)
+00584FD4 SkeletonDef_New          // (u32 bones) -> ApeSkeletonDef* (name?)
+0058AC70 GeomCmd_Simple           // (obj, u8, u8, s32) (name?)
+005A0E68 GeomCmd_Full             // (obj, u8, u8, s32, u32, u8, u32, rec*, u8 on stack) (name?)
+
+# Shader draws, part 4
+005533EC Vec3_RotateTo                        // (f32 out[3], const f32 v[3], const f32 m[3][4]) out = m rows . v; decompiled: src/gfx/shader4.cpp (name?)
+00555370 Matrix_RotateRows                    // (f32 out[3][4], const f32 rows[3][4], const f32 m[4][4]) vmaddfp rows through m; decompiled: src/gfx/shader4_draw.cpp (name?)
+00521D20 View_BeginFrame                      // (Scene*) per-frame view set-up: fog vconsts, layer resets, FrameBuffer_BeginLayer; decompiled: src/gfx/shader4_frame.cpp (name?)
+005B5150 AngleIndex_Draw                      // shader vtable 0x00B255A0 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005AEB00 TextureWarp_Draw                     // shader vtable 0x00B250D0 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005B0FB0 ProjTxr_Draw                         // shader vtable 0x00B25310 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005B48E8 SelfLight_Draw                       // shader vtable 0x00B25550 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005D2614 SlyWater_Draw                        // shader vtable 0x00B26038 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005B5E00 Water_Draw                           // shader vtable 0x00B25618 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005CDC38 SlyShrub_Draw                        // shader vtable 0x00B25E70 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005C13DC SlyCharacterFurFin_Draw              // shader vtable 0x00B25A80 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005D17E8 SlyTextureWarp_Draw                  // shader vtable 0x00B25FE8 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005C39C8 SlyDecal_Draw                        // shader vtable 0x00B25B50 slot 12; decompiled: src/gfx/shader4_draw.cpp
+005B67C8 SAC_Skinned_Draw                     // shader vtable 0x00B25638 slot 12; decompiled: src/gfx/shader4_draw.cpp
+0050B980 MaterialAnim_GetMatrix               // (MaterialAnim*) -> const f32*: the animated UV matrix (rows of 4), 311 insns (name?)
+005E6028 Cg_GetIOMask                         // (CgProgram*) vertex profile: output mask (+16); fragment: input mask (+4) (libgcm Cg) (name?)
+005E608C Cg_SetIOMask                         // (CgProgram*, u32) the same word written (libgcm Cg) (name?)
+0056A200 Matrix_Perspective                   // (f32 out[16]; f1 fov, f2 aspect, f3 near, f4 far) via 0x005E62E8 (tan?) (name?)
+005B0CF0 ProjTxr_BuildProjection              // (f32 pos[3], f32 m[16], a[3], b[3], c[3], proj[16], DrawItem*, 0x01196A00) (name?)
+005B47F4 SelfLight_GetLight                   // (Shader* unused, DrawItem*, f32 a[4], f32 dir[4], f32 b[4]) (name?)
+005207D0 View_Sub5207D0                       // (View*) called by View_BeginFrame (unknown)
