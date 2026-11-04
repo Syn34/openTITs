@@ -1693,8 +1693,8 @@
 007A39C4 BufferBase_Delete        // vtable 0x00B24110 slot 1 (name?); decompiled: src/gfx/pool_query.cpp
 007A3A08 Buffer_Destruct          // vtable 0x00B24120 slot 0: Mem_FreePool(+8, 4, 1) (name?); decompiled: src/gfx/pool_query.cpp
 007A3A60 Buffer_Delete            // vtable 0x00B24120 slot 1 (name?); decompiled: src/gfx/pool_query.cpp
-005382C0 DrawItem_DrawDepthSkinned // (mesh, *0x01163A80, DrawItem*, item+60, item+28, 0x40000000) 263 insns (name?)
-00527708 Slot_DrawProxy           // (Slot*) query proxy geometry draw, 207 insns (name?)
+005382C0 DrawItem_DrawDepthSkinned        // (mesh, skin_table, item, bones, -, flags) SPU-skinned depth draw (name?); decompiled: src/gfx/draw3.cpp
+00527708 Slot_DrawProxy                   // (Slot*) occlusion query proxy draw (name?); decompiled: src/gfx/draw3.cpp
 005E4D98 cellGcmSetDrawArrays     // (context, mode, first, count) (name?)
 005E3248 cellGcmSetClearReport    // (context, type) (name?)
 005E32D8 cellGcmSetReport         // (context, type, index) (name?)
@@ -1761,3 +1761,155 @@
 005922A8 World_AddGroup           // (world, group root obj): reads r4 only (name?), 296 insns
 0055F008 Spline_NearestSeg        // (data, p, 0, u32 last, u32* seg, f32* dist) -> f1 (name?)
 00560058 Spline_Eval              // (data, f1 t, out, data+12, bool) (name?)
+
+# Shader types and shaders
+0050E410 Render_Init                      // () render buffers, layers, heap (gfx.h Agl_Init50E410) (name?); decompiled: src/gfx/draw3.cpp
+007A3518 ShaderType_PickFirst             // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+007ACF98 ParticleMaterialType_PickShader  // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE9C4 SAC_ParticleType_PickShader      // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE914 SAC_PanoramaType_PickShader      // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005AE098 SimpleColorTxrType_PickShader    // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005AE630 SimpleColorTxrUVType_PickShader  // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005AFABC ScreenWarpType_PickShader        // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005AFBD8 LineOutlineType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B068C GeoParticleType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B19B4 ProjTxr_DeferredType_PickShader  // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B5084 SelfLightType_PickShader         // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B6760 WaterType_PickShader             // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CDC18 SlyScreenWarpType_PickShader     // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B7880 SAC_EnvironmentType_PickShader   // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B7EEC SAC_PropType_PickShader          // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B8618 SAC_LitPropType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B8DC8 SAC_FastPropType_PickShader      // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B9C60 SAC_EnvMapType_PickShader        // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CE4E8 SlyShrubType_PickShader          // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005ADD18 DebugType_PickShader             // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B17EC ProjTxrType_PickShader           // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B1E3C ZPassType_PickShader             // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B5914 AngleIndexType_PickShader        // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+007AD3DC SprParticleType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B71D4 SAC_SkinnedType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CAD00 SlyProjTxrType_PickShader        // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005AF24C TextureWarpType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005D2090 SlyTextureWarpType_PickShader    // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B0330 OutlineType_PickShader           // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C5678 SlyDecal4Type_PickShader         // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C8204 SlyHeightFogType_PickShader      // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005BA750 Sly2UVType_PickShader            // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005BB388 SlyCausticsType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE08C DecalType_PickShader             // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C12E4 SlyCharacterFurType_PickShader   // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C1DBC SlyCharacterFurFinType_PickShader // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005BFA7C SlyCharacterEyeType_PickShader   // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B2FD8 DiffuseType_PickShader           // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B46F8 EnvMapType_PickShader            // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005BC800 SlyCharacterType_PickShader      // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005BDC50 SlyCharacter2Type_PickShader     // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C26E8 SlyCharacterFakeFurType_PickShader // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C380C SlyCharacterCollectibleType_PickShader // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C48EC SlyDecalType_PickShader          // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C6A6C SlyEnvMapType_PickShader         // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C97D8 SlyMirrorType_PickShader         // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CA9D8 SlyPanoramaType_PickShader       // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CC0AC SlyPropType_PickShader           // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CF968 SlyTerrainSnowType_PickShader    // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005D124C SlyTerrainSnowDecalType_PickShader // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005D30F8 SlyWaterType_PickShader          // ShaderType slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005AE0B0 SimpleColorTxrUV_Bind            // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B47B8 SelfLight_Bind                   // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B6780 SAC_Skinned_Bind                 // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B7220 SAC_Environment_Bind             // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B0C78 ProjTxr_Bind                     // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B9C80 Sly2UV_Bind                      // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C1368 SlyCharacterFurFin_Bind          // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C1E40 SlyCharacterFakeFur_Bind         // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B30A0 Decal_Bind                       // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B50A0 AngleIndex_Bind                  // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C9898 SlyPanorama_Bind                 // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CAD48 SlyProp_Bind                     // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005CC170 SlyTerrain_Bind                  // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B34C0 EnvMap_Bind                      // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B8DF0 SAC_EnvMap_Bind                  // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005BB408 SlyCharacter_Bind                // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C27B0 SlyCharacterCollectible_Bind     // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C56E0 SlyEnvMap_Bind                   // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005C8268 SlyMirror_Bind                   // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B0388 GeoParticle_Bind                 // Shader slot 8 (name?); decompiled: src/gfx/draw3_shader.cpp
+005B2914 Diffuse_End                      // Shader slot 16 (name?); decompiled: src/gfx/draw3_shader.cpp
+005ADA08 Debug_Bind                       // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007ABEAC Debug_End                        // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005ADD50 PrimTxr_Bind                     // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AC130 PrimTxr_End                      // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005ADEE0 SimpleColorTxr_Bind              // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AC450 SimpleColorTxr_End               // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AC604 SimpleColorTxrUV_End             // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005AF07C TextureWarp_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005AFAB8 ScreenWarp_End                   // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005AFACC LineOutline_Bind                 // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005AFAD0 LineOutline_Draw                 // Shader slot 12 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007ACCA8 LineOutline_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005AFBE8 Outline_Bind                     // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007ACD64 Outline_End                      // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AD014 GeoParticle_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AD510 ProjTxr_End                      // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005B182C ProjTxr_Deferred_Bind            // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AD5CC ProjTxr_Deferred_End             // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005B1AE4 ZPass_Bind                       // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AD914 ZPass_End                        // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007ADA88 Decal_End                        // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE17C EnvMap_End                       // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE238 SelfLight_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE2F4 AngleIndex_End                   // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005B6420 Water_End                        // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE468 SAC_Skinned_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE524 SAC_Environment_End              // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005B78A0 SAC_Prop_Bind                    // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE5E0 SAC_Prop_End                     // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005B7F0C SAC_LitProp_Bind                 // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE69C SAC_LitProp_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005B8638 SAC_FastProp_Bind                // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE758 SAC_FastProp_End                 // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AE814 SAC_EnvMap_End                   // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AEA40 Sly2UV_End                       // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AEAFC SlyCaustics_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005BC02C SlyCharacter_End                 // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005BD79C SlyCharacter2_End                // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005BE0D4 SlyCharacterEye_Bind             // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005BF144 SlyCharacterEye_End              // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005BFB08 SlyCharacterFur_Bind             // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005C0C24 SlyCharacterFur_End              // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005C1A0C SlyCharacterFurFin_End           // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005C22A4 SlyCharacterFakeFur_End          // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005C3208 SlyCharacterCollectible_End      // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF0C0 SlyDecal_End                     // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF17C SlyDecal4_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF238 SlyEnvMap_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF2F4 SlyHeightFog_End                 // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF3B0 SlyMirror_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF46C SlyPanorama_End                  // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005CAA90 SlyProjTxr_Bind                  // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF528 SlyProjTxr_Draw                  // Shader slot 12 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF52C SlyProjTxr_End                   // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF5E8 SlyProp_End                      // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005CDC14 SlyScreenWarp_End                // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005CDC28 SlyShrub_Bind                    // Shader slot 8 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AFC4C SlyShrub_End                     // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AF6A4 SlyTerrain_End                   // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AFD08 SlyTerrainSnow_End               // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+007AFDC4 SlyTerrainSnowDecal_End          // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005D1EC0 SlyTextureWarp_End               // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005D2C00 SlyWater_End                     // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005D3F84 SlyWater2_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+005D5A68 SlyWater3_End                    // Shader slot 16 blr (name?); decompiled: src/gfx/draw3_shader.cpp
+0079D6F8 DrawItem_Create                  // (Mesh*, Material*, const ItemDesc*) -> 80-byte DrawItem from the frame arena (name?)
+00537824 Skin_BuildJob                    // (job record, desc*, part record, bones, flags) SPU skinning job (name?)
+005E0BA4 cellGcmSetVertexDataArray        // (context, index, freq, stride, size, type, location, offset) libgcm (name?)
+005E4394 cellGcmSetVertexDataArrayUnsafe  // same without the buffer check, libgcm (name?)
+0050D124 MaterialAnim_UploadUV            // (anim or 0, first constant, f32 su, f32 sv) 2 vertex constants (name?)
+0052F270 FProgram_SetConstant             // (index, const f32 v[4]) current fragment program constant, dirty on change (name?)
+0050CF50 Draw_SetParticleState            // (0, bool, 32) (unknown, name?)
+005BD298 SlyCharacter2_Bind               // Shader vtable 0x00B25958 slot 8, 69 insns (name?)
+00546EF4 Render_Init546EF4                // () called by Render_Init (unknown)
+005D9810 ShaderTypes_Construct            // static constructor of the 57 ShaderType statics at 0x01196A80 (name?)
+005D8E50 ShaderTypes_Destruct             // static destructor of the same (name?)
+0050B138 Shader_RegisterAll               // registers the ShaderType tables 0x00F88A08 / A4C / A68 / A8C by config flags (name?)
