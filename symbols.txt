@@ -322,10 +322,10 @@
 00567F2C Archive_MountMemory      // (File*, prefix) -> u16 index; decompiled: src/file/mount.cpp
 0055D684 Archive_MountFile        // (path, prefix) -> u16 index; decompiled: src/file/mount.cpp
 0055E350 Archive_Unmount          // (u16 index); decompiled: src/file/mount.cpp
-0050F0F0 Shader_LoadGroup         // (group 0..5) (name?)
-00534310 PostProc_Init            // "PostProc_Resolve2xMSAA" (name?)
-00546F6C PostProc_InitCopy        // "PostProc_Copy" (name?)
-0054BF48 StencilShadow_Init       // (name?)
+0050F0F0 Shader_LoadGroup         // decompiled: src/gfx/shadergroup.cpp
+00534310 PostProc_Init            // decompiled: src/gfx/post_init.cpp
+00546F6C PostProc_InitCopy        // decompiled: src/gfx/post_init.cpp
+0054BF48 StencilShadow_Init       // decompiled: src/gfx/post_init.cpp
 
 # World render submission, audio, math
 00459198 Job_Begin                // (slot, view, u8 layer); decompiled: src/world/job.cpp (name?)
@@ -542,12 +542,12 @@
 00553638 String_CopyN             // (dst, src, n) -> strncpy or 0 when n == 0; decompiled: src/uielem/ctor.cpp
 
 # Video mode, display targets
-0053044C Target_Construct         // (Target*) default 60-byte target (name?)
-0052F32C Target_BindTile          // (Target** slot, u32 flag) cellGcmSetTileInfo+BindTile (name?)
-00530998 Target_BindZcull         // (Target** slot) cellGcmBindZcull (name?)
-00530A9C Target_InitDepth         // (Target** out, w, h, 7, 0) depth target (name?)
-005311D8 Tiles_Unbind             // () unbinds display tiles/zcull (name?)
-0051AF28 RenderSurface_Alloc      // () -> AglRenderSurface* from free list at 0x00F8F110 (name?)
+0053044C Target_Construct         // decompiled: src/gfx/surface_alloc.cpp
+0052F32C Target_BindTile          // decompiled: src/gfx/tile.cpp
+00530998 Target_BindZcull         // decompiled: src/gfx/tile.cpp
+00530A9C Target_InitDepth         // decompiled: src/gfx/surface_alloc.cpp
+005311D8 Tiles_Unbind             // decompiled: src/gfx/tile.cpp
+0051AF28 RenderSurface_Alloc      // decompiled: src/gfx/surface_alloc.cpp
 
 # Emitters, key map, containers, sound channels
 00784194 KeyMap_Insert            // (Map*, const u32* key, u64 {handle,priority}); decompiled: src/audio/more_emitter.cpp (name?)
@@ -611,8 +611,8 @@
 004DCE7C UiText_FromXml           // decompiled: src/uiload/elem_text.cpp
 004DCA08 UiText5Desc_FromXml      // decompiled: src/uiload/elem_text.cpp
 004DCC04 UiText5_FromXml          // decompiled: src/uiload/elem_text.cpp
-004DE0F8 UiLoad_Elements          // main UI loader (name?)
-004DFA60 UiLoad_File              // (name?)
+004DE0F8 Ui_LoadElement           // (doc, node, parent, arg) -> Element*; decompiled: src/uiload/loader.cpp
+004DFA60 Ui_LoadFile              // (include, doc, root) -> 1; decompiled: src/uiload/loader.cpp
 004D6768 Font_Load                // (name?)
 004E70D0 UiText5_Update           // (name?)
 0045CAA0 StateMachine_Construct   // (this, levels, data size, u8 initial); decompiled: src/world/vt_statemachine.cpp
@@ -660,3 +660,63 @@
 00365A54 Game_SetPaused           // (bool resume, 0) (name?)
 0077D92C SubMachine_GetWorld      // vfunc +76: returns +48
 0077D910 SubMachine_WantsPause    // vfunc +56 base: returns 1
+
+# Tiles, shaders, post-process; UI loader, textures, includes
+0051AB74 RenderSurface_Construct  // decompiled: src/gfx/surface_alloc.cpp
+004FE990 Shader_FindByHash        // decompiled: src/gfx/shadergroup.cpp
+004FF2E8 Material_Alloc           // decompiled: src/gfx/shadergroup.cpp
+0051FF1C PostProc_InitEffects     // decompiled: src/gfx/post_init.cpp
+0053CE00 Blur11V_SetOffsets       // decompiled: src/gfx/post_blur.cpp
+0053CFD0 Blur11H_SetOffsets       // decompiled: src/gfx/post_blur.cpp
+00533EE4 VProgram_Create          // decompiled: src/gfx/post_programs.cpp
+00533BC0 FProgram_Create          // decompiled: src/gfx/post_programs.cpp
+00533978 FProgram_Setup           // decompiled: src/gfx/post_programs.cpp
+007A2BF4 FMap_Insert              // decompiled: src/gfx/post_map.cpp
+007A2D40 FMap_Find                // decompiled: src/gfx/post_map.cpp
+007A2EC8 VMap_Insert              // decompiled: src/gfx/post_map.cpp
+007A3014 VMap_Find                // decompiled: src/gfx/post_map.cpp
+00534160 ProgramPair_Load         // (VProgram**, FProgram**, name, bindings, 0) (name?)
+0053378C FProgram_Finish          // (FProgram**) (name?)
+004FF0D8 Material_Construct       // (AglMaterial*) (name?)
+005E5F38 Cg_GetRegisterCount      // libgcm (name?)
+005E5F9C Cg_SetRegisterCount      // libgcm (name?)
+005E5FF0 Cg_GetAttributeMask      // libgcm (name?)
+004DDD2C UiElem0_FromXml          // tag 0x0400B14D; decompiled: src/uiload/ctor_elem.cpp
+004DD800 UiElem1_FromXml          // tag 0x0428B13B; decompiled: src/uiload/ctor_elem.cpp
+004DD1F0 UiElem2_FromXml          // tag 0x33FDE730; decompiled: src/uiload/ctor_elem.cpp
+004D9DA0 UiElem6_FromXml          // tag 0x00274AAE; decompiled: src/uiload/ctor_elem.cpp
+004D8460 UiElem7_FromXml          // tag 0x040EFE5F; decompiled: src/uiload/ctor_elem.cpp
+004D8200 UiElem8_FromXml          // tag 0x30CF0025; decompiled: src/uiload/ctor_elem.cpp
+004D7910 UiElem9_FromXml          // tag 0xAA8CFA44; decompiled: src/uiload/ctor_elem.cpp
+004E4BF8 UiElem0_Clone            // decompiled: src/uielem/clone_elem.cpp
+004E53F0 UiElem1_Clone            // decompiled: src/uielem/clone_elem.cpp
+004E6414 UiElem2_Clone            // decompiled: src/uielem/clone_elem.cpp
+004E7D60 UiElem6_Clone            // decompiled: src/uielem/clone_elem.cpp
+004E8460 UiElem7_Clone            // decompiled: src/uielem/clone_elem.cpp
+004E9144 UiElem8_Clone            // decompiled: src/uielem/clone_elem.cpp
+004E9424 UiElem9_Clone            // decompiled: src/uielem/clone_elem.cpp
+004D5A4C Texture_FromXml          // decompiled: src/font/tex.cpp
+004D5EAC Texture_Load             // decompiled: src/font/tex.cpp
+004D5F38 Texture_Unload           // decompiled: src/font/tex.cpp
+00794FD0 Texture_Destruct         // decompiled: src/font/tex.cpp
+0079503C Texture_Delete           // decompiled: src/font/tex.cpp
+00795724 Include_Destruct         // decompiled: src/font/include.cpp
+00795790 Include_Delete           // decompiled: src/font/include.cpp
+004DFD04 Include_Load             // decompiled: src/font/include.cpp
+004DFDDC Include_Unload           // decompiled: src/font/include.cpp
+004F9140 XmlCursor_FirstChildAny  // (name?)
+004F8D74 XmlCursor_NextSiblingAny // (name?)
+00555EB0 String_CompareN          // (name?)
+004D7F24 UiElem8_Construct        // (name?)
+004D8A80 UiElem_SetTexture        // (name?)
+004D8E88 UiElem6_Build            // (name?)
+004DD08C UiElem2_SetBlend         // (name?)
+00523B7C Tex_Acquire              // (name?)
+004DF88C Timeline_FromXml         // (name?)
+005903F4 Bank_Create              // (name?)
+005904EC Bank_Open                // (name?)
+005964B4 Bank_Start               // (name?)
+00596E3C Bank_Destroy             // (name?)
+0050C398 Tex_FindLoaded           // (name?)
+0051E68C Tex_LoadFile             // (name?)
+004D5C64 Texture_MakePages        // (name?)
