@@ -175,7 +175,7 @@
 005F978C Overlay_Construct        // "overlay" (name?)
 00731648 Mem_NewAligned           // (size, align) (name?)
 007A5350 EdgeDecompressor_Construct // "edgeDecompressorTaskset" (name?)
-0051D91C Texture_LoadFromMemory   // (data, size, "Bmp", "MEM:...") (name?)
+0051D91C Texture_LoadFromMemory              // (data, size, kind, name) -> Texture* or 0: Texture_Alloc, name +16/+47/+48 hash, Texture_Init, release on failure; decompiled: src/gfx/gfx10.cpp
 00565410 DebugFont_Construct      // void DebugFont_Construct(DebugFont* f, const FontData* data, Texture* tex) +0 the data, +4 the texture, +8 a m; decompiled: src/obj/obj15_small.cpp
 004FEBD0 Shader_Find              // (hash) (name?)
 004FF43C Material_Create          // (shader) (name?)
@@ -282,7 +282,7 @@
 007277D0 _free_r
 00728608 _malloc_r
 004DC1B8 UiText_SetText           // (elem, text, bool relayout); decompiled: src/text/settext.cpp
-005201B0 RenderTarget_SetMatrix   // VMX
+005201B0 RenderTarget_SetMatrix              // camera matrix -> +752.., VMX rigid inverse -> +816.., u8 +52 |= 0x80; decompiled: src/gfx/gfx10_math.cpp
 
 # File layer, threads, tags, shaders
 0055B7D4 File_ResolvePath         // decompiled: src/file/fs.cpp
@@ -3334,7 +3334,6 @@
 007A6138 InflateQueue_Delete                // [vtable 00B24558[1]] InflateQueue_Destruct inlined + Mem_FreeFrom; decompiled: src/gfx/gfx9.cpp
 007A6638 InflateQueueLF_Destruct            // [vtable 00B245A4[0]] LF queue detached (0060D988), then the InflateQueue part; decompiled: src/gfx/gfx9.cpp
 007A66EC InflateQueueLF_Delete              // [vtable 00B245A4[1]] InflateQueueLF_Destruct inlined + Mem_FreeFrom; decompiled: src/gfx/gfx9.cpp
-0052F06C Release_0052F06C                   // (x) Texture_DestructBody's +96 object, before Mem_FreeFrom(x, 0) (name?)
 0060D988 LFQueue_Detach_0060D988            // Edge zlib: cellSpursLFQueueDetachLv2EventQueue + assert (SDK, left recompiled)
 
 # World event handler callees, part 13
@@ -3464,3 +3463,70 @@
 000FCBD0 Cam_NextTarget0FCBD0                 // (cam, target) -> next target (name?)
 000FBB88 Cam_BlendTarget0FBB88                // (cam, target; f32 t) (name?)
 000FEACC Target_Reset0FEACC                   // (target), for kind 11 (vt +8) (name?)
+
+# Renderer sweep part 4
+0050A4E8 TextureBase_Delete_0050A4E8    // [vtable 00B23380[1]] null-checked Texture_DestructBody body + Mem_FreeFrom(t, 0); decompiled: src/gfx/gfx10.cpp
+0052F06C Part_Release_0052F06C               // (Handle*) unless u8 +56: tile region s8 +45 cleared from 0x00F67244 (slw), then the +0 part freed (Pool_DestructPart inline); was Release_0052F06C (name?); decompiled: src/gfx/gfx10.cpp
+005B19D4 FluidSimType_Create                 // [ShaderType slot 0] one Shader (vtable 0x00B253D0) "FluidSim"/"FluidSim", vparams 0x00F88D1C; decompiled: src/gfx/gfx10.cpp
+0052609C Iff_HandleMeshBounds_0052609C       // (r, Mesh*) "ver"/"center"/"radius"/"hash"/"vertexCompressionMode" -> +64..+80; returns 1 (name?); decompiled: src/gfx/gfx10.cpp
+0053B558 RenderJobs_Shutdown_0053B558        // () Edge job context 0x01163F84 shut down, cursor reset, buffers freed, SPURS job chain 0x010F1400 shut down/joined; returns 1 (name?); decompiled: src/gfx/gfx10.cpp
+0053C8F8 RenderJobs_Kick_0053C8F8            // () once per frame: f_0060DFD0 / f_0060DE84 (10 args, 2 on the stack) / f_0060E01C on 0x01163F84 (name?); decompiled: src/gfx/gfx10.cpp
+00518490 ShadowPass_Begin_00518490           // () f_0053CA20(0x010DDB88); maybe f_005181E0 + Draw_SetTarget + Draw_Clear(240..) + BLEND_ENABLE inline; f_005E24F8(ctx, 2042) (name?); decompiled: src/gfx/gfx10.cpp
+00537DD4 CmdBuf_ReserveCall_00537DD4         // (CallSlot* out) 128-byte pad, call to own offset (f_005E0600), pad; out = {at, after, offset(after)} (pairs with CmdBuf_Call_00537D5C) (name?); decompiled: src/gfx/gfx10.cpp
+0079F850 Clone_0079F850                      // [vtable 00B231B0[3]] 64-byte SmallAlloc clone (null writes on failure) (name?); decompiled: src/gfx/gfx10_math.cpp
+0079FE68 Clone_0079FE68                      // [vtable 00B231D0[3]] 64-byte SmallAlloc clone (name?); decompiled: src/gfx/gfx10_math.cpp
+00522630 RenderTarget_SetViewMatrix_00522630 // view matrix -> +816.., inverse -> +752.. (name?); decompiled: src/gfx/gfx10_math.cpp
+00505C30 Particle_Integrate_00505C30         // (a, p, c, n; f1 s) -> f1: velocity / position step with reflection about n (K 0x00505C24) (name?); decompiled: src/gfx/gfx10_math.cpp
+00523DF4 Iff_HandleBatches_00523DF4          // (r, o) "numBatches"/"vertScale"/"isSkinned" -> +8/+12/+14/+16 bit 0x80, +0 = Mem_AllocPool(16, n*24, 0, 0) (name?); decompiled: src/gfx/gfx10.cpp
+005ACF90 TableEntry_Acquire_005ACF90         // (value, s32* out) next 128-byte entry of 0x011950A0 (full: index -1, entry before the first filled), pair of TableEntry_Release_005AD0A0 (name?); decompiled: src/gfx/gfx10.cpp
+005271F8 Directions_Init_005271F8            // () 8 unit vectors {-sin, 0, cos} at 0x010DFA40 via the parabola sine (name?); decompiled: src/gfx/gfx10_math.cpp
+007A18F4 Copy_007A18F4                       // (dst, src) assignment body (+4, +20..+91, +92..+160) (name?); decompiled: src/gfx/gfx10_math.cpp
+00527484 Records_Init_00527484               // () f_0052730C, Directions_Init_005271F8, 20-byte record into PtrVector 0x010DFA24 + 12-byte child (null writes on failure) (name?); decompiled: src/gfx/gfx10.cpp
+00525174 Floats_ByteSwap_00525174            // (count, p, comps, stride) -> end pointer: words byte-reversed in place (name?); decompiled: src/gfx/gfx10_math.cpp
+00525904 Iff_HandleIndices_00525904          // (r, Mesh*) index chunk into part +44 (Buffer_Alloc52F198), u16 swap when the reader swaps (name?); decompiled: src/gfx/gfx10.cpp
+0052F780 Gcm_EnterSubContext_0052F780        // () atomic resets, call into the frame's sub-buffer, Buffer_Init_005DF960(0x010F0E0C..), fx::g::state = 0x010F0E0C (name?); decompiled: src/gfx/gfx10.cpp
+005483EC View_StereoMatrix_005483EC          // (View*) u8 +49 == 1 and mode != 3: f_00536290(copy of +1008, +1008, mode, +1008, mode; f1/f2) (name?); decompiled: src/gfx/gfx10.cpp
+00523584 FrameBuffer_Reset_00523584          // (fb, a, b, c) type-18 record + cached state reset; leaves r7 = -1 for f_0045717C (name?); decompiled: src/gfx/gfx10.cpp
+00545A38 Warp_Update_00545A38                // (Warp*) area test, first-time grid resize + f_00544B4C, f_00544E08, Warp_Draw, +5780 ^= 1 (name?); decompiled: src/gfx/gfx10.cpp
+0051D718 Iff_HandleTextureFile_0051D718      // (r, Texture**) name chunk -> Texture_LoadFile_0053A8B0(tex, String(0x010DDB40 + name)) (name?); decompiled: src/gfx/gfx10.cpp
+007A7550 Array_Init128_007A7550              // (Array*, n, indexed, Allocator*) 128-byte elements (name?); decompiled: src/gfx/gfx10.cpp
+007A7674 Array_Init96_007A7674               // same, 96-byte elements (name?); decompiled: src/gfx/gfx10.cpp
+007A77A0 Array_Init4_007A77A0                // same, 4-byte elements (name?); decompiled: src/gfx/gfx10.cpp
+00517754 DrawList_Run_00517754               // () SortEntries on 0x010EF63C, usleep wait on 0x010DDC00, item->+64 slot 3 per entry, count cleared (name?); decompiled: src/gfx/gfx10.cpp
+00515784 VpConst_SetMvp_00515784             // (x, a, b) VMX a*b transposed -> cellGcmSetVertexProgramConstants(ctx, 0, 16) (name?); decompiled: src/gfx/gfx10_math.cpp
+005158B4 VpConst_SetMvp_005158B4             // identical copy of 00515784 (name?); decompiled: src/gfx/gfx10_math.cpp
+0051F708 Construct_0051F708                  // (o) vtable 0x00B23670 + tuning floats; returns o+108 (name?); decompiled: src/gfx/gfx10.cpp
+005C25B8 LoadParams_005C25B8                 // [ShaderType slot 1] texture d+4 (or default), param 13, f_005BDD30(0x01196EC0, m, d) (name?); decompiled: src/gfx/gfx10.cpp
+00522838 View_ScreenToWorld_00522838         // (View*, out[3], const p[4]) View_Update, Mat4_Invert(+1328), Vec4_TransformByMatrix, perspective divide (name?); decompiled: src/gfx/gfx10.cpp
+007A50D4 Reader_ReadFlags_007A50D4           // (o) version/flag bytes via stream slot 3; u8 +12 bit 0x02 (name?); decompiled: src/gfx/gfx10.cpp
+00505D50 Particle_PositionAt_00505D50        // (a, p, out; f1 t, f2 s) spline (Spline_PointAt) or ballistic offset (name?); decompiled: src/gfx/gfx10_math.cpp
+00518610 DrawQueue_Begin_00518610            // () marker on: CmdBuf_ReserveCall into 0x010DD490 + stamp; else queue 0x011DE300 built/waited/run (f_00516CD0) (name?); decompiled: src/gfx/gfx10.cpp
+00518A20 Lines_AddCircle_00518A20            // (o, out, c; f1 r) 8 36-byte line records round a circle; returns 8 (name?); decompiled: src/gfx/gfx10_math.cpp
+0052BB60 Proj_Update_0052BB60                // (o, x, cam, y) f_0052B688 unless x+96 bit 0x80; o+352 = cam+64*(o+48*0x010F0A90) transposed (name?); decompiled: src/gfx/gfx10_math.cpp
+0051F520 Warp_BuildStrip_0051F520            // (w, cols, rows) triangle-strip indices at +5144, count +5716 (name?); decompiled: src/gfx/gfx10.cpp
+00500798 Emitter_Construct_00500798          // (o, AglEmitProperties*) vtable 0x00B232D8, EmitPropsRef_Set, flags +64 (name?); decompiled: src/gfx/gfx10.cpp
+0050CC10 RenderBuffer_FlipStats_0050CC10     // () AglRenderBuffer peak printfs (+284/+288), buffer index flip (name?); decompiled: src/gfx/gfx10.cpp
+0051B0E8 AglRenderSurface_Delete_0051B0E8    // ApeTListAllocator<AglRenderSurface> delete (0x00F8F110, 156) (name?); decompiled: src/gfx/gfx10.cpp
+0051D058 AglMaterial_Delete_0051D058         // ApeTListAllocator<AglMaterial> delete (0x00F8F114, 144) (name?); decompiled: src/gfx/gfx10.cpp
+00522E70 AglRenderTarget_Delete_00522E70     // ApeTListAllocator<AglRenderTarget> delete (0x00F8F11C, 1840) (name?); decompiled: src/gfx/gfx10.cpp
+00525CD8 AglSubMesh_Delete_00525CD8          // ApeTListAllocator<AglSubMesh> delete (0x00F8F120, 116) (name?); decompiled: src/gfx/gfx10.cpp
+0079CA4C EmitPropsRef_Release_0079CA4C       // (AglEmitProperties** slot) refcount drop, EmitProps_Destruct + free list (0x00F8F128, 140) at zero (name?); decompiled: src/gfx/gfx10.cpp
+0050FE10 StreamBuffers_Flip_0050FE10         // () *0x010DDBBC double-buffer flip, +384/+512 stored atomically (name?); decompiled: src/gfx/gfx10.cpp
+0079DF78 Texture_Bind_0079DF78               // (Texture*, unit) cellGcmSetTexture/Control/Filter + TEXTURE_ADDRESS inline (name?); decompiled: src/gfx/gfx10.cpp
+00528F20 Iff_HandleForce_00528F20            // (r, o) "force" record (vtable 0x00B23260) replaces o+120 (name?); decompiled: src/gfx/gfx10.cpp
+005BB23C LoadParams_005BB23C                 // [ShaderType slot 1] texture d+16, m+120 top bits, params 0..3 = d+88..+100 (name?); decompiled: src/gfx/gfx10.cpp
+0052CB34 VertexFormat_Init_0052CB34          // (o) vertex format 0x010DD500 from template 0x00F66F98, children slot 2 (name?); decompiled: src/gfx/gfx10.cpp
+0052DB58 ShadowMap_LoadPrograms_0052DB58     // () once (0x00F671D4): ShadowMap_* vertex/fragment programs into 0x010F0AD0..0x010F0B18 (name?); decompiled: src/gfx/gfx10.cpp
+0053CA20 Fn_0053CA20                         // (0x010DDB88) called first by ShadowPass_Begin_00518490 (name?)
+005181E0 Fn_005181E0                         // () reads no argument registers; ShadowPass_Begin_00518490 (name?)
+005E0AF0 Gcm_PadNops_005E0AF0                // (context, words) libgcm, left recompiled (name?)
+005E0600 Gcm_SetCall_005E0600                // (context, offset) libgcm call command, left recompiled (name?)
+005E24F8 Gcm_SetReferenceCommand_005E24F8    // (context, value) libgcm, left recompiled (name?)
+00536290 Fn_00536290                         // (copy, m, mode, m, mode; f1, f2) reads r3/r4/r7/f1/f2; View_StereoMatrix_005483EC (name?)
+00544B4C Warp_BuildGrid_00544B4C             // (Warp*) first-time grid build from Warp_Update_00545A38 (name?)
+00544E08 Warp_Prepare_00544E08               // (Warp*) before Warp_Draw (name?)
+0052730C Fn_0052730C                         // () first call of Records_Init_00527484, still recompiled (94 instr) (name?)
+0052B688 Fn_0052B688                         // (o, x+32, s32, cam, y) reads r3..r7; Proj_Update_0052BB60 (name?)
+005BDD30 Fn_005BDD30                         // (0x01196EC0, m, d) -> bool; LoadParams_005C25B8 (name?)
+00516CD0 DrawQueue_Run_00516CD0              // (queue 0x011DE300) DrawQueue_Begin_00518610 (name?)
+0060DE84 Edge_0060DE84                       // Edge SDK, 10 args (2 on the stack); left recompiled
