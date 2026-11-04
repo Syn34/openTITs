@@ -162,7 +162,7 @@
 00559310 Iff_InitTags             // ATAG/TAG2/TAGG; decompiled: src/resource/tags.cpp
 0056F5BC Thread_Create            // decompiled: src/platform/thread.cpp
 0056C8E4 Game_BootCheck           // decompiled: src/system/boot.cpp
-00570B88 Image_Nop                // empty
+00570B88 Image_Nop                // (): empty; decompiled: src/obj/obj13_misc.cpp
 007A46EC SortedMap_Find           // decompiled: src/resource/tags_map.cpp
 007A44F8 SortedMap_Erase          // decompiled: src/resource/tags_map.cpp
 007A4390 SortedMap_Insert         // decompiled: src/resource/tags_map.cpp
@@ -181,7 +181,7 @@
 004FF43C Material_Create          // (shader) (name?)
 0051BC20 Mesh_CreateSphere        // "SphereIdx" (name?)
 0051C1A8 Mesh_CreateCube          // "Cube" (name?)
-005516E0 PtrVector_Construct      // (name?)
+005516E0 PtrVector_Construct      // (PtrVector*): all fields 0; decompiled: src/obj/obj13_misc.cpp
 0050F308 Shaders_Init             // decompiled: src/gfx/shaders.cpp
 
 # Per frame: players, UI, audio, world
@@ -651,7 +651,7 @@
 004EB904 Levels_Parse             // (XmlElement*) (name?)
 004F8C30 Xml_FindChild            // (node, name): hash + 0x004F8ACC (name?)
 004F936C Xml_FindChildren         // (node, name) (name?)
-005566A8 String_Append            // strcat (name?)
+005566A8 String_Append            // thunk to f_0072354C; decompiled: src/obj/obj13_misc.cpp
 004BCE90 Set_Find                 // (u32 name) -> Set* (name?)
 004C7A68 Effect_Construct         // (mem 140 bytes, def) (name?)
 004C753C Effect_Start             // (name?)
@@ -799,7 +799,7 @@
 000AE784 SaveData_Write           // stub: returns 3; decompiled: src/world/misc.cpp
 0044C43C Sound_Find               // (u32 hash) -> handle (name?); decompiled: src/world/misc.cpp
 00550EE8 Mem_DefaultAllocator     // () -> Allocator* (name?)
-00558F38 Array_Init               // empty function (blr)
+00558F38 Array_Init               // (Array*): empty in this build; decompiled: src/obj/obj13_misc.cpp
 0054EC94 Array_Destruct           // empty function (blr) (name?)
 005E6944 ThreadAttr_Init          // (attr): copies 32-byte defaults
 005E69A4 ThreadAttr_Destroy       // (name?)
@@ -866,7 +866,7 @@
 005095C0 Topology_Copy            // (topo, copy table) (name?); decompiled: src/obj/obj6_topo.cpp
 0056E2EC Rsx_Copy                 // (src, dst, size, 1) (name?)
 007A0E98 Texture_SetWrap          // AglTexture vfunc +16 (s, t, 1) (name?)
-00558F34 WorldObj_ReleaseRes      // (name?)
+00558F34 WorldObj_ReleaseRes      // (obj): empty in this build; decompiled: src/obj/obj13_misc.cpp
 0058049C WorldObj_SetBoundRadius  // (obj, f32 r in f1): class sphere and box; decompiled: src/obj/obj4.cpp
 00582C6C WorldObj_UpdateZoneMask  // (obj, bool lookup): +324 zone mask; decompiled: src/obj/obj4.cpp
 00580658 WorldObj_InitLinks       // decompiled: src/obj/obj3.cpp
@@ -2335,7 +2335,7 @@
 0059B474 Iff_HandleRecKeys        // chunk OPD 0x00F3C6C8: one word per world record into +64 (name?); decompiled: src/obj/obj11_small.cpp
 00555478 Quat_FromMatrix          // (f32 out[4], const f32 m[4][4]); decompiled: src/obj/obj12_math.cpp
 0057A770 Follower_Advance         // (follower, -, f32* t, f32 out[3]; f1 dt) (follower +108 bit 0x40 clear) (name?); decompiled: src/obj/obj12_follow.cpp
-0057AF20 Follower_AdvanceAlt      // the same for +108 bit 0x40 (name?)
+0057AF20 Follower_AdvanceAlt      // (follower, -, f32* t, f32 out[4]; f1 dt): distance-matched advance (+88 length, step search), orient via ahead point; decompiled: src/obj/obj13_follow.cpp
 00560690 Spline_TangentAt         // (SplineData*, f1 t, f32 out[4], bool) -> Spline_TangentEval(d, -, out, d+12, flag); decompiled: src/obj/obj12_small.cpp
 0050A268 Topology_Radius          // (AglTopology*) -> f1: shared block +16 radius or 0; decompiled: src/obj/obj12_small.cpp
 0050A19C Topology_Dump            // (AglTopology*, s32 depth): Topology_DumpDraw per draw record; decompiled: src/obj/obj12_small.cpp
@@ -2412,20 +2412,20 @@
 0058AC70 GeomInstance_DrawLod     // (obj, u8 lod, u8, u8): packet through Topology_Apply (was GeomCmd_Simple) (name?); decompiled: src/obj/obj12.cpp
 00583518 LightGrid_Rebuild        // (): 8x8 light grid once a frame (was Obj_Visit583518) (name?); decompiled: src/obj/obj12.cpp
 005A0E68 GeomInstance_DrawLodEx   // (obj, lod, b69, b70, recv**, mode, bits, w84, u8 b89 on stack) (was GeomCmd_Full) (name?); decompiled: src/obj/obj12.cpp
-00560430 Spline_TangentEval       // (SplineData*, -, f32 out[4], u32 seg, bool; f1 t) (name?)
-00539874 Topology_DumpDraw        // (draw record +0) (name?)
-00581D48 ObjLight_Collect         // (obj) (name?)
-00582290 ObjLight_Sort            // (obj) (name?)
-00582848 ObjLight_Blend           // (obj) (name?)
-00582A84 ObjLight_Apply           // (obj) (name?)
-00572AB0 WorldObj_AnimMatrix      // (obj) -> f32[4][4]* for +164 bits 6-7 (name?)
-0050CD58 DrawPacket_SetTexture    // (packet, u32, u16) (name?)
-0079D920 DrawPacket_Begin         // (packet) (name?)
-004FDBB8 DrawRecord_Submit        // (topology record, packet) (name?)
-004FD214 DrawRecordList_Init      // (0x011DE300) (name?)
-00509CEC Topology_ApplyRecv       // (AglTopology*, packet, receiver) (name?)
-00509F08 Topology_ApplyTo         // (AglTopology*, packet, receiver**) (name?)
-005820E0 LightSlot_CellRange      // (slot, s32* x0, s32* x1, s32* y0, s32* y1) (name?)
+00560430 Spline_TangentEval       // (SplineData*, -, f32 out[4], u32 seg, bool back; f1 t) -> u32 seg; decompiled: src/obj/obj13_spline.cpp
+00539874 Topology_DumpDraw        // (draw record) -> u32 data size in qwords: sum(+24 entries' +8 >> 4) + (+52 >> 4) (rename? DrawRecord_DataQwords); decompiled: src/obj/obj13_small.cpp
+00581D48 ObjLight_Collect         // (obj): ambient + up to 3 directional lights (count then capped to 1), +215 = 1; decompiled: src/obj/obj13_light.cpp
+00582290 ObjLight_Sort            // (obj): nearest type-2 light slots by grid/sphere/box, key (255-pri)<<24|d2; decompiled: src/obj/obj13_light.cpp
+00582848 ObjLight_Blend           // (obj): ambient (+220 * min(+376,1)) and directional entries from LightInstances; decompiled: src/obj/obj13_light.cpp
+00582A84 ObjLight_Apply           // (obj): light cache entries from +215 from the light slots (1-based); decompiled: src/obj/obj13_small.cpp
+00572AB0 WorldObj_AnimMatrix      // (obj) -> f32[4][4]*: slot/own matrix, +164 bits 6-7 mode 1/2 rotate (0x010DD900/40), 3 camera + "_Link_"N/100; decompiled: src/obj/obj13_draw.cpp
+0050CD58 DrawPacket_SetTexture    // (packet, f32 bones[][4][4], u32 n): skinning matrices to frame allocator +80/+88 (rename? DrawPacket_SetBones); decompiled: src/obj/obj13_draw.cpp
+0079D920 DrawPacket_Begin         // (packet): 208-byte object-space light block at +92 from frame allocator (rename? DrawPacket_BuildLights); decompiled: src/obj/obj13_draw.cpp
+004FDBB8 DrawRecord_Submit        // (draw record, packet): 160-byte stack record (matrix, view matrix, camera, bones) to DrawRecordList_Add; decompiled: src/obj/obj13_draw.cpp
+004FD214 DrawRecordList_Init      // (list 0x011DE300): enabled, PtrVector, cap 160, atomics 0; decompiled: src/obj/obj13_small.cpp
+00509CEC Topology_ApplyRecv       // (AglTopology*, packet, AglMaterial* recv): Topology_Apply with one forced material; decompiled: src/obj/obj13_draw.cpp
+00509F08 Topology_ApplyTo         // (AglTopology*, packet, AglMaterial** per-draw): Topology_Apply with per-draw materials; decompiled: src/obj/obj13_draw.cpp
+005820E0 LightSlot_CellRange      // (slot|sphere, s32* x0, x1, z0, z1): 8x8 grid cells clamped [0,7]; decompiled: src/obj/obj13_small.cpp
 
 # World event handler callees, part 9
 0035B984 Objects_Release35B984                // (u8 keep_player): handle-map objects reset, kind lists emptied, owned objects released; decompiled: src/world/hevent9_b.cpp (name?)
@@ -2477,3 +2477,54 @@
 00554858 Matrix_SplitScale                    // (const f32 m[16], f32 rot[16], f32 scale[3]) rows 0..2 normalised, lengths to scale, row 3 xyz copied; w lanes unwritten (leaf, 77 insns) (name?)
 00553F18 Matrix_RotationZ                     // (f32 out[16]; f1 angle) rotation about z with a polynomial sine; w lanes unwritten (leaf, 54 insns) (name?)
 005BFB50 Fur_ShellCount                       // (Shader*, DrawItem*, f32* scale_out) -> u16 shell count from the item's view depth and material parameters +76 (leaf, 104 insns) (name?)
+
+# World-object helpers, part 13 (lights, followers, draw records)
+005606C8 Spline_PointTangent      // (SplineData*, -, f32 pos[4], f32 tan[4], u32 seg, bool back; f1 t) -> u32 seg; decompiled: src/obj/obj13_spline.cpp
+00560A10 Spline_PointTangentAt    // (SplineData*, -, pos, tan, bool back; f1 t): Spline_PointTangent from +12 (name?); decompiled: src/obj/obj13_misc.cpp
+00553FF0 Matrix_MulRot            // (f32 out[4][4], const a[4][4], const b[4][4]): rows 0-2 = a x b (VMX), translation 0 (name?); decompiled: src/obj/obj13_misc.cpp
+00556764 Bank_DestroyNopA         // (): empty, called by Bank_Destroy (name?); decompiled: src/obj/obj13_misc.cpp
+0056A70C Bank_DestroyNopB         // (): empty, called by Bank_Destroy (name?); decompiled: src/obj/obj13_misc.cpp
+00570B90 Archive_Nop570B90        // (): empty, f_0055E7C0's (name?); decompiled: src/obj/obj13_misc.cpp
+005530E8 Callback_Return0         // () -> 0 (pointer target) (name?); decompiled: src/obj/obj13_misc.cpp
+00564C54 Callback_Return1         // () -> 1 (pointer target) (name?); decompiled: src/obj/obj13_misc.cpp
+0056F690 Archive_Return1A         // () -> 1, f_0055E56C's (name?); decompiled: src/obj/obj13_misc.cpp
+00571164 Archive_Return1B         // () -> 1, f_0055E7C0's (name?); decompiled: src/obj/obj13_misc.cpp
+00556BF0 Obj_GetField4            // (p) -> p->+4 (name?); decompiled: src/obj/obj13_misc.cpp
+0056DFC8 Cursor_Reset             // (c): +4 = +0 (name?); decompiled: src/obj/obj13_misc.cpp
+0056DF9C Cursor_Alloc             // (c, align, size) -> aligned +4, +4 += size (name?); decompiled: src/obj/obj13_misc.cpp
+00560B28 Obj_ResetVtbl560B28      // (o): +0 = 0x00B242E8 (name?); decompiled: src/obj/obj13_misc.cpp
+00562EB0 Obj_ResetVtbl562EB0      // (o): +0 = 0x00B24310 (name?); decompiled: src/obj/obj13_misc.cpp
+00562F08 Obj_ResetVtbl562F08      // (o): +0 = 0x00B24310 (name?); decompiled: src/obj/obj13_misc.cpp
+00564F10 Obj_Construct564F10      // (o): vtable 0x00B24110, +4/+8 = 0 (name?); decompiled: src/obj/obj13_misc.cpp
+00569338 Stream_Init569338        // (s, a, u8 flags) -> 1: +4 a, +8 0, +12 flags (bit 2 from 0x01164E4C) (name?); decompiled: src/obj/obj13_misc.cpp
+00569378 Bank_ClearField4         // (p) -> 1: +4 = 0 (name?); decompiled: src/obj/obj13_misc.cpp
+005721B4 Game_HddFreeSizeKB       // () -> s32 *0x00F88768 (name?); decompiled: src/obj/obj13_misc.cpp
+005630C0 Obj_SetEmpty148          // (o, u8 v): +148 = (v == 0) (name?); decompiled: src/obj/obj13_misc.cpp
+00564F2C Bank_ResetState          // (): 0x01164DEC / +4 = 0 (name?); decompiled: src/obj/obj13_misc.cpp
+00564F44 Bank_SetState            // (v): 0x01164DEC = {0, 0, v} (name?); decompiled: src/obj/obj13_misc.cpp
+00565A88 Obj_ClearField8          // (o): +8 = 0 if set (name?); decompiled: src/obj/obj13_misc.cpp
+00563098 Obj_ClearPair            // (o, i): +132+4i, +140+4i = 0 (name?); decompiled: src/obj/obj13_misc.cpp
+00571DA0 Obj_NameIfSet            // (Obj** p) -> (*p)->+48 if non-empty else 0 (name?); decompiled: src/obj/obj13_misc.cpp
+00576BB4 Fn_576BB4                // thunk to f_00575D18 (name?); decompiled: src/obj/obj13_misc.cpp
+00555FCC String_Find              // (s, sub): strstr; decompiled: src/obj/obj13_misc.cpp
+00555FF0 String_FindChar          // (s, c): strchr; decompiled: src/obj/obj13_misc.cpp
+00556014 String_Thunk71EDAC       // thunk to f_0071EDAC (name?); decompiled: src/obj/obj13_misc.cpp
+00555D48 String_VFormat           // (buf, u32 size, fmt, va): vsnprintf (name?); decompiled: src/obj/obj13_misc.cpp
+00550E40 Mem_FreeCallback         // (self, p): Mem_FreePool(p, 0, 0) (name?); decompiled: src/obj/obj13_misc.cpp
+005566CC String_ToInt10           // (s) -> (s32)strtol(s, 0, 10) (name?); decompiled: src/obj/obj13_misc.cpp
+005566FC String_ToFloat           // (s) -> (f32)strtod(s, 0) (name?); decompiled: src/obj/obj13_misc.cpp
+0055672C String_ToInt             // (s, s32 base) -> f_0071F284(s, &end, base) (name?); decompiled: src/obj/obj13_misc.cpp
+00555CC0 Mem_FreeIfSet            // (p): Mem_FreePool(p, 0, 0) if p (name?); decompiled: src/obj/obj13_misc.cpp
+0055F27C Holder_FreeData          // (h): Mem_FreePool(h->+4, 0, 0) if set (name?); decompiled: src/obj/obj13_misc.cpp
+0056C8A4 GcmMem_Free              // (p): cellGcmUnmapEaIoAddress(p), Mem_FreePool(p, 6, 0) (name?); decompiled: src/obj/obj13_misc.cpp
+005616C8 FsOp_ResultData          // (op) -> op+8 if FsOp_GetError(op) == 0 else 0 (name?); decompiled: src/obj/obj13_misc.cpp
+0056510C MemStack_AllocTop        // (s, size) -> block from +16 downwards (16-aligned) within +0, or 0 (name?); decompiled: src/obj/obj13_misc.cpp
+005602F8 Bezier_Tangent           // (f32 out[4], const f32 ctrl[4][4]; f1 u) (name?)
+004FD2E0 DrawRecordList_Add       // (draw record +0, const SubmitRecord* 160 bytes) (name?)
+0056E048 RingSlot_Next            // (o) -> o+512 + 128 * atomic(o+532: wraps at 2047) (name?) (left recompiled: lwarx/stwcx RMW)
+00575D18 Fn_575D18                // (name?)
+0071EDAC Libc_71EDAC              // String_Thunk71EDAC's callee (name?)
+0072354C Libc_72354C              // String_Append's callee (strcat?) (name?)
+00721D18 Libc_strtol              // (s, end, base) (name?)
+00721044 Libc_strtod              // (s, end) -> f1 (name?)
+0071F284 Libc_strtol_r            // (s, end, base) (name?)
