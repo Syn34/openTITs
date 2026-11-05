@@ -8869,13 +8869,9 @@
 00484858 World_SetCameraTarget484858          // (World*, UserBlock*) -> u32: camera controller for the user's +8 object by profile mode (0x0010DE30 / 0x000FF0D8 / 0x00111410 / 0x00113608 / 0x00114298) at w +0x128584, Camera_PushTarget0FC040, vt +20, Obj_RestoreFrom544, controller vt +28; decompiled: src/world/hevent25_c.cpp (name?)
 000F94C0 View_SetSplit0F94C0                  // (View*, s32 split) -> u32: split-screen viewport rect (u16 +346..+352) from 0x010C5A20 size or custom 0x010B1850, RenderTarget_SetViewport when +344 bit 31, +344 bits 27..30 = split; decompiled: src/world/hevent25_c.cpp (name?)
 002DB040 Episode_Percent2DB040                // (Episode*, Save*) -> f32 completion percentage (reads r3, r4 only) (name?)
-004A54F8 Matrix_FromDir4A54F8                 // (const vec3* dir, Matrix* m) (name?)
+004A54F8 Matrix_FromDir4A54F8                 // (const vec3* dir, Matrix* m): orthonormal 3x4 rows with row 2 = dir, up {0,1,0} at 0x010C26D0 (lazy init) or the old row 0 / 0x01164B50 when parallel; decompiled: src/world/hevent26_b.cpp
 000FF0D8 CamCtrl_Construct0FF0D8              // (ctrl 1040 bytes, Camera*, Object*) camera controller, mode 1 / default (name?)
 0010DE30 CamCtrl_Construct10DE30              // (ctrl 608 bytes, Camera*, Object*) mode 0 (name?)
-00111410 CamCtrl_Construct111410              // (ctrl 272 bytes, Camera*, Object*) mode 2 (name?)
-00113608 CamCtrl_Construct113608              // (ctrl 128 bytes, Camera*, Object*; f32) mode 3 (name?)
-00114298 CamCtrl_Construct114298              // (ctrl 176 bytes, Camera*, Object*, 0) (name?)
-004845F0 World_ReleaseCameraCtrl4845F0        // (World*, UserBlock*) (name?)
 000F9854 View_Update0F9854                    // only caller of View_SetSplit0F94C0 (name?)
 
 # Renderer sweep part 12
@@ -9093,3 +9089,25 @@
 000DA954 Obj_UseIndex0DA954           // (owner, index) after 0x000D14DC (name?); not decompiled
 005FC90C Fios_GetScheduler5FC90C      // () -> the scheduler passed to fios_Free 0x005FE784 (name?); not decompiled
 004FBFA8 Ctor_Base4FBFA8              // the base T::T(o, a) of the 0x00B0D9xx classes (vtables 0x00B0D934 / 0x00B0D968 / 0x00B0D99C / 0x00B0DA6C) (name?); not decompiled
+
+# World event handler part 26
+00358760 Scroller_Construct358760             // (Object*, Def*): base ctor, vtable 0x00B1F950, +232 target ids, 6 name hashes (+204..+224), PtrVector +304, 6 geometry slots +280 (d +172 hash each time, vt +56 (5) / +40 (0,1), Obj_CollectLodGroup), +268..+276 ids d +156..; decompiled: src/world/hevent26_a.cpp (name?)
+00358B64 ScrollerB_Construct358B64            // (Object*, Def*): as 0x00358760 with vtable 0x00B1F918, +288[4] geometry, +304/+328/+352/+376[6] objects of hash tables 0x00F64E58/E70/EA0/EE8, +408/+432/+456[6] clones of 3 template objects; decompiled: src/world/hevent26_a.cpp (name?)
+0035A868 UiObj_Construct35A868                // (Object*, Def*): base ctor, vtable 0x00B1F6B0, d +152 32-byte records -> 16-byte UI entries at +328 (template vt +8 clone "<name>_<n>", Ui_Find), 4 name hashes +300..+312; decompiled: src/world/hevent26_a.cpp (name?)
+00359E08 PathObj_Construct359E08              // (Object*, Def*) -> child: base ctor, vtable 0x00B1F870, per-record id arrays at +164, +176[4] kind-8 objects, bounds +288/+304/+320, Tex_Acquire render state +172, +192 owner child of id d +212; decompiled: src/world/hevent26_a.cpp (name?)
+000182C0 Follow_Update182C0                   // (Follower*, f32 dt): nav target ahead of the anchor (*0x00F557F0 +48), reach test (+56), line of sight (+58, 0x000138B0), camera frustum (+57), timer +52 clamped [0, 2]; decompiled: src/world/hevent26_b.cpp (name?)
+000138B0 Follow_LineOfSight138B0              // (Object*, const vec3* from, const vec3* to, Object* peer) -> bool: Havok all-hits ray cast (0x0092E510) in the world's hkpWorld, blocking game objects; decompiled: src/world/hevent26_b.cpp (name?)
+0012C968 Coach_FindSpline12C968               // (Object*, -, u32 mask, f32 radius) -> u32: snap onto the nearest spline (time flag bit 16) or grind search over mask groups 0x00AC8C20 {0xF44C, 0x0BB0}; decompiled: src/world/hevent26_b.cpp (name?)
+00386140 Obj_NotifyB386140                    // (Object*, u8 a, u8 b) -> u32: +960-flags sibling of Obj_NotifyA362F1C (kind -> 7, speaker / effect / body / components, handle 0x00F64CE4 notify; kind 0: vt +12 or queue in 0x0106C240); decompiled: src/world/hevent26_c.cpp (name?)
+003B835C LevelMachine_Construct3B835C         // (LevelMachine*, a1, a2, Level*) -> Level +5072: SubMachine_Construct, vtable 0x00B20488, PtrVector +104, state blocks (zero vec / identity quat / matrices), +64..+100 links; decompiled: src/world/hevent26_d.cpp (name?)
+00113608 CamCtrl3_Construct113608             // (ctrl 128 bytes, Camera*, Object*; f32): vtable 0x00B13F70, +84 target ref, then 0x001134D8; decompiled: src/world/hevent26_e.cpp (name?)
+00114298 CamCtrl4_Construct114298             // (ctrl 176 bytes, Camera*, Object*, s32 slot): vtable 0x00B14020, tuning 0x01036540.. by slot, heading atan2f, +12 target ref; decompiled: src/world/hevent26_e.cpp (name?)
+00111410 CamCtrl2_Construct111410             // (ctrl 272 bytes, Camera*, Object*): vtable 0x00B13E58, +16 Havok-side shape (0x009F6BB0 / 0x009F6A74 / 0x009F63EC) from obj +216 source, +208 matrix, +12 target ref; decompiled: src/world/hevent26_e.cpp (name?)
+004845F0 World_PopCameraLayers4845F0          // (World*): pops every camera layer controller (ref dropped by kind 1/11/2/7/9, Obj_PopLayer -1.0f), clears the matching +0x128584 target; decompiled: src/world/hevent26_e.cpp (name?)
+001134D8 CamCtrl3_Retarget1134D8              // (CamCtrl3*): called after a new target object (name?)
+0092E510 HkWorld_CastRay92E510                // (hkpWorld*, const RayInput*, Collector*) Havok (name?)
+009F6BB0 HkShape_Construct9F6BB0              // (Shape*) in-place ctor (Havok side, name?)
+009F6A74 HkShapeDesc_Construct9F6A74          // (Desc* 144 bytes) (name?)
+009F63EC HkShape_Init9F63EC                   // (Shape*, const Desc*) (name?)
+00F1DE80 Vt_RayAllHitsCollector               // vtable of the 8-inline-hit all-hits ray collector (data, name?)
+00F325E0 Opd_GrindFilter                      // OPD given to SplineInstances_CollectNear by 0x0012C968 (data, name?)
