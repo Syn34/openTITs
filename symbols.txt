@@ -803,7 +803,7 @@
 005E69A4 ThreadAttr_Destroy       // (name?)
 005E7824 Thread_Create2           // (thread, attr, entry opd, arg) (name?)
 005E6D1C Event_Init               // (event, 0) (name?)
-0079BA10 Lock_Init                // (lock, 32) (name?)
+0079BA10 Lock_Init                // (list, s32 n): n 16-byte slots allocated and chained as a free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
 0056A6E0 Hash_ToString            // "0x%x" via String_Format; decompiled: src/world/misc.cpp
 
 # World objects, textures
@@ -901,8 +901,8 @@
 00734CC8 Mat43_Copy               // 4 rows x 3 floats, stride 16; decompiled: src/world/construct_members.cpp
 00785BC4 AvlCmd_Insert                      // see file; decompiled: src/world/construct_animscript.cpp
 00786468 AvlVar_Insert                      // see file; decompiled: src/world/construct_animscript.cpp
-00785744 AvlCmd_InsertAt          // recursive insert (tree, key, value, node)
-00785FE8 AvlVar_InsertAt          //
+00785744 AvlCmd_InsertAt          // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0E4, rotations 0x007855FC / 0x007854B4 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00785FE8 AvlVar_InsertAt          // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0D8, rotations 0x00785EA0 / 0x00785D58 (template instance); decompiled: src/obj/obj20_tmpl.cpp
 004B9CB8 AnimCmd_ConstructBase              // see file; decompiled: src/world/construct_animscript.cpp
 002EE304 Effects_Construct        // g 0x00F64C38 "Effects1"; decompiled: src/world/construct_globals.cpp (name?)
 0047C8A0 World_EnterLevel0        // HandleEvent enter, level 0 (name?)
@@ -7737,3 +7737,337 @@
 # World event handler callees, part 20
 00365A54 Game_SetPaused              // (u8 a, u8 b): u8 0x00F64CC4 = a, handle map 0x0106C228 objects vt +24 (obj, a, b); flag 0 -> Objects_Reset35B470(0x0106C330); decompiled: src/world/hevent20_e.cpp (name?)
 004C753C Effect_Start                  // (Object*): push onto PtrVector 0x010C2968 (constructed on first use: capacity 16, step 4); decompiled: src/world/hevent20_f.cpp (name?)
+
+# Template instances, part 20 (AVL, VMX builders, command records, destructors)
+0020D338 VtB19558_Dtor            // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00212AA0 VtB19558_Dtor_00212AA0   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00215C00 VtB19558_Dtor_00215C00   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00218BF0 VtB19558_Dtor_00218BF0   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00219C88 VtB19558_Dtor_00219C88   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0021AF48 VtB19558_Dtor_0021AF48   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0021DB80 VtB19558_Dtor_0021DB80   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00220C68 VtB19558_Dtor_00220C68   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00221598 VtB19558_Dtor_00221598   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00759E74 VtB19558_Dtor_00759E74   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075A110 VtB19558_Dtor_0075A110   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075BB14 VtB19558_Dtor_0075BB14   // ~T(): vtable 0x00B19558, 0x000112D8 / 0x00638498 on +424, arrays +388 / +364, vector +344, 0x000D729C(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0073AFC4 Avl_Insert_0073AFC4      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0E0, rotations 0x00739F1C / 0x00739DD4 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0076D07C Avl_Insert_0076D07C      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0E8, rotations 0x0076BFD4 / 0x0076BE8C (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078E558 Avl_Insert_0078E558      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F100, rotations 0x0078E410 / 0x0078E2C8 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078EB6C Avl_Insert_0078EB6C      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0F4, rotations 0x0078C2C0 / 0x0078C178 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007918E4 Avl_Insert_007918E4      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0F8, rotations 0x0078A170 / 0x0078A028 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007930E8 Avl_Insert_007930E8      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F0DC, rotations 0x00792040 / 0x00791EF8 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00798E60 Avl_Insert_00798E60      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F104, rotations 0x00796BC8 / 0x00796A80 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007995FC Avl_Insert_007995FC      // (tree, u32 key, value, Node** pp): recursive insert, leaves from the free list at 0x00F8F108, rotations 0x00797DB8 / 0x00797C70 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00167370 Comp_Xform_00167370      // (out, obj): obj+268 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0016B050 Comp_Xform_0016B050      // (out, obj): obj+244 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00176E80 Comp_Xform_00176E80      // (out, obj): obj+252 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0017D940 Comp_Xform_0017D940      // (out, obj): obj+288 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0018FE60 Comp_Xform_0018FE60      // (out, obj): obj+292 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001B4650 Comp_Xform_001B4650      // (out, obj): obj+228 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001F9D70 Comp_Xform_001F9D70      // (out, obj): obj+296 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00203E70 Comp_Xform_00203E70      // (out, obj): obj+200 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0022F860 Comp_Xform_0022F860      // (out, obj): obj+980 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0010ED70 Vec3_ToRow_0010ED70      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x0010ED40 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00137980 Vec3_ToRow_00137980      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x00137950 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00170E10 Vec3_ToRow_00170E10      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x00170DE0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001F0840 Vec3_ToRow_001F0840      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x001F0810 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00204D20 Vec3_ToRow_00204D20      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x00204CF0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0026B4B0 Vec3_ToRow_0026B4B0      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x0026B480 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0034CE80 Vec3_ToRow_0034CE80      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x0034CE50 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+003E7B80 Vec3_ToRow_003E7B80      // (Vec4* out, const f32* p): {p[0], p[1], p[2]} with w from the masks at 0x003E7B50 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001138D8 SetRef_001138D8          // (o, p): o+136 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00114208 SetRef_00114208          // (o, p): o+12 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00115B0C SetRef_00115B0C          // (o, p): o+12 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00121E8C SetRef_00121E8C          // (o, p): o+420 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00121F10 SetRef_00121F10          // (o, p): o+428 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00757B58 SetRef_00757B58          // (o, p): o+392 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00757C9C SetRef_00757C9C          // (o, p): o+396 replaced (old slot 40 (old, 0)), p +178 count incremented (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000E4E80 Mat43_Copy_000E4E80      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0015C924 Mat43_Copy_0015C924      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0015CA38 Mat43_Copy_0015CA38      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+002370D0 Mat43_Copy_002370D0      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0026B360 Mat43_Copy_0026B360      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0026B508 Mat43_Copy_0026B508      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0034CED8 Mat43_Copy_0034CED8      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+003E7C14 Mat43_Copy_003E7C14      // (dst, src): rows of three words 16 bytes apart copied (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000DED00 Comp_VecNotify_000DED00  // (o, const f32* p): o+348 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00168620 Comp_VecNotify_00168620  // (o, const f32* p): o+388 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0016F1C0 Comp_VecNotify_0016F1C0  // (o, const f32* p): o+388 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00178650 Comp_VecNotify_00178650  // (o, const f32* p): o+388 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00184A80 Comp_VecNotify_00184A80  // (o, const f32* p): o+388 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00192370 Comp_VecNotify_00192370  // (o, const f32* p): o+388 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001FB370 Comp_VecNotify_001FB370  // (o, const f32* p): o+416 component: 0x0091A4C8(c), then (c+224) slot 68 with the vector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C0CF4 VtB21FD8_Delete          // deleting: vtable 0x00B21FD8, the objects of the PtrVector at +8 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C1094 VtB21FD8_Delete_004C1094 // deleting: vtable 0x00B21FD8, the objects of the PtrVector at +8 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C1380 VtB21FD8_Delete_004C1380 // deleting: vtable 0x00B21FD8, the objects of the PtrVector at +8 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C1688 VtB21FD8_Delete_004C1688 // deleting: vtable 0x00B21FD8, the objects of the PtrVector at +8 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C19C0 VtB21FD8_Delete_004C19C0 // deleting: vtable 0x00B21FD8, the objects of the PtrVector at +8 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C62F0 VtB22308_Delete          // deleting: vtable 0x00B22308, the objects of the PtrVector at +40 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C6C0C VtB22330_Delete          // deleting: vtable 0x00B22330, the objects of the PtrVector at +28 released, base vtable 0x00B11B20, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0073B444 Avl_TreeInsert_0073B444  // (tree, u32 key, value): count++, root leaf or 0x0073AFC4(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0076D4FC Avl_TreeInsert_0076D4FC  // (tree, u32 key, value): count++, root leaf or 0x0076D07C(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078E9D8 Avl_TreeInsert_0078E9D8  // (tree, u32 key, value): count++, root leaf or 0x0078E558(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078EFEC Avl_TreeInsert_0078EFEC  // (tree, u32 key, value): count++, root leaf or 0x0078EB6C(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00791D64 Avl_TreeInsert_00791D64  // (tree, u32 key, value): count++, root leaf or 0x007918E4(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00793568 Avl_TreeInsert_00793568  // (tree, u32 key, value): count++, root leaf or 0x007930E8(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007992E0 Avl_TreeInsert_007992E0  // (tree, u32 key, value): count++, root leaf or 0x00798E60(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00799A7C Avl_TreeInsert_00799A7C  // (tree, u32 key, value): count++, root leaf or 0x007995FC(tree, key, value, &root) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0073A064 Avl_RemoveMax_0073A064   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F0E0, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0076C11C Avl_RemoveMax_0076C11C   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F0E8, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078A2B8 Avl_RemoveMax_0078A2B8   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F0F8, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078B218 Avl_RemoveMax_0078B218   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F0E4, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0078C408 Avl_RemoveMax_0078C408   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F0F4, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00790984 Avl_RemoveMax_00790984   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F100, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00796D10 Avl_RemoveMax_00796D10   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F104, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00797F00 Avl_RemoveMax_00797F00   // (tree, Node** target, Node** pp, bool* changed): rightmost node unlinked into *target, freed to 0x00F8F108, rebalance (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007742DC Cmd_PushOp7_007742DC     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out word cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077487C Cmd_PushOp7_0077487C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out word cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077496C Cmd_PushOp7_0077496C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out word cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00774A5C Cmd_PushOp7_00774A5C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out word cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00774B4C Cmd_PushOp7_00774B4C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out word cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00774C3C Cmd_PushOp7_00774C3C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out word cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007743CC Cmd_PushOp7_007743CC     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out halfword cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007744BC Cmd_PushOp7_007744BC     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out halfword cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007745AC Cmd_PushOp7_007745AC     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out halfword cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077469C Cmd_PushOp7_0077469C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out halfword cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077478C Cmd_PushOp7_0077478C     // (u16 v, Ctx** pc, u32* out): a kind-7 record; *out halfword cleared (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0036BF38 Obj_SetOnOff_0036BF38    // (o, bool on, u8 a): off: 0x00362F1C(o, a, 0); on (unless +396 bit 0x40000000): 0x00363890(o, 0, *0x0036BF34, 0, 0, 0x01164CA4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+003798D8 Obj_SetOnOff_003798D8    // (o, bool on, u8 a): off: 0x00377D18(o, a, 0); on (unless +252 bit 0x40000000): 0x003780E0(o, 0, *0x003798D4, 0, 0, 0x01164CA4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0037DE50 Obj_SetOnOff_0037DE50    // (o, bool on, u8 a): off: 0x0037C7E0(o, a, 0); on (unless +252 bit 0x40000000): 0x0037CB10(o, 0, *0x0037DE4C, 0, 0, 0x01164CA4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00380C70 Obj_SetOnOff_00380C70    // (o, bool on, u8 a): off: 0x0037F5E8(o, a, 0); on (unless +252 bit 0x40000000): 0x0037F918(o, 0, *0x00380C68, 0, 0, 0x01164CA4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00387A80 Obj_SetOnOff_00387A80    // (o, bool on, u8 a): off: 0x00386140(o, a, 0); on (unless +960 bit 0x40000000): 0x00386560(o, 0, *0x00387A7C, 0, 0, 0x01164CA4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0007DE20 Obj_ForEachVCall20_0007DE20 // (o): slot 20 of each of the +32 count objects at +24 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0007E564 Obj_ForEachVCall20_0007E564 // (o): slot 20 of each of the +36 count objects at +28 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0007F3F4 Obj_ForEachVCall20_0007F3F4 // (o): slot 20 of each of the +20 count objects at +12 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C63EC Obj_ForEachVCall20_004C63EC // (o): slot 20 of each of the +48 count objects at +40 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004C6D08 Obj_ForEachVCall20_004C6D08 // (o): slot 20 of each of the +36 count objects at +28 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0006FE54 NewBind2_0006FE54        // (?, owner): Mem_Alloc(20), 0x004BB3B0(p, owner), vtable 0x00B0F360, 0x004FA14C(owner, 0x00217713 / 0x36611714, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00071F1C NewBind2_00071F1C        // (?, owner): Mem_Alloc(20), 0x004BB3B0(p, owner), vtable 0x00B0F428, 0x004FA14C(owner, 0x7A30D7E3 / 0x7F247172, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0007D884 NewBind2_0007D884        // (?, owner): Mem_Alloc(20), 0x004BB3B0(p, owner), vtable 0x00B0FB80, 0x004FA14C(owner, 0x7FAAD4A0 / 0x04B8CC71, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000A6A84 NewBind2_000A6A84        // (?, owner): Mem_Alloc(20), 0x004BB3B0(p, owner), vtable 0x00B11A30, 0x004FA14C(owner, 0x0024728B / 0x38EAE212, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000A74D0 NewBind2_000A74D0        // (?, owner): Mem_Alloc(20), 0x004BB3B0(p, owner), vtable 0x00B11AF8, 0x004FA14C(owner, 0x040EFE5F / 0x7E6EFA38, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00170CB0 Mat4_FromRows3_00170CB0  // (Vec4 out[4], const f32 p[16]): rows {p[4k..4k+2]} with w from the masks at 0x00170C80 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0017DC20 Mat4_FromRows3_0017DC20  // (Vec4 out[4], const f32 p[16]): rows {p[4k..4k+2]} with w from the masks at 0x0017DBF0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00200C10 Mat4_FromRows3_00200C10  // (Vec4 out[4], const f32 p[16]): rows {p[4k..4k+2]} with w from the masks at 0x00200BE0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+002BCBB0 Mat4_FromRows3_002BCBB0  // (Vec4 out[4], const f32 p[16]): rows {p[4k..4k+2]} with w from the masks at 0x002BCB80 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0034D020 Mat4_FromRows3_0034D020  // (Vec4 out[4], const f32 p[16]): rows {p[4k..4k+2]} with w from the masks at 0x0034CFF0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004EF274 Game_AddName_004EF274    // (XmlCursor*): a copy of its "name" attribute appended to the game object +496 PtrVector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004EFA4C Game_AddName_004EFA4C    // (XmlCursor*): a copy of its "name" attribute appended to the game object +376 PtrVector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004EFB40 Game_AddName_004EFB40    // (XmlCursor*): a copy of its "name" attribute appended to the game object +396 PtrVector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004EFC34 Game_AddName_004EFC34    // (XmlCursor*): a copy of its "name" attribute appended to the game object +416 PtrVector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004EFE00 Game_AddName_004EFE00    // (XmlCursor*): a copy of its "name" attribute appended to the game object +436 PtrVector (template instance); decompiled: src/obj/obj20_tmpl.cpp
+003FA828 Camera_ApplyDef_003FA828 // (o): the def keyed by (o+88)->+8 onto the view at o+60 (rows, +80 from (o+88)->+16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00402810 Camera_ApplyDef_00402810 // (o): the def keyed by (o+88)->+36 onto the view at o+60 (rows, +80 from (o+88)->+40) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004088A8 Camera_ApplyDef_004088A8 // (o): the def keyed by (o+88)->+12 onto the view at o+60 (rows, +80 from (o+88)->+16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00410D50 Camera_ApplyDef_00410D50 // (o): the def keyed by (o+88)->+4 onto the view at o+60 (rows, +80 from (o+88)->+8) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0041D000 Camera_ApplyDef_0041D000 // (o): the def keyed by (o+88)->+24 onto the view at o+60 (rows, +80 from (o+88)->+28) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00784C84 SlotList_Init_00784C84   // (list, s32 n): n 16-byte slots allocated and chained as a free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0079A1C8 SlotList_Init_0079A1C8   // (list, s32 n): n 16-byte slots allocated and chained as a free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0079B0F0 SlotList_Init_0079B0F0   // (list, s32 n): n 16-byte slots allocated and chained as a free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0079B250 SlotList_Init_0079B250   // (list, s32 n): n 16-byte slots allocated and chained as a free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0032CA0C VtB1E648_Dtor            // ~T(): vtable 0x00B1E648, 0x003260F0(this, 0, 1), the section arrays / lists / buffers freed, 0x0048F6B0(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0032EA68 VtB1E7B0_Dtor            // ~T(): vtable 0x00B1E7B0, 0x003260F0(this, 0, 1), the section arrays / lists / buffers freed, 0x0048F6B0(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00340134 VtB1F0C0_Dtor            // ~T(): vtable 0x00B1F0C0, 0x003260F0(this, 0, 1), the section arrays / lists / buffers freed, 0x0048F6B0(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+003409B8 VtB1F138_Dtor            // ~T(): vtable 0x00B1F138, 0x003260F0(this, 0, 1), the section arrays / lists / buffers freed, 0x0048F6B0(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00341208 VtB1F1B0_Dtor            // ~T(): vtable 0x00B1F1B0, 0x003260F0(this, 0, 1), the section arrays / lists / buffers freed, 0x0048F6B0(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0001B2E8 Obj_ClearField_0001B2E8  // this->+20 = 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0010BD7C Obj_ClearField_0010BD7C  // this->+104 = 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+003A4010 Obj_ClearField_003A4010  // this->+424 = 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004F41CC Obj_ClearField_004F41CC  // this->+140 = 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00230990 Obj_CopyField_00230990   // this->+952 = this->+960 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0023DF6C Obj_CopyField_0023DF6C   // this->+952 = this->+956 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00246D50 Obj_CopyField_00246D50   // this->+400 = this->+408 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0024DDBC Obj_CopyField_0024DDBC   // this->+400 = this->+404 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00735860 Array_ElemAddr_00735860  // &this->+0[i] (32-byte elements) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074E2E8 Array_ElemAddr_0074E2E8  // &this->+0[i] (16-byte elements) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00760F00 Array_ElemAddr_00760F00  // &this->+0[i] (128-byte elements) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077B100 Array_ElemAddr_0077B100  // &this->+0[i] (128-byte elements) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0022104C Obj_GetVia_0022104C      // q = this->+428; q ? q->+488 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00755E30 Obj_GetVia_00755E30      // q = this->+600; q ? q->+168 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00755F20 Obj_GetVia_00755F20      // q = this->+216; q ? q->+52 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00757BDC Obj_GetVia_00757BDC      // q = this->+4; q ? q->+8 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074BCD4 Copy16_0074BCD4          // dst[0..3] = src->+0[0..3] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074CEF4 Copy16_0074CEF4          // dst[0..3] = src->+0[0..3] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0076097C Copy16_0076097C          // dst[0..3] = src->+176[0..3] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00762B38 Copy16_00762B38          // dst[0..3] = src->+16[0..3] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0001BEA0 Obj_MemberVCall_0001BEA0 // q = this->+36; q ? q->vfn[9](q) : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+002E11D8 Obj_MemberVCall_002E11D8 // q = this->+72; q ? q->vfn[5](q) : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00426A90 Obj_MemberVCall_00426A90 // q = this->+152; q ? q->vfn[3](q) : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004F2FF4 Obj_MemberVCall_004F2FF4 // q = this->+0; q ? q->vfn[14](q) : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00767AB0 Obj_VCallIfKey_00767AB0  // if (this->+12 == a1) this->vfn[5](this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00767B0C Obj_VCallIfKey_00767B0C  // if (this->+212 == a1) this->vfn[5](this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00767B68 Obj_VCallIfKey_00767B68  // if (this->+12 == a1) this->vfn[5](this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00767BC4 Obj_VCallIfKey_00767BC4  // if (this->+12 == a1) this->vfn[5](this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074BC88 Mat33_Copy_0074BC88      // (dst, src): three rows of three words 16 bytes apart (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074CF18 Mat33_Copy_0074CF18      // (dst, src): three rows of three words 16 bytes apart (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074CF64 Mat33_Copy_0074CF64      // (dst, src): three rows of three words 16 bytes apart (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074E524 Mat33_Copy_0074E524      // (dst, src): three rows of three words 16 bytes apart (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770D08 AdjDtor_00770D08         // p = this - 20: five vtables (0x00B1F298 at +0), then 0x00884FB8(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770D64 AdjDtor_00770D64         // p = this - 16: five vtables (0x00B1F298 at +0), then 0x00884FB8(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770DC0 AdjDtor_00770DC0         // p = this - 12: five vtables (0x00B1F298 at +0), then 0x00884FB8(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770E1C AdjDtor_00770E1C         // p = this - 8: five vtables (0x00B1F298 at +0), then 0x00884FB8(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077D250 VtB20850_Dtor            // ~T(): vtable 0x00B20850, PtrVector +272, base vtable 0x00B207A8, 0x00490B34(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077D2C4 VtB208F8_Dtor            // ~T(): vtable 0x00B208F8, PtrVector +104, base vtable 0x00B207A8, 0x00490B34(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077D338 VtB209A0_Dtor            // ~T(): vtable 0x00B209A0, PtrVector +100, base vtable 0x00B207A8, 0x00490B34(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077D558 VtB20B98_Dtor            // ~T(): vtable 0x00B20B98, PtrVector +104, base vtable 0x00B207A8, 0x00490B34(this) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00168258 AdjDelete_00168258       // deleting: p = this -384; vtables 0x00B12528 / 0x00B1200C / 0x00B126B8, 0x000DF934(p), SmallFree(p, 480) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001682D0 AdjDelete_001682D0       // deleting: p = this -380; vtables 0x00B12528 / 0x00B1200C / 0x00B126B8, 0x000DF934(p), SmallFree(p, 480) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007590AC AdjDelete_007590AC       // deleting: p = this -384; vtables 0x00B12528 / 0x00B1200C / 0x00B126B8, 0x000DF934(p), SmallFree(p, 464) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00759124 AdjDelete_00759124       // deleting: p = this -380; vtables 0x00B12528 / 0x00B1200C / 0x00B126B8, 0x000DF934(p), SmallFree(p, 464) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007755E4 New_CAlways              // (s16 id): Mem_Alloc(24), 0x0038E5DC(p, id, "CAlways", 1) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077571C New_CNever               // (s16 id): Mem_Alloc(24), 0x0038E5DC(p, id, "CNever", 1) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00775854 New_COnEnterState        // (s16 id): Mem_Alloc(24), 0x0038E5DC(p, id, "COnEnterState", 2) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077598C New_COnExitState         // (s16 id): Mem_Alloc(24), 0x0038E5DC(p, id, "COnExitState", 4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001136E0 VtB13F70_Dtor            // ~T(): vtable 0x00B13F70, the +84 reference: slot 40 (ref, 0), base vtable 0x00B0DAEC (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001144D0 VtB14020_Dtor            // ~T(): vtable 0x00B14020, the +12 reference: slot 40 (ref, 0), base vtable 0x00B0DAEC (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074950C VtB13B38_Dtor            // ~T(): vtable 0x00B13B38, the +84 reference: slot 40 (ref, 0), base vtable 0x00B0DAEC (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00749888 VtB13FC8_Dtor            // ~T(): vtable 0x00B13FC8, the +136 reference: slot 40 (ref, 0), base vtable 0x00B0DAEC (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00762D34 VtB1BEF0_Dtor            // ~T(): vtable 0x00B1BEF0, PtrVector +20, base vtable 0x00B0DAAC, 0x007330C0(0x01056F04, this + 4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00763F10 VtB1C568_Dtor            // ~T(): vtable 0x00B1C568, PtrVector +96, base vtable 0x00B0DAAC, 0x007330C0(0x01056F04, this + 4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00764028 VtB1C5C0_Dtor            // ~T(): vtable 0x00B1C5C0, PtrVector +20, base vtable 0x00B0DAAC, 0x007330C0(0x01056F04, this + 4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007650C8 VtB1CD48_Dtor            // ~T(): vtable 0x00B1CD48, PtrVector +20, base vtable 0x00B0DAAC, 0x007330C0(0x01056F04, this + 4) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00772F70 VtB1F898_Dtor            // ~T(): vtable 0x00B1F898, +148 / +196 freed, base vtable 0x00B1F668 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00773088 VtB1F8D0_Dtor            // ~T(): vtable 0x00B1F8D0, +180 / +184 freed, base vtable 0x00B1F668 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007731A0 VtB1F908_Dtor            // ~T(): vtable 0x00B1F908, +176 / +180 freed, base vtable 0x00B1F668 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007732B8 VtB1F940_Dtor            // ~T(): vtable 0x00B1F940, +176 / +180 freed, base vtable 0x00B1F668 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077F044 VtB20850_Delete          // deleting: vtable 0x00B20850, PtrVector +272, base vtable 0x00B207A8, 0x00490B34(this), SmallFree(this, 384) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077F0F0 VtB208F8_Delete          // deleting: vtable 0x00B208F8, PtrVector +104, base vtable 0x00B207A8, 0x00490B34(this), SmallFree(this, 256) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077F19C VtB209A0_Delete          // deleting: vtable 0x00B209A0, PtrVector +100, base vtable 0x00B207A8, 0x00490B34(this), SmallFree(this, 256) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077F45C VtB20B98_Delete          // deleting: vtable 0x00B20B98, PtrVector +104, base vtable 0x00B207A8, 0x00490B34(this), SmallFree(this, 512) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0001D10C New_0001D10C             // p = Mem_Alloc(40, 0, 16); if p: 0x004F77F8(p, a1, a0), vtable 0x00B0E010; returns p (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00023FB0 New_00023FB0             // p = Mem_Alloc(36, 0, 16); if p: 0x004F77F8(p, a1, a0), vtable 0x00B0E1A0; returns p (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0002EB74 New_0002EB74             // p = Mem_Alloc(40, 0, 16); if p: 0x004F77F8(p, a1, a0), vtable 0x00B0E5A0; returns p (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0003C000 New_0003C000             // p = Mem_Alloc(36, 0, 16); if p: 0x004F77F8(p, a1, a0), vtable 0x00B0E734; returns p (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0011375C VtB13F70_Delete          // deleting: vtable 0x00B13F70, the +84 reference released, base vtable 0x00B0DAEC, SmallFree(this, 128) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0011454C VtB14020_Delete          // deleting: vtable 0x00B14020, the +12 reference released, base vtable 0x00B0DAEC, SmallFree(this, 176) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00749588 VtB13B38_Delete          // deleting: vtable 0x00B13B38, the +84 reference released, base vtable 0x00B0DAEC, SmallFree(this, 112) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00749904 VtB13FC8_Delete          // deleting: vtable 0x00B13FC8, the +136 reference released, base vtable 0x00B0DAEC, SmallFree(this, 160) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00762DB4 VtB1BEF0_Delete          // deleting: vtable 0x00B1BEF0, PtrVector +20, unregistered, SmallFree(this, 44) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00763F90 VtB1C568_Delete          // deleting: vtable 0x00B1C568, PtrVector +96, unregistered, SmallFree(this, 128) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007640A8 VtB1C5C0_Delete          // deleting: vtable 0x00B1C5C0, PtrVector +20, unregistered, SmallFree(this, 40) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00765148 VtB1CD48_Delete          // deleting: vtable 0x00B1CD48, PtrVector +20, unregistered, SmallFree(this, 44) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00772FF0 VtB1F898_Delete          // deleting: vtable 0x00B1F898, +148 / +196 freed, base vtable 0x00B1F668, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00773108 VtB1F8D0_Delete          // deleting: vtable 0x00B1F8D0, +180 / +184 freed, base vtable 0x00B1F668, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00773220 VtB1F908_Delete          // deleting: vtable 0x00B1F908, +176 / +180 freed, base vtable 0x00B1F668, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00773338 VtB1F940_Delete          // deleting: vtable 0x00B1F940, +176 / +180 freed, base vtable 0x00B1F668, Mem_FreeFrom (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00775228 Node_ParamByte_00775228  // (node): the record byte selected by the +7 byte of the other record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007752BC Node_ParamByte_007752BC  // (node): the record byte selected by the +8 byte of the other record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00775350 Node_ParamByte_00775350  // (node): the record byte selected by the +5 byte of the other record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00775550 Node_ParamByte_00775550  // (node): the record byte selected by the +6 byte of the other record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770FA4 AdjDtor_00770FA4         // p = this -20: five vtables (0x00B13974 at +0), then the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00771044 AdjDtor_00771044         // p = this -16: five vtables (0x00B13974 at +0), then the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007710E4 AdjDtor_007710E4         // p = this -12: five vtables (0x00B13974 at +0), then the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00771184 AdjDtor_00771184         // p = this -8: five vtables (0x00B13974 at +0), then the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007444B8 Obj_TestVCall_007444B8   // if 0x000E0BCC(this): r = vfn[8](this, 0); r 0 / 1: vfn[7](this, 0, 2) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074455C Obj_TestVCall_0074455C   // if 0x000E0BCC(this): r = vfn[8](this, 0); r 0 / 1: vfn[7](this, 0, 2) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00744600 Obj_TestVCall_00744600   // if 0x000E0BCC(this): r = vfn[8](this, 0); r 0 / 1: vfn[7](this, 0, 2) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007446A4 Obj_TestVCall_007446A4   // if 0x000E0BCC(this): r = vfn[8](this, 0); r 0 / 1: vfn[7](this, 0, 2) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770A78 AdjDtor_00770A78         // p = this -20: five vtables (0x00B1F298 at +0), 0x00884FB8(p), the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770B1C AdjDtor_00770B1C         // p = this -16: five vtables (0x00B1F298 at +0), 0x00884FB8(p), the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770BC0 AdjDtor_00770BC0         // p = this -12: five vtables (0x00B1F298 at +0), 0x00884FB8(p), the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00770C64 AdjDtor_00770C64         // p = this -8: five vtables (0x00B1F298 at +0), 0x00884FB8(p), the manager notified (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00087084 NewFlag_00087084         // (?, cursor): Mem_Alloc(16), 0x004BB3B0(p, cursor), vtable 0x00B10198, +12 = 1, 0x004F986C(cursor, 0x8629270A, &p->+12, 1) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000968A8 NewFlag_000968A8         // (?, cursor): Mem_Alloc(16), 0x004BB3B0(p, cursor), vtable 0x00B10BE8, +12 = 1, 0x004F986C(cursor, 0x83F172B0, &p->+12, 1) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000A45EC NewFlag_000A45EC         // (?, cursor): Mem_Alloc(16), 0x004BB3B0(p, cursor), vtable 0x00B11800, +12 = 1, 0x004F986C(cursor, 0xF4798D88, &p->+12, 1) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000A4758 NewFlag_000A4758         // (?, cursor): Mem_Alloc(16), 0x004BB3B0(p, cursor), vtable 0x00B11828, +12 = 1, 0x004F986C(cursor, 0xF4798D88, &p->+12, 1) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007479D0 AdjDtor_007479D0         // p = this -384: vtable 0x00B12898, the +388 PtrVector* freed, base vtable 0x00B12550, 0x000D7024(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00747A88 AdjDtor_00747A88         // p = this -380: vtable 0x00B12898, the +388 PtrVector* freed, base vtable 0x00B12550, 0x000D7024(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00747FF4 AdjDtor_00747FF4         // p = this -384: vtable 0x00B12898, the +388 PtrVector* freed, base vtable 0x00B12550, 0x000D7024(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007480AC AdjDtor_007480AC         // p = this -380: vtable 0x00B12898, the +388 PtrVector* freed, base vtable 0x00B12550, 0x000D7024(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077565C Cmd_PushOp6_0077565C     // (u16 v, Ctx** pc): a kind-6 record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00775794 Cmd_PushOp6_00775794     // (u16 v, Ctx** pc): a kind-6 record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007758CC Cmd_PushOp6_007758CC     // (u16 v, Ctx** pc): a kind-6 record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00775A04 Cmd_PushOp6_00775A04     // (u16 v, Ctx** pc): a kind-6 record (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00070040 NewBind2_00070040        // (?, cursor): Mem_Alloc(20), 0x004BB3B0(p, cursor), vtable 0x00B0F388, 0x004FA14C(cursor, 0x8A93973F / 0x7A30D7E3, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00071C7C NewBind2_00071C7C        // (?, cursor): Mem_Alloc(20), 0x004BB3B0(p, cursor), vtable 0x00B0F400, 0x004FA14C(cursor, 0x8C3DFCAA / 0x03D1FCFC, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0008B558 NewBind2_0008B558        // (?, cursor): Mem_Alloc(20), 0x004BB3B0(p, cursor), vtable 0x00B105A8, 0x004FA14C(cursor, 0x8A93973F / 0x7A30D7E3, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0009BCEC NewBind2_0009BCEC        // (?, cursor): Mem_Alloc(20), 0x004BB3B0(p, cursor), vtable 0x00B11050, 0x004FA14C(cursor, 0xE7E52D0D / 0x523827DF, &p->+12 / +16) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+002E9EBC Table64_Load_002E9EBC    // (reader): the table at 0x010687D0 read (64 bytes after a dropped u8), 0x01068720 = &table[1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B2B50 Table64_Load_004B2B50    // (reader): the table at 0x010C2708 read (64 bytes after a dropped u8), 0x00F65FEC = &table[1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004F4F90 Table64_Load_004F4F90    // (reader): the table at 0x010C2D20 read (64 bytes after a dropped u8), 0x00F668D4 = &table[1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004F51F8 Table64_Load_004F51F8    // (reader): the table at 0x010C2D70 read (64 bytes after a dropped u8), 0x00F668D4 = &table[1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00747830 AdjDelete_00747830       // deleting: p = this -384, as AdjDtor, then 0x0054EE6C(p, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00747900 AdjDelete_00747900       // deleting: p = this -380, as AdjDtor, then 0x0054EE6C(p, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00747E54 AdjDelete_00747E54       // deleting: p = this -384, as AdjDtor, then 0x00552420(p, 432) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00747F24 AdjDelete_00747F24       // deleting: p = this -380, as AdjDtor, then 0x00552420(p, 432) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00751750 AdjDtor_00751750         // p = this -384: vtable 0x00B15310, PtrVector +424, then the +388 PtrVector* class, 0x000DF934(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075184C AdjDtor_0075184C         // p = this -380: vtable 0x00B15310, PtrVector +424, then the +388 PtrVector* class, 0x000DF934(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00757110 AdjDtor_00757110         // p = this -384: vtable 0x00B18038, PtrVector +424, then the +388 PtrVector* class, 0x000DF934(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075720C AdjDtor_0075720C         // p = this -380: vtable 0x00B18038, PtrVector +424, then the +388 PtrVector* class, 0x000DF934(p) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00751520 AdjDelete_00751520       // deleting: p = this -384, as AdjDtor (vtable 0x00B15310), SmallFree(p, 480) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00751638 AdjDelete_00751638       // deleting: p = this -380, as AdjDtor (vtable 0x00B15310), SmallFree(p, 480) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00756EE0 AdjDelete_00756EE0       // deleting: p = this -384, as AdjDtor (vtable 0x00B18038), SmallFree(p, 624) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00756FF8 AdjDelete_00756FF8       // deleting: p = this -380, as AdjDtor (vtable 0x00B18038), SmallFree(p, 624) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B49E0 Pool_NewRec_004B49E0     // (a0, pool, a2): a kind-5 76-byte record from the pool, 0x004B42CC / 0x004B46A8 on its +4 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B53CC Pool_NewRec_004B53CC     // (a0, pool, a2): a kind-7 76-byte record from the pool, 0x004B4AEC / 0x004B4EC8 on its +4 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B5C70 Pool_NewRec_004B5C70     // (a0, pool, a2): a kind-11 76-byte record from the pool, 0x004B54D0 / 0x004B5918 on its +4 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B6658 Pool_NewRec_004B6658     // (a0, pool, a2): a kind-9 76-byte record from the pool, 0x004B5D78 / 0x004B6120 on its +4 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004E4E78 Obj_GetSize_004E4E78     // (Vec2* out, o): child, screen or own size scaled by +168 / +172 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004E80A8 Obj_GetSize_004E80A8     // (Vec2* out, o): child, screen or own size scaled by +240 / +244 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004E8E3C Obj_GetSize_004E8E3C     // (Vec2* out, o): child, screen or own size scaled by +168 / +172 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004E971C Obj_GetSize_004E971C     // (Vec2* out, o): child, screen or own size scaled by +168 / +172 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0020D478 VtB19558_Delete          // deleting: ~T() (vtable 0x00B19558), then 0x0054EE6C(this, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00759FB4 VtB19558_Delete_00759FB4 // deleting: ~T() (vtable 0x00B19558), then 0x00552420(this, 432) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075A250 VtB19558_Delete_0075A250 // deleting: ~T() (vtable 0x00B19558), then 0x0054EE6C(this, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075BC54 VtB19558_Delete_0075BC54 // deleting: ~T() (vtable 0x00B19558), then 0x00552420(this, 688) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00784FE4 SlotList_Grow_00784FE4   // (list, s32 n): the slots moved to an n-slot block, the new ones chained onto the free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0079A528 SlotList_Grow_0079A528   // (list, s32 n): the slots moved to an n-slot block, the new ones chained onto the free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0079B3B0 SlotList_Grow_0079B3B0   // (list, s32 n): the slots moved to an n-slot block, the new ones chained onto the free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0079BB70 SlotList_Grow_0079BB70   // (list, s32 n): the slots moved to an n-slot block, the new ones chained onto the free list (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00376A20 Elems_Sync_00376A20      // (o): the flagged object matrices to the (o+8)->+196 elements (slots 20 / 152 / 156) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00379960 Elems_Sync_00379960      // (o): the flagged object matrices to the (o+8)->+184 elements (slots 20 / 152 / 156) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0037DED8 Elems_Sync_0037DED8      // (o): the flagged object matrices to the (o+8)->+180 elements (slots 20 / 152 / 156) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00380CF8 Elems_Sync_00380CF8      // (o): the flagged object matrices to the (o+8)->+180 elements (slots 20 / 152 / 156) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00168BD0 Obj_HitImpulse_00168BD0  // (o, const Params* p): impulse to the +388 component, slot 352 reaction, p+14 |= 0x100 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00178F20 Obj_HitImpulse_00178F20  // (o, const Params* p): impulse to the +388 component, slot 352 reaction, p+14 |= 0x100 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001850F0 Obj_HitImpulse_001850F0  // (o, const Params* p): impulse to the +388 component, slot 352 reaction, p+14 |= 0x100 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001FBF80 Obj_HitImpulse_001FBF80  // (o, const Params* p): impulse to the +416 component, slot 352 reaction, p+14 |= 0x100 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00452024 Obj_SubAddr_00452024     // this->+60 + 80 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00734CB8 Obj_SubAddr_00734CB8     // this->+4 + 80 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074C5D4 Obj_SubAddr_0074C5D4     // this->+216 + 196 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00354150 Obj_SetF32Via_00354150   // q = this->+32; if q: q->+8 = f1 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00354184 Obj_SetF32Via_00354184   // q = this->+36; if q: q->+60 = f1 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00354254 Obj_SetF32Via_00354254   // q = this->+36; if q: q->+64 = f1 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B9BD8 Obj_GetVia_004B9BD8      // q = this->+24; q ? (s32)q->+4 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B9BF8 Obj_GetVia_004B9BF8      // q = this->+12; q ? (s32)q->+4 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+004B9C18 Obj_GetVia_004B9C18      // q = this->+16; q ? (s32)q->+4 : 0 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0012D354 Wrapper0_0012D354        // 0x001231B8(this, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001EE940 Wrapper0_001EE940        // 0x001EE680(this, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+002D263C Wrapper0_002D263C        // 0x002D0BA0(this, 0) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00313274 Obj_CopyVec3_00313274    // q = this->+32: q->+992..1000 = (q->+872)->+32..40 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00314200 Obj_CopyVec3_00314200    // q = this->+32: q->+992..1000 = (q->+872)->+32..40 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00316524 Obj_CopyVec3_00316524    // q = this->+32: q->+992..1000 = (q->+872)->+32..40 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007361E4 Obj_SetF32_007361E4      // this->+72 = f1 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00738E00 Obj_SetF32_00738E00      // this->+316 = f1 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00795E74 Obj_SetF32_00795E74      // this->+176 = f1 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+001BD440 Obj_SetFlag16_001BD440   // this->+394 |= 0x00000400 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007497E0 Obj_SetFlag16_007497E0   // this->+182 |= 0x00002000 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007497F0 Obj_SetFlag16_007497F0   // this->+182 |= 0x00002000 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+002FBB30 Obj_FieldIs_002FBB30     // this->+20 == 2 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007390CC Obj_FieldIs_007390CC     // this->+4 == 43 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+007390E0 Obj_FieldIs_007390E0     // this->+4 == 44 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00464578 Copy8_00464578           // this->+32[0..1] = a1->+0[0..1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00748FF8 Copy8_00748FF8           // this->+72[0..1] = a1->+0[0..1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00796538 Copy8_00796538           // this->+0[0..1] = a1->+240[0..1] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000EFFC8 Obj_FlagVia_000EFFC8     // (this->+216)->+372 & 0x00008000 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074CFE8 Obj_FlagVia_0074CFE8     // (this->+208)->+112 & 0x80000000 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074E738 Obj_FlagVia_0074E738     // (this->+216)->+452 & 0x08000000 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00185AC8 Copy12_00185AC8          // dst[0..2] = a1->+144[0..2] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00743754 Copy12_00743754          // dst[0..2] = a1->+144[0..2] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0075DB90 Copy12_0075DB90          // dst[0..2] = a1->+144[0..2] (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074C79C Obj_AnyFlag_0074C79C     // this->+300 & (0x40000000 | 0x20000000) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00760810 Obj_AnyFlag_00760810     // this->+172 & (0x00000040 | 0x00000020) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00772808 Obj_AnyFlag_00772808     // this->+532 & (0x02000000 | 0x01000000) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00735A90 Obj_SetClamped_00735A90  // this->+168 = f1 clamped by the constants at 0x00735A70 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00735B28 Obj_SetClamped_00735B28  // this->+196 = f1 clamped by the constants at 0x00735B08 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00761730 Obj_SetClamped_00761730  // this->+48 = f1 clamped by the constants at 0x00761710 (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0074D21C Def_Get_0074D21C         // (key): *0x007335C4((*0x00F8F158)->+16, &key) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00772838 Def_Get_00772838         // (key): *0x0073343C((*0x00F8F154)->+16, &key) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0077CEBC Def_Get_0077CEBC         // (key): *0x0073374C((*0x00F8F134)->+16, &key) (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0001819C Obj_MemberVCall_0001819C // (this->+24)->vfn[5]() (template instance); decompiled: src/obj/obj20_tmpl.cpp
+000181DC Obj_MemberVCall_000181DC // (this->+24)->vfn[7]() (template instance); decompiled: src/obj/obj20_tmpl.cpp
+00760E54 Obj_MemberVCall_00760E54 // (this->+216)->vfn[4]() (template instance); decompiled: src/obj/obj20_tmpl.cpp
+0038E5DC Cond_Init                // (Cond* p, s16 id, const char* class name, u32 kind) (name?); called by the New_C* factories (src/obj/obj20_tmpl.cpp); not decompiled
+000E0BCC Obj_TestE0BCC            // (obj) -> bool, gates Obj_TestVCall_* / Obj_HitImpulse_* (name?); not decompiled
+0073A36C Avl_Remove_0073A36C      // (tree, key, Node** pp, bool* changed): 764-insn recursive AVL remove, 9 instances (group 7bad4600) (name?); not decompiled
