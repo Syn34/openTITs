@@ -3527,10 +3527,7 @@
 00590DA0 Lights_CollectGlobal     // (): config +176 ambient / +192 sun colour / +208 sun dir from placed type-0 / type-1 light instances (name?); decompiled: src/obj/obj17.cpp
 00585EF0 LightDef_FromRecord      // (LightDef*, const LightRec*): sphere, name, colour /255, sqrt intensity, ranges, clamps, box (name?); decompiled: src/obj/obj17.cpp
 0059C294 LightDef_Read            // (IffReader*, LightDef*) -> 1: versioned light record -> LightDef_FromRecord; decompiled: src/obj/obj18.cpp
-0059B788 GeomDef_ReadChunks       // (IffReader*): GeomDef_New, Iff_ReadChunks, LOD byte fix-ups (name?)
 00735F28 Mem_NewArray                     // void* Mem_NewArray(u32 size): Mem_Alloc(size, 0, 16) (name?); decompiled: src/obj/obj21.cpp
-0055EA6C Plane_Transform          // (f32 plane[4], const f32 m[16]): by the inverse transpose (Mat4_Invert + Vec4_TransformByMatrix) (name?)
-00578F64 Quads_ClipSetup          // (out, planes, +16, +32, +48, near plane, -view dir) (name?)
 00578868 Quad_InClip              // (clip, quad) -> bool (name?)
 00577E40 Quad_InFrustum           // (quad, near plane, viewproj, planes) -> bool (name?)
 00598B3C Bank_PreUpdate           // (Obj*): once a frame: quads, view state, zone mask, sky flag, light grid, slots, items, view matrices (name?); decompiled: src/obj/obj18.cpp
@@ -8556,7 +8553,6 @@
 005C0F50 SlyCharacterFur_LoadParams          // [vtable 0x00B259F0 slot 3] (type, Material*, Desc*) -> 1 (name?); decompiled: src/gfx/gfx16.cpp
 00528130 EmitterJobs_Submit_00528130         // () batched emitter items -> slots / 144-byte records, SPU jobs of 16 via f_0056F050 (name?); decompiled: src/gfx/gfx16.cpp
 0056F050 EmitterJob_Run_0056F050             // (const JobHeader*, records, u32 count, u32** busy) under the job mutex: queue acquire, WorkQueue_Fn56EEF0, submit (name?); decompiled: src/gfx/gfx17.cpp
-00506598 EmitterDraw_00506598                // (Emitter*, record, const f32 view[4][4], x, u16 y) (name?)
 0053C4A0 Display_WaitVSync_0053C4A0          // () mftb / usleep frame pacing, label 251, vblank waits (name?) - skipped (timing loop)
 
 # World event handler callees, part 23
@@ -8886,8 +8882,8 @@
 0054A490 Iff_ReadGDEM_0054A490               // bool (IffReader*, Obj*): the 'GDEM' chunk handler (OPD 0x00F3BEB0): 128-byte records, pool-6 data, optional RSX buffer parts (name?); decompiled: src/gfx/gfx18.cpp
 0052C6B8 Obj23D50_FitBoxes_0052C6B8          // (Obj23D50*): look-at along o+32, each entry's objects' boxes / matrices into its space -> Obj23D50_FitBox_0052BC9C (name?); decompiled: src/gfx/gfx18.cpp
 0051B788 Mesh_CreateSphere_0051B788          // Mesh* (Material*, s32 rings, s32 segments): "Sphere" triangle-strip submesh (name?); decompiled: src/gfx/gfx18.cpp
-0052BC9C Obj23D50_FitBox_0052BC9C            // (o, const f32 box[8] {min, -, max, -}, const f32 m[4][4]) (name?)
-00565550 DebugFont_Draw_00565550             // (DebugFont*, FrameBuffer*, const f32 pos[3], const char*, colour*; f1 size) (name?)
+0052BC9C Obj23D50_FitBox_0052BC9C // (o unread, const f32 box[8], const f32 m[4][4]): stencil-marks the box (14-vertex strip inline, INCR/DECR_WRAP two-sided), then stencil off (name?); decompiled: src/gfx/gfx20.cpp
+00565550 DebugFont_Draw_00565550  // (DebugFont*, FrameBuffer*, const f32 pos[3], const char*, const u8 colour[4]; f1 size): 6-vertex quads per glyph, tabs to multiples of 30 (name?); decompiled: src/gfx/gfx20.cpp
 00731620 Mem_NewAligned_00731620             // (u32 size, u32 align) -> pointer (Mem_NewAligned's neighbour) (name?)
 
 # Game code sweep part 23
@@ -9409,3 +9405,16 @@
 00356BA0 Obj_Construct356BA0                  // (Object* 976 bytes, Def*) (+80 bit 16) (name?)
 0106C228 g_ObjectsById                        // {id, Object*} map (data) (name?)
 0106C258 g_ObjectsType4ById                   // {id, Object*} map of +80 bit 2 objects (data) (name?)
+
+# Renderer sweep part 14
+005AC840 Lights_Cull_005AC840     // (View*): rebuilds the light list (0x011950B0) from the light table: look-at bounding sphere vs the 6 planes (Sphere_FrustumFine when crossing), view-depth fade, max 12, flagged ones appended (name?); decompiled: src/gfx/gfx20.cpp
+00506598 Emitter_BuildParticles_00506598 // (Emitter*, rec, const f32 view[4][4], Occluder*, u16 n): per-particle colour/pos/view pos/size/uv/spin/layer/dir arrays, rec+124 = count (stops past index 512) (name?); decompiled: src/gfx/gfx20.cpp
+0055EA6C Plane_TransformInverse_0055EA6C // (f32 plane[4], const f32 m[4][4]) -> plane: by inverse(transpose(m)) (the symbols.txt line called it Plane_Transform, taken by 0055E940) (name?); decompiled: src/gfx/gfx20.cpp
+004FB5E0 LoadProgress_Update_004FB5E0 // (?, s32 stage, s32 done, s32 total) -> 0: loading bar (stages 5/7 weigh 10, 6 weighs 80; unknown stage marks 0x00F668E8 +94) (name?); decompiled: src/gfx/gfx20.cpp
+0058CD44 Records_AddList_0058CD44 // (Obj*, Item** items, u32 n): view set from slot 13, Records_AddToViews per item's resource entry (runs once for n = 0) (name?); decompiled: src/gfx/gfx20.cpp
+0059B388 Quads_ReadCorners_0059B388 // (IffReader*) -> 1: bank quads' 4 corners each (FileReader_ReadVec3Swapped) (name?); decompiled: src/gfx/gfx20.cpp
+0059B648 Quads_ReadNames_0059B648 // (IffReader*) -> 1: bank quads' names (64-byte records, 31 chars to +70) (name?); decompiled: src/gfx/gfx20.cpp
+0058E990 Tree_Collect_0058E990    // (Collector*, Node*) -> Collector*: node, children (+268), siblings (+272) appended to +36 PtrVector, level to flags bits 6..9 (name?); decompiled: src/gfx/gfx20.cpp
+0059B788 GeomDef_ReadChunks_0059B788 // (IffReader*) -> 1: GeomDef_New, class hooks (*0x00F8F12C +8), Iff_ReadChunks, LOD fix-ups, named map or delete (replaces "GeomDef_ReadChunks") (name?); decompiled: src/gfx/gfx20.cpp
+00578F64 Quads_ClipSetup_00578F64 // (Clip* out, p0..p5): 6 planes, transposed copies + pad plane, 8 corners via Plane_Intersect3 negated (name?); decompiled: src/gfx/gfx20.cpp
+0058E680 Node_SyncTree_0058E680   // (Scene*, Node*) -> flags: emitter def copies, recursion, attached-transform rotation, dirty-list queueing (name?); decompiled: src/gfx/gfx20.cpp
