@@ -5418,20 +5418,17 @@
 0054DD38 TargetArray_Destruct_0054DD38       // () static target array 0x011641F0 (2); decompiled: src/gfx/gfx12.cpp (name?)
 0054DF2C TargetArray_Destruct_0054DF2C       // () static target array 0x01164258 (2); decompiled: src/gfx/gfx12.cpp (name?)
 005DB4BC Game_ShutdownSystems_005DB4BC       // () -> bool: static holder release + 5 subsystem shutdowns; decompiled: src/gfx/gfx12.cpp (name?)
-0051669C DrawQueue_Submit_0051669C           // (Batch*) records to a job (CmdBuf_ReserveCall, WorkQueue_Submit) (name?)
-005203A8 RenderTarget_Setup_005203A8         // (RenderTarget*) after RenderTarget_Init_00521110 (name?)
-005358A8 Display_Prepare_005358A8            // (u32 3) (name?)
-0053B668 Surface_Bind_0053B668               // (RenderSurface*, 1) (name?)
-005109B0 RenderTarget_Draw_005109B0          // (RenderTarget*) after View_Update (name?)
-004FCD78 Mesh_SetFlag_004FCD78               // (Mesh*, 3) (name?)
-005AF298 Shader_IsReady_005AF298             // (0x01196B20, Material*, Desc*) -> bool; reads r4/r5 (name?)
+0051669C DrawQueue_Submit_0051669C           // (Batch*) stride to *+24, 224-byte job (cmd buffer, reserved call, view matrix, draw-record block), WorkQueue_Submit56E710 (name?); decompiled: src/gfx/gfx13.cpp
+005203A8 RenderTarget_Setup_005203A8         // (rt) defaults, identity matrix, viewport, "RenderTarget", post chain +656 (6848 bytes), +660 = OPD 0x00F3B440 -> returns chain (name?); decompiled: src/gfx/gfx13.cpp
+005358A8 Display_Prepare_005358A8            // (u32 msaa) display mode 2..7 with +137 set / +138 clear: MSAA resolve quad, render state reset (name?); decompiled: src/gfx/gfx13.cpp
+0053B668 Surface_Bind_0053B668               // (RenderSurface*, bool clear) bind colour/depth targets by mode, colour mask, viewport/scissor, optional clear (name?); decompiled: src/gfx/gfx13.cpp
 005E3EC8 cellGcmSetTextureAddress            // (ctx, index, wraps, wrapt, wrapr, unsigned remap, zfunc, gamma) libgcm (name?)
 005E4B24 cellGcmSetTransferScaleMode         // (ctx, mode, surface) libgcm (name?)
 005E4C2C cellGcmSetTransferScaleSurface      // (ctx, CellGcmTransferScale*, CellGcmTransferSurface*) libgcm (name?)
-00500908 Emitter_Advance_00500908            // (Emitter*; f1 dt) (name?)
-0079D280 Emitter_Emit_0079D280               // (Emitter*; f1 time offset) one particle (name?)
+00500908 Emitter_Advance_00500908            // (Emitter*; f1 dt) time, on/off phases (+64 bits 3..4, timer +20), emission count +16, target velocity (name?); decompiled: src/gfx/gfx13.cpp
+0079D280 Emitter_Emit_0079D280               // (Emitter*; f1 t) -> Particle*: next ring entry from the shape, transform, random colour/size bytes (name?); decompiled: src/gfx/gfx13.cpp
 004FD198 Obj_DestructBase_004FD198           // (obj) base destructor part (name?)
-0050FB5C Render_Shutdown_0050FB5C            // () -> bool (name?)
+0050FB5C Render_Shutdown_0050FB5C            // () -> 1: draw records, object list 0x00F66FD0, pools, frame block buffers, render-target allocator, RenderJobs_Shutdown (name?); decompiled: src/gfx/gfx13.cpp
 
 # World event handler callees, part 18
 00350178 Node_Init350178                      // (Node*, u32 owner +28, 0) (name?)
@@ -5451,3 +5448,35 @@
 00254210 Track_Stop254210                     // (Animator*, Object*, Track*) (name?)
 000D2E68 Obj_Prepare0D2E68                    // (WorldObj*, 1) (name?)
 00348ECC Line_Find348ECC                      // (u32 hash) -> Line* or 0 (name?)
+
+# Renderer sweep part 7
+005AF298 LoadParams_005AF298                 // (ShaderType*, Material*, Desc*) -> bool: tex d+4, params 0..9 (8/9 deg->rad from version 9) (was Shader_IsReady_005AF298) (name?); decompiled: src/gfx/gfx13.cpp
+004FCD78 Skin_LimitWeights_004FCD78          // (Mesh*, s32 bones) skin records m+72 (m+40 of 8 bytes) cut to `bones` influences, renormalised to 255 (was Mesh_SetFlag_004FCD78) (name?); decompiled: src/gfx/gfx13.cpp
+004FCE70 Stream_NextSlot_004FCE70            // (o) -> u8 o+109++ (name?); decompiled: src/gfx/gfx13.cpp
+005109B0 RenderTarget_Sync_005109B0          // (rt) member-wise copy into the render-side copy rt+672 (was RenderTarget_Draw_005109B0) (name?); decompiled: src/gfx/gfx13.cpp
+005AC280 EffectSlots_Cull_005AC280           // (View*) effect slots in range and in the frustum -> EffectSlot_Submit_005AB908 (name?); decompiled: src/gfx/gfx13.cpp
+00538950 Streams_Bind_00538950               // (Streams*, MeshData*) stream records from the bank 0x01164DEC (+24/+28, +60, +48/+52) with RSX offsets (name?); decompiled: src/gfx/gfx13.cpp
+005284C0 Iff_HandleEmitProps_005284C0        // [IFF chunk handler] (r, owner) new AglEmitProperties from its list allocator, chunks (name?); decompiled: src/gfx/gfx13.cpp
+0051F1C0 ScreenWarp_Construct_0051F1C0       // (ScreenWarp*) vtable 0x00B23650, 8x8 grid index strips, "ScreenWarp" + hash (name?); decompiled: src/gfx/gfx13.cpp
+00534BAC Display_BindResolve_00534BAC        // (display, unit) resolve target (+76 / +128) as texture (name?); decompiled: src/gfx/gfx13.cpp
+005CD100 LoadParams_005CD100                 // [LoadParams] two textures, params 0..4 (name?); decompiled: src/gfx/gfx13.cpp
+005241F0 Iff_HandlePacked10_005241F0         // [IFF chunk handler] (r, o) 4 x u16 entries packed to 5 bytes (10-bit) at o+12 (name?); decompiled: src/gfx/gfx13.cpp
+00506340 Emitter_UpdateSeen_00506340         // [called through a pointer] (Emitter*; f1 dt) Emitter_Update_007A0C10 gated on visibility (name?); decompiled: src/gfx/gfx13.cpp
+005129BC RenderThread_Create_005129BC        // (a, b) -> u64 thread id: "AglRenderThread", two event flags, Thread_Create (name?); decompiled: src/gfx/gfx13.cpp
+005052FC EmitterDraw_Layered_005052FC        // (Emitter*, list, x) particles bucketed per layer then drawn (name?); decompiled: src/gfx/gfx13.cpp
+00505518 EmitterDraw_Matrices_00505518       // (Emitter*, list, x) per-particle matrices 0x010D4740, then EmitterDraw_Layered (name?); decompiled: src/gfx/gfx13.cpp
+00504D40 EmitterDraw_BindLayer_00504D40      // (Emitter*, u32 layer) layer mesh's vertex arrays inline (name?); decompiled: src/gfx/gfx13.cpp
+00504F68 EmitterDraw_Particle_00504F68       // (Emitter*, list, layer, index, x) vertex constants 0..4, draw (indexed or arrays) (name?); decompiled: src/gfx/gfx13.cpp
+005CBE90 LoadParams_005CBE90                 // [LoadParams] upgrades descs below version 4 (fails), else two textures, params 0..2 (name?); decompiled: src/gfx/gfx13.cpp
+007A4874 Pack_Entry_007A4874                 // (Pack*, s32 i, u32* size) -> data pointer, byte-swapped table (name?); decompiled: src/gfx/gfx13.cpp
+00522A64 View_SetOrtho_00522A64              // [called through a pointer] (View*; f1..f4 l r b t) ortho projection, view-proj, frustum, constants (name?); decompiled: src/gfx/gfx13.cpp
+005A9B48 Poly_ClipPlane_005A9B48             // (plane, in[][4], n, out[][4], u32* count) Sutherland-Hodgman against one plane (name?); decompiled: src/gfx/gfx13.cpp
+0050ECD4 Graphics_InitFormats_0050ECD4       // () -> 1: two vertex formats 0x010DC740, draw ring 0x010DDBB4 (name?); decompiled: src/gfx/gfx13.cpp
+005B6528 LoadParams_005B6528                 // [LoadParams] LoadParams_005AF298 then params 10..20 by version (name?); decompiled: src/gfx/gfx13.cpp
+005AA718 Material_SetMatrixParams_005AA718   // (Material*, v, f32 src[16]) Obj_SetSlot20(m, v, 1), params 3..18 (name?); decompiled: src/gfx/gfx13.cpp
+00529D80 Iff_HandleScaleCurve_00529D80       // [IFF chunk handler] (r, EmitProps*) "variance" clamped, new scale curve +116, "Scale" keys (name?); decompiled: src/gfx/gfx13.cpp
+005B44B4 LoadParams_005B44B4                 // [LoadParams] tex d+4 (t,1,3,1), m+120 mode nibble, then two textures, params 0..2 (name?); decompiled: src/gfx/gfx13.cpp
+0051F850 PostChain_Construct_0051F850        // (PostChain*) 6848 bytes: "Bloom", "Desaturation", "Blur", "RadialBlur", "GodRays", "BloomNoise", ScreenWarp (name?)
+005AB908 EffectSlot_Submit_005AB908          // (View*, EffectSlot*) called for visible owner-less effect slots (name?)
+005E3C38 cellGcmSetAntiAliasingControl       // (context, enable, alpha to coverage, alpha to one, sample mask) method 0x1D7C libgcm (name?)
+005E2590 cellGcmSetAntiAliasingControl_005E2590  // the same with the command-buffer space check libgcm (name?)
