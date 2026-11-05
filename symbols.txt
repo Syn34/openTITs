@@ -5515,7 +5515,7 @@
 005E6CC0 Lock_Enter5E6CC0                     // (lock*) (name?)
 005E6C68 Lock_Leave5E6C68                     // (lock*) (name?)
 0079BD1C Queue_Push79BD1C                     // (out*, Queue*, const s32*) (name?)
-00369D98 Request_Do369D98                     // (block 0x0106C330, a, -, c; f1) (name?)
+00369D98 Request_Do369D98                     // (Request* 0x0106C330, key, -, const vec3* pos; f32 t) -> b+20: "%i" anim, world object scale/matrix (Mat34_FromRotPos553B4C), timings and positions; decompiled: src/world/hevent24_c.cpp (name?)
 000CC188 Target_0CC188                        // (r3..r8, u8, u8; f1; stack args 8 / 10) (name?)
 
 # Template instances, project-wide (obj19)
@@ -7489,8 +7489,8 @@
 0078C2C0 Avl_RotateL_0078C2C0     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0078E2C8 Avl_RotateR_0078E2C8     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0078E410 Avl_RotateL_0078E410     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
-0078F180 Avl_RotateR_0078F180     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
-0078F2C8 Avl_RotateL_0078F2C8     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
+0078F180 AvlF_RotateRight78F180               // (Tree*, Node** link) float-key AVL right rotation (name?); decompiled: src/obj/obj19_tmpl2.cpp
+0078F2C8 AvlF_RotateLeft78F2C8                // (Tree*, Node** link) float-key AVL left rotation (name?); decompiled: src/obj/obj19_tmpl2.cpp
 00796A80 Avl_RotateR_00796A80     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 00796BC8 Avl_RotateL_00796BC8     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 00797C70 Avl_RotateR_00797C70     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
@@ -8587,15 +8587,15 @@
 00467610 Hud_Rescale467610                    // (): 13 HUD elements 0x00F65DF4 rescaled (display height / 720, render / display size); decompiled: src/world/hevent23_h.cpp (name?)
 0034A8DC Anim_LoadFile34A8DC                  // (path, arg) -> u32: File_Open "rb", stack stream, Hk_Load802E08, 0x0034A5E4(path, arg, obj, size); decompiled: src/world/hevent23_i.cpp (name?)
 00349EAC Scene_LoadFile349EAC                 // (path, arg) -> u32: as 0x0034A8DC with rewind, 0x00348F04(arg, path, obj, size, 0); decompiled: src/world/hevent23_i.cpp (name?)
-0078F410 AvlF_InsertBelow78F410               // (tree, -, value, tree; f32 key): float-keyed AVL insert below the root (name?)
+0078F410 AvlF_InsertBelow78F410               // (tree, -, value, Node** link; f32 key): float-keyed AVL insert below *link, rebalance when tree +8; rotations 0x0078F2C8 / 0x0078F180; decompiled: src/world/hevent24_a.cpp (name?)
 007FECB8 Hk_ContainerClassSlot7FECB8          // () -> 0x011E2E80 (TOC constant; Havok) (name?)
 007D53AC Hk_LoadWord7D53AC                    // (u32* p) -> *p (Havok) (name?)
 007D48C4 Hk_AddRef7D48C4                      // (hkResource*) (Havok; name?)
 00802B08 Hk_FindObject802B08                  // (container, const hkClass*, 0) -> object (Havok; name?)
 007E2B38 Hk_WorldRemoveAll7E2B38              // (hkpWorld*) (Havok; name?)
-0034A5E4 Anim_Load34A5E4                      // (path, arg, obj, u32 size) -> u32 (189 insns) (name?)
+0034A5E4 Anim_Load34A5E4                      // (-, u32 key, hkResource*) -> bool: animation container (0x00802B08 or the 0x00A39858 class), resource vector 0x0106BC2C, map 0x0106BC14, "Duplicate Havok skeletons in table: %s"; decompiled: src/world/hevent24_a.cpp (name?)
 00348F04 Scene_Load348F04                     // (arg, path, obj, u32 size, 0) -> u32 (1000 insns) (name?)
-00385008 Spk_Refresh385008                    // (SpeakerObj*) (958 insns) (name?)
+00385008 Spk_Refresh385008                    // (SpeakerObj*): mode 1, say/effect, def widgets, map section from the player height, episode/job/goal/percent/stat texts via 0x00384EE4, map projection +544..+584, hideout back button; decompiled: src/world/hevent24_a.cpp (name?)
 
 # Game code sweep, part 22
 0045666C List32_Find76_0045666C           // Obj* f(const Obj* o, s32 key): the first of the list o->+32 (linked by +72) whose +76 is key, or 0. r5 left as the last +76 read. (name?); decompiled: src/obj/obj22.cpp
@@ -8804,7 +8804,7 @@
 001A7D48 Call_CDB28_Copy180_001A7D48      // f(Obj* o, Obj* d): sub_000CDB28(o, d); d->+144 = o->+180 (name?); decompiled: src/obj/obj22.cpp
 00274144 Obj_DtorVtB1C030_00274144        // f(Obj* o): o->+0 = 0x00B1C030 (vtable); SortedMap_Remove75DE78(0x01057544, o + 36) (name?); decompiled: src/obj/obj22.cpp
 002DAE5C Player_CountCur_002DAE5C         // u32 f(Player* p): Player_Count2DAC24(p, the current slot record) (name?); decompiled: src/obj/obj22.cpp
-002DB5D4 Player_CallCur_002DB5D4          // u32 f(Player* p): sub_002DB040(p, the current slot record) (name?); decompiled: src/obj/obj22.cpp
+002DB5D4 Episode_CompletePercent2DB5D4        // (episode) -> f32 (name?); decompiled: src/obj/obj22.cpp
 002F4998 World_AddCallback3_002F4998      // f(Obj* o): World_AddTimedCallback(World, 3, 0x00F36160, o, 0) (name?); decompiled: src/obj/obj22.cpp
 002FCA20 Call_2FC600_002FCA20             // f(Obj* o, u32 h, u32 k): if (h == o->+8) sub_002FC600(o, k == 0x82485B95 ? 2 : 1, k) (name?); decompiled: src/obj/obj22.cpp
 00302F6C Xml_ReadF32_4_00302F6C           // f(Obj* o, Cursor* c): XmlCursor_ReadF32(c, 0x00274ACD, &o->+4, default (f32) 0x01069AF0->+72) (name?); decompiled: src/obj/obj22.cpp
@@ -8841,3 +8841,31 @@
 0052F91C Gcm_DumpLocks_0052F91C              // (s32 swap_label) "=== RSX Potential Locks ===" printf dump of gcm contexts and RSX labels (name?); decompiled: src/gfx/gfx17.cpp
 005BF608 SlyCharacter2_LoadParams            // [vtable 0x00B259A0 slot 3] (type, Material*, Desc*) -> 1; m+20 / two textures (3,3,1), params 0..31 (name?); decompiled: src/gfx/gfx17.cpp
 0056AEFC Debug_Draw_0056AEFC                 // () debug prim draw (ApeDebug::Prim list); NOTE leaves r4 that View_EndDraw_00522140 reads (name?)
+
+# World event handler callees, part 24
+00348BFC Anim_UnloadAll348BFC                 // () -> 0: 0x00F64C9C released, Havok resources of 0x0106BC00 / 0x0106BC2C / 0x0106BC58 released, maps 0x0106BB9C / B4 / CC freed, 0x0106BBE4 = 0; decompiled: src/world/hevent24_a.cpp (name?)
+000106EC Nav_LoadGraph106EC                   // (void** slot, const char* level): "Levels/%s/%s" NavGraph.bfx_res read whole, 0x00677C7C with identity transform; decompiled: src/world/hevent24_b.cpp (name?)
+0001A840 Obj_ShutdownSlots1A840               // (Object*): teardown twin of Obj_ResetSlots1AB3C; nav world 0x00F557EC records / handles / resource released; decompiled: src/world/hevent24_b.cpp (name?)
+000104C8 Nav_UpdatePlayer104C8                // (NavState*; f32 dt): nav step 0x0067C8B8, player on-graph test (dy in (-1, 0.5), dist2 < 1), +20 state with +24 timer, query into +12; decompiled: src/world/hevent24_b.cpp (name?)
+000147B8 Nav_ClosestPoint147B8                // (vec3* out, Object*, const vec3* target): out = +176, graph query +216 rebuilt, 0x006308AC towards target; decompiled: src/world/hevent24_b.cpp (name?)
+00018DD0 Obj_InitRing18DD0                    // (Object*) -> o+1280: Clips_Load4B229C, fields, +44 = 900, 8 ring points +112+64i = center + R(axis, i/8 turn) * offset (VMX); decompiled: src/world/hevent24_b.cpp (name?)
+0035A3A0 Obj_Construct35A3A0                  // (Object*, Def*): vtable 0x00B1F838, PtrVector +164, id array +200, intro/idle/outro hashes +188..; decompiled: src/world/hevent24_c.cpp (name?)
+0035A5B0 Obj_Construct35A5B0                  // (Object*, Def*): vtable 0x00B1F720, hashes +168/+176/+180, 16-byte records +184, six named children +188..+208; decompiled: src/world/hevent24_c.cpp (name?)
+003599C4 Obj_Construct3599C4                  // (Object*, Def*): vtable 0x00B1F8A8, intro/onupdate/idle/outro hashes +184.., id array +220, 12-byte records +208, +224 child; decompiled: src/world/hevent24_c.cpp (name?)
+004B0E70 Clips_Release4B0E70                  // (ClipTable*) -> count: used nodes' items released (callback *0x00F65F84 +292), free list rebuilt, clips released (0x004B0C70 + Mem_FreeFrom); decompiled: src/world/hevent24_c.cpp (name?)
+0031F44C Attach_Build31F44C                   // (PtrVector* out, Map* defs) -> out+20: 144-byte attachments per model entry with +52 (SortedMap_Find768AC0), pushed and 0x0031E1D8; decompiled: src/world/hevent24_c.cpp (name?)
+00A39858 Hk_AnimClassSlotA39858               // () -> 0x011F7EA4 (TOC constant; Havok) (name?)
+00384EE4 Spk_SetText384EE4                    // (SpeakerObj*, const char* text, u32 field hash) (name?)
+002E3188 Game_CompletePercent2E3188           // (session, 0) -> f32 (name?)
+0067C8B8 Nav_Step67C8B8                       // (-, const Params*; f32 dt) navigation middleware (name?)
+00677C7C Nav_AddResource677C7C                // (data, const Transform*) navigation middleware "AddResource" (name?)
+0067738C Nav_RemoveResource67738C             // (data) navigation middleware "RemoveResource" (name?)
+00630F94 NavQuery_Init630F94                  // (Query*, const vec3*, 0, params) navigation middleware (name?)
+006308AC NavQuery_Towards6308AC               // (Query* out, const vec3* target, Query* from, params) navigation middleware (name?)
+0062E164 NavQuery_IsValid62E164               // (Query*) -> bool navigation middleware (name?)
+0062D25C NavQuery_Point62D25C                 // (vec3* out, Query*, const vec3*, 0) navigation middleware (name?)
+0062D414 NavQuery_Assign62D414                // (dst, Query*) navigation middleware (name?)
+0062E094 NavQuery_Finish62E094                // (Query*) navigation middleware (name?)
+0062D08C NavQuery_Free62D08C                  // (Query*) navigation middleware (name?)
+0031E1D8 Attach_Init31E1D8                    // (Attach*) (name?)
+004B0C70 Clip_Release4B0C70                   // (Clip*) (name?)
