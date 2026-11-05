@@ -650,7 +650,7 @@
 004EB904 Levels_Parse             // (XmlElement*) (name?)
 004F936C Xml_FindChildren         // (node, name) (name?)
 005566A8 String_Append            // thunk to f_0072354C; decompiled: src/obj/obj13_misc.cpp
-004BCE90 Set_Find                 // (u32 name) -> Set* (name?)
+004BCE90 Set_Find                             // (u32 name) -> Set*: find-or-create in the effect set registry AVL 0x010C2888 (map +12, last value 0x011DE4A4); new 108-byte set inserted (0x00791D64), +0 = name (quirk: written to address 0 on a failed re-lookup); decompiled: src/world/hevent25_a.cpp
 004C7A68 Effect_Construct                     // (Effect* 140 bytes, Def*): header, empty child map, +112 vector, +136 flags, def ref ++, 0x004C761C; decompiled: src/world/hevent21_f.cpp
 004CF710 Effect_SetTime                       // (Effect*; f32): instance step 0x004BC7C8, done bit 0x80, children stepped / finished ones destructed and freed, pending +132 switch; decompiled: src/world/hevent21_j.cpp
 004CF3C4 Effect_Release                       // (Effect*, u32 hash) -> bool: switches to the def named hash in def +24's set (last 0x011DE2A8), old instance vt +8, new 0x004BBABC; decompiled: src/world/hevent21_g.cpp (name? it is a def switch, not a release)
@@ -5516,7 +5516,6 @@
 005E6C68 Lock_Leave5E6C68                     // (lock*) (name?)
 0079BD1C Queue_Push79BD1C                     // (out*, Queue*, const s32*) (name?)
 00369D98 Request_Do369D98                     // (Request* 0x0106C330, key, -, const vec3* pos; f32 t) -> b+20: "%i" anim, world object scale/matrix (Mat34_FromRotPos553B4C), timings and positions; decompiled: src/world/hevent24_c.cpp (name?)
-000CC188 Target_0CC188                        // (r3..r8, u8, u8; f1; stack args 8 / 10) (name?)
 
 # Template instances, project-wide (obj19)
 000133F8 Nop_000133F8             // empty (template instance); decompiled: src/obj/obj19_tmpl.cpp
@@ -8855,8 +8854,8 @@
 004B0E70 Clips_Release4B0E70                  // (ClipTable*) -> count: used nodes' items released (callback *0x00F65F84 +292), free list rebuilt, clips released (0x004B0C70 + Mem_FreeFrom); decompiled: src/world/hevent24_c.cpp (name?)
 0031F44C Attach_Build31F44C                   // (PtrVector* out, Map* defs) -> out+20: 144-byte attachments per model entry with +52 (SortedMap_Find768AC0), pushed and 0x0031E1D8; decompiled: src/world/hevent24_c.cpp (name?)
 00A39858 Hk_AnimClassSlotA39858               // () -> 0x011F7EA4 (TOC constant; Havok) (name?)
-00384EE4 Spk_SetText384EE4                    // (SpeakerObj*, const char* text, u32 field hash) (name?)
-002E3188 Game_CompletePercent2E3188           // (session, 0) -> f32 (name?)
+00384EE4 Spk_SetText384EE4                    // (SpeakerObj*, const char* text, u32 field): def +148 / +152 36-byte widget entries by +32, widget +16 vt +188 (text, 0) then vt +148; decompiled: src/world/hevent25_b.cpp (name?)
+002E3188 Game_CompletePercent2E3188           // (Game*, Save*) -> f32: weighted mean of 0x002DB040 over the 860-byte episodes (+20 / +24, weight +832) * 100; save defaults to the current user's slot; decompiled: src/world/hevent25_b.cpp (name?)
 0067C8B8 Nav_Step67C8B8                       // (-, const Params*; f32 dt) navigation middleware (name?)
 00677C7C Nav_AddResource677C7C                // (data, const Transform*) navigation middleware "AddResource" (name?)
 0067738C Nav_RemoveResource67738C             // (data) navigation middleware "RemoveResource" (name?)
@@ -8867,5 +8866,22 @@
 0062D414 NavQuery_Assign62D414                // (dst, Query*) navigation middleware (name?)
 0062E094 NavQuery_Finish62E094                // (Query*) navigation middleware (name?)
 0062D08C NavQuery_Free62D08C                  // (Query*) navigation middleware (name?)
-0031E1D8 Attach_Init31E1D8                    // (Attach*) (name?)
-004B0C70 Clip_Release4B0C70                   // (Clip*) (name?)
+0031E1D8 Attach_Init31E1D8                    // (Attach*) -> u32: direction / matrix from def +36 to +40 named points (PointMap_Find on *0x00F8F154 +16), world matrix to "DummyScrollGroupName" objects (geometry vt +56 (5)) in 44-byte holders per def +52 slot; decompiled: src/world/hevent25_b.cpp (name?)
+004B0C70 Clip_Release4B0C70                   // (Clip*) -> 0 or clip: arrays +8 / +12 / +16 (data to allocator vt +8, Array_Destruct, Mem_FreeFrom) and the +36 block; decompiled: src/world/hevent25_b.cpp (name?)
+
+# World event handler callees, part 25
+003A1500 Obj_ResetFx3A1500                    // (Owner*): 336-byte effect slots (+28, count hdr +20): +280 owner detached (+276 = 0x044DC6AB), +288 vt +8, two +76 effects switched to def 0x10CBB / +136 |= 0x200 / restarted, +308 emitter stopped, +312 shape released; 368-byte fx (+44) Obj_ResetEffects39CD68 + 4 vectors cleared; 112-byte buffers (+12) data to +88 allocator vt +8, Array_Destruct, shape; counts and +70 zeroed; decompiled: src/world/hevent25_a.cpp (name?)
+002E9338 Level_LoadTable2E9338                // (LevelDef*) -> u32: once (0x010686C0 == 0), +544 / +536 entries -> 112-byte Obj_Construct2E8DFC objects with 72-byte items (vtable 0x00B1D450; String_Dup name, maps 0x010686C4 / 0x010686DC), appended to map 0x010686A8; decompiled: src/world/hevent25_a.cpp (name?)
+000CC188 SpawnQuery_Construct0CC188           // (SpawnQuery*, name, Profile*, a3, const f32 m[3x4], const vec3* pos, u8, u8, stack a8; f32) -> u8: base query 0x00B12260 then vtable 0x00B12868, profile records (+136, 192 bytes) into a PtrVector at +16, PtrVectors +180 / +200; decompiled: src/world/hevent25_a.cpp (name?)
+0031FB90 Model_Build31FB90                    // (Model*): def +48 lists -> 32-byte slot tables in map +0 and 24-byte attachment vectors in map +24 (Attach_Build31F44C), then Model_Reset31F968(m, 0, 0); decompiled: src/world/hevent25_b.cpp (name?)
+00484858 World_SetCameraTarget484858          // (World*, UserBlock*) -> u32: camera controller for the user's +8 object by profile mode (0x0010DE30 / 0x000FF0D8 / 0x00111410 / 0x00113608 / 0x00114298) at w +0x128584, Camera_PushTarget0FC040, vt +20, Obj_RestoreFrom544, controller vt +28; decompiled: src/world/hevent25_c.cpp (name?)
+000F94C0 View_SetSplit0F94C0                  // (View*, s32 split) -> u32: split-screen viewport rect (u16 +346..+352) from 0x010C5A20 size or custom 0x010B1850, RenderTarget_SetViewport when +344 bit 31, +344 bits 27..30 = split; decompiled: src/world/hevent25_c.cpp (name?)
+002DB040 Episode_Percent2DB040                // (Episode*, Save*) -> f32 completion percentage (reads r3, r4 only) (name?)
+004A54F8 Matrix_FromDir4A54F8                 // (const vec3* dir, Matrix* m) (name?)
+000FF0D8 CamCtrl_Construct0FF0D8              // (ctrl 1040 bytes, Camera*, Object*) camera controller, mode 1 / default (name?)
+0010DE30 CamCtrl_Construct10DE30              // (ctrl 608 bytes, Camera*, Object*) mode 0 (name?)
+00111410 CamCtrl_Construct111410              // (ctrl 272 bytes, Camera*, Object*) mode 2 (name?)
+00113608 CamCtrl_Construct113608              // (ctrl 128 bytes, Camera*, Object*; f32) mode 3 (name?)
+00114298 CamCtrl_Construct114298              // (ctrl 176 bytes, Camera*, Object*, 0) (name?)
+004845F0 World_ReleaseCameraCtrl4845F0        // (World*, UserBlock*) (name?)
+000F9854 View_Update0F9854                    // only caller of View_SetSplit0F94C0 (name?)
