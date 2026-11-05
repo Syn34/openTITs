@@ -58,7 +58,6 @@
 00723884 strcmp
 00555D94 String_Compare           // strcmp; decompiled: src/string/string_misc.cpp
 00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
-00520D88 RenderTarget_Construct   // "RenderTarget_Primary" (name?)
 0053C9F8 RenderTarget_SetParams   // decompiled: src/common/misc.cpp
 005518FC FreeList_AddBlock        // (list, flag); decompiled: src/container/freelist.cpp
 00551598 PtrVector_Init           // decompiled: src/container/vector.cpp
@@ -174,7 +173,7 @@
 005EFDD8 Dearchiver_Construct     // "dearchiver" (name?)
 005F978C Overlay_Construct        // "overlay" (name?)
 00731648 Mem_NewAligned           // (size, align) (name?)
-007A5350 EdgeDecompressor_Construct // "edgeDecompressorTaskset" (name?)
+007A5350 EdgeDecompressor_Construct          // (q, CellSpurs*) "edgeDecompressorTaskset", event flag +10624, vtable 0x00B245A4 slots 6..9 (name?); decompiled: src/gfx/gfx16.cpp
 0051D91C Texture_LoadFromMemory              // (data, size, kind, name) -> Texture* or 0: Texture_Alloc, name +16/+47/+48 hash, Texture_Init, release on failure; decompiled: src/gfx/gfx10.cpp
 00565410 DebugFont_Construct      // void DebugFont_Construct(DebugFont* f, const FontData* data, Texture* tex) +0 the data, +4 the texture, +8 a m; decompiled: src/obj/obj15_small.cpp
 004FEBD0 Shader_Find              // wrapper of 0x004FE990 (the same arguments) (template instance); decompiled: src/obj/obj19_tmpl.cpp
@@ -2799,7 +2798,7 @@
 007A4DA8 Delete_007A4DA8          // void (this): when set, this->vtable = 0x00B242E8, then Mem_FreePool(this, 0, 0) [vtable 00B243A8[1]]; decompiled: src/gfx/gfx7_delete.cpp (name?)
 0051A6A0 Call_0051A6A0            // void (this): this->u8 +48 ? 005170B8(this) : 00518E78(this); decompiled: src/gfx/gfx7_misc.cpp (name?)
 0051E7F0 SetName_0051E7F0         // void (const char* name): String_Copy(0x010DDB40, name, 64); decompiled: src/gfx/gfx7_misc.cpp (name?)
-0053BBE0 Call_0053BBE0            // void (): 005325D8(0), then 0053B668(*(u32*)0x00F66FBC, 1); decompiled: src/gfx/gfx7_misc.cpp (name?)
+0053BBE0 Call_0053BBE0                       // () called by Render_BeginFrame_0051008C (name?); decompiled: src/gfx/gfx7_misc.cpp
 005DB070 ThreadId_005DB070        // u64 (): sys_ppu_thread_get_id into a zeroed stack u64, returned; decompiled: src/gfx/gfx7_misc.cpp (name?)
 0079F810 SetHalf_0079F810         // void (this, const f32 v[3]): this->+48..+56 = v * 0.5 (k at 0x0079F808); decompiled: src/gfx/gfx7_misc.cpp (name?)
 0079FE28 SetHalf_0079FE28         // void (this, const f32 v[3]): this->+48..+56 = v * 0.5 (k at 0x0079FE20); decompiled: src/gfx/gfx7_misc.cpp (name?)
@@ -8076,8 +8075,8 @@
 00544870 Trail_Update_00544870            // [vtable 0x00B24038 slot 4] (Trail*) lerp + projected step, slot 10 (name?); decompiled: src/gfx/gfx15.cpp
 005AD15C Render_FreeLists_005AD15C        // [shutdown table 0x00F10864] () frees bank/pool/part lists (name?); decompiled: src/gfx/gfx15.cpp
 005C3528 LoadParams_005C3528              // [vtable 0x00B25AF0 slot 3] (ShaderType*, Material*, Desc*) -> 1 (name?); decompiled: src/gfx/gfx15.cpp
-004FEBF0 EmitProps_AddMesh_004FEBF0       // (AglEmitProperties*, Mesh*) (name?)
-004FEDD0 EmitProps_SetMaterial_004FEDD0   // (AglEmitProperties*, AglMaterial*): +72, material refs++ (name?)
+004FEBF0 EmitProps_AddMesh_004FEBF0          // (AglEmitProperties*, Mesh*) +72[+88] mesh, +90 max draw words (scratch context), shader 0x59D9B0B7 (name?); decompiled: src/gfx/gfx16.cpp
+004FEDD0 EmitProps_SetMaterial_004FEDD0      // (AglEmitProperties*, AglMaterial*) +72, +92/+96 texture aspect, +100/+104 params, shader 0x90873B1B (name?); decompiled: src/gfx/gfx16.cpp
 005E2BD4 Gcm_SetDepthBoundsTest_005E2BD4  // (context, enable) libgcm (name?)
 005E341C Gcm_SetDepthBounds_005E341C      // (context; f1 zmin, f2 zmax) libgcm (name?)
 005E3CFC cellGcmSetColorMask_5E3CFC       // method 0x0324 libgcm (name?)
@@ -8538,3 +8537,39 @@
 001931C0 Obj_Pos388Or144_001931C0         // void f(f32 out[3], const Obj* o): o->+388->+320 or o->+144 (template instance) (name?); decompiled: src/obj/obj21_tmpl.cpp
 00325A30 Recs_Reset325A30         // (o, u8 k) after Recs_Clear_* (name?)
 00940F24 HkBase_Dtor940F24        // the base ~T() after Dtor_VtB1F3FC_* (Havok range) (name?)
+
+# Renderer sweep part 10
+0051008C Render_BeginFrame_0051008C          // () frame start: frame clock, cull/front face inline, draw-record list + frame arena reset, FrameBuffer_Begin, StreamBuffers_Flip, query_active (name?); decompiled: src/gfx/gfx16.cpp
+00518B64 ShapeList_Draw_00518B64             // (LineBuf*, u32 key) debug shapes 0x010DDCA0 [u16 0x010DF8A0]: circles / skins / vtable +20..+36 (name?); decompiled: src/gfx/gfx16.cpp
+005ABB58 Bounds_Draw_005ABB58                // (const Box*, const f32 m[4][4]) bounds cube 80-byte draw item from the frame arena, Material_Bind, shader +12 (name?); decompiled: src/gfx/gfx16.cpp
+005ABE5C FlipEntry_DrawBounds_005ABE5C       // (FlipEntry*) stencil INCR pass of the bounds, then NOTEQUAL, object +56, Sync_00548550 (name?); decompiled: src/gfx/gfx16.cpp
+005D6D50 SHODefaultType_Create               // [ShaderType slot 0] 16 shaders from the 8-entry table 0x00F8AFA0, vtable 0x00B260F8; decompiled: src/gfx/gfx16.cpp
+005D8890 SHONightBlendType_Create            // [ShaderType slot 0] the same from 0x00F8B088, vtable 0x00B26198; decompiled: src/gfx/gfx16.cpp
+0051CD48 Iff_HandleMaterialAnim_0051CD48     // (IffReader*, AglMaterial*) "speed".."flags" record -> AglMaterialAnim (+128, free list 0x011DE4B8) via FogRanges_Set_0050B6D8 (name?); decompiled: src/gfx/gfx16.cpp
+005BC4F0 SlyCharacter_LoadParams             // [vtable 0x00B25900 slot 3] (type, Material*, Desc*) -> 1 (name?); decompiled: src/gfx/gfx16.cpp
+005087EC Topology_Destruct                   // (AglTopology*) vtable 0x00B23368: draw entries, mesh-mtl table free list 0x00F66EE8, +88 / +92, ApeRoot_Destruct (name?); decompiled: src/gfx/gfx16.cpp
+005C45D0 SlyDecal_LoadParams                 // [vtable 0x00B25B68 slot 3] (type, Material*, Desc*) -> 0 / 1 (name?); decompiled: src/gfx/gfx16.cpp
+00507B18 Emitter_Draw_00507B18               // [vtable 0x00B23338 slot 3] (Emitter*, item, a, b, slot) batched or frame-stack record + draw by kind/mode (name?); decompiled: src/gfx/gfx16.cpp
+005D70E0 UvAnim_Matrices_005D70E0            // (Material*, f32 a[16], f32 b[16], f32 out[4]) scrolling / rotating UV matrices from params (name?); decompiled: src/gfx/gfx16.cpp
+005077B4 EmitterDraw_Batched_005077B4        // (Emitter*, Item*, Slot*) kind 0 batched sprites from the stream buffers (name?); decompiled: src/gfx/gfx16.cpp
+005073F8 EmitterDraw_BatchedMeshes_005073F8  // (Emitter*, MeshSlot*) kind 1 batched meshes: prebuilt command lists jumped to (name?); decompiled: src/gfx/gfx16.cpp
+005C5300 SlyDecal4_LoadParams                // [vtable 0x00B25BB8 slot 3] (type, Material*, Desc*) -> 0 / 1 (name?); decompiled: src/gfx/gfx16.cpp
+005291F8 Iff_HandleEmitCurve_005291F8        // [IFF handler OPD 0x00F3B680] (IffReader*, AglEmitProperties*) "alphaFadeIn/Out", "RGBA" colours -> +112 curve (name?); decompiled: src/gfx/gfx16.cpp
+0079FFB0 BoxShape_Spawn_0079FFB0             // [vtable 0x00B231D4 slot 3] (shape, f32 pos[3], f32 vel[3]) random point in box, optional spin (name?); decompiled: src/gfx/gfx16.cpp
+00520D88 RenderTarget_InitPrimary_00520D88   // (RenderTarget*, u8 primary) "RenderTarget_Primary", the display, view +672 (name?); decompiled: src/gfx/gfx16.cpp
+005105E0 Render_EndFrame_005105E0            // () frame end: stats, record list, texture / vertex attribute reset, pending copy, Gcm_FlipContext (name?); decompiled: src/gfx/gfx16.cpp
+0079EEF8 SphereShape_Spawn_0079EEF8          // [vtable 0x00B23174 slot 3] random point on sphere, radial velocity, optional spin (name?); decompiled: src/gfx/gfx16.cpp
+0079F3E8 SphereVolumeShape_Spawn_0079F3E8    // [vtable 0x00B23194 slot 3] random point in sphere, up velocity, optional spin (name?); decompiled: src/gfx/gfx16.cpp
+0079F9A0 BoxSurfaceShape_Spawn_0079F9A0      // [vtable 0x00B231B4 slot 3] random point on box surface, up velocity, optional spin (name?); decompiled: src/gfx/gfx16.cpp
+005C0F50 SlyCharacterFur_LoadParams          // [vtable 0x00B259F0 slot 3] (type, Material*, Desc*) -> 1 (name?); decompiled: src/gfx/gfx16.cpp
+00528130 EmitterJobs_Submit_00528130         // () batched emitter items -> slots / 144-byte records, SPU jobs of 16 via f_0056F050 (name?); decompiled: src/gfx/gfx16.cpp
+0056F050 EmitterJob_Run_0056F050             // (const JobHeader*, records, u32 count, u32** busy) (name?)
+00506598 EmitterDraw_00506598                // (Emitter*, record, const f32 view[4][4], x, u16 y) (name?)
+00505740 EmitterDraw_00505740                // (Emitter*, record, view_proj): kind 1, record mode 5 (name?)
+005043B0 EmitterDraw_005043B0                // (Emitter*, record): kind 0, record mode 5 (name?)
+00503BC0 EmitterDraw_00503BC0                // mode 4 (name?)
+00503340 EmitterDraw_00503340                // mode 3 (name?)
+00502AC0 EmitterDraw_00502AC0                // mode 2 (name?)
+00502240 EmitterDraw_00502240                // mode 1 (name?)
+005019B8 EmitterDraw_005019B8                // any other mode (name?)
+0053C4A0 Display_WaitVSync_0053C4A0          // () mftb / usleep frame pacing, label 251, vblank waits (name?) - skipped (timing loop)
