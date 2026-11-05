@@ -177,7 +177,7 @@
 0051D91C Texture_LoadFromMemory              // (data, size, kind, name) -> Texture* or 0: Texture_Alloc, name +16/+47/+48 hash, Texture_Init, release on failure; decompiled: src/gfx/gfx10.cpp
 00565410 DebugFont_Construct      // void DebugFont_Construct(DebugFont* f, const FontData* data, Texture* tex) +0 the data, +4 the texture, +8 a m; decompiled: src/obj/obj15_small.cpp
 004FEBD0 Shader_Find              // wrapper of 0x004FE990 (the same arguments) (template instance); decompiled: src/obj/obj19_tmpl.cpp
-004FF43C Material_Create          // (shader) (name?)
+004FF43C Material_Create                  // Material* Material_Create(shader): m = Material_Alloc(); m->+16 = shader (name?); decompiled: src/obj/obj22.cpp
 0051BC20 Mesh_CreateSphere        // "SphereIdx" (name?)
 0051C1A8 Mesh_CreateCube          // "Cube" (name?)
 005516E0 PtrVector_Construct      // (PtrVector*): all fields 0; decompiled: src/obj/obj13_misc.cpp
@@ -648,7 +648,6 @@
 00490E40 SubMachine_Shutdown      // vfunc +12; decompiled: src/world/vt2_submachine.cpp
 0077D8F8 SubMachine_HandleEvent   // vfunc +36, returns 1; decompiled: src/world/vt2_submachine.cpp
 004EB904 Levels_Parse             // (XmlElement*) (name?)
-004F8C30 Xml_FindChild            // (node, name): hash + 0x004F8ACC (name?)
 004F936C Xml_FindChildren         // (node, name) (name?)
 005566A8 String_Append            // thunk to f_0072354C; decompiled: src/obj/obj13_misc.cpp
 004BCE90 Set_Find                 // (u32 name) -> Set* (name?)
@@ -2515,7 +2514,6 @@
 0056510C MemStack_AllocTop        // (s, size) -> block from +16 downwards (16-aligned) within +0, or 0 (name?); decompiled: src/obj/obj13_misc.cpp
 005602F8 Bezier_Tangent           // void Bezier_Tangent(f32 out[4], const f32 ctrl[4][4], f32 u); decompiled: src/obj/obj14_small.cpp
 004FD2E0 DrawRecordList_Add       // void DrawRecordList_Add(ListOwner* o, const SubmitRecord* r); decompiled: src/obj/obj14_draw.cpp
-0056E048 RingSlot_Next            // (left recompiled: lwarx/stwcx RMW) (name?)
 00575D18 Fn_575D18                // 935-insn render pass (View_GetCurrent, FProgram_SetConstant/Upload, cellGcmSetDrawIndexArray), called by Fn_576BB4 (not decompiled) (name?)
 0071EDAC Libc_71EDAC              // String_Thunk71EDAC's callee (name?)
 0072354C Libc_72354C              // String_Append's callee (strcat?) (name?)
@@ -3533,7 +3531,6 @@
 00585EF0 LightDef_FromRecord      // (LightDef*, const LightRec*): sphere, name, colour /255, sqrt intensity, ranges, clamps, box (name?); decompiled: src/obj/obj17.cpp
 0059C294 LightDef_Read            // (IffReader*, LightDef*) -> 1: versioned light record -> LightDef_FromRecord; decompiled: src/obj/obj18.cpp
 0059B788 GeomDef_ReadChunks       // (IffReader*): GeomDef_New, Iff_ReadChunks, LOD byte fix-ups (name?)
-004FD1E0 Render_FrameAlloc        // (u32 size): MemStack_Alloc(*(0x010DD600 +280), size) (name?)
 00735F28 Mem_NewArray                     // void* Mem_NewArray(u32 size): Mem_Alloc(size, 0, 16) (name?); decompiled: src/obj/obj21.cpp
 0055EA6C Plane_Transform          // (f32 plane[4], const f32 m[16]): by the inverse transpose (Mat4_Invert + Vec4_TransformByMatrix) (name?)
 00578F64 Quads_ClipSetup          // (out, planes, +16, +32, +48, near plane, -view dir) (name?)
@@ -8062,8 +8059,8 @@
 0001819C Obj_MemberVCall_0001819C // (this->+24)->vfn[5]() (template instance); decompiled: src/obj/obj20_tmpl.cpp
 000181DC Obj_MemberVCall_000181DC // (this->+24)->vfn[7]() (template instance); decompiled: src/obj/obj20_tmpl.cpp
 00760E54 Obj_MemberVCall_00760E54 // (this->+216)->vfn[4]() (template instance); decompiled: src/obj/obj20_tmpl.cpp
-0038E5DC Cond_Init                // (Cond* p, s16 id, const char* class name, u32 kind) (name?); called by the New_C* factories (src/obj/obj20_tmpl.cpp); not decompiled
-000E0BCC Obj_TestE0BCC            // (obj) -> bool, gates Obj_TestVCall_* / Obj_HitImpulse_* (name?); not decompiled
+0038E5DC Cond_Init                        // void Cond_Init(Cond* p, s16 id, const char* class name, u32 kind): p->+8 = id, p->+0 = 0, p->+12 = a new 52-byte binding owner (0x004D2BFC(o, name, 0, 0); 0 whe (name?); decompiled: src/obj/obj22.cpp
+000E0BCC Obj_TestE0BCC                    // bool Obj_TestE0BCC(Obj* o, const HitEvent* ev): with ev->+14 bit 0x200 and the queue enabled (0x01032148 nonzero), ev is queued for o and 0 is returned (0 too w (name?); decompiled: src/obj/obj22.cpp
 
 # Renderer sweep part 9
 00514D68 Stream_SetDepthBias_00514D68     // (Stream*) pass cmd 17: u8 record -> polygon offset by depth format (name?); decompiled: src/gfx/gfx15.cpp
@@ -8599,3 +8596,230 @@
 0034A5E4 Anim_Load34A5E4                      // (path, arg, obj, u32 size) -> u32 (189 insns) (name?)
 00348F04 Scene_Load348F04                     // (arg, path, obj, u32 size, 0) -> u32 (1000 insns) (name?)
 00385008 Spk_Refresh385008                    // (SpeakerObj*) (958 insns) (name?)
+
+# Game code sweep, part 22
+0045666C List32_Find76_0045666C           // Obj* f(const Obj* o, s32 key): the first of the list o->+32 (linked by +72) whose +76 is key, or 0. r5 left as the last +76 read. (name?); decompiled: src/obj/obj22.cpp
+0046C7B0 Global_Test10C5A20_0046C7B0      // bool f(): the block at 0x010C5A20: +6 (u16) != 720 && +33 (u8) == 0 (name?); decompiled: src/obj/obj22.cpp
+00470560 Rec_Set_00470560                 // void f(Rec* r, f32 x, f32 y, f32 z, ?, ?, ?, u32 w, bool b): r->+0..+8 = x, y, z; +12 = w; +16 = 0; +20: bit 31 = b, bit 30 set (name?); decompiled: src/obj/obj22.cpp
+0047BE60 Call_3697E0_U8_0047BE60          // f(?, u8 a, u8 b): sub_003697E0(a, b) (name?); decompiled: src/obj/obj22.cpp
+004B0C40 Call_4B0850_004B0C40             // f(a1..a10): sub_004B0850(a1..a10) (the 9th / 10th from the stack, as words) (name?); decompiled: src/obj/obj22.cpp
+0073641C Name72_Copy_0073641C             // f(Obj* o, const char* s): String_CopyN(o + 72, s, 127) (name?); decompiled: src/obj/obj22.cpp
+00737758 Field348_Le_00737758             // bool f(const Obj* o): o->+348 <= *(f32*)0x00737750 (name?); decompiled: src/obj/obj22.cpp
+00738690 Field4_Lt_00738690               // bool f(?, const Obj* o): o->+4 < *(f32*)0x00738688 (name?); decompiled: src/obj/obj22.cpp
+00739760 Field4_Is4To6_00739760           // bool f(const Obj* o): o->+4 is 4, 5 or 6 (name?); decompiled: src/obj/obj22.cpp
+0074BC58 Bits2_TestHigh_0074BC58          // bool f(const Obj* o, u32 i): the high bit of 2-bit entry i of the words at o + 36 (name?); decompiled: src/obj/obj22.cpp
+0074C708 Clamp_0074C708                   // f32 f(f32 x): the constants at 0x0074C6F0 (f32 a, f64 b, f64 c): t = a - x >= 0 ? x : b; t >= 0 ? t : c (fsel) (name?); decompiled: src/obj/obj22.cpp
+0074CB40 Field_Get132_48_0074CB40         // u32 f(const Obj* o, u32 i, u32 j): (o->+132)[i * 2]->+48[j * 2 + 1] (name?); decompiled: src/obj/obj22.cpp
+0074DA78 Field348_Byte761_0074DA78        // u8 f(const Obj* o): o->+348 <= *(f32*)0x0074DA70 ? 0 : o->+761 (name?); decompiled: src/obj/obj22.cpp
+0074E2B8 Field_Set0_12b_0074E2B8          // void f(const Obj* o, const u8 b[4]): o->+0->+12..+15 = b (byte by byte) (name?); decompiled: src/obj/obj22.cpp
+00771AEC Obj_InitVt_B13974_Adj12          // void f(Base12* b): the object at b - 12 gets the vtables of 0x0076EB78 (name?); decompiled: src/obj/obj22.cpp
+00771B1C Obj_InitVt_B13974_Adj8           // void f(Base8* b): the object at b - 8 gets the vtables of 0x0076EB78 (name?); decompiled: src/obj/obj22.cpp
+0077CD74 Arr8_Get4_0077CD74               // u32 f(const Arr* a, u32 i): i < a->+6 (u16) ? a->+12[i].+4 (8-byte entries) : 0 (name?); decompiled: src/obj/obj22.cpp
+0077ED00 Global_Le_0077ED00               // bool f(): *(f32*)0x010854AC <= *(f32*)0x0077ECF8 (name?); decompiled: src/obj/obj22.cpp
+00092C78 Call_ShowHeadline_00092C78       // f(const Obj* o): World_ShowHeadline(*(World**)0x00F65CA0, o->+12 (u8)) (name?); decompiled: src/obj/obj22.cpp
+00099CC8 Call_AB954_00099CC8              // f(const Obj* o): sub_000AB954(o->+16, o->+24, o->+28 (u8)) (r6 = the byte too) (name?); decompiled: src/obj/obj22.cpp
+00099F6C Call_ABA14_00099F6C              // f(const Obj* o): sub_000ABA14(o->+12, o->+20 (u8), o->+21 (u8)) (r6 = the last byte too) (name?); decompiled: src/obj/obj22.cpp
+000DF4CC Call_4A783C_000DF4CC             // f(const Obj* o): sub_004A783C(o->+160, o->+372, o->+364 (u8)) (r6 = the byte too) (name?); decompiled: src/obj/obj22.cpp
+001F7128 Call_D9F1C_U8_001F7128           // f(a, u8 b, u8 c, u8 d, u8 e): sub_000D9F1C(a, b, c, d, e) (name?); decompiled: src/obj/obj22.cpp
+0024DC5C Vec1200_Add_0024DC5C             // void f(Obj* o, const f32 d[3]): o->+1200..+1208 += d (name?); decompiled: src/obj/obj22.cpp
+00264D70 Rec48_Get40_00264D70             // void f(const Obj* o, u32* out, ?, s32 i): *out = i == -1 ? 0 : (o->+64 + i * 48)->+40 (name?); decompiled: src/obj/obj22.cpp
+002D98A4 SlotRec_Byte464_002D98A4         // u8 f(const Obj* o): the current slot record's byte +464 + o->+502 (name?); decompiled: src/obj/obj22.cpp
+002F47E8 Field_Set8b_002F47E8             // void f(Obj* o): if (o->+12) *(u8*)0x01068841 = 1, *(u8*)0x01068840 = 0; o->+8 (u8) = 1 (name?); decompiled: src/obj/obj22.cpp
+00332DF4 CmpF32Desc_00332DF4              // s32 f(const f32* a, const f32* b): *a < *b ? 1 : *a > *b ? -1 : 0 (a descending sort comparator) (name?); decompiled: src/obj/obj22.cpp
+0033891C Field_Get2212_0033891C           // bool f(const Obj* o, u32 out[3]): o->+2212 ? (out = {o->+2212, 5 - o->+2628, 5}, 1) : 0 (name?); decompiled: src/obj/obj22.cpp
+00352DD4 Field_Set116_144v_00352DD4       // void f(const Obj* o, const f32 v[3]): if (o->+116) o->+116->+144..+152 = v (name?); decompiled: src/obj/obj22.cpp
+00354088 Field_Get36_40_12f_00354088      // f32 f(const Obj* o): o->+36->+40->+12->+12 (f32), or *(f32*)0x00354080 when a link is null (name?); decompiled: src/obj/obj22.cpp
+0036C124 Field_SetByKind_0036C124         // void f(Obj* o, s32 k, u32 v, bool b): k 3: o->+316 = v, o->+396 bit 0x80000 = b; k 4: o->+320 = v (name?); decompiled: src/obj/obj22.cpp
+0036F1C8 Call_36F0D0Or36EFC8              // f(o, u8 on): on ? sub_0036F0D0(o, on) : sub_0036EFC8(o, 0) (name?); decompiled: src/obj/obj22.cpp
+003F2B5C Global_Test_F65820_003F2B5C      // bool f(): p = *(T**)0x00F65820: !p || (p->+396 != 3 && p->+396 != 5) (name?); decompiled: src/obj/obj22.cpp
+00428F00 Global_Init10AA1B0_00428F00      // void f(): the block at 0x010AA1B0: +92 (u16) = 0x8006, +94 (u16) = 771, +88 bit 31 cleared and bits 15..30 = 770 (name?); decompiled: src/obj/obj22.cpp
+00431FF8 Global_F65CA0_Flag40_2           // void f(const Obj* o): (*(T**)0x00F65CA0)->+40 bit 0x2 = o->+9 != 0 (name?); decompiled: src/obj/obj22.cpp
+00432100 Global_F65CA0_Flag40_4           // void f(const Obj* o): (*(T**)0x00F65CA0)->+40 bit 0x4 = o->+9 != 0 (name?); decompiled: src/obj/obj22.cpp
+0043207C Call_4897AC_0043207C             // f(const Obj* o): sub_004897AC(*(T**)0x00F65CA0, o->+9 (u8)) (r5 = the byte too) (name?); decompiled: src/obj/obj22.cpp
+00441D18 Field96_SetIfMoved_00441D18      // void f(Obj* o, f32 x): if |x - o->+96| >= *(f32*)0x00441D10: o->+96 = x, *(u8*)0x00F65B68 = 1 (name?); decompiled: src/obj/obj22.cpp
+00464EA0 Rec_Init28_00464EA0              // void f(Rec* r, u32 a, u32 b, u32 c): r = {+0 28, +4 (*(T**)0x00F65CA0)->+12->+0 (f32), +8 b, +12 c, +20 0, +24 a} (name?); decompiled: src/obj/obj22.cpp
+00489E78 World_Test12847C_00489E78        // bool f(const World* w): p = w->+0x12847C: p && (p->+164 bit 0x80000000) (name?); decompiled: src/obj/obj22.cpp
+0048C840 World_Set10C5A5C_0048C840        // void f(const World* w): *(f32*)0x010C5A5C = w->+0x1281C0 ? w->+0x1281C0->+876 : *(f32*)0x0048C83C (name?); decompiled: src/obj/obj22.cpp
+0048CDF8 Call_SetMode23_0048CDF8          // f(Obj* o): if (o->+31 (u8)) Obj_SetMode470750(o, 23, 0) (name?); decompiled: src/obj/obj22.cpp
+0049E704 Table10BE8BC_At_0049E704         // Rec* f(u32 i): i < 84 ? 0x010BE8BC + i * 152 : 0 (name?); decompiled: src/obj/obj22.cpp
+004FD1E0 MemStack_Alloc_10DD718           // void* f(u32 n): MemStack_Alloc(*(T**)0x010DD718, n) (name?); decompiled: src/obj/obj22.cpp
+00734A8C Vec3_Sub_00734A8C                // void Vec3_Sub(f32 out[3], const f32 a[3], const f32 b[3]): out = a - b (name?); decompiled: src/obj/obj22.cpp
+00734E94 Vec3_Add_00734E94                // void Vec3_Add(f32 out[3], const f32 a[3], const f32 b[3]): out = a + b (name?); decompiled: src/obj/obj22.cpp
+00735CDC Vec3_Mul_00735CDC                // void Vec3_Mul(f32 out[3], const f32 a[3], const f32 b[3]): out = a * b (per component) (name?); decompiled: src/obj/obj22.cpp
+00760E20 Box_Size_00760E20                // void f(f32 out[3], const f32 box[6]): out = box[3..5] - box[0..2] (name?); decompiled: src/obj/obj22.cpp
+00742C74 Vec3_SubInPlace_00742C74         // void Vec3_SubInPlace(f32 v[3], const f32 d[3]): v -= d (name?); decompiled: src/obj/obj22.cpp
+0074C600 Vec3_AddInPlace_0074C600         // void Vec3_AddInPlace(f32 v[3], const f32 d[3]): v += d (name?); decompiled: src/obj/obj22.cpp
+00736770 TypedValue_InitF32_00736770      // void f(TypedValue* v, u32 a, f32 x, u32 c): kind 3 (a float), vtable 0x00B0DC20 (name?); decompiled: src/obj/obj22.cpp
+007367E8 TypedValue_Init2_007367E8        // void f(TypedValue* v, u32 a, u32 x, u32 c): kind 2, vtable 0x00B0DC34 (name?); decompiled: src/obj/obj22.cpp
+00736860 TypedValue_Init5_00736860        // void f(TypedValue* v, u32 a, u32 x, u32 c): kind 5, vtable 0x00B0DC48 (name?); decompiled: src/obj/obj22.cpp
+007386E0 Flag305_SetIfAbove_007386E0      // void f(Obj* o, f32 x): if x > *(f32*)0x007386D8 and o->+305 bit 0x10 is clear, o->+305 |= 0x80 (name?); decompiled: src/obj/obj22.cpp
+00738CAC Field4_Not1_4_12_13_00738CAC     // bool f(const Obj* o): o->+4 is not 1, 4, 12 or 13 (name?); decompiled: src/obj/obj22.cpp
+00032A30 Field4_Is7To10_00032A30          // bool f(const Obj* o): o->+4 is 7, 8, 9 or 10 (name?); decompiled: src/obj/obj22.cpp
+00742CDC Word_ByteSwap_00742CDC           // void f(u32* w): *w byte-swapped (through a stack word and lfs / stfs) (name?); decompiled: src/obj/obj22.cpp
+00743720 Pos_Get_00743720                 // void f(f32 out[3], const Obj* o, const Obj* p): out = p ? p->+48..+56 : o->+144..+152 (name?); decompiled: src/obj/obj22.cpp
+0074D744 Vec4x3_Copy_0074D744             // void f(V4 d[3], const V4 s[3]): 48 bytes copied (lvx / stvx, 16-byte aligned) (name?); decompiled: src/obj/obj22.cpp
+0074E3AC Obj_Clear_0074E3AC               // void f(Obj* o): o->+0 = o->+4 = 0 and the 64 bytes at +16 zeroed (stvx) (name?); decompiled: src/obj/obj22.cpp
+0074E7D0 Field_Mode136_68_0074E7D0        // u32 f(const Obj* o): o->+40 bit 31 set and bit 16 clear ? (o->+136->+68 >> 1) & 3 : 3 (name?); decompiled: src/obj/obj22.cpp
+00767A04 CmpF32_00767A04                  // s32 f(const f32* a, const f32* b): *a > *b ? 1 : *a < *b ? -1 : 0 (name?); decompiled: src/obj/obj22.cpp
+0077D7C4 CmpF32_0077D7C4                  // s32 f(const f32* a, const f32* b): *a > *b ? 1 : *a < *b ? -1 : 0 (name?); decompiled: src/obj/obj22.cpp
+00788264 Obj_CopyFields_00788264          // void f(Obj* d, const Obj* s): d's +4 (u8), +32 / +36 / +40 / +48 (f32), +52 (u8) from s (name?); decompiled: src/obj/obj22.cpp
+000653CC Call_398DAC_000653CC             // f(u32 id): sub_00398DAC(*(T**)0x00F65798, id) (name?); decompiled: src/obj/obj22.cpp
+00096820 Call_HandleNotify_00096820       // f(const Obj* o): Handle_Notify36742C(o->+12, o->+16 (u8), o->+17 (u8), 0) (r7 = the last byte too) (name?); decompiled: src/obj/obj22.cpp
+00099FA8 Global_VtB0D99C_F9CD38           // f(): SetVtB0D99C on the global at 0x00F9CD38 (name?); decompiled: src/obj/obj22.cpp
+004566D8 Global_VtB0D99C_10B16C8          // f(): SetVtB0D99C on the global at 0x010B16C8 (name?); decompiled: src/obj/obj22.cpp
+000B277C Trophy_UnlockIf_000B277C         // f(s32 n): if (n != -1) Trophy_Unlock4FB4A0(*(Trophy**)0x00F668E8, n) (name?); decompiled: src/obj/obj22.cpp
+000DB258 Flag_Set172_1_000DB258           // void f(Obj* o, u8 on): o->+172 bit 0 = on (bit 0 of the argument); when off, o->+176 (u16) bit 0x10 is cleared first (name?); decompiled: src/obj/obj22.cpp
+00106700 Field440_Set_00106700            // void f(Obj* o, u32 v): when v changes, o->+744 (f32) = (v ? 0x01032CCC : 0x010324B4)->+72; o->+440 = v (name?); decompiled: src/obj/obj22.cpp
+0012999C Field_Test216_980_0012999C       // bool f(const Obj* o): o->+188 bit 0x20 && o->+216->+980 == 0x04318BE6 (name?); decompiled: src/obj/obj22.cpp
+0012BD5C Call_D9424_SetHash_0012BD5C      // T* f(o): r = CallK2_000D9424(o); if (r) r->+28 = 0xCABDE7BA (name?); decompiled: src/obj/obj22.cpp
+001CF5E0 Flag855_Set40_001CF5E0           // void f(Obj* o): (o && (o->+196 bit 0x02000000) ? o : 0)->+855 |= 0x40 (quirk kept: writes address 855 otherwise) (name?); decompiled: src/obj/obj22.cpp
+001EEE40 Call_E4720_Bool                  // bool f(o, f32 x): sub_000E4720(o, x) != 0 (name?); decompiled: src/obj/obj22.cpp
+001EEE78 Call_E5000_Bool                  // bool f(o, f32 x): sub_000E5000(o, x) != 0 (name?); decompiled: src/obj/obj22.cpp
+00207204 Field388_SetHalf_00207204        // f(Obj* o, f32 x): o->+388->+510 (s16) = the high half of (f32)x's bits; sub_000DA25C(o, x) (name?); decompiled: src/obj/obj22.cpp
+00229C5C Effect_SetHash356_00229C5C       // f(const Obj* o): if (o->+356) Effect_SetHash4CF988(o->+356, 0x707A34AB) (name?); decompiled: src/obj/obj22.cpp
+002448C0 Field592_Reset_002448C0          // void f(Obj* o, u8 b): o->+600 = 0, o->+604 = b; if o->+592 <= *(f32*)0x002448B8, o->+592 = 1.0f (name?); decompiled: src/obj/obj22.cpp
+00254108 Entry112_SetF_00254108           // void f(Obj* o, s32 i, ?, bool both, f32 x): entry i (112 bytes): +192 = x, and +188 = x when both (name?); decompiled: src/obj/obj22.cpp
+00268120 Field_Cur28_48_48_00268120       // T* f(const Obj* o): o->+48 < o->+36 (u16) ? o->+28[o->+48]->+48->+48 : 0 (name?); decompiled: src/obj/obj22.cpp
+00287874 Call_2874E8_Swap_00287874        // f(a, ?, c, f32 x): if (c) sub_002874E8(c, a, a, x) (name?); decompiled: src/obj/obj22.cpp
+0029394C Field_Test8_164_0029394C         // bool f(const Obj* o): p = o->+8->+164: !p || ((p->+40 (u16) >> 5) & 3) == 3 (name?); decompiled: src/obj/obj22.cpp
+00297E00 Call_297BA8_IfAbs_00297E00       // f(o, f32 x): if |x| >= *(f32*)0x00297DFC, sub_00297BA8(o, |x|) (name?); decompiled: src/obj/obj22.cpp
+002D2EC4 Counter28_Dec_002D2EC4           // void f(Obj* o): the counter in o->+28 bits 2..9 (u16) counts down; on reaching 0, o->+72 = 0 and o->+76 (u8) = 0 (name?); decompiled: src/obj/obj22.cpp
+002DAFFC SlotRec_Byte418_002DAFFC         // u8 f(const Obj* o): the current slot record's byte +418 + o->+822 * 4 (name?); decompiled: src/obj/obj22.cpp
+002E20CC Call_UserBlockFind_002E20CC      // f(const Obj* o): UserBlock_Find465F30((*(T**)0x00F65CA0) + 4208, o->+96) (name?); decompiled: src/obj/obj22.cpp
+002FD660 Field_Latch41_002FD660           // bool f(Obj* o): o->+40 && o->+41 (u8) ? 1 : (o->+41 = 1, o->+48 = o->+44 (f32), 0) (name?); decompiled: src/obj/obj22.cpp
+003814A8 Field_Test408_003814A8           // bool f(const Obj* o): !(o->+160 >> 1) || o->+408 + 1 >= o->+8->+168 (signed) (name?); decompiled: src/obj/obj22.cpp
+00419C78 Field428_Test_00419C78           // bool f(const Obj* o): o->+428 > *(f32*)0x00419C70 && o->+432 (u8) (name?); decompiled: src/obj/obj22.cpp
+0042BCD4 Array10AA694_At_0042BCD4         // T* f(u32 i): the array at 0x010AA694 (+0 data, +8 u16 count): i < count ? data[i] : 0 (name?); decompiled: src/obj/obj22.cpp
+00434AB8 Obj_Flag8Clear32_00434AB8        // void f(Obj* o): Flag_Set8_40000000(o), o->+32 = 0 (name?); decompiled: src/obj/obj22.cpp
+00443168 Ptr_Test88_00443168              // bool f(T** pp): pp && *pp && (*pp)->+88 > 0 (signed) (name?); decompiled: src/obj/obj22.cpp
+0044CEB0 Call_6D5038_If_0044CEB0          // f(a, s8 b): if (*(u8*)0x010AEC60) sub_006D5038(a, b) (name?); decompiled: src/obj/obj22.cpp
+004562B8 Field48_TypeSlot_004562B8        // T* f(const Obj* o): o->+48 ? o->+48->+12[type index of 0x010AB310] : 0 (name?); decompiled: src/obj/obj22.cpp
+00738A54 Obj_TypeSlotNull_F94A54          // bool f(const Obj* o): o's slot for the type 0x00F94A54 is empty (name?); decompiled: src/obj/obj22.cpp
+00738FEC Obj_TypeSlotNull_F94CAC          // bool f(const Obj* o): o's slot for the type 0x00F94CAC is empty (name?); decompiled: src/obj/obj22.cpp
+004651D8 Msg_Init7_004651D8               // void f(Msg* m, u32 a, u32 b): m = {7, time, 0, 0, 0, a, b} (name?); decompiled: src/obj/obj22.cpp
+00465384 Msg_Init13_00465384              // void f(Msg* m, u32 b): kind 13 (name?); decompiled: src/obj/obj22.cpp
+004653BC Msg_Init14_004653BC              // void f(Msg* m, u32 b): kind 14 (name?); decompiled: src/obj/obj22.cpp
+004902B8 Call_HandleNotify_F64D08         // f(): Handle_Notify36742C(*(u32*)0x00F64D08, 1, 0, 0) (name?); decompiled: src/obj/obj22.cpp
+00491180 Global_Set10BB850_00491180       // void f(s32 m): if m is 1 or 2, *(u32*)0x010BB850 = m (name?); decompiled: src/obj/obj22.cpp
+004B00EC WorldObj_SetGroupFrom_004B00EC   // bool f(Obj* o, const s32* g): if (o) WorldObj_SetGroup(o, *g); 1 (name?); decompiled: src/obj/obj22.cpp
+00736560 Field72_SetHash_00736560         // void f(Obj* o, const char* s): o->+72 = String_HashNoCase(s) (name?); decompiled: src/obj/obj22.cpp
+007366F4 TypedValue_Init4_007366F4        // void f(TypedValue* v, u32 a, u8 hi, u32 c, u32 lo): kind 4, vtable 0x00B0DC0C, value (hi << 24) | (lo & 0xFFFFFF) (name?); decompiled: src/obj/obj22.cpp
+0074B5C0 Vec3_DivScale_0074B5C0           // void f(f32 out[3], const f32 v[3], f32 s): out = v * (*(f32*)0x0074B5B8 / s) (name?); decompiled: src/obj/obj22.cpp
+0074CDE0 Obj_Clear80_0074CDE0             // void f(Obj* o): the 80 bytes at o zeroed (stvx), then o->+52 = 0.1f (name?); decompiled: src/obj/obj22.cpp
+00771D08 Obj_DtorVtB1F5D0_00771D08        // f(Obj* o): if (o) o->+0 = 0x00B1F5D0 (vtable), sub_007D1CE4(o) (name?); decompiled: src/obj/obj22.cpp
+0001B238 Arr3700_Push_0001B238            // void f(Obj* o, u32 v): append v to the 8-entry array at o + 3700 (count +20) when not full (name?); decompiled: src/obj/obj22.cpp
+0001BE50 Field72_Reset_0001BE50           // bool f(Obj* o): o->+72 < *(f32*)0x0001BE4C ? (o->+72 = (f32) 0x00F9CB78->+72, 1) : 0 (name?); decompiled: src/obj/obj22.cpp
+0002BED8 Obj_VCall220_0002BED8            // f(Obj* o, a): o->vfn[220 / 4](o, a) (name?); decompiled: src/obj/obj22.cpp
+0008054C World_SetExposureFrom_0008054C   // f(const Obj* o): World_SetExposure(*(World**)0x00F65CA0, o->+12, o->+16, o->+20) (name?); decompiled: src/obj/obj22.cpp
+00099808 SaveSlot_MarkSeen12_00099808     // f(const Obj* o): if (o->+12) SaveSlot_MarkSeen(*(T**)0x00F64C20, o->+12) (name?); decompiled: src/obj/obj22.cpp
+000F5E28 Field736_SetV_000F5E28           // f(Obj* o, const f32 v[3]): o->+736..+744 = v; sub_000F498C(o, 1) (name?); decompiled: src/obj/obj22.cpp
+000F60DC Call_443368_348_000F60DC         // f(const Obj* o): sub_00443368(o->+348) (name?); decompiled: src/obj/obj22.cpp
+0011A5CC Field196_Free_0011A5CC           // f(Obj* o): if (o->+196) Mem_FreeIfSet(o->+196) (r4 = o->+192, r5 = o) (name?); decompiled: src/obj/obj22.cpp
+001E1EE4 Pos216_Get_001E1EE4              // void f(f32 out[3], const Obj* o): out = o->+216 ? o->+216->+320..+328 : the 3 floats at 0x01164B40 (name?); decompiled: src/obj/obj22.cpp
+001EEEB0 Obj_OnEvent69988172_001EEEB0     // void f(Obj* o, const Ev* e): e->+8 == 0x69988172 && o->+856 && e->+0 == o->+856: o->+980 |= 0x20000 (name?); decompiled: src/obj/obj22.cpp
+001F509C Call_1EE680_001F509C             // f(Obj* o, u8 b): if (!b && o->+856) sub_001EE680(o, 1) (name?); decompiled: src/obj/obj22.cpp
+00252940 Obj_GetBody_00252940             // Body* f(const Obj* o): o->+32 ? Hk_GetBody9D19C8(o->+32) : 0 (name?); decompiled: src/obj/obj22.cpp
+0027CDEC Call_250A0_0027CDEC              // f(Obj* o): if (o->+84) sub_000250A0(o->+84, o + 32) (name?); decompiled: src/obj/obj22.cpp
+0029F6E8 Field2284_Set_0029F6E8           // void f(Obj* o, f32 x): o->+2284 = x (and +2292 for the 0x9F6559A5 kind) (name?); decompiled: src/obj/obj22.cpp
+0029F724 Field2288_Set_0029F724           // void f(Obj* o, f32 x): o->+2288 = x (and +2292 for the 0xD3380BFC kind) (name?); decompiled: src/obj/obj22.cpp
+002DA990 SlotRec_Bits416_002DA990         // u32 f(const Obj* o): the current slot record's u16 +416 + o->+822 * 4, low 3 bits (name?); decompiled: src/obj/obj22.cpp
+002E6D30 SlotRec_Set329_002E6D30          // void f(?, u8 v): the current slot record's byte +329 = v == 1 (name?); decompiled: src/obj/obj22.cpp
+003032EC Xml_ReadF32_4_003032EC           // f(Obj* o, Cursor* c): XmlCursor_ReadF32(c, 0x00274ACD, &o->+4, default o->+4) (name?); decompiled: src/obj/obj22.cpp
+003131E0 Field80_Reset_003131E0           // f(Obj* o): o->+80 = (f32) 0x01069AF0->+72; sub_00308F5C(o->+32->+872, 0) (name?); decompiled: src/obj/obj22.cpp
+0033521C Call_3274D0_334114               // f(Obj* o): sub_003274D0(o, 0); sub_00334114(o) (name?); decompiled: src/obj/obj22.cpp
+0036E714 Obj_Attach264_0036E714           // f(Obj* o, u32 i): if (o->+264[i]) Obj_Attach364408(o, o->+264[i]) (name?); decompiled: src/obj/obj22.cpp
+0042EA30 Obj_Flag24Flag8_0042EA30         // f(Obj* o): if (o->+4) o->+4->+24 |= 0x20000000; Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj22.cpp
+0042FA90 World_SetExposureFrom_0042FA90   // f(const Obj* o): World_SetExposure(*(World**)0x00F65CA0, o->+12, o->+16, o->+20) (name?); decompiled: src/obj/obj22.cpp
+00438558 Global_F65CA0_Bit45_20           // f(Obj* o): (*(T**)0x00F65CA0)->+45 bit 0x20 = o->+9; Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj22.cpp
+004385EC Global_F65CA0_Bit46_80           // f(Obj* o): (*(T**)0x00F65CA0)->+46 bit 0x80 = o->+9; Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj22.cpp
+00438680 Global_F65CA0_Bit46_40           // f(Obj* o): (*(T**)0x00F65CA0)->+46 bit 0x40 = o->+9; Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj22.cpp
+0043DA08 Obj_DtorVtB217E8_0043DA08        // f(Obj* o): o->+0 = 0x00B217E8 (vtable), *(u32*)0x00F658D4 = 0, Thunk_004F41AC(o) (name?); decompiled: src/obj/obj22.cpp
+00446348 Call_446198_00446348             // f(a, b, c): sub_00446198(a, 0, b, c, 1) (name?); decompiled: src/obj/obj22.cpp
+0045669C List32_Set64_0045669C            // void f(Obj* o, u32 a, u32 b): every node of the list o->+32 (linked by +72) gets +64 = a, +68 = b (name?); decompiled: src/obj/obj22.cpp
+004655D4 Msg_Init17_004655D4              // void f(Msg* m, const Obj* o): kind 17 with o->+60->+204 (name?); decompiled: src/obj/obj22.cpp
+00465610 Msg_Init18_00465610              // void f(Msg* m, const Obj* o): kind 18 with o->+40->+204 (name?); decompiled: src/obj/obj22.cpp
+0049E860 Obj_Clear68_0049E860             // void f(Obj* o): o->+68 = 0, +72 / +73 = 0, the first 68 bytes zeroed (name?); decompiled: src/obj/obj22.cpp
+0049E8A8 Obj_Clear68Set_0049E8A8          // void f(Obj* o, u32 v): o->+68 = v, +72 / +73 = 0, the first 68 bytes zeroed (name?); decompiled: src/obj/obj22.cpp
+00735C1C WorldObj_SetPos64_00735C1C       // f(Obj* o, const f32 v[3]): o->+64..+72 = v; WorldObj_MarkDirty(o) (name?); decompiled: src/obj/obj22.cpp
+00738308 Obj_PosPlus464_00738308          // void f(f32 out[3], const Obj* o): out = o->+144..+152 + o->+464..+472 (name?); decompiled: src/obj/obj22.cpp
+00738528 Field60_348Le_00738528           // bool f(const Obj* o): o->+60 && o->+60->+348 <= *(f32*)0x00738520 (name?); decompiled: src/obj/obj22.cpp
+00744358 Obj_DtorVtB126B8_00744358        // f(Obj* o): o->+380 = 0x00B1200C, o->+0 = 0x00B126B8 (vtables); VtB12550_Dtor_000DF934(o) (name?); decompiled: src/obj/obj22.cpp
+0074948C Obj_VCall16_0074948C             // f(Obj* o, ?, a): o->vfn[16 / 4](o, <the OPD>, a) (r4 = the OPD, r6 = its entry, as the original leaves them) (name?); decompiled: src/obj/obj22.cpp
+0074BB5C Flag968_Any70_0074BB5C           // bool f(const Obj* o): o->+968 (u8) has any of 0x40 / 0x20 / 0x10 (name?); decompiled: src/obj/obj22.cpp
+0074E8A0 Rec_Set_0074E8A0                 // void f(Rec* d, const f32 a[3], ?, u8 k, const f32 c[3], f32 x): d = {+0 a, +16 c, +32 x, +36 k} (name?); decompiled: src/obj/obj22.cpp
+007609A0 PtrVector_Reset_007609A0         // f(PtrVector* v, u8 free): free ? PtrVector_Clear(v) : count = 0 (name?); decompiled: src/obj/obj22.cpp
+007616B0 PtrVector_Reset_007616B0         // f(PtrVector* v, u8 free): free ? PtrVector_Clear(v) : count = 0 (name?); decompiled: src/obj/obj22.cpp
+00769AA4 Obj_VCall60_00769AA4             // f(Obj* o, a): o->vfn[60 / 4](o, a) (name?); decompiled: src/obj/obj22.cpp
+007718B0 Obj_Reset8_007718B0              // void f(?, Obj* o): o->+64 = 0, o->+8 from o->+40->+12->+12 or *(f32*)0x007718A8 (name?); decompiled: src/obj/obj22.cpp
+007718F8 Obj_Reset8_007718F8              // void f(?, Obj* o): o->+64 = 0, o->+8 from o->+40->+12->+12 or *(f32*)0x007718F0 (name?); decompiled: src/obj/obj22.cpp
+0077D09C Flag656_Set_0077D09C             // f(Obj* o, u8 b): o->+656 bit 0x01000000 = b bit 0; if b == 1, sub_00175CF0(o) (name?); decompiled: src/obj/obj22.cpp
+0001815C Obj_VCall24_8_0001815C           // f(const Obj* o, a): o->+24->vfn[8 / 4](o->+24, a) (name?); decompiled: src/obj/obj22.cpp
+0003C1BC Call_12E70_0003C1BC              // f(Obj* o, f32 x): w = o->+48->+172; unless bit 0x40 or 0x20, sub_00012E70(o, x) (name?); decompiled: src/obj/obj22.cpp
+00072DF8 Call_48C6EC_00072DF8             // f(const Obj* o): sub_0048C6EC(*(T**)0x00F65CA0, o->+12 (u8), o->+16, o->+20, o->+24) (name?); decompiled: src/obj/obj22.cpp
+000B16E0 Get_F64584_000B16E0              // void f(s32* res, const T* a, u32 out[3]): a->+4 == 0 ? *res = -2 : (out = {*(u32*)0x00F64584 + 7232, 0, 1}, *res = 0) (name?); decompiled: src/obj/obj22.cpp
+000DD778 Obj_VCall48_000DD778             // f(?, Obj* o): o->vfn[48 / 4](o) (name?); decompiled: src/obj/obj22.cpp
+000EB040 Obj_Scale192_000EB040            // f32 f(const Obj* o): o->+400 ? (World->+0x1281D4)->+84 * o->+192 : *(f32*)0x000EB03C (name?); decompiled: src/obj/obj22.cpp
+001882B8 Obj_VCall32_0_001882B8           // f(Obj* o): o->vfn[32 / 4](o, 0) (name?); decompiled: src/obj/obj22.cpp
+00194714 Obj_VCall32_0_00194714           // f(Obj* o): o->vfn[32 / 4](o, 0) (name?); decompiled: src/obj/obj22.cpp
+001882F8 World_Flag1281F4_001882F8        // void f(): p = World->+0x1281F4; if (p && (p->+28 & 0x100)) p->+309 = 1 (name?); decompiled: src/obj/obj22.cpp
+001BD614 Obj_VCall48_001BD614             // f(?, Obj* o): o->vfn[48 / 4](o) (name?); decompiled: src/obj/obj22.cpp
+001E9164 Target_SetState2_001E9164        // f(Object* t): d = Target_GetDef0D951C(t); d->+124 bit 0x100000 cleared; Obj_SetStateFx266E6C(d, 2) (name?); decompiled: src/obj/obj22.cpp
+00264DA4 Rec48_Get32Or48_00264DA4         // u32 f(const Obj* o, s32 i): (i != -1 ? (o->+64 + i * 48)->+32 : 0), or o->+48 when 0 (name?); decompiled: src/obj/obj22.cpp
+0027BDC8 Call_D6614_0027BDC8              // f(Obj* o): if (o->+92 && (o->+92->+164 & 0x8000)) sub_000D6614(o, 1) (name?); decompiled: src/obj/obj22.cpp
+00286B54 World_AddCallback_00286B54       // f(Obj* o): World_AddTimedCallback(World, 2, 0x00F35300, o, o->+8) (name?); decompiled: src/obj/obj22.cpp
+0028EE94 World_AddCallback_0028EE94       // f(Obj* o): World_AddTimedCallback(World, 2, 0x00F353B0, o, o->+8) (name?); decompiled: src/obj/obj22.cpp
+0029F760 Rec128_Alloc_0029F760            // Rec* f(Obj* o): the next of the 16 128-byte records at o + 112 (count +2160), or 0 when full (name?); decompiled: src/obj/obj22.cpp
+002ABD08 Field2564_FindF64A70_002ABD08    // void f(Obj* o, u32 h): o->+2564 = the index (0 / 1) of h in the 2 words at 0x00F64A70 (h != 0) (name?); decompiled: src/obj/obj22.cpp
+002D2EFC Counter28_Dec_Adj24              // void f(Base24* b): Counter28_Dec on the object at b - 24 (r3 left as the halfword, or 0) (name?); decompiled: src/obj/obj22.cpp
+0031F8AC Table_GetF_0031F8AC              // f32 f(const Obj* o, u32 i): ((o->+48->+8->+0)[o->+52 * 2]->+0)[i * 2 + 1] (f32) (name?); decompiled: src/obj/obj22.cpp
+0034B844 Iff_ReadReset_0034B844           // bool f(Reader* r): the words at 0x0106BFA4 / 0x0106BFA8 = 0; Iff_ReadChunks(r, 0); 1 (name?); decompiled: src/obj/obj22.cpp
+0034BB18 Iff_ReadReset_0034BB18           // bool f(Reader* r): the words at 0x0106BFB4 / 0x0106BFB8 = 0; Iff_ReadChunks(r, 0); 1 (name?); decompiled: src/obj/obj22.cpp
+0042681C Treasure_ReleaseIf_0042681C      // f(Treasure* t, u32 h): if (t->+164 bit 31 && t->+132 == h) Treasure_Release425BA8(t, 1) (name?); decompiled: src/obj/obj22.cpp
+0042E9F0 Obj_InitVt_B20E48                // void f(Obj* o): Obj_InitVt_B20CC8(o, 1), vtable 0x00B20E48 (name?); decompiled: src/obj/obj22.cpp
+00433424 Obj_InitVt_B21088                // void f(Obj* o, u8 on): Obj_InitVt_B20CC8(o, on), vtable 0x00B21088 (name?); decompiled: src/obj/obj22.cpp
+00439DC4 Obj_InitVt_B21370                // void f(Obj* o): Obj_InitVt_B20CC8(o, 1), vtable 0x00B21370 (name?); decompiled: src/obj/obj22.cpp
+0043A80C Emitter_Stop9_0043A80C           // f(Obj* o): Emitter_StopGlobal(o->+9 (u8)); Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj22.cpp
+0044DC80 Mem_AllocCounted_0044DC80        // void* f(u32 n): *(u32*)0x010AC934 += n; Mem_Alloc(n, 0, 16) (name?); decompiled: src/obj/obj22.cpp
+0046524C Msg_Init10_0046524C              // void f(Msg* m, u32 a, f32 x): m = {10 (6 first), time, 0, 0, 0, a, x} (name?); decompiled: src/obj/obj22.cpp
+00465E60 SaveSlot_Bits2Is1_00465E60       // bool f(const u8* slot, u32 i): 2-bit entry i of the words at the save slot's +4016 (World + 80 + 3936) is 1 (name?); decompiled: src/obj/obj22.cpp
+004A2560 World_Counter_004A2560           // u32 f(): q = (World->+0x1281D4)->+4: q ? ++q->+116->+48 : 0 (name?); decompiled: src/obj/obj22.cpp
+004F8C30 XmlCursor_FirstChildNamed        // f(Cursor* c, const char* name): XmlCursor_FirstChildRaw(c, String_HashNoCase(name)) (name?); decompiled: src/obj/obj22.cpp
+0056E048 Ring_Next_0056E048               // Rec* f(Ring* r): the next of the 2048 128-byte records at r->+512, the cursor r->+532 advanced atomically (wrapping 2047 -> 0) (name?); decompiled: src/obj/obj22.cpp
+00737350 Flag172_8_00737350               // f(Obj* o, u8 on): o->+172 bit 0x8 = on bit 0; if on, sub_000CFEC4(o, 0) (name?); decompiled: src/obj/obj22.cpp
+0074D040 Rec_Set_0074D040                 // void f(Rec* r, u32 a, ?, ?, const f32 c[2], f32 x, f32 y, f32 z): r = {+0 a, +4 x, +8 min(y, *(f32*)0x0074D038), +12 c[0], +16 c[1], +20 z} (name?); decompiled: src/obj/obj22.cpp
+00755DAC Vec3_Cross_00755DAC              // void Vec3_Cross(f32 out[3], const f32 a[3], const f32 b[3]) (fused) (name?); decompiled: src/obj/obj22.cpp
+00760858 Map_FindValue_00760858           // u32 f(const Obj* o, u32 i): *SortedMap_Find749A14(0x0105752C, &o->+128[i]) (name?); decompiled: src/obj/obj22.cpp
+0076BE3C Obj_InitVt5_0076BE3C             // void f(Obj* o): the five vtables of 0x00B13974's derived class (name?); decompiled: src/obj/obj22.cpp
+0076EAEC Obj_InitVt5_0076EAEC             // void f(Obj* o): the five vtables of 0x00B13974's derived class (name?); decompiled: src/obj/obj22.cpp
+00795A34 Obj_VCall72_00795A34             // f(Obj* o, u32 a): o->vfn[72 / 4](o, a) (name?); decompiled: src/obj/obj22.cpp
+00795A74 Obj_VCall80_00795A74             // f(Obj* o, u32 a): o->vfn[80 / 4](o, a) (name?); decompiled: src/obj/obj22.cpp
+00795E7C Obj_VCall188_00795E7C            // f(Obj* o, a): o->vfn[188 / 4](o, a, 0) (name?); decompiled: src/obj/obj22.cpp
+0003D000 Obj_TypeByte_F95410_0003D000     // bool f(const Obj* o): o's byte for the type 0x00F95410 is set and o->+304 bit 0 is clear (name?); decompiled: src/obj/obj22.cpp
+00064FFC Obj_DtorVtB0EF30_00064FFC        // f(Obj* o): o->+0 = 0x00B0EF30 (vtable), *(u32*)0x00F557F8 = 0, Thunk_004B1308(o + 4) (name?); decompiled: src/obj/obj22.cpp
+000877AC Overlay_Clear12_000877AC         // f(const Obj* o): if ((World + 4208)->+8) Overlay_Clear2AA9C8(o->+12) (name?); decompiled: src/obj/obj22.cpp
+000ABB30 PtrVector_ClearF9CDA8            // f(): PtrVector_Clear(0x00F9CDA8); Nop(0x00F9CDA8) (name?); decompiled: src/obj/obj22.cpp
+00140B9C Flag184_80_ByMode_00140B9C       // bool f(Obj* o, const s32* v): *v 1: o->+184 (u64) bit 0x80 cleared; 2: set; 1 (name?); decompiled: src/obj/obj22.cpp
+0016CCD8 Call_DFBFC_Copy236_0016CCD8      // f(Obj* o, Obj* d): sub_000DFBFC(o, d); d->+200 = o->+236 (name?); decompiled: src/obj/obj22.cpp
+0016D850 Call_296840_0016D850             // f(const Obj* o, x): sub_00296840(CallK2_000D94F4(x), (s32) o->+4) (name?); decompiled: src/obj/obj22.cpp
+001A7D48 Call_CDB28_Copy180_001A7D48      // f(Obj* o, Obj* d): sub_000CDB28(o, d); d->+144 = o->+180 (name?); decompiled: src/obj/obj22.cpp
+00274144 Obj_DtorVtB1C030_00274144        // f(Obj* o): o->+0 = 0x00B1C030 (vtable); SortedMap_Remove75DE78(0x01057544, o + 36) (name?); decompiled: src/obj/obj22.cpp
+002DAE5C Player_CountCur_002DAE5C         // u32 f(Player* p): Player_Count2DAC24(p, the current slot record) (name?); decompiled: src/obj/obj22.cpp
+002DB5D4 Player_CallCur_002DB5D4          // u32 f(Player* p): sub_002DB040(p, the current slot record) (name?); decompiled: src/obj/obj22.cpp
+002F4998 World_AddCallback3_002F4998      // f(Obj* o): World_AddTimedCallback(World, 3, 0x00F36160, o, 0) (name?); decompiled: src/obj/obj22.cpp
+002FCA20 Call_2FC600_002FCA20             // f(Obj* o, u32 h, u32 k): if (h == o->+8) sub_002FC600(o, k == 0x82485B95 ? 2 : 1, k) (name?); decompiled: src/obj/obj22.cpp
+00302F6C Xml_ReadF32_4_00302F6C           // f(Obj* o, Cursor* c): XmlCursor_ReadF32(c, 0x00274ACD, &o->+4, default (f32) 0x01069AF0->+72) (name?); decompiled: src/obj/obj22.cpp
+00369D14 Global_SetHashObj_00369D14       // void f(Obj* o, const char* s): *(u32*)0x0106C270 = String_HashNoCase(s), *(Obj**)0x00F64CB4 = o (name?); decompiled: src/obj/obj22.cpp
+0036C0E0 Field340_Pick_0036C0E0           // void f(Obj* o): for (o->+160 >> 1) 2 / 3: o->+340 = o->+336 >= *(f32*)0x0036C0D8 ? o->+336 : o->+332 (name?); decompiled: src/obj/obj22.cpp
+00376954 Obj_Mode_00376954                // f(Obj* o, u8 on): on ? (o->+216 bit 0x40000000 clear: Obj_StartMode368360(o)) : Obj_ShopModeOff3684B8(o) (name?); decompiled: src/obj/obj22.cpp
+003AAF38 Obj_ResetIf0_003AAF38            // bool f(Obj* o, const s32* v): if (*v == 0) the +120 / +124 words and the +152 / +153 / +157 / +158 bytes are cleared and +161 = 1; 1 (name?); decompiled: src/obj/obj22.cpp
+003ABE88 Field104_Ratio_003ABE88          // f32 f(const Obj* o): p = o->+104: p && (p->+192 bit 0x2) ? p->+348 / p->+344 : *(f32*)0x003ABE80 (name?); decompiled: src/obj/obj22.cpp
+00466574 Call_466208_429C04               // f(): if (*(u8*)0x010B9F38) sub_00466208(World); sub_00429C04() (name?); decompiled: src/obj/obj22.cpp
+004A08C8 Timer_Step_004A08C8              // void f(Timer* t, u8 k, f32 d): t->+0 == k ? t->+4 = 0 : (t->+4 += d; t->+4 >= t->+8: t->+0 = k) (name?); decompiled: src/obj/obj22.cpp
+004A109C Obj_ResetPos_004A109C            // void f(Obj* o): o->+0..+8 and +16..+24 = the 3 floats at 0x01164B40, o->+32 = 0 (name?); decompiled: src/obj/obj22.cpp
+004A5798 Curve_004A5798                   // f32 f(f32 t): the curve with the constants at 0x004A5788 {c0, c1, c2}: t < c0 ? c1 * t * t : c2 - c1 * (c2 - t)^2 (fused) (name?); decompiled: src/obj/obj22.cpp
+004AE3D0 Profile_Cached_F65F78            // u32 f(): *(u32*)0x00F65F78, set from Save_Profile0C9FC8(0x42361175) when 0 (name?); decompiled: src/obj/obj22.cpp
+004AE414 Profile_Cached_F65F7C            // u32 f(): *(u32*)0x00F65F7C, set from Save_Profile0C9FC8(0x02D45643) when 0 (name?); decompiled: src/obj/obj22.cpp
+004B40CC Call_4D3378_0_004B40CC           // f(Obj* o): sub_004D3378(o, 0x00AEE340, 0); sub_004B2DA0(o) (name?); decompiled: src/obj/obj22.cpp
+004B499C Call_4D3378_1_004B499C           // f(Obj* o): sub_004D3378(o, 0x00AEE348, 1); sub_004B2DA0(o) (name?); decompiled: src/obj/obj22.cpp
+004D2BFC NodeOwner_Init                   // (p, name, 0, 0): inits the 52-byte binding owner made by Cond_Init (name?); not decompiled
+004D2BB8 Binding_Reserve                  // (binding, n): reserves the binding's value-name list (+0 count, +68 array, +72 capacity) (name?); not decompiled
