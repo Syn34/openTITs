@@ -9389,7 +9389,7 @@
 004AE498 SpawnQueue_Update4AE498              // (; f32 dt) -> u16 count: cooldown 0x00F65F80, delayed spawns 0x010C2480 (128-byte records, +108 delay) made via profile vt +28 with a query (0x00B12260) or spawn query (0x00B12868, Wrapper_0CC4D4), record removed; decompiled: src/world/hevent28_b.cpp (name?)
 00486854 World_SpawnPlayers486854             // (World*) -> u8 user count: session (0x00F64C20 +72) slots: profile items notified, "Player%02d_Controllable" spawned (w +0x1280F0), then user blocks placed + User_Travel484BE0; decompiled: src/world/hevent28_c.cpp (name?)
 000F9854 View_Init0F9854                      // (View*, ViewDef*) -> controller: fields from def (+148 split, +152 mode), main camera (def +28 name) and "%s_additive" camera from fresh camera defs (allocator *0x00F8F134 vt +12), controllers (Ctl_Construct34BDEC); decompiled: src/world/hevent28_d.cpp; was View_Update0F9854 (name?)
-004F05A8 Geom_LoadScene4F05A8                 // (GeomSet*, Scene*, u32 a, bool first, bool top) 1926 insns (name?)
+004F05A8 Geom_LoadScene4F05A8                 // (GeomSet*, Scene*, u32 a, bool first, bool top) 1926 insns: calls the three 4F0xxx pieces above and the PropTable getters (name?)
 00F65F80 g_SpawnCooldown                      // f32 (data) (name?)
 010C2480 g_SpawnQueue                         // vector of 128-byte delayed spawn records (+0 data, u16 +8 count) (data) (name?)
 011944E0 g_BankOpenPos                        // f32[3] position for Bank_Open (data) (name?)
@@ -9399,8 +9399,7 @@
 00B247B8 vt_PointDef                          // vtable (data) (name?)
 00B139B8 vt_View                              // vtable (data) (name?)
 0035AC7C Objects_CreateFromDefs35AC7C         // () -> 0x01070000: defs 0x0106C210 instantiated by +80 flag (UI variants 0x00B1F988 / 0x00B1FA48 / 0x00B1F6E0, Obj/Scroller/PathObj ctors), registered by +68 id in 0x0106C228 (type 4 also in 0x0106C258); ids 0x00F64D28 / 0x00F64CDC resolved into 0x0106C330 +100 / +104; decompiled: src/world/hevent28_g.cpp (name?)
-00357DC4 Obj_Construct357DC4                  // (Object* 544 bytes, Def*) (+80 bit 15) (name?)
-00356BA0 Obj_Construct356BA0                  // (Object* 976 bytes, Def*) (+80 bit 16) (name?)
+00356BA0 Obj_Construct356BA0                  // (Object* 976 bytes, Def*) (+80 bit 16) 1161 insns (name?)
 0106C228 g_ObjectsById                        // {id, Object*} map (data) (name?)
 0106C258 g_ObjectsType4ById                   // {id, Object*} map of +80 bit 2 objects (data) (name?)
 
@@ -9582,7 +9581,7 @@
 0077EBA4 VtB205B8_Delete                  // T::~T deleting form: see VtB205B8DeleteAt (name?); decompiled: src/obj/obj25.cpp
 0077F628 VtB21160_Dtor                    // T::~T: vtable 0x00B21160, the PtrVector at +80 destroyed, the member +44 (VtB21B58_DtorTrivial), then VtB20CC8_DtorTrivial_0042CA50(o) (name?); decompiled: src/obj/obj25.cpp
 007881DC Part_Destroy_007881DC            // void f(Part* o): unless the u8 +48 is set, the part +40 (when set) is released (Part_Release_0052F06C, Mem_FreeFrom(it, 0)) and +40 = 0; then Pool_DestructPart( (name?); decompiled: src/obj/obj25.cpp
-00799C18 Color_ToBytes_00799C18           // void f(u8* d, const f32* s): d[0..3] = (u8)(s32)(s[i] * k) (truncated; k the f32 at 0x00799C10, e.g. 255). r4 / f1 left as the last conversion. (name?); decompiled: src/obj/obj25.cpp
+00799C18 PropColor_FromFloats799C18           // (u8 out[4], const f32 in[4]): fctiwz(in[k] * *0x00799C10) bytes (claimed by another agent; not decompiled here) (name?); decompiled: src/obj/obj25.cpp
 0002BA28 VtB0E428_Dtor                    // T::~T: when o->+48->+220 and its +80 are set, vtable 0x00B0E428 and 0x0002B618(+80, it); then vtable 0x00B0DC70 and NavQuery_Free62D08C(o + 216) (name?); decompiled: src/obj/obj25b.cpp
 000577C0 Obj_KindStep_000577C0            // void f(T* o): o->vfn[220](21) for the kind +4 19, o->vfn[220](15) for 14 (name?); decompiled: src/obj/obj25b.cpp
 000A6220 Cmd_PushB21358_000A6220          // void f(T* o): pushes a new VtB21358 (20 bytes) made from ((s32)+12; f32 +16) (name?); decompiled: src/obj/obj25b.cpp
@@ -9643,3 +9642,28 @@
 000EB0F8 Obj_BaseDtor_000EB0F8            // the base destructor under VtB13528 (name?); not decompiled
 001AE468 Obj_BaseDtor_001AE468            // the base destructor under VtB174C0 (name?); not decompiled
 000C2DA0 Obj_BaseDtor_000C2DA0            // the base destructor under VtB15150 / VtB19510 (name?); not decompiled
+
+# World event handler part 29
+004F0394 Scene_ApplyView4F0394                // (-, Scene*, View*, u8 force) -> r3: when force or scene +600: View_SetFov(+604), View_Set520338(+608), SetFactor_005202C8(+612), +616 u8[4] -> (view +512) +32; r3 = that address or 0; decompiled: src/world/hevent29_a.cpp (name?)
+004F0448 Scene_AddXmlPaths4F0448              // (-, Scene*) -> u16: +316 xml paths (count +324) -> Set_AddXmlPath4BDD08(Set_Find(0), path, 0); r3 = count; decompiled: src/world/hevent29_a.cpp (name?)
+004F04D4 Scene_OpenBanks4F04D4                // (GeomSet*, Scene*) -> u16: +296 entries (count +304): +16 f32[3] -> 0x011944E0, Bank_Open(set +0, entry +0, 0); r3 = count; decompiled: src/world/hevent29_a.cpp (name?)
+00799C90 PropTable_GetFloat799C90             // (PropTable*, int set, u32 key, f32* out) -> bool: set = t +4 [set]; u16 +12 count, sorted keys +16, u16 offsets +20, values +24; f1 = value on a hit; decompiled: src/world/hevent29_b.cpp (name?)
+00799D2C PropTable_GetColor799D2C             // (PropTable*, int, u32 key, u8 out[4]) -> bool; decompiled: src/world/hevent29_b.cpp (name?)
+00799DE0 PropTable_GetByte799DE0              // (PropTable*, int, u32 key, u8* out) -> bool; decompiled: src/world/hevent29_b.cpp (name?)
+00799E74 PropTable_GetU32799E74               // (PropTable*, int, u32 key, u32* out) -> bool; decompiled: src/world/hevent29_b.cpp (name?)
+00357DC4 RadarHud_Construct357DC4             // (Object* 544 bytes, Def*): Obj_BaseConstruct35695C, vt 0x00B1F9C8, "<name>_Intro/_OnUpdate/_Idle/_Outro/_AlertIntro/_AlertOutro" hashes +168.., radar blips from kind-8 templates (def +156..+188): player[9] +212, enemy/goal/goal-edge[12] +248/+296/+344, hideout +392, follow +396, bottle[32] +400, safe +528 (vt +40, vt +56 instance, Obj_CollectLodGroup, WorldObj_SetName, bottles/safe Body_SetMode4A5C20 13); was Obj_Construct357DC4; decompiled: src/world/hevent29_c.cpp (name?)
+002DF198 Session_StartLevel2DF198             // (Session*) -> r3: users entered / left at their first entry, the part (+36 or by level), episode masks (map 0xFE71E1BB, List_Notify456500), mask spawners (0xCE33CC21), start objects 0x010681CC (Effect_SetHash 0x3032DD97), Loader_Reset2DEDB4, user 0 object release / snap / vt +28, save value text (handle 0x00F64CDC), target 0x8624AF0B def (+72..+84, Obj_SetStateFx266E6C, save +496 state), 0xE07DD018 effect, Mask_ShowCount2DE258, flagged object mode; decompiled: src/world/hevent29_d.cpp (name?)
+0048A6B0 World_UpdateTimer48A6B0              // (World*; f32 dt) -> 1: countdown block +0x128458..+0x128474 (vt +32 level 2 sub-states 0 / 1): object by id (map 0x0106C228), "%i" text on slot object / player, sounds 0x1EF09B4D / 0x27B8586F / 0xEF586B1D, Request_Post36A050, World_EndFade466678; decompiled: src/world/hevent29_e.cpp (name?)
+0046B9F8 World_BuildStyles46B9F8              // (World*) -> r3: styled instances (+0x128614, 36-byte records, u8 count +0x128610) released, rebuilt from level (+0x128164) +5448 defs (84 bytes): geometry instance by name hash, material (key +40, s16 +4 > 0), camera def, colours, up to 4 Style_Apply0D6D28 instances (vt +96, +88, light kind 8 WorldObj_Set292 0xD000, vt +200 tint 1/0.25/0); decompiled: src/world/hevent29_f.cpp (name?)
+00475F70 World_CloudUpload475F70              // (World*, u8 now): cloud upload sub-states 0..3 (Async_Write0AFE94 of the save, STR_CLOUD_NO_DATA / UPLOAD_SUCCESS / UPLOAD_ERROR / Save_ErrorMessage dialogs, fade, mode 18 / level 1 state 12); decompiled: src/world/hevent29_g.cpp (name?)
+00472470 World_CloudDownload472470            // (World*, u8 now): cloud download sub-states 0..7 (STR_CLOUD_DOWNLOAD_CONFIRM yes/no, Async_Read0AFFD0 into 0x010BD6F0, Save_SaveGameToList, memmove over the save, World_BeginLevel472234, fade); decompiled: src/world/hevent29_g.cpp (name?)
+010681CC g_LevelStartObjects                  // {+2 u16 count, +8 {u32 id, const u8* bit}[]} (data) (name?)
+01068420 g_LevelStartBusy                     // u8 (0x010683D8 +72) (data) (name?)
+010682F0 g_TargetMode                         // s32 (0x010682A8 +72) (data) (name?)
+00F35F68 opd_EpisodeOwnerCb                   // OPD stored in the episode owner +56 (data) (name?)
+00F35F70 opd_TargetDefCbA                     // OPD stored in the target def +72 (+80: 0x00F35F78) (data) (name?)
+00B1F9C8 vt_RadarHud                          // vtable (data) (name?)
+00B12260 vt_StyleDesc                         // style descriptor vtable (Style_Apply0D6D28 input) (data) (name?)
+00B10ED0 vt_FreeListAglMaterial               // ApeTFreeList<AglMaterial> vtable; slot 0x00F8F114, 144-byte nodes (data) (name?)
+010BD6F0 g_CloudDownload                      // u8[4056] downloaded save (data) (name?)
+00F9D1B8 g_SaveErrorKind                      // s32: 7 PSN, 4 / 3 save error text, 1 (data) (name?)
