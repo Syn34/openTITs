@@ -908,7 +908,6 @@
 004B9CB8 AnimCmd_ConstructBase              // see file; decompiled: src/world/construct_animscript.cpp
 002EE304 Effects_Construct        // g 0x00F64C38 "Effects1"; decompiled: src/world/construct_globals.cpp (name?)
 0047C8A0 World_EnterLevel0        // HandleEvent enter, level 0 (name?)
-0050EB08 RenderBuffer_Construct   // 224 bytes (name?)
 
 # Anim-script commands and variables (World_Construct)
 0007AF18 AnimCmd_Clear12_24                 // see file; decompiled: src/world/construct_animscript.cpp
@@ -3579,12 +3578,12 @@
 00544E08 Warp_FillGrid_00544E08              // (Warp*) current vertex buffer: grid positions, colour +5736, UVs with the parabola-sine wave (name?); decompiled: src/gfx/gfx11.cpp
 0052B688 ShadowProj_Build_0052B688           // (o, dir, sphere_fit, cam, range[8]) look-at, slice bounds (corners or sphere), snap, depth range, ortho * look-at -> o+48, slot 7 (name?); decompiled: src/gfx/gfx11.cpp
 00536290 Stereo_ProjectionMatrix_00536290    // (src, dst, -, -, eye; f1, f2) eye 0 copy; 1 / 2 off-axis stereo shift ("ParameterCheckError!"), other: dst transposed (name?); decompiled: src/gfx/gfx11.cpp
-00516970 DrawQueue_Build_00516970            // (Batch*: +0 list, +4 0x24000, +8..+24 0) reads r3 only; DrawQueue_Run_00516CD0 (name?)
-0052B4B8 Shadow_FrustumCorners_0052B4B8      // (cam, -, -, f32 out[32]; f1 near, f2 far) reads r3 / r6 / f1 / f2 (name?)
-0052B2EC Shadow_Bounds_0052B2EC              // (lo[3], hi[3], corners, cam+128, look-at) (name?)
-0052AF78 Shadow_SnapBounds_0052AF78          // (lo[3], hi[3], u16 w, u16 h) (name?)
-0052AA98 Shadow_DepthRange_0052AA98          // (f32* near, f32* far, bounds, look-at, dir, range rec) reads r3..r8 (name?)
-004FF008 Material_AddTexture_004FF008        // (Material*, Texture*) (name?)
+00516970 DrawQueue_Build_00516970            // (Batch*) copies draw records to frame memory, batches/submits; decompiled: src/gfx/gfx12.cpp (name?)
+0052B4B8 Shadow_FrustumCorners_0052B4B8      // (inv_proj, -, -, f32 out[32]; f1 near, f2 far); decompiled: src/gfx/gfx12.cpp (name?)
+0052B2EC Shadow_Bounds_0052B2EC              // (lo[3], hi[3], corners[8], a, b) box through a then b, z negated; decompiled: src/gfx/gfx12.cpp (name?)
+0052AF78 Shadow_SnapBounds_0052AF78          // (lo[3], hi[3], u32 w, u32 h) floor-snap x/y to texel grid; decompiled: src/gfx/gfx12.cpp (name?)
+0052AA98 Shadow_DepthRange_0052AA98          // (near*, far*, b[8], view, dir[3], box[8]); decompiled: src/gfx/gfx12.cpp (name?)
+004FF008 Material_AddTexture_004FF008        // (Material*, Texture*) next slot +20.., refcount, old released (vt slot 2); slot 0 sets u16 +48; decompiled: src/gfx/gfx12.cpp (name?)
 0051D210 Iff_HandleTexture_0051D210          // [IFF chunk handler] (r) texture chunks; loaded ones -> AglTexture allocator hook (*0x00F8F118 +8) and the list *0x010DDAF4 {hash, tex}; returns 1 (name?); decompiled: src/gfx/gfx11.cpp
 00522D18 RenderTarget_RunPasses_00522D18     // (rt, mask) u8 0x00F66FC0 set, config +152 bit 0x10 clear: rt+656 slot 0, passes +4.. by mask bits 0..9 (slot 3 -> slot 4), slot 1; Draw_InvalidateState (name?); decompiled: src/gfx/gfx11.cpp
 005012A4 VpConst_SetModelView_005012A4       // (a, m) vconsts 0..3 = (m or identity when a+24) * view +880, transposed (name?); decompiled: src/gfx/gfx11.cpp
@@ -3620,12 +3619,11 @@
 0051ED00 Trail_UpdateFade_0051ED00           // (o) f_0051E8E0, f_0051EB20 target, +88, +84 eased by SystemState +4 * 0.7 / 2.0 (name?); decompiled: src/gfx/gfx11.cpp
 0052173C FrameBuffer_SetScissor_0052173C     // (fb, rect) clamped scissor cached +164..+170, type-9 record into the stream (name?); decompiled: src/gfx/gfx11.cpp
 00501820 Sprite_Bind_00501820                // (a, m) Material_Bind, model-view by shader mode (billboard 0x010DD940), Stencil_SetEqual32 (name?); decompiled: src/gfx/gfx11.cpp
-00521110 RenderTarget_Init_00521110          // (rt, arg) reads r3 / r4; AglRenderTarget_New_0052317C (name?)
-004FD8D4 Owner_Create_004FD8D4               // (o) -> holder kept at o+92; Iff_HandleRecord_00523C98 (name?)
-0051E8E0 Trail_Fn_0051E8E0                   // (o, o+48, o+64, o+80) reads r4..r6; Trail_UpdateFade_0051ED00 (name?)
-0051EB20 Trail_Fn_0051EB20                   // (o) -> f1 fade target; Trail_UpdateFade_0051ED00 (name?)
-004FCC34 VpConst_Set_004FCC34                // (const f32 m[16]) Sprite_Bind_00501820's identity path (name?)
-004FDEA0 Frustum_FromMatrix       // (f32 planes[6][4], const f32 m[16]) (name?)
+00521110 RenderTarget_Init_00521110          // (RenderTarget*, RenderSurface*) base + its 1840-byte view +672; decompiled: src/gfx/gfx12.cpp (name?)
+0051E8E0 Trail_Fn_0051E8E0                   // (Trail*, sphere, out[4], f32* radius) screen projection; decompiled: src/gfx/gfx12.cpp (name? Trail_ProjectSphere)
+0051EB20 Trail_Fn_0051EB20                   // (Trail*) -> f1 visible fraction of the screen circle; decompiled: src/gfx/gfx12.cpp (name? Trail_ScreenCoverage)
+004FCC34 VpConst_Set_004FCC34                // (const f32 m[16]) vconsts 0..3 = (m * view block +0)^T, VMX; decompiled: src/gfx/gfx12.cpp (name?)
+004FDEA0 Frustum_FromMatrix                  // (Frustum*, const f32 m[16]) 6 normalised planes + 2 transposed copies at +96/+160; decompiled: src/gfx/gfx12.cpp
 
 # World event handler callees, part 16
 000A78D4 Param_SetName0A78D4                  // (Param*, const char* s): non-empty s -> String_Copy(p +20, s, 64), else returns s; was Param_SetMatrix0A78D4 (it copies a name, not a matrix); decompiled: src/world/hevent16_a.cpp (name?)
@@ -5383,3 +5381,54 @@
 0079A1C4 Nop_0079A1C4             // empty (template instance); decompiled: src/obj/obj18_tmpl.cpp
 0079BA04 Nop_0079BA04             // empty (template instance); decompiled: src/obj/obj18_tmpl.cpp
 0079BA0C Nop_0079BA0C             // empty (template instance); decompiled: src/obj/obj18_tmpl.cpp
+
+# Renderer sweep part 6
+004FD8D4 TopoRecordRef_New               // (Topology*) -> new TopoRecordRef + TopoRecord (config +500 slots); decompiled: src/gfx/gfx12.cpp (name? TopoRecordRef_New)
+00505E90 Particle_CollidePlanes_00505E90     // (Point*) ring particles vs emitter planes; decompiled: src/gfx/gfx12.cpp (name?)
+007A6498 InflateQueue_Wait_007A6498          // [InflateQueue vt slot 5] (q, job, u32* out) wait, copy, atomic bit clear; decompiled: src/gfx/gfx12.cpp (name?)
+0051B5C0 MeshFormat_Get_0051B5C0             // (bool second) -> one of 2 lazily built vertex formats 0x010F0CC0; decompiled: src/gfx/gfx12.cpp (name?)
+00524500 Iff_HandleSubMesh_00524500          // [IFF chunk handler] (IffReader*, Topology*) new AglSubMesh; decompiled: src/gfx/gfx12.cpp (name?)
+005ACDE4 LightList_Snapshot_005ACDE4         // () copies lights 0x011950B0 -> 0x01195120 (144 B each); decompiled: src/gfx/gfx12.cpp (name?)
+0050F9A4 DrawRecordList_Reset_0050F9A4       // () resets the draw-record list 0x011DE300; decompiled: src/gfx/gfx12.cpp (name?)
+0051038C RenderState_Invalidate_0051038C     // () -> render state; forget cached GCM state, stencil defaults; decompiled: src/gfx/gfx12.cpp (name?)
+00511F8C RenderTargets_Update_00511F8C       // () View_Update + 005109B0 per live AglRenderTarget; decompiled: src/gfx/gfx12.cpp (name?)
+005CA818 LoadParams_005CA818                 // [ShaderType LoadParams] (type, mat, desc); decompiled: src/gfx/gfx12.cpp (name?)
+00525A24 Iff_HandleSkinWeights_00525A24      // [IFF chunk handler] (IffReader*, Mesh*) bones/weights -> o+72; decompiled: src/gfx/gfx12.cpp (name?)
+00517FB8 RenderState_Reset_00517FB8          // () default GCM state, copy programs, blend; decompiled: src/gfx/gfx12.cpp (name?)
+0050EB08 DrawRing_Init_0050EB08              // (ring, size, count, u8 buffers, u8 b) -> 0xFFFF; decompiled: src/gfx/gfx12.cpp (name?)
+00534DB4 Display_BindAsTexture_00534DB4      // (display, u32 unit) colour surface as texture; decompiled: src/gfx/gfx12.cpp (name?)
+0053DF98 Bloom_Update_0053DF98               // [called through a pointer] (Bloom*) -> Bloom_Chain; decompiled: src/gfx/gfx12.cpp (name?)
+005D7BD0 SHOTextureWarpType_Create           // [ShaderType slot 0] "SHO_TextureWarp", "SHO_TextureWarp_Lit"; decompiled: src/gfx/gfx12.cpp
+005380D0 Job_SetView_005380D0                // (job, RenderTarget*) viewport/matrix record at job +0x12000; decompiled: src/gfx/gfx12.cpp (name?)
+005D2F20 LoadParams_005D2F20                 // [ShaderType LoadParams] params 10..15, texture; decompiled: src/gfx/gfx12.cpp (name?)
+005C95FC LoadParams_005C95FC                 // [ShaderType LoadParams] default texture 5 + load_params12; decompiled: src/gfx/gfx12.cpp (name?)
+00543F40 Display_ScaleToTarget_00543F40      // [called through a pointer] (Effect*) transfer-scale copy; decompiled: src/gfx/gfx12.cpp (name?)
+007A0C10 Emitter_Update_007A0C10             // [called through a pointer] (Emitter*; f1 dt) prewarm/age/emit; decompiled: src/gfx/gfx12.cpp (name?)
+00538724 SubMesh_Destruct_00538724           // (SubMesh*) frees the skin +112, then 004FD198; decompiled: src/gfx/gfx12.cpp (name?)
+005D8C6C SelectShader_005D8C6C               // [ShaderType SelectShader] (type, mat, item) fog/alpha variant; decompiled: src/gfx/gfx12.cpp (name?)
+0079C07C Pool_AllocEntry_0079C07C            // (EntryPool*) free head -> used list; decompiled: src/gfx/gfx12.cpp (name?)
+0050EF04 Graphics_RegisterTypes_0050EF04     // () topology allocator/map, RHSM/HSEM/HHSM handlers, RegisterKLBM; decompiled: src/gfx/gfx12.cpp (name?)
+005B2DF0 LoadParams_005B2DF0                 // [ShaderType LoadParams] load_params12 + param 3; decompiled: src/gfx/gfx12.cpp (name?)
+0079E0C0 Draw_BindVertexArrays_0079E0C0      // (Buffer*, VertexFormat*, offset, stream); decompiled: src/gfx/gfx12.cpp (name?)
+00507E68 Emitter_New_00507E68                // [called through a pointer] (const Emitter*) -> clone with ring; decompiled: src/gfx/gfx12.cpp (name?)
+00515350 Cmd_SetStencil_00515350             // (CmdStream*) stencil enable/ref from the stream; decompiled: src/gfx/gfx12.cpp (name?)
+0054E120 TargetArray_Destruct_0054E120       // () static target array 0x011642C0 (5); decompiled: src/gfx/gfx12.cpp (name?)
+0079C47C TopoRecordRef_Release_0079C47C      // (TopoRecordRef*) drop a reference, free at 0; decompiled: src/gfx/gfx12.cpp (name?)
+0054DB44 TargetArray_Destruct_0054DB44       // () static target array 0x01164188 (2); decompiled: src/gfx/gfx12.cpp (name?)
+0054DD38 TargetArray_Destruct_0054DD38       // () static target array 0x011641F0 (2); decompiled: src/gfx/gfx12.cpp (name?)
+0054DF2C TargetArray_Destruct_0054DF2C       // () static target array 0x01164258 (2); decompiled: src/gfx/gfx12.cpp (name?)
+005DB4BC Game_ShutdownSystems_005DB4BC       // () -> bool: static holder release + 5 subsystem shutdowns; decompiled: src/gfx/gfx12.cpp (name?)
+0051669C DrawQueue_Submit_0051669C           // (Batch*) records to a job (CmdBuf_ReserveCall, WorkQueue_Submit) (name?)
+005203A8 RenderTarget_Setup_005203A8         // (RenderTarget*) after RenderTarget_Init_00521110 (name?)
+005358A8 Display_Prepare_005358A8            // (u32 3) (name?)
+0053B668 Surface_Bind_0053B668               // (RenderSurface*, 1) (name?)
+005109B0 RenderTarget_Draw_005109B0          // (RenderTarget*) after View_Update (name?)
+004FCD78 Mesh_SetFlag_004FCD78               // (Mesh*, 3) (name?)
+005AF298 Shader_IsReady_005AF298             // (0x01196B20, Material*, Desc*) -> bool; reads r4/r5 (name?)
+005E3EC8 cellGcmSetTextureAddress            // (ctx, index, wraps, wrapt, wrapr, unsigned remap, zfunc, gamma) libgcm (name?)
+005E4B24 cellGcmSetTransferScaleMode         // (ctx, mode, surface) libgcm (name?)
+005E4C2C cellGcmSetTransferScaleSurface      // (ctx, CellGcmTransferScale*, CellGcmTransferSurface*) libgcm (name?)
+00500908 Emitter_Advance_00500908            // (Emitter*; f1 dt) (name?)
+0079D280 Emitter_Emit_0079D280               // (Emitter*; f1 time offset) one particle (name?)
+004FD198 Obj_DestructBase_004FD198           // (obj) base destructor part (name?)
+0050FB5C Render_Shutdown_0050FB5C            // () -> bool (name?)
