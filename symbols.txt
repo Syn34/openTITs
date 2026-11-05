@@ -342,7 +342,7 @@
 005E693C sqrtf                    // decompiled: src/math/trig.cpp
 005E6830 _Atan                    // atanf kernel (f32, flags); decompiled: src/math/trig.cpp
 00565154 Arena_Restore            // decompiled: src/world/render.cpp (name?)
-00521A5C FrameBuffer_BeginLayer   // VMX (name?)
+00521A5C FrameBuffer_BeginLayer           // (fb, view, flags) state-cache reset, cmd 0/1 matrices, identity state, scissor; decompiled: src/gfx/gfx15.cpp
 0056A0D0 Matrix_LookAt            // (out, eye, target, up); decompiled: src/world/render.cpp
 004D4E28 Ui_Render                // (bool, -); decompiled: src/ui/render.cpp (name?)
 006EFD10 Snd_Lock                 // decompiled: src/audio/voice_core.cpp
@@ -7642,15 +7642,15 @@
 007A61F4 SpursQueue_Push_007A61F4         // [virtual] (JobQueue*, Job*) atomic 16-slot claim, copy, event flag clear, vslot 10 (name?); decompiled: src/gfx/gfx14.cpp
 0052A528 Iff_HandleTexAnim_0052A528       // [IFF chunk] (IffReader*, Material*) 48-byte texture animation at o+128, scale o+92/+96 (name?); decompiled: src/gfx/gfx14.cpp
 0051DF3C Texture_SystemInit_0051DF3C      // () texture allocator state + list, texture IFF chunks, Texture_InitDefaults, EnsureTextures (name?); decompiled: src/gfx/gfx14.cpp
-005AB5F0 EffectSlot_Texture_005AB5F0      // (slot+28, slot->+40, owner, view) -> Texture* (name?)
+005AB5F0 EffectSlot_Texture_005AB5F0      // (Texture** list, count, owner, view) -> Texture*: picks by projected rect width x view->+512->+56 vs u16 +52 (name?); decompiled: src/gfx/gfx15.cpp
 005AA998 EffectSlot_Draw_005AA998         // (view, rt, const f32 plane[4], owner, slot->+4; f1 fade) (name?)
-00506050 Emitter_Check_00506050           // (Emitter*, item, a, b, c) -> 0 skips the draw; calls Particle_LightColour_00500D40 (name?)
-005159E8 Draw_Pass_005159E8               // (state-cache object, const Pass* {+0, +4, +16 f32[16]}) (name?)
-0054C268 Stencil_Pass_0054C268            // (o, u32 pass; f1 scale) (name?)
-004FF4C0 EmitProps_SetDesc_004FF4C0       // (AglEmitProperties*, const EmitDesc*) (name?)
+00506050 Emitter_Check_00506050           // (Emitter*, DrawRecord* out, a, b, c) -> bool: depth-fade alpha, CollidePlanes, LightColour, fills out (name?); decompiled: src/gfx/gfx15.cpp
+005159E8 Draw_Pass_005159E8               // (Stream*, Pass*) pass command-stream interpreter (cmds 0..23) (name?); decompiled: src/gfx/gfx15.cpp
+0054C268 Stencil_Pass_0054C268            // (o, u32 pass; f1 scale) per-light depth bounds + fragment params + quad (name?); decompiled: src/gfx/gfx15.cpp
+004FF4C0 EmitProps_SetDesc_004FF4C0       // (AglEmitProperties*, const EmitDesc*) clamps, kind 0 material / kind 1 meshes (name?); decompiled: src/gfx/gfx15.cpp
 005E104C Gcm_Transfer_005E104C            // libgcm cellGcmSetTransferImage variant (context, mode, dst off, pitch, x, y, src off, pitch, x, y, w, h, bpp) (name?)
 005E0688 Gcm_WriteLabel_005E0688          // libgcm (context, label index, value) (name?)
-0051DA1C Texture_InitDefaults_0051DA1C    // () after the texture system init (name?)
+0051DA1C Texture_InitDefaults_0051DA1C    // () builds APE_WHITE/GREY/FALLOFF/NORMAL/BLACK into 0x010DDADC (name?); decompiled: src/gfx/gfx15.cpp
 
 # World event handler callees, part 20
 00787630 Flag_Set787630                       // (base, off, v): byte (base+off) +656 bit 0x80 = v & 1; decompiled: src/world/hevent20_a.cpp (name?)
@@ -8071,3 +8071,29 @@
 0038E5DC Cond_Init                // (Cond* p, s16 id, const char* class name, u32 kind) (name?); called by the New_C* factories (src/obj/obj20_tmpl.cpp); not decompiled
 000E0BCC Obj_TestE0BCC            // (obj) -> bool, gates Obj_TestVCall_* / Obj_HitImpulse_* (name?); not decompiled
 0073A36C Avl_Remove_0073A36C      // (tree, key, Node** pp, bool* changed): 764-insn recursive AVL remove, 9 instances (group 7bad4600) (name?); not decompiled
+
+# Renderer sweep part 9
+00514D68 Stream_SetDepthBias_00514D68     // (Stream*) pass cmd 17: u8 record -> polygon offset by depth format (name?); decompiled: src/gfx/gfx15.cpp
+005399CC Iff_HandleTextureData_005399CC   // [IFF chunk] (IffReader*, Texture**) pixel data into pool, header +72, format +100 (name?); decompiled: src/gfx/gfx15.cpp
+0052CD5C LightGroup_Draw_0052CD5C         // [virtual] (o, view, x) per-light slot 3, LightView block, slot 6 (name?); decompiled: src/gfx/gfx15.cpp
+0053170C RenderState_Reset_0053170C       // () RSX default state + render-state cache reset (name?); decompiled: src/gfx/gfx15.cpp
+005437F0 GodRays_Update_005437F0          // [vtable 0x00B23FF0 slot 4] (GodRays*) (name?); decompiled: src/gfx/gfx15.cpp
+00518748 Skin_TransformPositions_00518748 // (SkinMesh*, pose) bone 3x4 transform of +0x800C into +0x8010 (name?); decompiled: src/gfx/gfx15.cpp
+00544870 Trail_Update_00544870            // [vtable 0x00B24038 slot 4] (Trail*) lerp + projected step, slot 10 (name?); decompiled: src/gfx/gfx15.cpp
+005AD15C Render_FreeLists_005AD15C        // [shutdown table 0x00F10864] () frees bank/pool/part lists (name?); decompiled: src/gfx/gfx15.cpp
+005C3528 LoadParams_005C3528              // [vtable 0x00B25AF0 slot 3] (ShaderType*, Material*, Desc*) -> 1 (name?); decompiled: src/gfx/gfx15.cpp
+004FEBF0 EmitProps_AddMesh_004FEBF0       // (AglEmitProperties*, Mesh*) (name?)
+004FEDD0 EmitProps_SetMaterial_004FEDD0   // (AglEmitProperties*, AglMaterial*): +72, material refs++ (name?)
+005E2BD4 Gcm_SetDepthBoundsTest_005E2BD4  // (context, enable) libgcm (name?)
+005E341C Gcm_SetDepthBounds_005E341C      // (context; f1 zmin, f2 zmax) libgcm (name?)
+005E3CFC cellGcmSetColorMask_5E3CFC       // method 0x0324 libgcm (name?)
+005E3D20 cellGcmSetCullFace_5E3D20        // method 0x1830 libgcm (name?)
+005E3D44 cellGcmSetDepthFunc_5E3D44       // method 0x0A6C libgcm (name?)
+005E3D68 cellGcmSetFrontFace_5E3D68       // method 0x1834 libgcm (name?)
+005E3DB0 cellGcmSetAlphaTestEnable_5E3DB0 // method 0x0304 libgcm (name?)
+005E3DD4 cellGcmSetBlendEnable_5E3DD4     // method 0x0310 libgcm (name?)
+005E3DF8 cellGcmSetCullFaceEnable_5E3DF8  // method 0x183C libgcm (name?)
+005E3E1C cellGcmSetDepthTestEnable_5E3E1C // method 0x0A74 libgcm (name?)
+005E3E40 cellGcmSetRestartIndexEnable_5E3E40 // method 0x1DAC libgcm (name?)
+005E3F5C cellGcmSetRestartIndex_5E3F5C    // method 0x1DB0 libgcm (name?)
+005E3FA4 Gcm_5E3FA4                       // (context, a, b) methods 0x1E98 / 0x0100 libgcm (name?)
