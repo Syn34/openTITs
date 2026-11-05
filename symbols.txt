@@ -8561,13 +8561,6 @@
 00528130 EmitterJobs_Submit_00528130         // () batched emitter items -> slots / 144-byte records, SPU jobs of 16 via f_0056F050 (name?); decompiled: src/gfx/gfx16.cpp
 0056F050 EmitterJob_Run_0056F050             // (const JobHeader*, records, u32 count, u32** busy) under the job mutex: queue acquire, WorkQueue_Fn56EEF0, submit (name?); decompiled: src/gfx/gfx17.cpp
 00506598 EmitterDraw_00506598                // (Emitter*, record, const f32 view[4][4], x, u16 y) (name?)
-00505740 EmitterDraw_00505740                // (Emitter*, record, view_proj): kind 1, record mode 5 (name?)
-005043B0 EmitterDraw_005043B0                // (Emitter*, record): kind 0, record mode 5 (name?)
-00503BC0 EmitterDraw_00503BC0                // mode 4 (name?)
-00503340 EmitterDraw_00503340                // mode 3 (name?)
-00502AC0 EmitterDraw_00502AC0                // mode 2 (name?)
-00502240 EmitterDraw_00502240                // mode 1 (name?)
-005019B8 EmitterDraw_005019B8                // any other mode (name?)
 0053C4A0 Display_WaitVSync_0053C4A0          // () mftb / usleep frame pacing, label 251, vblank waits (name?) - skipped (timing loop)
 
 # World event handler callees, part 23
@@ -8839,7 +8832,7 @@
 0052996C Iff_HandleEmitSpline_0052996C       // [IFF handler OPD 0x00F3B690] (IffReader*, AglEmitProperties*) isLoop / numPoints / position+control1+control2 -> +136 spline shape (vtable 0x00B232C0) (name?); decompiled: src/gfx/gfx17.cpp
 0052F91C Gcm_DumpLocks_0052F91C              // (s32 swap_label) "=== RSX Potential Locks ===" printf dump of gcm contexts and RSX labels (name?); decompiled: src/gfx/gfx17.cpp
 005BF608 SlyCharacter2_LoadParams            // [vtable 0x00B259A0 slot 3] (type, Material*, Desc*) -> 1; m+20 / two textures (3,3,1), params 0..31 (name?); decompiled: src/gfx/gfx17.cpp
-0056AEFC Debug_Draw_0056AEFC                 // () debug prim draw (ApeDebug::Prim list); NOTE leaves r4 that View_EndDraw_00522140 reads (name?)
+0056AEFC Debug_Draw_0056AEFC                 // () ApeDebug::Prim list drawn (7 line, 8 rect, 3 text); leaves r4 that View_EndDraw_00522140 reads (name?); decompiled: src/gfx/gfx18.cpp
 
 # World event handler callees, part 24
 00348BFC Anim_UnloadAll348BFC                 // () -> 0: 0x00F64C9C released, Havok resources of 0x0106BC00 / 0x0106BC2C / 0x0106BC58 released, maps 0x0106BB9C / B4 / CC freed, 0x0106BBE4 = 0; decompiled: src/world/hevent24_a.cpp (name?)
@@ -8885,3 +8878,23 @@
 00114298 CamCtrl_Construct114298              // (ctrl 176 bytes, Camera*, Object*, 0) (name?)
 004845F0 World_ReleaseCameraCtrl4845F0        // (World*, UserBlock*) (name?)
 000F9854 View_Update0F9854                    // only caller of View_SetSplit0F94C0 (name?)
+
+# Renderer sweep part 12
+00505740 EmitterDraw_Oriented_00505740       // (Emitter*, record, view_proj): kind 1 mode 5: particle matrices scaled, turned to particle_dir (n, r = n x up, t = r x n), through the record's 4x4 unless o+24; then EmitterDraw_Layered_005052FC (name?); decompiled: src/gfx/gfx18.cpp
+00503BC0 EmitterDraw_Sprites_00503BC0        // (Emitter*, record): kind 0 mode 4: xy quads, no matrix (rec+108 adds the particle matrix translation, which keeps the position: quirk) into the stream buffers (name?); decompiled: src/gfx/gfx18.cpp
+00502240 EmitterDraw_SpritesXY_00502240      // (Emitter*, record): kind 0 mode 1: xy-plane quads (rec+108: corners through the particle matrix) (name?); decompiled: src/gfx/gfx18.cpp
+00502AC0 EmitterDraw_SpritesXZ_00502AC0      // (Emitter*, record): kind 0 mode 2: xz-plane quads (name?); decompiled: src/gfx/gfx18.cpp
+00503340 EmitterDraw_SpritesZY_00503340      // (Emitter*, record): kind 0 mode 3: yz-plane quads (x half size on z) (name?); decompiled: src/gfx/gfx18.cpp
+005019B8 EmitterDraw_SpritesDefault_005019B8 // (Emitter*, record): kind 0 other modes: the xy quads from the second position array 0x010D0D30 (name?); decompiled: src/gfx/gfx18.cpp
+005043B0 EmitterDraw_Facing_005043B0         // (Emitter*, record): kind 0 mode 5: quads spanned by t / r of each particle's direction (up 0x01164B50 or 0x01164B70) (name?); decompiled: src/gfx/gfx18.cpp
+0054E7D8 RenderState_Construct_0054E7D8      // () static initialiser: render state 0x010F10A0 defaults, program maps vmap / fmap, job part 0x01163E80 flags, PostProc_ThermalObject ShaderType (name?); decompiled: src/gfx/gfx18.cpp
+005325D8 Frame_Begin_005325D8                // (bool bind): gamma clamp 0.8..1.2 (cellVideoOutSetGamma), shader patch buffer stats, RenderState_Reset, video mode, then viewport / targets / clear of the display (name?); decompiled: src/gfx/gfx18.cpp
+00538B44 DrawItem_DrawDepth_00538B44         // (Mesh*, DrawItem*): DrawItem_DrawDepth with skinned flags 0 [vtable] (name?); decompiled: src/gfx/gfx18.cpp
+005393FC DrawItem_DrawBank_005393FC          // (Mesh*, DrawItem*, Bank*): DrawItem_DrawDepth with the bank's skin table (+1280 + u8 +652 * 128), flags 0xC0000000 [Bank_DrawItem] (name?); decompiled: src/gfx/gfx18.cpp
+0050D2E0 Outline_Init_0050D2E0               // u32 () [Graphics_Init]: 'OUTL'.. chunk handlers, draw-record list, outline shader material, its 512-byte stream buffer; returns the old +128 atomic (name?); decompiled: src/gfx/gfx18.cpp
+0054A490 Iff_ReadGDEM_0054A490               // bool (IffReader*, Obj*): the 'GDEM' chunk handler (OPD 0x00F3BEB0): 128-byte records, pool-6 data, optional RSX buffer parts (name?); decompiled: src/gfx/gfx18.cpp
+0052C6B8 Obj23D50_FitBoxes_0052C6B8          // (Obj23D50*): look-at along o+32, each entry's objects' boxes / matrices into its space -> Obj23D50_FitBox_0052BC9C (name?); decompiled: src/gfx/gfx18.cpp
+0051B788 Mesh_CreateSphere_0051B788          // Mesh* (Material*, s32 rings, s32 segments): "Sphere" triangle-strip submesh (name?); decompiled: src/gfx/gfx18.cpp
+0052BC9C Obj23D50_FitBox_0052BC9C            // (o, const f32 box[8] {min, -, max, -}, const f32 m[4][4]) (name?)
+00565550 DebugFont_Draw_00565550             // (DebugFont*, FrameBuffer*, const f32 pos[3], const char*, colour*; f1 size) (name?)
+00731620 Mem_NewAligned_00731620             // (u32 size, u32 align) -> pointer (Mem_NewAligned's neighbour) (name?)
