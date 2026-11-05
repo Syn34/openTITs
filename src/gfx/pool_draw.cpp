@@ -4,6 +4,7 @@
 #include "pool.h"
 
 #include "../view/view2.h"
+#include "gfx10.h"
 
 using namespace sly4;
 
@@ -296,6 +297,9 @@ DECOMP(00538FA0, DrawItem_DrawDepth) {
                 const u32 src = mats + 48 * ref<u8>(pal + 1 + i);
                 for (u32 k = 0; k < 48; k += 4) sp::copy_word(bones + 48 * i + k, src + k);
             }
+            // The copy goes through f1, which is left holding the last word
+            // copied (bone 0, word 11).
+            ctx.fpr[1] = sly4::render::gfx10::lfs_value(load<u32>(mats + 48 * ref<u8>(pal + 1) + 44));
             n = ref<u8>(pal);
         }
         call(ctx, fx::fn::cellGcmSetVertexProgramConstants, {load<u32>(st), 64, 12 * n, bones});

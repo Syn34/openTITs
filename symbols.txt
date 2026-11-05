@@ -178,8 +178,6 @@
 00565410 DebugFont_Construct      // void DebugFont_Construct(DebugFont* f, const FontData* data, Texture* tex) +0 the data, +4 the texture, +8 a m; decompiled: src/obj/obj15_small.cpp
 004FEBD0 Shader_Find              // wrapper of 0x004FE990 (the same arguments) (template instance); decompiled: src/obj/obj19_tmpl.cpp
 004FF43C Material_Create                  // Material* Material_Create(shader): m = Material_Alloc(); m->+16 = shader (name?); decompiled: src/obj/obj22.cpp
-0051BC20 Mesh_CreateSphere        // "SphereIdx" (name?)
-0051C1A8 Mesh_CreateCube          // "Cube" (name?)
 005516E0 PtrVector_Construct      // (PtrVector*): all fields 0; decompiled: src/obj/obj13_misc.cpp
 0050F308 Shaders_Init             // decompiled: src/gfx/shaders.cpp
 
@@ -9111,3 +9109,27 @@
 009F63EC HkShape_Init9F63EC                   // (Shape*, const Desc*) (name?)
 00F1DE80 Vt_RayAllHitsCollector               // vtable of the 8-inline-hit all-hits ray collector (data, name?)
 00F325E0 Opd_GrindFilter                      // OPD given to SplineInstances_CollectNear by 0x0012C968 (data, name?)
+
+# Renderer sweep part 13
+0051C1A8 Mesh_CreateCube_0051C1A8            // (Material*, bool faces) -> Mesh* "Cube": 8 corners +-0.5, 24 line / 36 triangle indices (replaces Mesh_CreateCube); decompiled: src/gfx/gfx19.cpp (name?)
+0051BC20 Mesh_CreateSphereIdx_0051BC20       // (Material*, s32 rings, s32 segments) -> Mesh* "SphereIdx": indexed strips joined by 0xFFFF (replaces Mesh_CreateSphere); decompiled: src/gfx/gfx19.cpp (name?)
+005246A8 VtxDecl_Get_005246A8                // (const u8 (*)[12], u32 count, bool) -> AglVtxDecl* shared by hash (ApeTListAllocator<AglVtxDecl> 0x010E061C); decompiled: src/gfx/gfx19.cpp (name?)
+0054E30C RenderState_Destruct_0054E30C       // () static destructor: tr list, static surfaces / target arrays, thermal shader, job part, vmap / fmap; decompiled: src/gfx/gfx19.cpp (name?)
+0050E614 Emitter_InitSystem_0050E614         // () [Graphics_Init] AglEmitProperties header, 12 emitter chunk handlers, sprite stream buffers 0x010DDBBC; decompiled: src/gfx/gfx19.cpp (name?)
+005499D8 DrawList_DrawDepth_005499D8         // (?, View*) depth pass over the view's draw records (+1024..+1152); decompiled: src/gfx/gfx19.cpp (name?)
+00549F30 DepthPass_Run_00549F30              // (DepthPass*) -> u8: waits on +128, binds / clears the depth target, per view viewport, call/jump blocks, DrawList_DrawDepth; decompiled: src/gfx/gfx19.cpp (name?)
+0052528C Mesh_SwapVertices_0052528C          // (Mesh*) byte-swaps the vertex data by attribute type [Iff_HandleXTVM]; decompiled: src/gfx/gfx19.cpp (name?)
+005D7598 DrawItem_SetupBasic_005D7598        // (-, DrawItem*) [virtual] item matrix, fog, layer list, fconst 8, translucency, mesh draw; decompiled: src/gfx/gfx19.cpp (name?)
+005D65C0 DrawItem_SetupStencil_005D65C0      // (-, DrawItem*) [virtual] as SetupBasic plus stencil ref / cull, fconst 2; decompiled: src/gfx/gfx19.cpp (name?)
+005D8100 DrawItem_SetupStencil_005D8100      // (-, DrawItem*) [virtual] identical body to 005D65C0 (own 1/255 constant); decompiled: src/gfx/gfx19.cpp (name?)
+005D0CA0 LoadParams_005D0CA0                 // (-, Material*, Desc*) -> bool [virtual] 4 textures, params 0..19; decompiled: src/gfx/gfx19.cpp (name?)
+005D4198 LoadParams_005D4198                 // (-, Material*, Desc*) -> bool [virtual] SHOTextureWarp-ready, 3 textures (wraps from +160/+164), params 10..32; decompiled: src/gfx/gfx19.cpp (name?)
+005D5C80 LoadParams_005D5C80                 // (-, Material*, Desc*) -> bool [virtual] sibling of 005D4198, params 10..34, m+45 = 7; decompiled: src/gfx/gfx19.cpp (name?)
+00528948 Iff_HandleEmitShape_00528948        // (IffReader*, AglEmitProperties*) -> bool: sphere / box emit shape at +108; decompiled: src/gfx/gfx19.cpp (name?)
+00529FE0 Iff_HandleEmitRotation_00529FE0     // (IffReader*, AglEmitProperties*) -> bool: 192-byte rotation at +124 (axis, variance, angle range, Rot keys); decompiled: src/gfx/gfx19.cpp (name?)
+00524B68 Iff_HandleMeshHeader_00524B68       // (IffReader*, Mesh*) -> bool: header record, vertex elements -> VtxDecl_Get, material by hash, Streams_Bind; decompiled: src/gfx/gfx19.cpp (name?)
+0051C704 Iff_HandleMaterial_0051C704         // (IffReader*, Material*) -> bool: material record (versions 2..4), params -> Material_Apply_0050C3D8; decompiled: src/gfx/gfx19.cpp (name?)
+00539C7C Iff_HandleDds_00539C7C              // (FileReader*, Texture*) -> bool: DDS (DXT1-5, V8U8) into the texture via Rsx_Copy; decompiled: src/gfx/gfx19.cpp (name?)
+005AD444 Bank_StaticInit_005AD444            // () static initialiser: object bank globals (0x01193060 etc.), changed list, default matrices / bounds; decompiled: src/gfx/gfx19.cpp (name?)
+0050C3D8 Material_Apply_0050C3D8             // (Material*, const MaterialRecord*) applies Iff_HandleMaterial's record (Shader_FindByHash, Map_Find) (name?)
+007881DC Surface_Destruct_007881DC           // (Surface*, u32 2): releases its RSX part / pool block [RenderState_Destruct] (name?)
