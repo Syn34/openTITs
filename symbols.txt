@@ -2926,7 +2926,7 @@
 005695C4 Iff_ReadFile             // bool Iff_ReadFile(IffReader* r, File* f, Obj* o): +4 = f, +8 = 0, +12 = (name?); decompiled: src/obj/obj14_small.cpp
 005698F4 FileReader_ReadF32Swapped // u32 FileReader_ReadF32Swapped(FileReader* r, f32* out): 4 bytes read (name?); decompiled: src/obj/obj14_small.cpp
 0056998C FileReader_ReadByte      // u32 FileReader_ReadByte(FileReader* r, void* buf): the same for one byte (name?). (name?); decompiled: src/obj/obj14_small.cpp
-00569C10 FileReader_Read32        // u32 FileReader_Read32(FileReader* r, void* buf) / FileReader_ReadU32: (name?); decompiled: src/obj/obj14_small.cpp
+00569C10 FileReader_Read32                // (IffReader*, char out[32], name) (name?); decompiled: src/obj/obj14_small.cpp
 00569C74 FileReader_ReadU32       // u32 FileReader_Read32(FileReader* r, void* buf) / FileReader_ReadU32: (name?); decompiled: src/obj/obj14_small.cpp
 0056A2D8 Matrix_PerspectiveWH     // void Matrix_PerspectiveWH(f32 m[4][4], f32 w, f32 h, f32 n, f32 f) (name?); decompiled: src/obj/obj14_small.cpp
 0056A7AC Data_Hash31              // u32 Data_Hash31(const u8* p, u32 n): h = h * 31 + byte over n bytes; 0 (name?); decompiled: src/obj/obj14_small.cpp
@@ -3086,7 +3086,7 @@
 0051D198 ReadName_0051D198                  // u32 (x): f_00569638(x, buf) into a 256-byte stack buffer; when that returns nonzero, String_Dup(buf) is appended to the u32 list at 0x010DDADC (+28... (name?); decompiled: src/gfx/gfx8.cpp
 00527D34 Gcm_ResetMaskCull_00527D34         // void (): three RSX commands written inline at the gcm context's current pointer (no space check): colour mask 0x01010101, cull face enable 1, front... (name?); decompiled: src/gfx/gfx8.cpp
 00537D5C CmdBuf_Call_00537D5C               // void (CallRec* rec): f_005E0600(gcm context, the RSX offset of rec->+0), then *rec->+4 = the offset of the context's current pointer | 0x20000000 (... (name?); decompiled: src/gfx/gfx8.cpp
-0053A94C Texture_LoadFromHeader_0053A94C    // void (Texture* t, const Header* h): InitFromHeader_0050A28C(t, h), then, when the u32 at 0x01164DEC (obj13 kBankState) is set, Texture_FromGtf(t, b... (name?); decompiled: src/gfx/gfx8.cpp
+0053A94C Texture_LoadFromHeader_0053A94C  // (Texture*, const TextureHeader* 52 bytes) (name?); decompiled: src/gfx/gfx8.cpp
 005D7064 SHO_DefaultType_SelectShader       // u32 (ShaderType* t, Material* m, DrawItem* item): item->u8 +69 = 1 when its material (+28) has u8 +100 bit 0x80 and item->+44 is set (sel = *item->... (name?); decompiled: src/gfx/gfx8.cpp
 0050059C EmitPropsHolder_Delete             // The 0x00B232D8 holder's deleting destructor: when set, vtable, EmitPropsRef_Set(this + 4, 0), f_0079CA4C(this + 4), then Mem_FreeFrom(this, 0) [vta...; decompiled: src/gfx/gfx8.cpp
 0052F8A0 Display_SetGamma                   // void (f32 gamma): clamped to [0.8, 1.2] (k at 0x0052F898; NaN stays); when it differs from render::g::mem_stats +56 it is stored there and cellVide... (name?); decompiled: src/gfx/gfx8.cpp
@@ -5476,8 +5476,8 @@
 005AA718 Material_SetMatrixParams_005AA718   // (Material*, v, f32 src[16]) Obj_SetSlot20(m, v, 1), params 3..18 (name?); decompiled: src/gfx/gfx13.cpp
 00529D80 Iff_HandleScaleCurve_00529D80       // [IFF chunk handler] (r, EmitProps*) "variance" clamped, new scale curve +116, "Scale" keys (name?); decompiled: src/gfx/gfx13.cpp
 005B44B4 LoadParams_005B44B4                 // [LoadParams] tex d+4 (t,1,3,1), m+120 mode nibble, then two textures, params 0..2 (name?); decompiled: src/gfx/gfx13.cpp
-0051F850 PostChain_Construct_0051F850        // (PostChain*) 6848 bytes: "Bloom", "Desaturation", "Blur", "RadialBlur", "GodRays", "BloomNoise", ScreenWarp (name?)
-005AB908 EffectSlot_Submit_005AB908          // (View*, EffectSlot*) called for visible owner-less effect slots (name?)
+0051F850 PostChain_Construct_0051F850     // (PostChain*) builds the 6848-byte post-effect chain: Bloom, DoF, Desaturation, Blur, RadialBlur, ScreenWarp, GodRays, Trail, BloomNoise, +6736; then each effect's vslot 2 (name?); decompiled: src/gfx/gfx14.cpp
+005AB908 EffectSlot_Submit_005AB908       // (View*, EffectSlot*) facing test, slot texture bind, fade, EffectSlot_Draw_005AA998, Material_SetMatrixParams (name?); decompiled: src/gfx/gfx14.cpp
 005E3C38 cellGcmSetAntiAliasingControl       // (context, enable, alpha to coverage, alpha to one, sample mask) method 0x1D7C libgcm (name?)
 005E2590 cellGcmSetAntiAliasingControl_005E2590  // the same with the command-buffer space check libgcm (name?)
 
@@ -7619,3 +7619,38 @@
 007591EC AdjDtor_007591EC         // p = this -380: vtables 0x00B126B8 / 0x00B12528 / 0x00B1200C at +0 / +384 / +380, then 0x000DF934(p) (template instance); decompiled: src/obj/obj19_tmpl3.cpp
 00391694 Node_Init                // (p, s16 id, const char* name) (name?); called by the NewNamed_* factories (src/obj/obj19_tmpl*.cpp); not decompiled
 004D3088 Node_Bind                // (owner, const char* name, k5, k6, -1, 0) -> binding (+64 a byte value, +76 cleared by callers) (name?); not decompiled
+
+# Renderer sweep part 8
+005B9A1C LoadParams_005B9A1C              // [ShaderType LoadParams] (type, Material*, Desc*) textures d+4/+8/+12, params 0..2 (name?); decompiled: src/gfx/gfx14.cpp
+005C67E0 LoadParams_005C67E0              // [ShaderType LoadParams] as 005B9A1C + param 3 flag (name?); decompiled: src/gfx/gfx14.cpp
+00549160 Surface_AttachDepth_00549160     // [virtual] (o, pass) display depth slot -> o+640, surfaces o+644 / +648 (name?); decompiled: src/gfx/gfx14.cpp
+005D20E0 LoadParams_005D20E0              // [ShaderType LoadParams] texture d+4, params 0..9 (d+120/+124 to radians from ver 9) (name?); decompiled: src/gfx/gfx14.cpp
+005D7DE8 LoadParams_005D7DE8              // [ShaderType LoadParams] same as 005D20E0 (name?); decompiled: src/gfx/gfx14.cpp
+0050809C Emitter_PrepareDraw_0050809C     // [virtual] (Emitter*, item, a, b, c, u32 out[4]) frame-stack draw record into item+112 (name?); decompiled: src/gfx/gfx14.cpp
+0051A918 Render_DrawFrame_0051A918        // () clear, layer 12, draw list, Draw_Lists(3), Draw_Pass_005159E8, layer 13 (name?); decompiled: src/gfx/gfx14.cpp
+0054CB58 Stencil_Draw_0054CB58            // [virtual] (o) two stencil-EQUAL passes of Stencil_Pass_0054C268 (name?); decompiled: src/gfx/gfx14.cpp
+00525E40 Iff_HandleTopology_00525E40      // [IFF chunk] (IffReader*) new AglTopology, chunks, materials, topology map append (name?); decompiled: src/gfx/gfx14.cpp
+0051D4B4 Iff_HandleTexture_0051D4B4       // [IFF chunk] (IffReader*, Texture** out) texture header, lookup or Texture_Alloc + load (name?); decompiled: src/gfx/gfx14.cpp
+00500D40 Particle_LightColour_00500D40    // (-, u8 colour[4], Particle*, Lights*) ambient + point/directional lights, clamp, scale colour (name?); decompiled: src/gfx/gfx14.cpp
+00517488 Draw_Lists_00517488              // (u32 mask) runs the bit-0 / bit-1 draw lists -> bool (name?); decompiled: src/gfx/gfx14.cpp
+005286BC Iff_HandleEmitDesc_005286BC      // [IFF chunk] (IffReader*, AglEmitProperties*) 68-byte emitter desc -> EmitProps_SetDesc_004FF4C0 (name?); decompiled: src/gfx/gfx14.cpp
+005495D8 DepthState_Apply_005495D8        // [virtual] (o) polygon offset by depth format, depth mask/test/func, blend off, cull, front face, colour mask 0 (name?); decompiled: src/gfx/gfx14.cpp
+00537118 Surface_Copy_00537118            // (Surface* a, Surface* b) RSX transfer image or scaled blit a -> b (name?); decompiled: src/gfx/gfx14.cpp
+0053BC14 Display_Readback_0053BC14        // () once per frame: colour target -> read-back buffer + label 251, pending buffer back (name?); decompiled: src/gfx/gfx14.cpp
+0054D23C DrawItem_DrawLit_0054D23C        // [virtual] (-, DrawItem*) item matrix constants, camera pos -> fragment param 0, mesh draw (name?); decompiled: src/gfx/gfx14.cpp
+0052A7C0 Iff_HandleDeflector_0052A7C0     // [IFF chunk] (IffReader*, AglEmitProperties*) 112-byte deflector at o+132: bounce, planes[6] (name?); decompiled: src/gfx/gfx14.cpp
+005D47A0 SelectShader_005D47A0            // [ShaderType variant select] (type, Material*, DrawItem*) -> Shader*, index in item+69 (name?); decompiled: src/gfx/gfx14.cpp
+005D62E8 SelectShader_005D62E8            // [ShaderType variant select] as 005D47A0, other params (name?); decompiled: src/gfx/gfx14.cpp
+0050B6D8 FogRanges_Set_0050B6D8           // (FogRanges*, const FogRange*) slot u8 r+33 copy / unset, slot 0/1 overlap check (name?); decompiled: src/gfx/gfx14.cpp
+007A61F4 SpursQueue_Push_007A61F4         // [virtual] (JobQueue*, Job*) atomic 16-slot claim, copy, event flag clear, vslot 10 (name?); decompiled: src/gfx/gfx14.cpp
+0052A528 Iff_HandleTexAnim_0052A528       // [IFF chunk] (IffReader*, Material*) 48-byte texture animation at o+128, scale o+92/+96 (name?); decompiled: src/gfx/gfx14.cpp
+0051DF3C Texture_SystemInit_0051DF3C      // () texture allocator state + list, texture IFF chunks, Texture_InitDefaults, EnsureTextures (name?); decompiled: src/gfx/gfx14.cpp
+005AB5F0 EffectSlot_Texture_005AB5F0      // (slot+28, slot->+40, owner, view) -> Texture* (name?)
+005AA998 EffectSlot_Draw_005AA998         // (view, rt, const f32 plane[4], owner, slot->+4; f1 fade) (name?)
+00506050 Emitter_Check_00506050           // (Emitter*, item, a, b, c) -> 0 skips the draw; calls Particle_LightColour_00500D40 (name?)
+005159E8 Draw_Pass_005159E8               // (state-cache object, const Pass* {+0, +4, +16 f32[16]}) (name?)
+0054C268 Stencil_Pass_0054C268            // (o, u32 pass; f1 scale) (name?)
+004FF4C0 EmitProps_SetDesc_004FF4C0       // (AglEmitProperties*, const EmitDesc*) (name?)
+005E104C Gcm_Transfer_005E104C            // libgcm cellGcmSetTransferImage variant (context, mode, dst off, pitch, x, y, src off, pitch, x, y, w, h, bpp) (name?)
+005E0688 Gcm_WriteLabel_005E0688          // libgcm (context, label index, value) (name?)
+0051DA1C Texture_InitDefaults_0051DA1C    // () after the texture system init (name?)
