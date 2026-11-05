@@ -707,7 +707,7 @@
 00523B7C Tex_Acquire              // (Texture*) -> new AglMaterial on it; decompiled: src/uiload/more.cpp (name?)
 004DF88C Timeline_FromXml         // -> TimelineDef (vtbl 0xB22F60); decompiled: src/uiload/more.cpp
 005903F4 Bank_Create              // Bank* Bank_Create(arg): an 88-byte bank (Fn_586440, vtable 0x00B24770), marked running (+64 0x80) with object ; decompiled: src/obj/obj15_small.cpp
-005904EC Bank_Open                // (name?)
+005904EC Bank_Open                            // (Bank*, const char* path, u8 flags) -> bool: +4 name, SetName(path cut at "levels/"), list allocators' +8 / +12 = 0x00F3C5A8 / bank while Iff_ReadChunks runs (reset skips 0x00F8F140); decompiled: src/world/hevent28_f.cpp
 005964B4 Bank_Start               // void Bank_Start(Bank* b): clears the running bit, Bank_SetState(0), then the load steps (the +64 0x20 ones onl; decompiled: src/obj/obj15_small.cpp
 00596E3C Bank_Destroy             // (Bank*): waits, record lists, 272-byte records, tag table, objects, sub-objects, bank (name?); decompiled: src/obj/obj18.cpp
 0050C398 Tex_FindLoaded           // decompiled: src/uiload/more.cpp
@@ -8869,7 +8869,6 @@
 004A54F8 Matrix_FromDir4A54F8                 // (const vec3* dir, Matrix* m): orthonormal 3x4 rows with row 2 = dir, up {0,1,0} at 0x010C26D0 (lazy init) or the old row 0 / 0x01164B50 when parallel; decompiled: src/world/hevent26_b.cpp
 000FF0D8 CamCtrl_Construct0FF0D8              // (ctrl 1040 bytes, Camera*, Object*) camera controller, mode 1 / default (name?)
 0010DE30 CamCtrl_Construct10DE30              // (ctrl 608 bytes, Camera*, Object*) mode 0 (name?)
-000F9854 View_Update0F9854                    // only caller of View_SetSplit0F94C0 (name?)
 
 # Renderer sweep part 12
 00505740 EmitterDraw_Oriented_00505740       // (Emitter*, record, view_proj): kind 1 mode 5: particle matrices scaled, turned to particle_dir (n, r = n x up, t = r x n), through the record's 4x4 unless o+24; then EmitterDraw_Layered_005052FC (name?); decompiled: src/gfx/gfx18.cpp
@@ -9147,7 +9146,7 @@
 004EFF08 GeomSet_Destroy4EFF08                // (GeomSet*) -> 0: World_FreeBlock40, EffectSlots_Clear, +8 / +4 vt +8, Bank_Destroy(+0); decompiled: src/world/hevent27_g.cpp (name?)
 004EFFC8 GeomSet_Create4EFFC8                 // (GeomSet*) -> Bank*: +0 = Bank_Create(1); decompiled: src/world/hevent27_g.cpp (name?)
 004F2FC0 GeomSet_Start4F2FC0                  // (GeomSet*): Bank_Start(+0), then 0x005A5130; decompiled: src/world/hevent27_g.cpp (name?)
-0079A328 HandleTable_Release79A328            // (u32* out, HandleTable*, u32 handle idx<<16|serial): {+8 first, +12 last, +16 count, +24 cap, +28 16-byte entries} (name?)
+0079A328 HandleTable_Release79A328            // (u32* out, HandleTable*, u32 idx<<16|serial) -> out: live entry unlinked, appended to the free list, *out = next live handle / 0xFFFF0000, 0 when invalid; decompiled: src/world/hevent28_e.cpp (name?)
 006D59C4 Bank_ReleaseHandle6D59C4             // (handle, 1) from Bank_Destroy449244 (name?)
 007DC758 HkSpuUtil_Construct7DC758            // (40-byte object, SPURS handle) Havok (name?)
 007DC510 HkSpuUtil_Init7DC510                 // (SpuUtil*) Havok (name?)
@@ -9390,3 +9389,23 @@
 004F7128 Obj_Register4F7128               // (o, global) x3 from 0x0043C4F4 (name?); not decompiled
 00ABDDC4 Import_ABDDC4                    // import stub (h, a, b, 0) -> compared with b by 0x00427744 (name?)
 00ABDCE4 Import_ABDCE4                    // import stub (s32 handle): a close called by 0x004279A4 (name?)
+
+# World event handler part 28
+004F2678 GeomSet_LoadScene4F2678              // (GeomSet*, Scene*, u32 a) -> r3 of Geom_BindClassTextures (0 without a bank): config fog/depth (scene +656 / defaults 300 / 50), child scenes (node map 0x010C2CB8) recursively, banks (Bank_Open at +16 position), xml paths, cameras +8 / +4 with camera def 0xFCCCF4CC (or allocator node / default matrix, fov 55), HookEffects, +276 scenes (Geom_LoadScene4F05A8), class textures; decompiled: src/world/hevent28_a.cpp (name?)
+004AE498 SpawnQueue_Update4AE498              // (; f32 dt) -> u16 count: cooldown 0x00F65F80, delayed spawns 0x010C2480 (128-byte records, +108 delay) made via profile vt +28 with a query (0x00B12260) or spawn query (0x00B12868, Wrapper_0CC4D4), record removed; decompiled: src/world/hevent28_b.cpp (name?)
+00486854 World_SpawnPlayers486854             // (World*) -> u8 user count: session (0x00F64C20 +72) slots: profile items notified, "Player%02d_Controllable" spawned (w +0x1280F0), then user blocks placed + User_Travel484BE0; decompiled: src/world/hevent28_c.cpp (name?)
+000F9854 View_Init0F9854                      // (View*, ViewDef*) -> controller: fields from def (+148 split, +152 mode), main camera (def +28 name) and "%s_additive" camera from fresh camera defs (allocator *0x00F8F134 vt +12), controllers (Ctl_Construct34BDEC); decompiled: src/world/hevent28_d.cpp; was View_Update0F9854 (name?)
+004F05A8 Geom_LoadScene4F05A8                 // (GeomSet*, Scene*, u32 a, bool first, bool top) 1926 insns (name?)
+00F65F80 g_SpawnCooldown                      // f32 (data) (name?)
+010C2480 g_SpawnQueue                         // vector of 128-byte delayed spawn records (+0 data, u16 +8 count) (data) (name?)
+011944E0 g_BankOpenPos                        // f32[3] position for Bank_Open (data) (name?)
+00F8F134 g_CameraDefAllocSlot                 // {allocator*, nodes per block, +8 heap, +12 owner}; +16 camera def map (data) (name?)
+01164CD0 g_CameraDefSerial                    // u32 counter for camera def +8 bits 11..31 (data) (name?)
+00B246B0 vt_CameraDef                         // vtable (data) (name?)
+00B247B8 vt_PointDef                          // vtable (data) (name?)
+00B139B8 vt_View                              // vtable (data) (name?)
+0035AC7C Objects_CreateFromDefs35AC7C         // () -> 0x01070000: defs 0x0106C210 instantiated by +80 flag (UI variants 0x00B1F988 / 0x00B1FA48 / 0x00B1F6E0, Obj/Scroller/PathObj ctors), registered by +68 id in 0x0106C228 (type 4 also in 0x0106C258); ids 0x00F64D28 / 0x00F64CDC resolved into 0x0106C330 +100 / +104; decompiled: src/world/hevent28_g.cpp (name?)
+00357DC4 Obj_Construct357DC4                  // (Object* 544 bytes, Def*) (+80 bit 15) (name?)
+00356BA0 Obj_Construct356BA0                  // (Object* 976 bytes, Def*) (+80 bit 16) (name?)
+0106C228 g_ObjectsById                        // {id, Object*} map (data) (name?)
+0106C258 g_ObjectsType4ById                   // {id, Object*} map of +80 bit 2 objects (data) (name?)
