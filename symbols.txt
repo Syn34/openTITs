@@ -653,9 +653,9 @@
 004F936C Xml_FindChildren         // (node, name) (name?)
 005566A8 String_Append            // thunk to f_0072354C; decompiled: src/obj/obj13_misc.cpp
 004BCE90 Set_Find                 // (u32 name) -> Set* (name?)
-004C7A68 Effect_Construct         // (mem 140 bytes, def) (name?)
-004CF710 Effect_SetTime           // (Effect*, f32) (name?)
-004CF3C4 Effect_Release           // (Effect*, 0x10CBB) (name?)
+004C7A68 Effect_Construct                     // (Effect* 140 bytes, Def*): header, empty child map, +112 vector, +136 flags, def ref ++, 0x004C761C; decompiled: src/world/hevent21_f.cpp
+004CF710 Effect_SetTime                       // (Effect*; f32): instance step 0x004BC7C8, done bit 0x80, children stepped / finished ones destructed and freed, pending +132 switch; decompiled: src/world/hevent21_j.cpp
+004CF3C4 Effect_Release                       // (Effect*, u32 hash) -> bool: switches to the def named hash in def +24's set (last 0x011DE2A8), old instance vt +8, new 0x004BBABC; decompiled: src/world/hevent21_g.cpp (name? it is a def switch, not a release)
 0077D92C SubMachine_GetWorld      // returns this->+48 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0077D910 SubMachine_WantsPause    // returns 0x1 (template instance); decompiled: src/obj/obj18_tmpl.cpp
 
@@ -1531,7 +1531,6 @@
 002DFEFC Users_ForEachVfn32_36             // (Object*): user block 0 list +80/+88, vfunc +32 and +36(0); decompiled: src/world/hevent2_c.cpp (name?)
 002E9A28 Registry_ForEachVfn16             // vfunc +16 on registry values except types 0x0353CB09/0x63C971C0; decompiled: src/world/hevent2_c.cpp (name?)
 00446984 Node_PushF65B7C                   // (a, b) -> 24-byte node at the head of 0x00F65B7C; decompiled: src/world/hevent2_c.cpp (name?)
-00441AC0 sub_00441AC0                      // (a, u32* b) -> u32, used by Node_PushF65B7C (name?)
 002E29B0 World_GetSaveObj160               // () -> u32: World obj +5540 / session player +812 / SaveSlot +160; decompiled: src/world/hevent2_c.cpp (name?)
 003A0380 Obj_Refresh3A0380                 // (Object*): per-element sub_0039BC48/003991A0, sub_0039F3D8; decompiled: src/world/hevent2_c.cpp (name?)
 002E1DB0 Obj_Call2E0930ById                // (o, id, b, c..g) -> sub_002E0930(o, elem by +468, ..., 1); decompiled: src/world/hevent2_c.cpp (name?)
@@ -2836,7 +2835,7 @@
 
 # World event handler callees, part 10
 00345EB8 Physics_Step345EB8                   // (PhysicsWorld*, f32 dt) -> 0: contact velocity fix-up, ceil(dt*15) Havok sub-steps, entity array emptied; decompiled: src/world/hevent10_i.cpp (name?)
-004CF988 Effect_SetHash4CF988                 // (Effect*, u32 hash) (already hevent.h sub_004CF988) (name?)
+004CF988 Effect_SetHash4CF988                 // (Effect*, u32 hash) -> bool: as Effect_Release, then Effect_SetTime(e; 1/60); decompiled: src/world/hevent21_g.cpp
 003992AC Volume_Item3992AC                    // (Item*, u8 on, u8 forced, u8 fired) -> r3: +328 flags, child / slot switchables (vt +40), sound restart; toggle mode +276 == 1; decompiled: src/world/hevent11_i.cpp (name?)
 000112D8 Volume_Notify112D8                   // (Listener*, Volume*): matching slots (+28708[], s32 +32) released / cleared / swap-removed, then 0x00638360(v); decompiled: src/world/hevent11_a.cpp (name?)
 00398FF8 Volume_Changed398FF8                 // (Volume*): owner on in mode, box not empty: "laser" shape (0x000110EC) at box centre / extent -> 0x00637D14, 0x00638498; decompiled: src/world/hevent11_c.cpp (name?)
@@ -7712,26 +7711,22 @@
 002E98CC Level_FreeMaps2E98CC                 // (): map 0x010686A8 objects vt +4, counts 0; vector 0x0106870C blocks popped / freed; FsOp *0x00F64C34 destructed / freed; decompiled: src/world/hevent20_l.cpp (name?)
 00428F34 Overlay_Setup428F34                  // (): overlay 0x010AA1B0 flags from the world part object (+5564 / +5568 vs 0x394E2CB4); enabled -> +96 zeroed, +88/+92/+94, 0x00428B74(32, 18), 16 slots; decompiled: src/world/hevent20_l.cpp (name?)
 0042ADA0 LayerStack_Init42ADA0                // () -> Layer*: 768-byte block 0x00F65858, 36-byte base layer pushed on 0x010AA694, first layer -> 0x00F6585C (+24 bit 31); decompiled: src/world/hevent20_l.cpp (name?)
-004BE420 Set_Restart4BE420                    // (Set*) (name?) [called by Loader_Refresh2DE198]
-003690F0 Request_3690F0                       // (a, b, c, d, u8 e) (name?)
-00390724 TrackPool_Update390724               // (Pool* *0x00F65798) (name?)
-00566318 Buffer_Sync566318                    // (Buffer*, u32 data) (name?)
-00368870 Obj_SetMode368870                    // (Obj*, u32 flags, 0, 0; f32) (name?)
+004BE420 Set_Restart4BE420                    // (Set*) -> 0: in-order walk of the +16 object map, node object vt +12; decompiled: src/world/hevent21_b.cpp (name?)
+00390724 TrackPool_Update390724               // (Pool*) -> capacity: releases live objects (0x0038DC0C) along the live list, relinks the 16-byte free list; decompiled: src/world/hevent21_b.cpp (name?)
+00566318 Buffer_Sync566318                    // (Buffer*, u32 size): realloc with the memory system's lazy init inlined; not done (memory manager internals)
+00368870 Obj_SetMode368870                    // (Object*, -, u8 flag, Node*; f32 t): +532 gated; mode 2/3 -> Speaker_SayId4A5C90 / Effect_SetHash4CF988 bits, 0/4 -> +204 node, 0x00368770; decompiled: src/world/hevent21_a.cpp (name?)
 00108480 Obj_Refresh108480                    // (Obj*) (name?)
 0010DA30 Obj_Refresh10DA30                    // (Obj*) (name?)
 000FE828 Target_Update0FE828                  // (Target*) (name?)
-002AAEBC Obj_Pause2AAEBC                      // (Obj*, u8 paused) (name?)
-002CCFF0 Obj_Transform2CCFF0                  // (Obj*, const f32* pos, u8, a, b, c, d) (name?)
-004B20B8 Clip_Load4B20B8                      // (Owner*, XmlDoc*, const char* path) (name?)
-00342E00 Obj_Init342E00                       // () reads no argument registers (name?)
-00342A30 Obj_Start342A30                      // (Obj*) (name?)
-002DDAB0 Session_Stop2DDAB0                   // (Session*, -) reads r3 only (name?)
-004BD4B4 Set_Erase4BD4B4                      // (Set*) (name?)
-00428B74 Overlay_Setup428B74                  // (32, 18) reads r3 / r4 only (name?)
-000AF5FC Async_Start0AF5FC                    // (s32 write) (name?)
-000AF8E4 Async_Swap0AF8E4                     // (buffer) (name?)
-0025A690 Coach_Update25A690                   // (Coach*) (name?)
-00368D78 Obj_ModeEnd368D78                    // (Object*) (name?)
+002CCFF0 Obj_Transform2CCFF0                  // (Obj*, const f32* pos, u8, a, b, c, d): trig-heavy, not done
+004B20B8 Clip_Load4B20B8                      // (Owner*, XmlDoc*, path) -> 1: "AnimSet" children by "Name" hash into the +72 clip map (48-byte clips, 0x004B1708 init); decompiled: src/world/hevent21_a.cpp (name?)
+00342A30 Obj_Start342A30                      // (Obj*): builds a Havok rigid body (VMX masks, stack cinfo, Hk_AddEntity92F2A8); not done (vector code, Havok)
+002DDAB0 Session_Stop2DDAB0                   // (Session*): drains user block 0's object queue (+80 / u16 +88): kind 4 handle notify, vt +28 / +4; +100 bit 0x40000000 around it; decompiled: src/world/hevent21_a.cpp (name?)
+004BD4B4 Set_Erase4BD4B4                      // (u32 hash): set registry 0x010C2888 lookup (twice), Set_Stop4BD1CC, set tree emptied + freed, registry entry erased; decompiled: src/world/hevent21_c.cpp (name?)
+00428B74 Overlay_Setup428B74                  // (w, h): overlay 0x010AA1B0 w x h grid: 3 vertex buffers, zig-zag strip index buffer, 2-chunk list +1124; flag 0x20; decompiled: src/world/hevent21_d.cpp (name?)
+000AF5FC Async_Start0AF5FC                    // (u8 write): net start dialog / content rating / Upload|DownloadSave thread step machine (state 0x00F9D1B4); decompiled: src/world/hevent21_c.cpp (name?)
+0025A690 Coach_Update25A690                   // (Coach*) -> group count: +2268 vt +40, +2176 vt +88, groups' +52 vt +88/+284/+128 (0x8B3BD7A1), members vt +40; decompiled: src/world/hevent21_b.cpp (name?)
+00368D78 Obj_ModeEnd368D78                    // (Object*): non-null -> 0x00368AC8(o, 0, 0); decompiled: src/world/hevent21_a.cpp (name?)
 00F39F58 Opd_FindById                         // OPD: WorldObj_ForEach callback used by WorldObj_FindById4A5AE8 (name?)
 
 # World event handler callees, part 20
@@ -8097,3 +8092,35 @@
 005E3E40 cellGcmSetRestartIndexEnable_5E3E40 // method 0x1DAC libgcm (name?)
 005E3F5C cellGcmSetRestartIndex_5E3F5C    // method 0x1DB0 libgcm (name?)
 005E3FA4 Gcm_5E3FA4                       // (context, a, b) methods 0x1E98 / 0x0100 libgcm (name?)
+
+# World event handler callees, part 21
+00342E00 Preload_Request342E00                // (): 15 resource hashes requested from *0x011E289C (vt +20); decompiled: src/world/hevent21_c.cpp (name?)
+003690F0 Obj_StartRequest3690F0               // (Object*, a, b, Vector* items, u8 e): +208 bit 31, mode 1, def slots 0-3 vt +188/+148, items (9 of 12 bytes) appended to +164, Speaker_SayId4A5C90, Effect_SetHash4CF988 0x04296E4C; decompiled: src/world/hevent21_d.cpp (name?)
+002AAEBC Coach_Pause2AAEBC                    // (Coach*, u8 paused): nested pause count +2324; animator +184 / owner +48 / effect +192 / object tables vt +40; decompiled: src/world/hevent21_e.cpp (name?)
+000AF8E4 SaveBlock_Swap0AF8E4                 // (u8* b) -> b: online save block byte swap in place (u16/u32/u64 fields, 4056+ bytes); decompiled: src/world/hevent21_e.cpp (name?)
+00368360 Obj_StartMode368360                  // (Object*) -> +216: +216 gated; mode 2/3 Speaker_SayId4A5C90 (+188) / Effect_SetHash4CF988, 0/4 0x00367C20; 0x010B1A94 bit 0x8000; decompiled: src/world/hevent21_f.cpp (name?)
+00128EE0 Obj_AttachControlAI128EE0            // (Object*): +388 "ControlAI" component via a stack template (vtable 0x00B1432C) registered in 0x01056F04, Obj_Attach0D135C, vt +20; +380 = it; decompiled: src/world/hevent21_f.cpp (name?)
+002DF010 Mask_CheckSpawner2DF010              // (Session*, Spawner*, const u16* masks): mask info map 0x0106819C, "Couldn't find mask spawner" / episode range logs, vt +24 when the mask bit is clear; decompiled: src/world/hevent21_f.cpp (name?)
+0031E040 Ring_Reset31E040                     // (Ring*) -> u8: pending blocks (PtrVectors of 44-byte entries) cleared and freed, cursor wraps; head/cursor = begin, count 0, +28 bit 31; decompiled: src/world/hevent21_g.cpp (name?)
+0031E890 Group_Reset31E890                    // (Group*) -> begin: ring reset, +0 blocks' objects vt +8, block vectors cleared, SmallFree 44; decompiled: src/world/hevent21_h.cpp (name?)
+0031FEE8 Model_FreeBlocks31FEE8               // (Pool*): +32 group vectors (Group_Reset31E890, 144-byte groups), +8 rings (Ring_Reset31E040, 32 bytes) freed, counts 0; decompiled: src/world/hevent21_h.cpp (name?)
+00441AC0 Snd_FindEvent441AC0                  // (u32 hash, u32* bank key) -> Event*: named bank (bank map 0x010AFEB0 / global 0x00F65B60), global bank, then every bank; decompiled: src/world/hevent21_i.cpp (name?) [symbols.txt sub_00441AC0]
+002DE258 Mask_ShowCount2DE258                 // (Session*, u8 complete): counter object (handle 0x00F64CD4) effect 0x90A128CF / 0x3143F570, "%d" / "%d/%d" via Obj_SetAnim / Player_Set3632C8; decompiled: src/world/hevent21_j.cpp (name?)
+004545B0 Pool_Reset4545B0                     // (Pool*) -> capacity: +36 blocks freed, +12 objects vt +4, 16-byte entry pool +80 relinked; decompiled: src/world/hevent21_k.cpp (name?)
+0047E1D4 World_FreePartObj47E1D4              // (World*): unless +28 bits 0xC0, part object +0x128164 vectors (7 x 20 bytes) and itself (5584) freed; decompiled: src/world/hevent21_k.cpp (name?)
+00266E6C Obj_SetStateFx266E6C                 // (Object*, s32 state): owner effect (vt +272) and +108 switched to 0x00AD4CB4[state]; +68 = state; +124 bit 0x01000000 -> vt +96 (state == 2); decompiled: src/world/hevent21_k.cpp (name?)
+0031F6D8 Table_Init31F6D8                     // (Table*, const Vector* src[2]) -> +68: two 16-byte element arrays (+0 / +24) from Mem_DefaultAllocator, compare OPDs 0x00F36AB8 / 0x00F36AC0, +64 = 1.0; decompiled: src/world/hevent21_l.cpp (name?)
+00366E20 Pending_Build366E20                  // (): pending list 0x0106C2C0 rebuilt from the handle map (owner +164 bit 0x8000, key not one of four globals), vt +20 (o, 0); ready byte 0x0106C3C0; decompiled: src/world/hevent21_l.cpp (name?)
+00368AC8 Obj_ModeOff368AC8                    // (Object*, 0, 0) (name?)
+00368770 Obj_ModeIdle368770                   // (Object*) (name?)
+00367C20 Obj_ModeIdle367C20                   // (Object*) (name?)
+004B1708 Clip_Init4B1708                      // (Clip*, const {XmlDoc*, path, cursor}*) (name?)
+0038DC0C Track_Release38DC0C                  // (Object*) (name?)
+0078A5C0 Tree_Erase78A5C0                     // (tree, Node** link, key, u8* done) (name?)
+004C761C Effect_Init4C761C                    // (Effect*) (name?)
+004BBABC Effect_Instance4BBABC                // (Def*, Effect*) -> instance (name?)
+004BC7C8 Instance_SetTime4BC7C8               // (Instance*, Effect*; f32) (name?)
+00F35F50 Opd_PauseVisit                       // OPD: WorldObj_ForEach callback of Coach_Pause2AAEBC, arg {u8 paused, Coach*} (name?)
+00F30FF0 Opd_NetDialogCallback                // OPD: sysutil callback registered by Async_Start0AF5FC (name?)
+00F30FF8 Opd_UploadSaveThread                 // OPD: "UploadSave" thread entry (name?)
+00F31000 Opd_DownloadSaveThread               // OPD: "DownloadSave" thread entry (name?)
