@@ -85,6 +85,10 @@ When you decompile a function:
 - check what its callees read before writing;
 - when a known caller depends on a register your function leaves behind, set it explicitly (`ctx.gpr[7] = ...`) and add a comment.
 
+Known dependencies on still-recompiled functions (whoever decompiles them must keep the register at exit):
+- `0056AEFC` (Debug_Draw): `View_EndDraw_00522140` builds stream record 22 from the r4 it leaves.
+- `0045717C` reads r7 after `FrameBuffer_Reset_00523584` and after `CallbackList_Invoke`; both set or pass it through as the original does.
+
 ## Conventions
 
 - **Names:** `Subsystem_Verb` for functions (`File_Exists`, `Np_Init`), `g::name` for globals, and PascalCase for structs.

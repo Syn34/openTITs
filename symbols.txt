@@ -8560,7 +8560,7 @@
 0079F9A0 BoxSurfaceShape_Spawn_0079F9A0      // [vtable 0x00B231B4 slot 3] random point on box surface, up velocity, optional spin (name?); decompiled: src/gfx/gfx16.cpp
 005C0F50 SlyCharacterFur_LoadParams          // [vtable 0x00B259F0 slot 3] (type, Material*, Desc*) -> 1 (name?); decompiled: src/gfx/gfx16.cpp
 00528130 EmitterJobs_Submit_00528130         // () batched emitter items -> slots / 144-byte records, SPU jobs of 16 via f_0056F050 (name?); decompiled: src/gfx/gfx16.cpp
-0056F050 EmitterJob_Run_0056F050             // (const JobHeader*, records, u32 count, u32** busy) (name?)
+0056F050 EmitterJob_Run_0056F050             // (const JobHeader*, records, u32 count, u32** busy) under the job mutex: queue acquire, WorkQueue_Fn56EEF0, submit (name?); decompiled: src/gfx/gfx17.cpp
 00506598 EmitterDraw_00506598                // (Emitter*, record, const f32 view[4][4], x, u16 y) (name?)
 00505740 EmitterDraw_00505740                // (Emitter*, record, view_proj): kind 1, record mode 5 (name?)
 005043B0 EmitterDraw_005043B0                // (Emitter*, record): kind 0, record mode 5 (name?)
@@ -8823,3 +8823,21 @@
 004B499C Call_4D3378_1_004B499C           // f(Obj* o): sub_004D3378(o, 0x00AEE348, 1); sub_004B2DA0(o) (name?); decompiled: src/obj/obj22.cpp
 004D2BFC NodeOwner_Init                   // (p, name, 0, 0): inits the 52-byte binding owner made by Cond_Init (name?); not decompiled
 004D2BB8 Binding_Reserve                  // (binding, n): reserves the binding's value-name list (+0 count, +68 array, +72 capacity) (name?); not decompiled
+
+# Renderer sweep part 11
+005D7438 UvAnim_SetConstants_005D7438        // [vtable 0x00B26178 slot 2] (Shader*, Material*) UvAnim_Matrices -> fragment constants 1..7 (3x3 rows, w from the stack) (name?); decompiled: src/gfx/gfx17.cpp
+00512148 DeferredDestroy_Update_00512148     // () due deferred destructions run + entries freed, ++frame counter 0x010DDC8C; -> 1 once the list is empty (name?); decompiled: src/gfx/gfx17.cpp
+0054CE80 ThermalObject_SetParams_0054CE80    // [vtable 0x00B24190 slot 2, PostProc_ThermalObject] (Shader*, Material*) params 0..12 -> fragment constants 1..4 (inline set) (name?); decompiled: src/gfx/gfx17.cpp
+005CF5B0 SlyTerrainSnow_LoadParams           // [vtable 0x00B25F28 slot 3] (type, Material*, Desc*) -> 0 / 1; colours red/blue swapped, params 3..18 (name?); decompiled: src/gfx/gfx17.cpp
+00522140 View_EndDraw_00522140               // (Owner*, const Opd* done) view matrix save, debug prims, stream record 22, view callbacks, layers ended, display rebound (name?); decompiled: src/gfx/gfx17.cpp
+005170B8 Render_DrawLayers_005170B8          // (Owner*) [Call_0051A6A0, u8 +48 set] layers 0,1,2,10,11 / draw queue (built, waited, run) / 3,4,5,6,9,12 / Draw_Pass / 13, owner vtable +28 (name?); decompiled: src/gfx/gfx17.cpp
+005295A0 Iff_HandleEmitCurve2_005295A0       // [IFF handler OPD 0x00F3B688] (IffReader*, AglEmitProperties*) u8, alphaFadeIn/Out, shadeVariance (u16 +8 = *256), RGBA -> +112 curve (name?); decompiled: src/gfx/gfx17.cpp
+005A4918 EmitterInstance_ReadChunks_005A4918 // [IFF handler OPD 0x00F3C928] (IffReader*, Obj* parent) kind 10 from 0x00F8F14C, callbacks, parent / dirty, name map (name?); decompiled: src/gfx/gfx17.cpp
+005A83A8 SplineInstance_ReadChunks_005A83A8  // [IFF handler OPD 0x00F3C9E8] (IffReader*, Obj* parent) reader +12 bit 4 -> 1; Kind13_Construct from 0x00F8F158, same tail (name?); decompiled: src/gfx/gfx17.cpp
+005A1614 GeomInstance_ReadChunks_005A1614    // [IFF handler OPD 0x00F3C878] (IffReader*, Obj* parent) kind 8 from 0x00F8F144; u8 +322 &= ~0x20, mapped when +320 bits 9..12 == 3 (name?); decompiled: src/gfx/gfx17.cpp
+005A358C LightInstance_ReadChunks_005A358C   // [IFF handler OPD 0x00F3C8C8] (IffReader*, Obj* parent) kind 9 from 0x00F8F148 with light defaults +352..+388 (name?); decompiled: src/gfx/gfx17.cpp
+005C7DE8 SlyHeightFog_LoadParams             // [vtable 0x00B25C58 slot 3] (type, Material*, Desc*) -> 1; two textures, params 0..17, d+96 / d+120 *= pi/180 in place (name?); decompiled: src/gfx/gfx17.cpp
+0052996C Iff_HandleEmitSpline_0052996C       // [IFF handler OPD 0x00F3B690] (IffReader*, AglEmitProperties*) isLoop / numPoints / position+control1+control2 -> +136 spline shape (vtable 0x00B232C0) (name?); decompiled: src/gfx/gfx17.cpp
+0052F91C Gcm_DumpLocks_0052F91C              // (s32 swap_label) "=== RSX Potential Locks ===" printf dump of gcm contexts and RSX labels (name?); decompiled: src/gfx/gfx17.cpp
+005BF608 SlyCharacter2_LoadParams            // [vtable 0x00B259A0 slot 3] (type, Material*, Desc*) -> 1; m+20 / two textures (3,3,1), params 0..31 (name?); decompiled: src/gfx/gfx17.cpp
+0056AEFC Debug_Draw_0056AEFC                 // () debug prim draw (ApeDebug::Prim list); NOTE leaves r4 that View_EndDraw_00522140 reads (name?)
