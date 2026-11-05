@@ -9078,7 +9078,6 @@
 0036C014 Obj_Entry_0036C014               // T* f(const Obj* o, u32 i): with i < o->+8->+152: sub_004DC6F4(p) for p = o->+328[i].+12 (16-byte entries) when set; else 0 (r4 / r5 left) (name?); decompiled: src/obj/obj23.cpp
 0042C1D4 List_AnySet_0042C1D4             // bool f(): one of the (u16 at 0x010AA69C) entries of *(T***)0x010AA694 has a nonzero +12 (u16) (r3..r7 as the loop leaves them) (name?); decompiled: src/obj/obj23.cpp
 00922918 Comp_GetF32_922918           // f32 f(T* p): read on o->+N + 224 by 0x001FB178 / 0x00244418 / 0x0024D9C0 (30+ callers) (name?); not decompiled
-000DA954 Obj_UseIndex0DA954           // (owner, index) after 0x000D14DC (name?); not decompiled
 005FC90C Fios_GetScheduler5FC90C      // () -> the scheduler passed to fios_Free 0x005FE784 (name?); not decompiled
 004FBFA8 Ctor_Base4FBFA8              // the base T::T(o, a) of the 0x00B0D9xx classes (vtables 0x00B0D934 / 0x00B0D968 / 0x00B0D99C / 0x00B0DA6C) (name?); not decompiled
 
@@ -9126,7 +9125,6 @@
 00539C7C Iff_HandleDds_00539C7C              // (FileReader*, Texture*) -> bool: DDS (DXT1-5, V8U8) into the texture via Rsx_Copy; decompiled: src/gfx/gfx19.cpp (name?)
 005AD444 Bank_StaticInit_005AD444            // () static initialiser: object bank globals (0x01193060 etc.), changed list, default matrices / bounds; decompiled: src/gfx/gfx19.cpp (name?)
 0050C3D8 Material_Apply_0050C3D8             // (Material*, const MaterialRecord*) applies Iff_HandleMaterial's record (Shader_FindByHash, Map_Find) (name?)
-007881DC Surface_Destruct_007881DC           // (Surface*, u32 2): releases its RSX part / pool block [RenderState_Destruct] (name?)
 
 # World event handler part 27
 00449244 Bank_Destroy449244                   // (Bank*): frees +16 / +40 {key, p} tables, 0x006D59C4(+0, 1), +4 buffer (pool 0x00F65B58 if it holds it else 0x00F65B50, only while 0x00F65B54), arrays +32 / +8, then itself; decompiled: src/world/hevent27_a.cpp (name?)
@@ -9418,3 +9416,230 @@
 0059B788 GeomDef_ReadChunks_0059B788 // (IffReader*) -> 1: GeomDef_New, class hooks (*0x00F8F12C +8), Iff_ReadChunks, LOD fix-ups, named map or delete (replaces "GeomDef_ReadChunks") (name?); decompiled: src/gfx/gfx20.cpp
 00578F64 Quads_ClipSetup_00578F64 // (Clip* out, p0..p5): 6 planes, transposed copies + pad plane, 8 corners via Plane_Intersect3 negated (name?); decompiled: src/gfx/gfx20.cpp
 0058E680 Node_SyncTree_0058E680   // (Scene*, Node*) -> flags: emitter def copies, recursion, attached-transform rotation, dirty-list queueing (name?); decompiled: src/gfx/gfx20.cpp
+
+# Game code sweep part 25
+0001821C Obj_SetByte16_0001821C           // void f(T* o, u8 v): when v differs from the u8 +16, o->+24->vfn[16](v); then +16 = v (name?); decompiled: src/obj/obj25.cpp
+0002B3BC Obj_SetHashIfKind0_0002B3BC      // void f(T* o): Global_SetHashObj_00369D14(o->+48, the string at 0x00AC01D4) when the kind +4 is 0 (name?); decompiled: src/obj/obj25.cpp
+00065044 VtB0EF30_Delete                  // T::~T deleting form: vtable 0x00B0EF30, the global 0x00F557F8 = 0, Thunk_004B1308(o + 4), Mem_FreeFrom(o, 0). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+0006FDA0 World_NotifyFlagged_0006FDA0     // void f(): p = world->+4208->+8; when p is set and its +192 has bit 0x8, Obj_Notify26(p) and, when that returns an object, Call_2A8AE0_244(it) (name?); decompiled: src/obj/obj25.cpp
+0008D344 Obj_WorldUserCall_0008D344       // void f(T* o): World_UserCall484BE0(world, o->+12, o->+16, 0, the u8 +20, 0, 0, 0, 1) when +12 >= 0 and +16 is set (name?); decompiled: src/obj/obj25.cpp
+000AF27C Thread_StartOnce_000AF27C        // s32 f(): the s32 at 0x00F645B0; when it is -2 (not started), start the thread (entry OPD 0x00F31068, priority 1001, 16 KiB stack, the name at 0x00AC5FF8) and se (name?); decompiled: src/obj/obj25.cpp
+000BD6D0 Obj_SetKindBits_000BD6D0         // void f(T* o, Node* n): when n->+76 is set, o->+676 |= 0x80000000 if the u16 n->+12 has bit 0x4, else by the top two bits of n->+76->+72: 1 -> 0x40000000, 2 -> 0 (name?); decompiled: src/obj/obj25.cpp
+000DF848 Obj_FlagAndForward_000DF848      // void f(T* o, a) (o points 344 bytes into its object b): b->+376 |= 0x20000000, then b->+244->vfn[208](a) when +244 is set (name?); decompiled: src/obj/obj25.cpp
+000F5EFC VtB13718_Dtor                    // T::~T: vtable 0x00B13718, Emitter_Stop(+348, 1), RefNode_Release(+356), then the base destructor 0x000D7024 (name?); decompiled: src/obj/obj25.cpp
+001F01A8 Obj_CallComp_001F01A8            // void f(T* o): c = 0x000DB290(o->+856, 0x366FD481) when +856 is set, then c->vfn[128](0x7B2728A1, 1) when found (name?); decompiled: src/obj/obj25.cpp
+0020B95C Obj_SetEffectHash_0020B95C       // void f(T* o, u32 hash, u8 b): Effect_SetHash4CF988(o->+428, hash) when +428 is set, then 0x000DA684(o, hash, b) (name?); decompiled: src/obj/obj25.cpp
+002F457C VtB1D578_Dtor                    // T::~T: when +12 is set, vtable 0x00B1D578 and +12->vfn[8](); then vtable 0x00B1D4D8 (r3 left as it) (name?); decompiled: src/obj/obj25.cpp
+002FE448 Obj_EffectSetTime_002FE448       // void f(T* o, f32 t): e = o->+48->+52; when set and not done (Effect_Check4CF620(e, 1) == 0), Effect_SetTime(e; t) (name?); decompiled: src/obj/obj25.cpp
+00352C6C List_SetVecByKey_00352C6C        // void f(T* o, u32 key, const Vec3* v): every 64-byte entry of the list o->+104 (+0 the array, the u16 +8 the count; re-read each step) whose +0 is key gets +32.. (name?); decompiled: src/obj/obj25.cpp
+003ABB20 Obj_TrackReset_003ABB20          // void f(T* o): the u8 +164 = 1 when Anim_TrackSet36_0029879C(o->+96-> vfn[60](), 0, 0) returns true (name?); decompiled: src/obj/obj25.cpp
+003C3784 Handle_Notify_003C3784           // void f(): for the handle 0x8D2C4D64, Obj_Forward20(resolved, 0x72BAA908) when it resolves, then Handle_Notify36742C(handle, 0, 1, 0) (name?); decompiled: src/obj/obj25.cpp
+003CB1BC Obj_VCall40_003CB1BC             // void f(T* o, u8 b): o->+1212->vfn[40](b == 0, 1) when +1212 is set (otherwise r3 is left as b) (name?); decompiled: src/obj/obj25.cpp
+0042DDDC VtB20DA0_Ctor                    // T::T(T* o, a, b): the 0x00B20CC8 base (o, 1), +16 = a, +24 = b, +12 = +20 = 0, vtable 0x00B20DA0 (r3 / r4 left as the vtable / 0) (name?); decompiled: src/obj/obj25.cpp
+0042F1D4 Obj_SetRec_0042F1D4              // void f(T* o): Rec_Set_00470560(world + 0x1283A8; o->+12, +16, +20, (s32)+24, the u8 +28), then Flag_Set8_40000000(o). r5 / r6 pass through. (name?); decompiled: src/obj/obj25.cpp
+00434D94 Obj_Start_00434D94               // u32 f(T* o): Obj_SetState30_0048A0E4(world, o->+12), Call_470750_0(world, 7), 0x00371968(Player_Get()), the u8 +16 = 1; returns 1 (name?); decompiled: src/obj/obj25.cpp
+00438F3C VtB212F8_Ctor                    // T::T(T* o, a, bool b): the 0x00B20CC8 base (o, 1), +12 = a, bit 31 of +16 = b, vtable 0x00B212F8 (r3 / r4 left as the +16 word / the vtable) (name?); decompiled: src/obj/obj25.cpp
+0043A670 Obj_MarkAndFlag_0043A670         // void f(T* o): r = 0x0042BD0C(o->+12) when +12 is set; when found, r->+24 |= 0x80000000 and 0x0042BC44(r); then Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj25.cpp
+0043AD8C VtB21418_Ctor                    // T::T(T* o, u32 hash, b): the 0x00B20CC8 base (o, 1), vtable 0x00B21418, +12 = Hash_ToIndex_0044D118(hash), +16 = b (name?); decompiled: src/obj/obj25.cpp
+00450214 Table_ClearFirst_00450214        // s32 f(?, ?, u32 i): in the 72-byte record i of the table at 0x010B0BC8, the first nonzero word of the 16 at +8 is cleared and -2 returned; 0 when all are 0 (name?); decompiled: src/obj/obj25.cpp
+00457100 VtB219C0_Dtor                    // T::~T: vtable 0x00B219C0; when +28 is set, +28->vfn[32](0) and +28 = 0. Returns 0. (name?); decompiled: src/obj/obj25.cpp
+004A0E60 Obj_Blend_004A0E60               // void f(T* o): 0x004A0990(o), then +28 = (1 - +12) * +20 + +12 * +24 (fused; 1.0f the constant at 0x004A0E5C), also stored through +32 when that is set. f1 left  (name?); decompiled: src/obj/obj25.cpp
+004A57E8 Ease_Knee_004A57E8               // f32 f(f32 x, f32 e): a smooth ease with the knee at e (the constants a, b at 0x004A57DC / 0x004A57E0): x < e: (x * b * x) / (e * (a - e)); x > a - e: a - ((a -  (name?); decompiled: src/obj/obj25.cpp
+004BEF40 VtB21DC8_Dtor                    // T::~T: when +28 is set, vtable 0x00B21DC8 and +28->vfn[8](); then vtable 0x00B11B20 (r3 left as it) (name?); decompiled: src/obj/obj25.cpp
+004CC25C Obj_SetPeerBit_004CC25C          // bool f(WorldObj* o, const u8* b): when o has a peer, bit 0x20 of the u8 Peer_GetVec(peer)->+28 = bit 0 of *b. Returns 1. (name?); decompiled: src/obj/obj25.cpp
+007443FC VtB126B8_DeleteAdj380            // T::~T deleting form, called through the interface 380 bytes in: vtables 0x00B126B8 / 0x00B1200C (at +380), VtB12550_Dtor, SmallFree(o, 448). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+0074E1A8 Rng_Next_0074E1A8                // f32 f(Rng* s): the next random number: the 64-bit +0 converted and scaled by the constants at 0x0074E198 (x * k0 * k1 - k2, fused); then w = +8: x = (rotl(w, 4) (name?); decompiled: src/obj/obj25.cpp
+00755C34 Array8_RemoveAt_00755C34         // void f(Array* a, s32 i): removes the 8-byte element i (the u16 +8 the count, re-read each step): the later ones move down, the count drops by one. i == the last (name?); decompiled: src/obj/obj25.cpp
+00767418 Cmp_U64At8_00767418              // s32 f(const T* a, const T* b): compares by the u64 +8 (-1 / 0 / 1); a null on either side compares the pointers (0 when equal, else -1 when a < b, unsigned, and (name?); decompiled: src/obj/obj25.cpp
+007713C0 Obj_VCall16Rel_007713C0          // void f(T* o, const U* a): q = a->+4; when the s8 q->+24 is 1 and q plus the s8 q->+16 is not null, o->vfn[16](that) (name?); decompiled: src/obj/obj25.cpp
+00024FF8 Obj_InRange_00024FF8             // bool f(const T* o): 1 unless the kind +8 is 9; for kind 9, whether the squared distance from +96..+104 to +176..+184 is below +208 (fused sums; f1..f4 / r4 left (name?); decompiled: src/obj/obj25.cpp
+00080C88 Obj_StartLevel_00080C88          // void f(T* o): for the level o->+12 (when set): World_SetFlags44(world, 0) when it is the world's current one (+0x128114), else World_StartLevel( world, level, 0 (name?); decompiled: src/obj/obj25.cpp
+00083CE0 VtB0FF40_Delete                  // T::~T deleting form: vtable 0x00B0FF40, RefNode_Release(+24), +24 = 0, VtB11B20_DtorTrivial, Mem_FreeFrom(o, 0). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+000B29B0 Rec_SumCounts_000B29B0           // s32 f(): the sum of the s32 +4 of the first n 8-byte records of the array at *0x00F64620 (re-read each step), n the u16 +200 of the object at *0x00F668E8 when i (name?); decompiled: src/obj/obj25.cpp
+000F4ED0 VtB13528_Dtor                    // T::~T: vtables 0x00B13528 / 0x00B136C8 (+380) / 0x00B136F0 (+384), the members at +680 and +644 (VtB21B58_DtorTrivial), then the base destructor 0x000EB0F8 (name?); decompiled: src/obj/obj25.cpp
+001125D8 VtB13EB8_Dtor                    // T::~T: vtable 0x00B13EB8, +16->vfn[84](o + 32), then vtable 0x00B0DAEC (r3 left as it) (name?); decompiled: src/obj/obj25.cpp
+001CF690 Obj_Near3_001CF690               // bool f(const T* o): whether +720..+728 and +704..+712 differ by less than the constant at 0x001CF688 in each of the three components (f1..f4 left as on the path (name?); decompiled: src/obj/obj25.cpp
+001DC910 VtB17DB0_Delete                  // T::~T deleting form: vtable 0x00B17DB0, Mem_FreeIfSet(+600, +596) when +600 is set, Thunk_000E2A34, SmallFree(o, 640). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+001ED964 Obj_Forward_001ED964             // void f(T* o, const U* a): a->+4->vfn[40](0) when set, then 0x001ED85C(o, a->+0) (name?); decompiled: src/obj/obj25.cpp
+001EF800 Target_SetBit28_001EF800         // void f(Object* o, bool b): bit 0x10000000 of Target_GetDef0D951C(o)->+124 = b, unless b is set and o->+980 has no bit 0x01000000 (name?); decompiled: src/obj/obj25.cpp
+0028BD40 Obj_SetByName_0028BD40           // void f(const char* name, ?, T* t; f32 v): when t is set, name is the string at 0x00AD4F54 and t->+168 differs from v: +168 = v and the u8 +456 |= 0x80 (name?); decompiled: src/obj/obj25.cpp
+002ECD78 Obj_CountUp_002ECD78             // void f(T* o): when Obj_Owner0D93FC(o->+16)->+40 has bit 0x80000000, the u8 +112 counts up to 3 (+20 = 0 on each step); otherwise +20 = 0 and +112 = 0 (name?); decompiled: src/obj/obj25.cpp
+002F98D0 Obj_EffectSetTimeScaled_002F98D0 // void f(T* o, f32 s): see EffectSetTimeScaled (name?); decompiled: src/obj/obj25.cpp
+002FCC14 Obj_EffectSetTimeScaled_002FCC14 // void f(T* o, f32 s): see EffectSetTimeScaled (name?); decompiled: src/obj/obj25.cpp
+002FD910 Obj_ReleaseChild_002FD910        // void f(T* o, bool b): the u8 +41 = 0 when b; then +48->vfn[4]() and +48 = 0 when +48 is set. Returns 0. (name?); decompiled: src/obj/obj25.cpp
+003A3F90 Obj_ResetState_003A3F90          // void f(?, T** pp): ResetStateFrom(*pp) when pp and *pp are set (name?); decompiled: src/obj/obj25.cpp
+0042CC10 VtB20CE0_Ctor                    // T::T(T* o, u8 a, b; f32 x): the 0x00B20CC8 base (o, 1), +12 = b, the u8 +16 = a, +20 = x, vtable 0x00B20CE0 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+0042D13C VtB20D10_Ctor                    // T::T(T* o, a, b, c): the 0x00B20CC8 base (o, 1), +12 / +16 / +20 = a / b / c, vtable 0x00B20D10 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+0042D20C VtB20D28_Ctor                    // T::T(T* o, a, b; f32 x): the 0x00B20CC8 base (o, 1), +12 / +16 / +20 = a / b / x, vtable 0x00B20D28 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+0042DED0 VtB20DB8_Ctor                    // T::T(T* o, a, b, u8 c): the 0x00B20CC8 base (o, 1), +12 / +16 / the u8 +20 = a / b / c, vtable 0x00B20DB8 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+0042E20C VtB20DE8_Ctor                    // T::T(T* o, a, u8 b, u8 c): the 0x00B20CC8 base (o, 1), +12 / the u8 +16 / the u8 +17 = a / b / c, vtable 0x00B20DE8 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+0042FA20 VtB20F20_Ctor                    // T::T(T* o; f32 x, y, z): the 0x00B20CC8 base (o, 1), +12..+20 = x, y, z, vtable 0x00B20F20 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+004382D8 Obj_StateIs_004382D8             // bool f(const T* o): 1 when +28 is not set or Obj_Notify26(+28) finds nothing; else whether the byte (r->+244 >> 20) is 0 (3 when bit 0x8 of o->+12 is set) (name?); decompiled: src/obj/obj25.cpp
+0043A6DC VtB213B8_Ctor                    // T::T(T* o, a, b, u8 c): the 0x00B20CC8 base (o, 1), +12 / +16 / the u8 +20 = a / b / c, vtable 0x00B213B8 (r3 left as the vtable) (name?); decompiled: src/obj/obj25.cpp
+0043A74C Obj_Stop_0043A74C                // void f(T* o): 0x0044D1E8(+16) when +16 is set, else 0x0044D168(+12, the u8 +20) when +12 is set, else Emitters_StopAll(); then Flag_Set8_40000000(o) (name?); decompiled: src/obj/obj25.cpp
+004897AC World_VCall60_004897AC           // void f(World* w, bool b): w->+0x1281F4->vfn[60](b == 0) when set (otherwise r3 is left as b) (name?); decompiled: src/obj/obj25.cpp
+00490F88 Obj_SetPausedBit_00490F88        // void f(T* o, bool b): bit 0x20000000 of +52 = b; then Game_SetPaused(!b, 0) when o->vfn[56]() returns true (name?); decompiled: src/obj/obj25.cpp
+004C44BC Effect_SetParam_004C44BC         // void f(T* o, Effect* e): Effect_FindComponent(e, +12); then for c = Effect_Bind4BB7E0(e, +12, 0) of kind 11 ((c->+4 >> 10) & 63), c->+340 = o->+16 (name?); decompiled: src/obj/obj25.cpp
+004F61C4 Xml_Where_004F61C4               // const char* f(XmlCursor* o): String_Format(the format at 0x00AF0A8C, XmlCursor_DocPath(0x004F9434(o)), +8 + 1, +12 + 1) (name?); decompiled: src/obj/obj25.cpp
+00736320 VtB0DA04_Ctor                    // T::T(T* o, a, const u8* b): Ctor_Base4FBFA8(o, a), vtable 0x00B0DA04, +72..+75 = b[0..3] (byte copy; r3 / r4 left) (name?); decompiled: src/obj/obj25.cpp
+007604C8 Table_Find_007604C8              // s32 f(const T* t, u16 key): binary search of the 8-byte entries at +8 (the u16 +4 the count) by their u16 +0 >> 3; the index or -1 (name?); decompiled: src/obj/obj25.cpp
+00761518 Obj_CopyState_00761518           // bool f(const T* s, U* d): d->+0..+8 / +16..+28 / +32..+40 / the u16 +44 = s->+416..+424 / +432..+444 / +448..+456 / the u16 +460; returns bit 0x10000000 of s->+ (name?); decompiled: src/obj/obj25.cpp
+00776320 Node_New_00776320                // Node* f(s16 x): a 24-byte node named by the string at 0x00B1FBB1 (name?); decompiled: src/obj/obj25.cpp
+0077644C Node_New_0077644C                // Node* f(s16 x): a 24-byte node named by the string at 0x00B1FBBC (name?); decompiled: src/obj/obj25.cpp
+0077AD88 Mat_Copy3x3_0077AD88             // void f(Mat* d, const T* a): the 3x3 part of the 4x4 matrix a->+96 + 96 copied to d (raw words; f1 / r4 left) (name?); decompiled: src/obj/obj25.cpp
+0001B274 IntSet_Remove_0001B274           // void f(T* o, s32 key): removes every key from the s32 array at +3700 (the count +20, re-read after each removal): the last element moves into the freed slot, wh (name?); decompiled: src/obj/obj25.cpp
+00023F3C Obj_Register4_00023F3C           // void f(T* o): Obj_Register4F7128(o, d) for the four descriptors at 0x00F94AB4, 0x00F94ACC, 0x00F94AE4 and 0x00F94AFC (name?); decompiled: src/obj/obj25.cpp
+0007D7C8 Handle_SetAndFade_0007D7C8       // void f(T* o): for h = Handle_ResolveBit1(+12) (when set): Obj_SetField180_003676DC(h, +16) when +16 is set, then Prompt_Fade367758(h; +20) (name?); decompiled: src/obj/obj25.cpp
+00083880 Obj_Rebind_00083880              // void f(T* o): when +28 is not set, +12 is set and the node +24 is gone (Ptr_DerefNonZero == 0): RefNode_Release(+24), +24 = Node_PushF65B7C(+12, +16) (name?); decompiled: src/obj/obj25.cpp
+0008CDCC World_SlotCall_0008CDCC          // void f(T* o): when +12 is set, 0x000AE2BC(the 4056-byte world slot (+80) picked by the u8 world->+4208 of the 0x20C80-byte block +16, +12, the u8 +20) (name?); decompiled: src/obj/obj25.cpp
+000A2E14 Obj_PushNewB21130_000A2E14       // void f(T* o): 0x0042C138(a new VtB21130 (20 bytes, SmallAlloc) made from +12, or null) (name?); decompiled: src/obj/obj25.cpp
+000A43C4 Obj_PushNewB21220_000A43C4       // void f(T* o): 0x0042C138(a new Ctor_B21220 (16 bytes, SmallAlloc) made from the f32 +12, or null) (name?); decompiled: src/obj/obj25.cpp
+000F1D0C Obj_Dispatch_000F1D0C            // void f(T* o, U* a): see ObjDispatchAt (name?); decompiled: src/obj/obj25.cpp
+000F50EC VtB13528_DtorAdj384              // VtB13528_Dtor called through the interface 384 bytes in (name?); decompiled: src/obj/obj25.cpp
+000F5160 VtB13528_DtorAdj380              // VtB13528_Dtor called through the interface 380 bytes in (name?); decompiled: src/obj/obj25.cpp
+0013AE28 Obj_Drop1184_0013AE28            // void f(T* o): when world->+0x1281E0 is set and Obj_HasWord368_000FC5DC (it, +1184): 0x001071CC(+1184, o + 1200) and +1184 = 0. Returns 0. (name?); decompiled: src/obj/obj25.cpp
+001681E4 VtB126B8_Delete480               // T::~T deleting form (480 bytes): see VtB126B8Delete (name?); decompiled: src/obj/obj25.cpp
+001AC060 Obj_CountEvent_001AC060          // void f(T* o, Event* e): for the event 0xC6678E85 whose +12 is o->+464 (set), o->+452 += 1; then 0x000E5E44(o, e) (name?); decompiled: src/obj/obj25.cpp
+001BDFE8 Obj_CopyOut_001BDFE8             // void f(T* o, U* d): 0x000DFBFC(o, d), then d->+208..+216 = o->+240..+248, d->+224 = o->+256 and the u8 d->+232..+234 = o->+264..+266 (name?); decompiled: src/obj/obj25.cpp
+001BE858 Obj_CallIfState_001BE858         // u32 f(T* o, a, s32 b, c): 0x000E7FF0(o, a, b, c) when +392 >> 1 is 1 and b is 3, else 0 (name?); decompiled: src/obj/obj25.cpp
+001F70B4 Obj_Handle2_001F70B4             // u32 f(T* o, const s32* p): 0x001F69B0(o, p) when *p is 2, else 1 (name?); decompiled: src/obj/obj25.cpp
+00219E10 Obj_TestAndCall_00219E10         // bool f(T* o, U* p): p->+192 bit 0x8 and 0x0020E7A4(o, p) (name?); decompiled: src/obj/obj25.cpp
+00221DD0 Obj_TestAndCall_00221DD0         // bool f(T* o, U* p): p->+196 bit 0x20000 and 0x0021F9E8(o, p) (name?); decompiled: src/obj/obj25.cpp
+00235D48 Obj_AllIdle_00235D48             // bool f(const T* o): q = o->+612; 0 when q or q->+28 is not set; else whether none of the 224-byte entries q->+72 (the s8 q->+28->+32 of them, an unsigned count) (name?); decompiled: src/obj/obj25.cpp
+00243F4C Obj_GetVec320_00243F4C           // void f(Vec3* d, const T* o): o->+396->+320, else o->+144 (name?); decompiled: src/obj/obj25.cpp
+002440BC Obj_GetVec432_002440BC           // void f(Vec3* d, const T* o): o->+396->+432, else the Vec3 at 0x01164B40 (name?); decompiled: src/obj/obj25.cpp
+00244130 Obj_GetVec448_00244130           // void f(Vec3* d, const T* o): o->+396->+448, else the Vec3 at 0x01164B40 (name?); decompiled: src/obj/obj25.cpp
+0026D7B0 Obj_SetOn_0026D7B0               // void f(T* o, bool b): the u8 +16 = b; when b is 0, o->vfn[16]() and bits 0x70000000 of +416 put back as they were before the call (name?); decompiled: src/obj/obj25.cpp
+0026D880 Obj_StateValue_0026D880          // f32 f(const T* o): by the state (+416 >> 28) & 7: 1, 4, 5 -> k0; else +484 - +292 when +272 has bit 0x80000000, else k1 when +420 > k0, else k2 (k0..k2 the cons (name?); decompiled: src/obj/obj25.cpp
+002725E8 VtB1C020_Delete                  // T::~T deleting form: vtable 0x00B1C020, SortedMap_Remove75DC84(the map at 0x0105752C, o + 36), RefNode_Release(+280), Mem_FreeFrom(o, 0). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+00298AC8 Anim_Apply_00298AC8              // void f(T* o, a, ?, key; f32 t): for c = Obj_FindComp34CC34(o->+36, key) (when +36 is set and c found), 0x00352F70(c, ?, a; t) (name?); decompiled: src/obj/obj25.cpp
+002FB460 Obj_EffectDone_002FB460          // bool f(const T* o): 0 unless the kind +16 is 8; then 1 when o->+8 or its +52 is not set, else Effect_Check4CF620(+52, 0) != 0 (name?); decompiled: src/obj/obj25.cpp
+002FD7C0 VtB1D730_Dtor                    // T::~T: when +48 is set, vtable 0x00B1D730, +48->vfn[4]() and +48 = 0; then vtable 0x00B1D6A0 (r3 left as it) (name?); decompiled: src/obj/obj25.cpp
+002FE510 Obj_ReadXml_002FE510             // void f(T* o, XmlCursor* c): the bool 0x64FDE756 into the u8 +40 and the hash 0x0024728B into +44 (the current values as defaults) (name?); decompiled: src/obj/obj25.cpp
+00303328 Obj_ReadXml_00303328             // void f(T* o, XmlCursor* c): the hash 0x0024728B into +4 and the f32 0x79792193 into +8 (the current values as defaults) (name?); decompiled: src/obj/obj25.cpp
+003541E0 Obj_SetSign_003541E0             // void f(T* o; f32 x): when +32 is set, +32->+64 = x and bits 0x01000000 / 0x00800000 / 0x00400000 of +12 = x > k / x < k / x == k (k the constant at 0x003541DC;  (name?); decompiled: src/obj/obj25.cpp
+00364E70 Obj_ResetState_00364E70          // void f(?, T** out, U* p): when p and p->+208 are set, *out = p and ResetStateFrom(p) (name?); decompiled: src/obj/obj25.cpp
+0038BA6C Rec_Offset_0038BA6C              // u32 f(const T* o): the byte offset past two variable-size records: with i / j the u16 +146 / +144 and the 132-byte slots at +152, a = (12 * slot[i].u16 + 23) &  (name?); decompiled: src/obj/obj25.cpp
+003AA9F0 Obj_OnEvent_003AA9F0             // void f(T* o, Event* e): see ObjOnEventA7DC (name?); decompiled: src/obj/obj25.cpp
+00488004 World_PlayerCall_00488004        // void f(World* w, s32 i, a): p = the object at +8 of the player block i (0x20C80 bytes each, from +4208); 0x0012BC20(p, a) when p is set and its +192 has bit 0x8 (name?); decompiled: src/obj/obj25.cpp
+004CF2BC Effect_GetComp36_004CF2BC        // u32 f(Effect* e, u32 type): c = Effect_FindComponent(e, type); c->+36 when c is found and c->vfn[32]() is 5, else 0 (name?); decompiled: src/obj/obj25.cpp
+0073EED8 VtB10698_Delete                  // T::~T deleting form: vtable 0x00B10698, RefNode_Release(+20), vtable 0x00B0F1D0, VtB11B20_DtorTrivial, Mem_FreeFrom(o, 0). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+00742DD8 PtrVector_Make76_00742DD8        // void f(PtrVector* v, a, b, u8 c): a vector of 76-byte elements (name?); decompiled: src/obj/obj25.cpp
+0074E818 PtrVector_GetOrNew_0074E818      // PtrVector* f(PtrVector** pp): *pp, made first when null (20 bytes, SmallAlloc; PtrVector_Construct, element size 4) (name?); decompiled: src/obj/obj25.cpp
+00757E38 Quat_Inverse_00757E38            // void f(Quat* d, const Quat* q): d = the inverse of q (conjugate over the squared length; fused sums; f2..f7 left) (name?); decompiled: src/obj/obj25.cpp
+00759038 VtB126B8_Delete464               // T::~T deleting form (464 bytes): see VtB126B8Delete (name?); decompiled: src/obj/obj25.cpp
+00760BE0 Mat_Copy3x3W_00760BE0            // void f(Mat* d, const Mat* s): the 3x3 part and the word +48 copied (raw; f1 / r5..r8 left) (name?); decompiled: src/obj/obj25.cpp
+00762CC0 PtrVector_Make4_00762CC0         // void f(PtrVector* v, a, b, u8 c): a vector of 4-byte elements (name?); decompiled: src/obj/obj25.cpp
+0077142C Obj_VCall16RelAdj12_0077142C     // Obj_VCall16Rel_007713C0 called through the interface 12 bytes in (name?); decompiled: src/obj/obj25.cpp
+0077CE28 Obj_SetMat_0077CE28              // void f(T* o, const Mat* m): +80..+136 = the 4x3 part of m (rows of 16 bytes; raw), bit 0x800 of +164 cleared (f1 / r5 / r6 left) (name?); decompiled: src/obj/obj25.cpp
+00788734 VtB218D8_New                     // T* f(): a new 56-byte T (SmallAlloc): +4..+24 = 0, the u8 +28 = 0, +32 = 0, vtable 0x00B218D8; null when the allocation fails (r4 / r5 left) (name?); decompiled: src/obj/obj25.cpp
+0001CC30 Obj_SetDrawCb_0001CC30           // void f(T* o, bool a, u8 b): WorldObj_SetDrawCallback(o->+160, 0, cb, a ? o : 0, b) with cb the OPD 0x00F2D8E8 when a, else 0 (when +160 is set) (name?); decompiled: src/obj/obj25.cpp
+00024048 Obj_SetMode_00024048             // void f(T* o, s32 k): bit 0x10 of the u8 +305 set for k 0 / 1, cleared for k 2 / 3; then +348 = k (name?); decompiled: src/obj/obj25.cpp
+00035D44 Obj_SendValue_00035D44           // void f(T* o): unless the u8 0x00F9BC28 is set, 0x0048F90C(o->+48, 0xCB186A06, 0x752CA457, 0; the f32 table o->+308->+12 indexed by the s32 at (*0x00F951CC)->+64 (name?); decompiled: src/obj/obj25.cpp
+0006EF5C Obj_WorldCall_0006EF5C           // void f(T* o): when world->+0x1281E0 is set, has bit 0x40000 in +172 and o->+12 is set: 0x000FCE18(it, +12, the u8 +20, o, the u8 +21; +16) (name?); decompiled: src/obj/obj25.cpp
+0009B2A4 Cmd_PushB20D40_0009B2A4          // void f(T* o): pushes a new VtB20D40 (20 bytes) made from (f32 +12, the u8 +16) (name?); decompiled: src/obj/obj25.cpp
+0009C53C Cmd_PushB20E00_0009C53C          // void f(T* o): pushes a new VtB20E00 (12 bytes) made from the u8 +12, +13 (name?); decompiled: src/obj/obj25.cpp
+0009CB40 Cmd_PushB20E48_0009CB40          // void f(T* o): pushes a new Obj_InitVt_B20E48 object (12 bytes) when the u8 +12 is set; then Global_StepF6585C() (name?); decompiled: src/obj/obj25.cpp
+0009CEBC Cmd_PushB20E78_0009CEBC          // void f(T* o): pushes a new VtB20E78 (20 bytes) made from (+12, the u8 +16) (name?); decompiled: src/obj/obj25.cpp
+000A4ED4 Cmd_PushB21298_000A4ED4          // void f(T* o): pushes a new VtB21298 (20 bytes) made from (+12, +16) (name?); decompiled: src/obj/obj25.cpp
+000A506C Cmd_PushB212B0_000A506C          // void f(T* o): pushes a new VtB212B0 (20 bytes) made from the u8 +12, +13 (name?); decompiled: src/obj/obj25.cpp
+000A7598 Cmd_PushB21418_000A7598          // void f(T* o): pushes a new VtB21418 (20 bytes) made from (+12, +16) (name?); decompiled: src/obj/obj25.cpp
+000E5E44 Obj_OnEvent_000E5E44             // void f(T* o, Event* e): o->vfn[376]() for the event 0xC39AF658, then 0x000E1060(o, e) (name?); decompiled: src/obj/obj25.cpp
+000EB080 Obj_CopyOut_000EB080             // void f(T* o, U* d): 0x000DFBFC(o, d), then d->+208..+216 = o->+240..+248, d->+224..+232 = o->+256..+264, d->+240 / +244 = o->+272 / +276 (name?); decompiled: src/obj/obj25.cpp
+000F1D80 Obj_DispatchAdj380_000F1D80      // Obj_Dispatch_000F1D0C called through the interface 380 bytes in (name?); decompiled: src/obj/obj25.cpp
+000F816C Map_GetPair_000F816C             // void f(u32 key, u32* a, u32* b): *a / *b = the pair found under key in the sorted map at 0x0103217C (nothing for key 0 or no entry) (name?); decompiled: src/obj/obj25.cpp
+0016DC78 Effect_Handoff_0016DC78          // void f(T* s, U* d): d->+680 = s->+8; on the effect s->+4: +136 bit 0x200 set, bit 0x400 cleared, Effect_SetHash4CF988(it, 0x879F2BDA); s->+4 = 0 (name?); decompiled: src/obj/obj25.cpp
+001B0654 Obj_CopyOut_001B0654             // void f(T* o, U* d): Thunk_000E44C0(o, d), then d->+208 / +212 / +216 = o->+240 / +244 / +248 and bits 0x80000000 / 0x40000000 of d->+220 from o->+252 (f1 / r3 / (name?); decompiled: src/obj/obj25.cpp
+001BD168 Obj_WaitAndRun_001BD168          // void f(T* o): only when the state 0x010426B0 is 3: waits (sys_timer_usleep 300 in a loop) for the busy word 0x01042500 to clear, then 0x001BBC40(o) (name?); decompiled: src/obj/obj25.cpp
+001D1D94 VtB174C0_Dtor                    // T::~T: vtables 0x00B174C0 / 0x00B17694 (+380) / 0x00B176BC (+384), the PtrVector at +556 destroyed, then the base destructor 0x001AE468 (name?); decompiled: src/obj/obj25.cpp
+001D3968 Obj_SetLink_001D3968             // void f(T* o, U* p): when o->+704 is set: p null clears it (returns 0); else when the low 15 bits of +704->+208->+112 and p->+208->+112 agree, +704 = p and 0x001 (name?); decompiled: src/obj/obj25.cpp
+001F465C Obj_Check_001F465C               // bool f(const T* o): t = +820 set, +980 bit 0x10000000, t->+172 bit 0x100 and Field_404Bit15_001BD4A0(t) (name?); decompiled: src/obj/obj25.cpp
+0021167C Obj_StopAndRun_0021167C          // void f(T* o, a): Emitter_Stop(+484, 1); then 0x0020EBC8(o, a) unless the state +428 is 0 or 3 (name?); decompiled: src/obj/obj25.cpp
+00214038 Obj_Resolve_00214038             // void f(T* o): when +216 is set, its +180 = MapGet_0044C404(+176) and +188 = Sound_Find(+184); then +616 = +620 = 0 and 0x000D82BC(o, 0) (name?); decompiled: src/obj/obj25.cpp
+0027C914 Obj_SetKeyBit_0027C914           // void f(T* o, s32 key, bool on): for the first of the 31 12-byte entries at 0x00F64A78 whose +0 is key (index i), bit i of the mask at +84 = !on (an off mask) (name?); decompiled: src/obj/obj25.cpp
+0029FA28 Obj_SetBit2336_0029FA28          // void f(T* o, bool v, u8 b): when bit 0x20 of the u8 +2336 differs from v, it is set to v and o->vfn[48](v, b) (the vtable read before the store) (name?); decompiled: src/obj/obj25.cpp
+002C6D00 Obj_Animate_002C6D00             // void f(T* o, bool b): for the object +424 (when set): Obj_SetAnim(it, 0, 1, ...; the f32 at 0x002C6CF8) with the anim set 0x01164CA4 when b, else Obj_Dispatch36 (name?); decompiled: src/obj/obj25.cpp
+002FD5C8 Obj_ReadXml_002FD5C8             // void f(T* o, XmlCursor* c): the bool 0x64FDE756 into the u8 +40 and the f32 0xB7EA3D94 into +44 (the current values as defaults) (name?); decompiled: src/obj/obj25.cpp
+002FE198 Obj_ReadXml_002FE198             // void f(T* o, XmlCursor* c): the bool 0x64FDE756 into the u8 +40 and the hash 0x9178C4CB into +44 (the current values as defaults) (name?); decompiled: src/obj/obj25.cpp
+0031F8EC List_IndexOf_0031F8EC            // u32 f(const T* o, s32 key): the index of the first 8-byte entry of the list o->+48->+8 (+0 the array, the u16 +8 the count, re-read each step) whose +4 is key;  (name?); decompiled: src/obj/obj25.cpp
+0033E218 Obj_ForEach_0033E218             // void f(T* o): when the u8 +2812 is set, 0x0033B9F8 on each word of the array +2772 (the u16 +2780 the count; both re-read each step) (name?); decompiled: src/obj/obj25.cpp
+00347EA0 Obj_QueryId_00347EA0             // s32 f(T* o): o->vfn[16](&r) fills a 16-byte result; -1 unless its first byte is set and +8 is set, else the s32 +8->+268 (name?); decompiled: src/obj/obj25.cpp
+00367134 Lists_CountKey_00367134          // u32 f(s32 key): how many entries of the four 20-byte lists at 0x0106C2D4 (+0 the array of objects, the u16 +8 the count, re-read each step) have ->+8->+84 equal (name?); decompiled: src/obj/obj25.cpp
+003AD168 Obj_ReadyOrSpawn_003AD168        // bool f(const T* o): the u8 +156, the limit at 0x01086528, effect 0x2BD9DDB4 (name?); decompiled: src/obj/obj25.cpp
+003AD1EC Obj_ReadyOrSpawn_003AD1EC        // bool f(const T* o): the u8 +154, the limit at 0x010864D8, effect 0x5E77B5FF (name?); decompiled: src/obj/obj25.cpp
+00451E08 Obj_Pick_00451E08                // u32 f(const T* o): with b = o->+48->+12 a table of 4-byte slots indexed by (*0x010AB0F8)->+64 and (*0x010AB128)->+64: 0 when the first slot's byte is 0; else +8 (name?); decompiled: src/obj/obj25.cpp
+0049AF80 Sys_Start_0049AF80               // bool f(u64* id, u64* kb): *id = Thread_StartOnce_000AF27C() (retried until it is not negative), *kb = Game_HddFreeSizeKB(); returns 1 (name?); decompiled: src/obj/obj25.cpp
+004CC68C Effect_SetFlagTree_004CC68C      // void f(T* o, Effect* e, bool v): sets bit 0x10 of the u8 +42 of e->+208->+112 to v for e of kind 10 ((+4 >> 10) & 63); when the u8 o->+17 is set, continues with (name?); decompiled: src/obj/obj25.cpp
+004D2354 VtB225B0_Delete                  // T::~T deleting form: vtable 0x00B225B0, Mem_FreeFrom(+304, 0), vtable 0x00B22598, ApeRoot_Destruct, Mem_FreeFrom(o, 0). Null does nothing. (name?); decompiled: src/obj/obj25.cpp
+00742D60 Math_PowI_00742D60               // f32 f(f32 x, s32 n): x to the power n by squaring (single rounding each step; 1 / r for negative n, the double at 0x00742D58 (+inf) when r is 0; the constants 1 (name?); decompiled: src/obj/obj25.cpp
+00747180 VtB123D0_Dtor                    // T::~T: see VtB123D0DtorAt (name?); decompiled: src/obj/obj25.cpp
+007487D8 VtB1388C_Delete                  // T::~T deleting form, vtable 0x00B1388C: see PoolDelete9000A0 (name?); decompiled: src/obj/obj25.cpp
+00748978 VtB138B8_Delete                  // T::~T deleting form, vtable 0x00B138B8: see PoolDelete9000A0 (name?); decompiled: src/obj/obj25.cpp
+0074CCA8 Frame_Set_0074CCA8               // void f(T* d, const Vec3* a, b, c, e; f32 x, f32 y; s32 k, u8 flag (stack)): d->+0 / +16 / +32 / +48 = a / b / c / e (raw), +64 = x, +68 = y, +72 = k, the u8 +76 (name?); decompiled: src/obj/obj25.cpp
+00757C24 Hk_Activate_00757C24             // void f(T* o, a, b; f32 x): Hk_Activate91A4C8(o, a, b; x), then the member +224's vfn[96](b; x) (name?); decompiled: src/obj/obj25.cpp
+0075A684 VtB13974_B194F8_Delete           // T::~T deleting form: see VtB13974DeleteAt (name?); decompiled: src/obj/obj25.cpp
+00760CE0 Obj_Init_00760CE0                // T::T(T* o): +0..+12 = 0, 0x006279E8(o + 16), the u8 +24 = 0, 0x006279FC(o + 28), +32..+44 = 0 (name?); decompiled: src/obj/obj25.cpp
+0077EBA4 VtB205B8_Delete                  // T::~T deleting form: see VtB205B8DeleteAt (name?); decompiled: src/obj/obj25.cpp
+0077F628 VtB21160_Dtor                    // T::~T: vtable 0x00B21160, the PtrVector at +80 destroyed, the member +44 (VtB21B58_DtorTrivial), then VtB20CC8_DtorTrivial_0042CA50(o) (name?); decompiled: src/obj/obj25.cpp
+007881DC Part_Destroy_007881DC            // void f(Part* o): unless the u8 +48 is set, the part +40 (when set) is released (Part_Release_0052F06C, Mem_FreeFrom(it, 0)) and +40 = 0; then Pool_DestructPart( (name?); decompiled: src/obj/obj25.cpp
+00799C18 Color_ToBytes_00799C18           // void f(u8* d, const f32* s): d[0..3] = (u8)(s32)(s[i] * k) (truncated; k the f32 at 0x00799C10, e.g. 255). r4 / f1 left as the last conversion. (name?); decompiled: src/obj/obj25.cpp
+0002BA28 VtB0E428_Dtor                    // T::~T: when o->+48->+220 and its +80 are set, vtable 0x00B0E428 and 0x0002B618(+80, it); then vtable 0x00B0DC70 and NavQuery_Free62D08C(o + 216) (name?); decompiled: src/obj/obj25b.cpp
+000577C0 Obj_KindStep_000577C0            // void f(T* o): o->vfn[220](21) for the kind +4 19, o->vfn[220](15) for 14 (name?); decompiled: src/obj/obj25b.cpp
+000A6220 Cmd_PushB21358_000A6220          // void f(T* o): pushes a new VtB21358 (20 bytes) made from ((s32)+12; f32 +16) (name?); decompiled: src/obj/obj25b.cpp
+000DA954 Obj_Entry16_000DA954             // T* f(T* o, s32 i): the 16-byte entry i of o->+160->vfn[28]()->+32; null when +160 or the result is null or i < 0 (name?); decompiled: src/obj/obj25b.cpp
+000F498C Obj_SetMode_000F498C             // void f(T* o, s32 k): the u8 +624 = (k == 1 and the u8 o->+216->+436 is set); +628 = k (name?); decompiled: src/obj/obj25b.cpp
+000FA5D0 Obj_GetXform_000FA5D0            // void f(const T* o, U* d): d->+0..+56 = the 4x3 part of the matrix at o + 96, d->+64 / +68 = o->+356 / +360 (raw; f1 / r5 left) (name?); decompiled: src/obj/obj25b.cpp
+00113458 Obj_DeltaZ_00113458              // void f(T* o): when +12 and +16 are set, +32..+40 = +16->+160..+168 minus +12->+128..+136; then +32 = +36 = 0 (only z is kept) (name?); decompiled: src/obj/obj25b.cpp
+00168114 Obj_CopyOut_00168114             // void f(T* o, U* d): 0x000DFBFC(o, d), then d->+208..+216 = o->+240..+248, d->+224..+232 = o->+256..+264, d->+240 / +200 = o->+272 / +276 (name?); decompiled: src/obj/obj25b.cpp
+001A7058 VtB15150_Dtor                    // T::~T: vtable 0x00B15150, RefNode_Release on the five nodes at +172..+188, then the base destructor 0x000C2DA0 (name?); decompiled: src/obj/obj25b.cpp
+001CE8B0 Obj_ScaleAndCall_001CE8B0        // u32 f(a, b, c, f32* d): 0 when c is set; else *d *= the f32 at 0x001CE8A8 and 0x000DF960(a, b, 0, d) (name?); decompiled: src/obj/obj25b.cpp
+001D1FD8 VtB174C0_DtorAdj384              // VtB174C0_Dtor called through the interface 384 bytes in (name?); decompiled: src/obj/obj25b.cpp
+001D2054 VtB174C0_DtorAdj380              // VtB174C0_Dtor called through the interface 380 bytes in (name?); decompiled: src/obj/obj25b.cpp
+001DB9C8 Obj_Reset_001DB9C8               // void f(T* o): +584 = 0, o->vfn[28](0, 1), Obj_SetStateFx266E6C( Target_GetDef0D951C(o), 0), +608 = 0 (name?); decompiled: src/obj/obj25b.cpp
+001FB804 Obj_SetHalf_001FB804             // void f(T* o; f32 x): the u16 +510 of o->vfn[144]() (when it returns an object) = the upper half of x's bits; then 0x000DA25C(o; x) (name?); decompiled: src/obj/obj25b.cpp
+00210238 VtB19920_Delete                  // T::~T deleting form: vtable 0x00B19920, RefNode_Release(+184), +184 = 0, vtable 0x00B19510, the base destructor 0x000C2DA0, SmallFree(o, 192). Null does nothing (name?); decompiled: src/obj/obj25b.cpp
+00224B48 Obj_DropChild_00224B48           // void f(T* o, bool b): when b and +436 is set, +436->vfn[4]() and +436 = 0; then 0x0020D5D4(o, b) (name?); decompiled: src/obj/obj25b.cpp
+002B05D8 Obj_OnEvent_002B05D8             // void f(T* o, Event* e): the event 0x2FBD3D56 -> 0x002B0480(o, e->+0, e->+12); 0x340866A4 -> +76 = 0 (r3 left as the compared constant otherwise) (name?); decompiled: src/obj/obj25b.cpp
+002E3A70 Rec_Ratio_002E3A70               // f32 f(): Rec_SumCounts_000B29B0() = n; 0x000B2A20() / n when n > 0, else the f32 at 0x002E3A6C (f2 left as n) (name?); decompiled: src/obj/obj25b.cpp
+002F99A0 VtB1D628_Dtor                    // T::~T: when +44 is set, vtable 0x00B1D628 and the effect +44 destroyed (Effect_Destruct, SmallFree 140), +44 = 0; then vtable 0x00B1D600 (r3 left as it) (name?); decompiled: src/obj/obj25b.cpp
+003285C8 Static_Dtor_003285C8             // void f(): the static destructor of the object at 0x0106B264: when the u64 0x0106B2C0 is set, the PtrVector at 0x0106B2C8 destroyed and it cleared; then vtable 0 (name?); decompiled: src/obj/obj25b.cpp
+00329240 VtB1E3E0_Delete                  // T::~T deleting form: vtable 0x00B1E3E0, the PtrVector at +3248 destroyed, the base destructor 0x003286D8, SmallFree(o, 3280). Null does nothing. (name?); decompiled: src/obj/obj25b.cpp
+00369C30 List_RunByKey_00369C30           // void f(s32 key): 0x00369680(e) for the first object e of the list at 0x0106C280 (+0 the array, the u16 +8 the count) whose +168 is key (name?); decompiled: src/obj/obj25b.cpp
+003AAA64 Obj_OnEventAdj64_003AAA64        // Obj_OnEvent_003AA9F0 called through the interface 64 bytes in (name?); decompiled: src/obj/obj25b.cpp
+0042DE54 Obj_Detach_0042DE54              // void f(T* o): +12 = Obj_FindByHandle42C2B0(+16, 0); when found, +20 = the one for +24 and, when found too, Obj_Detach0D72C0(+12, +20); then Flag_Set8_40000000(o (name?); decompiled: src/obj/obj25b.cpp
+0042EEF0 VtB20E90_Delete                  // T::~T deleting form: vtable 0x00B20E90, Audio_Release446384(the audio table 0x010ACC40, +28), RefNode_Release(+12), VtB20CC8_DtorTrivial, SmallFree(o, 32). Null (name?); decompiled: src/obj/obj25b.cpp
+00432A2C VtB21058_Delete                  // T::~T deleting form: vtable 0x00B21058, RefNode_Release(+12), Audio_Release446384(0x010ACC40, +16), VtB20CC8_DtorTrivial, SmallFree(o, 220). Null does nothing. (name?); decompiled: src/obj/obj25b.cpp
+004345F8 VtB21100_Delete                  // T::~T deleting form: vtable 0x00B21100, RefNode_Release(+12), Audio_Release446384(0x010ACC40, +16), VtB20CC8_DtorTrivial, SmallFree(o, 124). Null does nothing. (name?); decompiled: src/obj/obj25b.cpp
+0048C8A0 Frame_Clear_0048C8A0             // void f(): Draw_Clear(1, 0xFFFFFFFF, ..., 0, 255; the f32 at 0x0048C898), Layer9_RunStream_005165D0(), then (*0x010DDAC0)->vfn[16]() (name?); decompiled: src/obj/obj25b.cpp
+0049E5AC Slots_AnyFlag4_0049E5AC          // bool f(): whether any of the n (*0x010C1A9C) 152-byte slots at 0x010BE8BC with +0 set has bit 0x4 in the world's u8 +4028 + i (name?); decompiled: src/obj/obj25b.cpp
+004A66D0 Effect_GetParam_004A66D0         // u32 f(Effect* e, u32 h): c = Effect_Bind4BB7E0(e, h, 0); c->+280 when c->+276 is 0x7A30D7E3, else 0 (0 for a null e) (name?); decompiled: src/obj/obj25b.cpp
+004BFCC0 VtB21EF8_Dtor                    // T::~T: vtable 0x00B21EF8, +40 = 0 (when set), the PtrVector at +20 destroyed, then vtable 0x00B11B20 (r3 left as it) (name?); decompiled: src/obj/obj25b.cpp
+004F6ED8 VtB23020_Ctor                    // T::T(T* o): vtable 0x00B23020, the u8 +4 = 1, +8 = 0, the slot lists at +12 (SlotList_Init_0079B250) and +48 (SlotList_Init_0079B0F0) with 8 slots each, +84 = + (name?); decompiled: src/obj/obj25b.cpp
+00735BA0 Vec3_Lerp_00735BA0               // void f(Vec3* d, const Vec3* a, const Vec3* b; f32 t): d = a + (b - a) * t, computed in place in d as the original does (single rounding each step; f1..f4 left) (name?); decompiled: src/obj/obj25b.cpp
+0074731C VtB123D0_DtorAdj344              // VtB123D0_Dtor called through the interface 344 bytes in (name?); decompiled: src/obj/obj25b.cpp
+0074BE68 Quat_Normalize_0074BE68          // void f(Quat* d, const Quat* s): d = s normalized (k = 1.0f at 0x0074BE60); each s component re-read after the previous store (name?); decompiled: src/obj/obj25b.cpp
+0074D6A8 Quat_NormalizeSelf_0074D6A8      // void f(Quat* q): q normalized in place (k = 1.0f at 0x0074D6A0) (name?); decompiled: src/obj/obj25b.cpp
+0075A6FC VtB13974_B194F8_DeleteAdj8       // VtB13974_B194F8_Delete called through the interface 8 bytes in (name?); decompiled: src/obj/obj25b.cpp
+0076528C VtB1CE10_Dtor                    // T::~T: when +92 is set, vtable 0x00B1CE10, Mem_FreeFrom(+92, 0) and +92 = 0; then vtable 0x00B0DAAC and SortedMap_Remove7330C0(the map at 0x01056F04, o + 4) (name?); decompiled: src/obj/obj25b.cpp
+00771344 Hk_Remove_00771344               // void f(?, T* a): for the entity p = a + the s8 a->+32 + 16 (when the s8 a->+40 is 1 and p is not null) whose u8 +232 is neither 4 nor 5: Hk_RemoveEntity92FFC8(& (name?); decompiled: src/obj/obj25b.cpp
+0077EC1C VtB205B8_DeleteAdj56             // VtB205B8_Delete called through the interface 56 bytes in (name?); decompiled: src/obj/obj25b.cpp
+00012D60 Obj_InRadius_00012D60            // bool f(const T* o): bit 0x4 of the u8 +304 set, the radius +208 above the f32 at 0x00012D58 and the squared distance from +96..+104 to +176..+184 below its squa (name?); decompiled: src/obj/obj25b.cpp
+00014C78 Obj_RandomPhase_00014C78         // void f(T* o): +36 = 0, bit 0x4 of the u8 +305 cleared, +40 = the next number of the global generator at 0x01164888 (the 64-bit +0 converted and scaled by the f3 (name?); decompiled: src/obj/obj25b.cpp
+00087130 Player_SetBit_00087130           // void f(T* o): for p = the world's player block +4208->+8 with bit 0x8 in +192: bit 0x800 of Obj_Notify26(p)->+244 (when found) = bit 0 of the u8 o->+12 (name?); decompiled: src/obj/obj25b.cpp
+0009B0F0 Cmd_PushB20D10_0009B0F0          // void f(T* o): pushes a new VtB20D10 (24 bytes) made from (+12, +16, +20) (name?); decompiled: src/obj/obj25b.cpp
+0009E70C Cmd_PushB20F20_0009E70C          // void f(T* o): pushes a new VtB20F20 (24 bytes) made from (f32 +12, +16, +20) (name?); decompiled: src/obj/obj25b.cpp
+000A3608 Cmd_Push4360CC_000A3608          // void f(T* o): pushes a new 0x004360CC object (160 bytes) made from (+12, the u8 +16, the u8 +17) (name?); decompiled: src/obj/obj25b.cpp
+000A6DE0 Cmd_PushB213B8_000A6DE0          // void f(T* o): pushes a new VtB213B8 (24 bytes) made from (+12, +16, the u8 +20) (name?); decompiled: src/obj/obj25b.cpp
+000A7644 VtB11B38_Dtor                    // T::~T: vtable 0x00B11B38; Emitter_Stop(the handle +20, 1) when either u16 half of it is set; then VtB11B20_DtorTrivial_004B6884 (name?); decompiled: src/obj/obj25b.cpp
+000DFAC8 Obj_CountAndMark_000DFAC8        // void f(T* o, U* t, s32 k): the u16 +178 += 1; for k 3, bit t->+172 of the type-27 component's +88 set when the u64 t->+184 has bit 0 (name?); decompiled: src/obj/obj25b.cpp
+000E63C8 Obj_LastHalf_000E63C8            // u32 f(const T* o): +412, unless world->+0x1281D4->+4 is set: then the high half of +28->+44 of the last 48-byte entry of the list +388 (+0 the array, the u16 +8 (name?); decompiled: src/obj/obj25b.cpp
+000ED898 Obj_Threshold_000ED898           // void f(T* o, U* a): +216->+204 * a->+64 against the f32 at 0x000ED890 (name?); decompiled: src/obj/obj25b.cpp
+000ED928 Obj_Threshold_000ED928           // void f(T* o, U* a): +216->+208 * a->+60 against the f32 at 0x000ED924 (name?); decompiled: src/obj/obj25b.cpp
+000ED9B8 Obj_Threshold_000ED9B8           // void f(T* o, U* a): +216->+212 * a->+32 against the f32 at 0x000ED9B4 (name?); decompiled: src/obj/obj25b.cpp
+00107618 VtB13C18_Dtor                    // T::~T: vtable 0x00B13C18; when the skeleton +76 is set: Body_Remove931F00( its +8, it) when +8 is set, AnimSkel_Release7D4EA8(+76), +76 = 0; then vtable 0x00B0D (name?); decompiled: src/obj/obj25b.cpp
+0042C138 CmdList_Push_0042C138            // (cmd or null): pushes a script command built by the Cmd_Push* builders (name?); not decompiled
+000DB290 Obj_FindByHash_000DB290          // (owner, hash) -> component or 0 (name?); not decompiled
+000D7024 Obj_BaseDtor_000D7024            // the base destructor under VtB13718 / VtB123D0 (name?); not decompiled
+000EB0F8 Obj_BaseDtor_000EB0F8            // the base destructor under VtB13528 (name?); not decompiled
+001AE468 Obj_BaseDtor_001AE468            // the base destructor under VtB174C0 (name?); not decompiled
+000C2DA0 Obj_BaseDtor_000C2DA0            // the base destructor under VtB15150 / VtB19510 (name?); not decompiled
