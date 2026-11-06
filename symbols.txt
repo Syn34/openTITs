@@ -9938,10 +9938,7 @@
 00785190 SlotList_PushFront_00785190      // void (Handle* out, SlotList* l, const u32* v): SlotList PushFront, grows via SlotList_Grow_00784FE4 (name?); decompiled: src/obj/mid2_slotlist.cpp
 0079A6D4 SlotList_PushFront_0079A6D4      // void (Handle* out, SlotList* l, const u32* v): SlotList PushFront, grows via SlotList_Grow_0079A528 (name?); decompiled: src/obj/mid2_slotlist.cpp
 0035CA00 SlotDefC_Read_0035CA00           // (SlotDefC*, x, XmlCursor*): the reader SlotDefC_New_0035D4B0 calls (684 instructions) (name?); not decompiled
-0032AC78 Section_Prepare_0032AC78         // (o, 0, 1): called first by VtB1E5D0_Dtor (name?); not decompiled
 004FA2AC XmlCursor_ReadString_004FA2AC    // (cursor, hash, const char** out, const char* default) (name?); not decompiled
-0035C8CC SlotDefList_New_0035C8CC         // calls SlotDefList_Read_0035C3E4 (77 instructions; a SlotDefList factory) (name?); not decompiled
-00361108 SlotDefList_New_00361108         // calls SlotDefList_Read_0035C3E4 (75 instructions) (name?); not decompiled
 
 # Renderer sweep part 16
 00599154 SlotsWork_Build_00599154  // () [via pointer]: SlotsWork_Prepare, the view block (inverses of view +1008 / +880 x uv_to_clip, rows, pos) to the view work object's vfunc +24, frame block, results into kWork +3232/+3328; decompiled: src/gfx/gfx22.cpp (name?)
@@ -9954,3 +9951,37 @@
 004FB704 Trophy_ThreadMain_004FB704 // (TrophyThreadArgs* = manager+24) -> 0: the TrophyThread state machine (register, game info/list, disk space, unlock state, unlock queue); decompiled: src/gfx/gfx22.cpp (name?)
 00595968 GeomBatches_Build_00595968 // () [Bank_Start]: static geometry batches (0x0116BF00, 272 bytes, count 0x0116E100) from batchable instances, per-instance 80-byte records; decompiled: src/gfx/gfx22.cpp (name?)
 005A9DB0 Reflection_Create_005A9DB0 // (scene, o, arg, ParamBlock*) [Call5A9DB0_005AC7AC]: reflection record (0x01194ED8, 200 bytes), 3 mip levels, "Reflection" ShadowSource with two param sets, o vfunc +40; decompiled: src/gfx/gfx22.cpp (name?)
+
+# Game code medium sweep part 3
+0077A03C NodeStartMeleeAttack_New_0077A03C // Node* New(s16 id): the "RStartMeleeAttack" event node (Mem_Alloc(24, 0, 16), record 16): AttachBoneName, Radius, Damage, Impulse, XOffset, YOffset, ZOffset, Hit (name?); decompiled: src/obj/mid3_node.cpp
+007778CC NodePlaySndSFX_New_007778CC      // Node* New(s16 id): the "RPlaySndSFX" event node (Mem_Alloc(24, 0, 16), record 16): SndName, Part, UseDefaultSndLib, Is3DSnd, AttachType, AttachTypePlayer, UseSu (name?); decompiled: src/obj/mid3_node.cpp
+00778BEC NodeCameraShake_New_00778BEC     // Node* New(s16 id): the "RCameraShake" event node (Mem_Alloc(24, 0, 16), record 16): Radius, Duration, Magnitude, FalloffMode, FalloffStartTime, Pitch, Yaw, Roll (name?); decompiled: src/obj/mid3_node.cpp
+0077A404 NodeFireProjectile_New_0077A404  // Node* New(s16 id): the "RFireProjectile" event node (Mem_Alloc(24, 0, 16), record 32): AttachBoneName, ProjDefName, XOffset, YOffset, ZOffset, PredictTargetPos, (name?); decompiled: src/obj/mid3_node.cpp
+00777D58 NodePlayDirScript_New_00777D58   // Node* New(s16 id): the "RPlayDirScript" event node (Mem_Alloc(24, 0, 16), record 16): DirScriptName, Mode (an enum: default hash 0x36B9B6DE, a name list of 2 ho (name?); decompiled: src/obj/mid3_node.cpp
+00776094 CondIsTimer_New_00776094         // Node* New(s16 id): the "CIsTimer" condition node (Mem_Alloc(24, 0, 16), record 16): TimerName, Value, Operator (an enum: default hash 0x59D794DD, a name list of (name?); decompiled: src/obj/mid3_node.cpp
+0032AC78 Section_SetMode_0032AC78         // (was Section_Prepare_0032AC78) u32 Section::SetMode(Section* o, s32 mode, u8 flag) (vtable 0x00B1E5D0's override of 0x003260F0). - flag 0 and mode == o->+18: just the base SetMode; - mode 4:  (name?); decompiled: src/obj/mid3_section.cpp
+0077D934 VtB20220_Dtor_0077D934           // u32 ~T(T* o) of the 0x00B20218 class (448 bytes; see mid2_dtor.cpp B20218Dtor, whose thunks enter it through the bases): vtables 0x00B20220 (+0) / 0x00B2028C (+ (name?); decompiled: src/obj/mid3_section.cpp
+0035C8CC SlotDefListB1FA38_New_0035C8CC   // SlotDef* f(x, XmlCursor* c): new def (vtable 0x00B1FA38, +80 |= 0x00020001) read from c; returns it. (name?); decompiled: src/obj/mid3_slot.cpp
+00361108 SlotDefListB1F6A0_New_00361108   // f(x, XmlCursor* c): new def (vtable 0x00B1F6A0, +80 |= 1) read from c; returns SlotDefList_Read_0035C3E4's result (the original drops the pointer). (name?); decompiled: src/obj/mid3_slot.cpp
+000C24E8 TuningVars_Ctor_000C24E8         // void f(): static initializer of the tuning vars Entity.WestBoss.* (the stuck-camera tuning, two debug switches). (name?); decompiled: src/obj/mid3_tuning.cpp
+0020BD08 TuningVars_Ctor_0020BD08         // void f(): static initializer of the tuning vars Entity.Marker.* / Entity.Score.* (marker offsets, score popup timing, instance names). (name?); decompiled: src/obj/mid3_tuning.cpp
+002F5E00 TuningVars_Ctor_002F5E00         // void f(): static initializer of the tuning vars FX.* (shake, trail) and two PtrVectors. (name?); decompiled: src/obj/mid3_tuning.cpp
+0043B0C0 TuningVars_Ctor_0043B0C0         // void f(): static initializer of the tuning vars Goal.QTE.* / Goal.ParisChase.* (the chase camera shake and roll). (name?); decompiled: src/obj/mid3_tuning.cpp
+0024F034 TuningVars_Ctor_0024F034         // void f(): static initializer of the tuning vars Entity.Vehicle.* (simple-wheeled collision and help text) and a pool array. (name?); decompiled: src/obj/mid3_tuning.cpp
+00226060 TuningVars_Dtor_00226060         // void f(): static (atexit) destructor of 23 tuning vars. (name?); decompiled: src/obj/mid3_tuning.cpp
+00209240 TuningVars_Dtor_00209240         // void f(): static (atexit) destructor of 52 tuning vars and the array 0x01054D50[5] (from the back). (name?); decompiled: src/obj/mid3_tuning.cpp
+003A23D4 TuningVars_Dtor_003A23D4         // void f(): static (atexit) destructor of 65 tuning vars. (name?); decompiled: src/obj/mid3_tuning.cpp
+001F7288 TuningVars_Dtor_001F7288         // void f(): static (atexit) destructor of 73 tuning vars. (name?); decompiled: src/obj/mid3_tuning.cpp
+002E76F4 TuningVars_Dtor_002E76F4         // void f(): static (atexit) destructor of 15 tuning vars, 1 PtrVector, 5 pool arrays. (name?); decompiled: src/obj/mid3_tuning.cpp
+004AFD54 TuningVars_Dtor_004AFD54         // void f(): static (atexit) destructor of 34 tuning vars, 1 PtrVector, 1 pool array. (name?); decompiled: src/obj/mid3_tuning.cpp
+000F81E4 TuningVars_Dtor_000F81E4         // void f(): static (atexit) destructor of 7 tuning vars, 5 PtrVectors, 5 pool arrays. (name?); decompiled: src/obj/mid3_tuning.cpp
+002EBDB0 TuningVars_Dtor_002EBDB0         // void f(): static (atexit) destructor of 2 tuning vars, 1 PtrVector, 4 pool arrays. (name?); decompiled: src/obj/mid3_tuning.cpp
+00483B88 LevelNames_Read0_00483B88        // u32 f(XmlCursor*): a level name / id element into list pair 0. (name?); decompiled: src/obj/mid3_xml.cpp
+00483D74 LevelNames_Read1_00483D74        // u32 f(XmlCursor*): a level name / id element into list pair 1. (name?); decompiled: src/obj/mid3_xml.cpp
+00483F60 LevelNames_Read2_00483F60        // u32 f(XmlCursor*): a level name / id element into list pair 2. (name?); decompiled: src/obj/mid3_xml.cpp
+004C96E4 ReaderB22380_Read_004C96E4       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B22380, 52 bytes): +4 = 1, +12..+20 = 0, +24 = {255, 255, 255, 255}, +28 / +48 = 0 (u8), +32..+44 = 0; then +16 / +2 (name?); decompiled: src/obj/mid3_xml.cpp
+00080D68 ReaderB0FD60_Read_00080D68       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B0FD60): the base init Obj_InitVt_B21C98(o) (r4 = c, as passed), +12..+48 = 0, then eleven hashes +12..+52 with defa (name?); decompiled: src/obj/mid3_xml.cpp
+000A48F0 ReaderB11850_Read_000A48F0       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B11850): the base init Obj_InitVt_B21C98(o) (r4 = c), +12..+28 = 0, the bytes +32..+40 = 0; then the hashes +12 (def (name?); decompiled: src/obj/mid3_xml.cpp
+004C1FE4 ReaderB220B0_Read_004C1FE4       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B220B0): +4 = 1, +12..+36 = 0, the flags word +40: bits 31..27 cleared, bits 26..25 = 2; then +12 / +16 / +20 / +28  (name?); decompiled: src/obj/mid3_xml.cpp
+0022083C Reader_Read_0022083C             // u32 f(?, XmlCursor* c, T* o): the bits 0x20 / 0x10 / 0x08 / 0x02 of the u8 +184 (through a stack byte, zeroed first; defaults: the bits), the hashes +188 / +192 (name?); decompiled: src/obj/mid3_xml.cpp
+003260F0 Section_SetModeBase_003260F0    // (Section* o, s32 mode, u8 flag): the section base SetMode, called last by Section_SetMode_0032AC78 (name?); not decompiled
