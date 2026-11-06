@@ -5505,7 +5505,7 @@
 000A9670 Ar_StartDiscoveryA9670               // () -> sys_ppu_thread_create("Discover AR Server", OPD 0x00F30F90, prio 1536, 8 KB); decompiled: src/world/hevent19_k.cpp (name?)
 005E6CC0 Lock_Enter5E6CC0                     // (lock*) (name?)
 005E6C68 Lock_Leave5E6C68                     // (lock*) (name?)
-0079BD1C Queue_Push79BD1C                     // (out*, Queue*, const s32*) (name?)
+0079BD1C Queue_Push79BD1C                 // void (Handle* out, SlotList* l, const s32* v): SlotList PushBack, grows via SlotList_Grow_0079BB70; decompiled: src/obj/mid2_slotlist.cpp
 00369D98 Request_Do369D98                     // (Request* 0x0106C330, key, -, const vec3* pos; f32 t) -> b+20: "%i" anim, world object scale/matrix (Mat34_FromRotPos553B4C), timings and positions; decompiled: src/world/hevent24_c.cpp (name?)
 
 # Template instances, project-wide (obj19)
@@ -9716,7 +9716,7 @@
 003616A4 SlotDefB748_New_003616A4         // SlotDef* (x, XmlCursor* cur): new 208-byte def (vtable 0x00B1F748), SlotDef_Read, bools / hashes / floats +152..+192 (name?); decompiled: src/obj/mid1_slot.cpp
 00361374 SlotDefB780_New_00361374         // SlotDef* (x, XmlCursor* cur): new 304-byte def (vtable 0x00B1F780), SlotDef_Read, hashes, floats, icon%d / sound%d / addBitScript%d x10 (name?); decompiled: src/obj/mid1_slot.cpp
 003604E0 SlotDef3DText_New_003604E0       // SlotDef* (x, XmlCursor* cur): new 160-byte def (vtable 0x00B1F828), SlotDef_Read, 16-byte entries per "3DTextObject" child (+148 / +152), hash +156 (name?); decompiled: src/obj/mid1_slot.cpp
-0079B55C Set_Insert_0079B55C              // (out, set, const T* key): insert into the set at o + 48 (called by Obj_RegisterParam) (name?); not decompiled
+0079B55C Set_Insert_0079B55C              // void (Handle* out, SlotList* l, const u32* v): SlotList PushBack (handle idx << 16 | gen, gen counter 0x010C29DC), grows via SlotList_Grow_0079B3B0 (rename SlotList_PushBack_0079B55C?); decompiled: src/obj/mid2_slotlist.cpp
 0048F298 Obj_Flag13Off_0048F298           // (o, 1): called by Obj_BaseDtor_000D7024 when +176 has 0x2000 (name?); not decompiled
 0048F6B0 Obj_BaseDtor_0048F6B0            // the base destructor under Obj_BaseDtor_003286D8 (name?); not decompiled
 0012E8B0 Obj_Detach_0012E8B0              // (node, area): called by Area_Enter / Area_Leave when the node's +192 has 0x8 (name?); not decompiled
@@ -9908,3 +9908,37 @@
 0032A440 Obj_NewChild_0032A440            // void f(T* o): World_SetChild1281F4(o->+8, a new 0x003B04F8 (480 bytes, SmallAlloc) made from (+8, 0x7719A548, o), or 0) (name?); decompiled: src/obj/obj26b.cpp
 0034F600 Obj_FindDescendant_0034F600      // Obj* f(a, s32 key, Obj* n): depth-first search below n (children +272, siblings +268) for the object whose +204 is key; 0 when none (name?); decompiled: src/obj/obj26b.cpp
 00352EDC Obj_SetEntryF_00352EDC           // void f(T* o, u32 key, _, u8 both, f32 v): in the 224-byte entries of the list +96 (u16 count +8), the f32 +204 of the one keyed key = v, and its +200 too when b (name?); decompiled: src/obj/obj26b.cpp
+
+# Game code medium sweep part 2
+0032DA14 SectionBase_Dtor_0032DA14        // ~T() of a member-less level-section class: the 0x00B1E1F8 body inlined (array +2544, lists +2232[5], buffers +2524..+2488, vector +2272), then Obj_BaseDtor_0048F6B0 (name?); decompiled: src/obj/mid2_dtor.cpp
+00331788 SectionBase_Dtor_00331788        // as SectionBase_Dtor_0032DA14 (another class) (name?); decompiled: src/obj/mid2_dtor.cpp
+00332F44 SectionBase_Dtor_00332F44        // as SectionBase_Dtor_0032DA14 (another class) (name?); decompiled: src/obj/mid2_dtor.cpp
+00769480 SectionBase_Dtor_00769480        // as SectionBase_Dtor_0032DA14 with the array's Ptr_FreeAndClear calls inlined (name?); decompiled: src/obj/mid2_dtor.cpp
+00769744 SectionBase_Delete_00769744      // deleting: null -> nothing; SectionBase_Dtor_00769480 body, Mem_FreeFrom(this, 0) (name?); decompiled: src/obj/mid2_dtor.cpp
+0032CF20 VtB1E6C0_Dtor                    // ~T() (vtable 0x00B1E6C0, 2608 bytes): PtrVector +2588, then the section base body (name?); decompiled: src/obj/mid2_dtor.cpp
+0032EF90 VtB1E828_Dtor                    // ~T() (vtable 0x00B1E828, 2592 bytes): PtrVector +2572, then the section base body (name?); decompiled: src/obj/mid2_dtor.cpp
+0032FA74 VtB1E8A0_Dtor                    // ~T() (vtable 0x00B1E8A0, 2596 bytes): PtrVector +2576, then the section base body (name?); decompiled: src/obj/mid2_dtor.cpp
+0076B458 VtB1EA80_Dtor                    // ~T() (vtable 0x00B1EA80): PtrVector +2572, then the section base body (name?); decompiled: src/obj/mid2_dtor.cpp
+0076B724 VtB1EA80_Delete                  // deleting ~T() of VtB1EA80 (SmallFree 2608; null -> nothing) (name?); decompiled: src/obj/mid2_dtor.cpp
+0076B050 VtB1F048_Dtor                    // ~T() (vtable 0x00B1F048): PtrVectors +2612 / +2592 / +2572, then the section base body (name?); decompiled: src/obj/mid2_dtor.cpp
+0076BAD0 VtB1F048_Delete                  // deleting ~T() of VtB1F048 (SmallFree 2668; null -> nothing) (name?); decompiled: src/obj/mid2_dtor.cpp
+0032B02C VtB1E5D0_Dtor                    // ~T() (vtable 0x00B1E5D0): Section_Prepare_0032AC78(this, 0, 1), u16 +2580 = 0, PtrVector +2572, then the section base body (name?); decompiled: src/obj/mid2_dtor.cpp
+0077E2FC VtB20220_Dtor_Thunk64            // ~T() of the 448-byte class with vtables 0x00B20220 / +56 0x00B2028C / +60 0x00B202B4 / +64 0x00B202D8, entered via the +64 base (this - 64) (name?); decompiled: src/obj/mid2_dtor.cpp
+0077E4DC VtB20220_Dtor_Thunk60            // the same entered via the +60 base (name?); decompiled: src/obj/mid2_dtor.cpp
+0077E6BC VtB20220_Dtor_Thunk56            // the same entered via the +56 base (name?); decompiled: src/obj/mid2_dtor.cpp
+0077DB10 VtB20220_Delete                  // deleting ~T() of VtB20220 (SmallFree 448; null -> nothing) (name?); decompiled: src/obj/mid2_dtor.cpp
+0077DD08 VtB20220_Delete_Thunk64          // deleting ~T() of VtB20220 via the +64 base (name?); decompiled: src/obj/mid2_dtor.cpp
+0077DF04 VtB20220_Delete_Thunk60          // deleting ~T() of VtB20220 via the +60 base (name?); decompiled: src/obj/mid2_dtor.cpp
+0077E100 VtB20220_Delete_Thunk56          // deleting ~T() of VtB20220 via the +56 base (name?); decompiled: src/obj/mid2_dtor.cpp
+0035D958 SlotDefB_New_0035D958            // SlotDef* (x, XmlCursor*): new 224-byte def (vtable 0x00B1F9B8), SlotDefB_Read_0035D708 (on 0 when the allocation fails) (name?); decompiled: src/obj/mid2_slot.cpp
+0035D4B0 SlotDefC_New_0035D4B0            // SlotDef* (x, XmlCursor*): new 448-byte def (vtable 0x00B1F9F8), SlotDefC_Read_0035CA00 (on 0 when the allocation fails) (name?); decompiled: src/obj/mid2_slot.cpp
+0035C3E4 SlotDefList_Read_0035C3E4        // SlotDef* (SlotDefList* s, x, XmlCursor*): SlotDef_Read, 32-byte "3DTextObject" entries (+148 / +152, built on the stack, max 40), float +156, bool +160 (name?); decompiled: src/obj/mid2_slot.cpp
+003608E8 SlotDefE_New_003608E8            // SlotDef* (x, XmlCursor*): new 160-byte def (vtable 0x00B1F70C), SlotDef_Read, 32-byte "3DTextObject" entries with hashes, bool +156 (name?); decompiled: src/obj/mid2_slot.cpp
+00360DE8 SlotDefD_New_00360DE8            // SlotDef* (x, XmlCursor*): new 176-byte def (vtable 0x00B1F978), SlotDefList_Read_0035C3E4, 40-byte records per 0x8BB559E6 child (+164 / +168), float +172 (name?); decompiled: src/obj/mid2_slot.cpp
+00785190 SlotList_PushFront_00785190      // void (Handle* out, SlotList* l, const u32* v): SlotList PushFront, grows via SlotList_Grow_00784FE4 (name?); decompiled: src/obj/mid2_slotlist.cpp
+0079A6D4 SlotList_PushFront_0079A6D4      // void (Handle* out, SlotList* l, const u32* v): SlotList PushFront, grows via SlotList_Grow_0079A528 (name?); decompiled: src/obj/mid2_slotlist.cpp
+0035CA00 SlotDefC_Read_0035CA00           // (SlotDefC*, x, XmlCursor*): the reader SlotDefC_New_0035D4B0 calls (684 instructions) (name?); not decompiled
+0032AC78 Section_Prepare_0032AC78         // (o, 0, 1): called first by VtB1E5D0_Dtor (name?); not decompiled
+004FA2AC XmlCursor_ReadString_004FA2AC    // (cursor, hash, const char** out, const char* default) (name?); not decompiled
+0035C8CC SlotDefList_New_0035C8CC         // calls SlotDefList_Read_0035C3E4 (77 instructions; a SlotDefList factory) (name?); not decompiled
+00361108 SlotDefList_New_00361108         // calls SlotDefList_Read_0035C3E4 (75 instructions) (name?); not decompiled
