@@ -423,7 +423,7 @@
 004D7E70 UiElem_GetScale          // vfunc +168, sret vec3, inherits parent's; decompiled: src/text/glyph_transform.cpp
 00522750 View_ProjectPoint        // (view, out vec4, in vec3) -> [0,1] screen; decompiled: src/text/glyph_transform.cpp
 005541F0 Matrix_Multiply          // (Matrix* a, const Matrix* b): a = rows(a) x b, w lanes from stack junk; decompiled: src/obj/obj12_math.cpp
-005115F0 View_Update              // (view, 0) (name?)
+005115F0 View_Update              // void View_Update(View* v, bool force): when forced or dirty (+52 0x80): projection +1008 (ortho / perspective / + oblique clip +496), raw copy +1264, x view +1328, vfunc +16, screen rotation (+48 bits 13..15, aspect fix +50 0x10), view x proj +880 (+944 transposed), frustum +272, view rotation transposed +1072, roll +1136 (name?); decompiled: src/gfx/gfx23.cpp
 00553A2C Vec_TransformByMatrix    // (out, in xyz, m); decompiled: src/view/vector.cpp
 004E1B58 UiElem_GetSize           // vfunc +140, cached at +140; decompiled: src/uielem/vtbl_size.cpp
 004E0B30 UiElem_GetWorldMatrix    // vfunc +164; decompiled: src/uielem/vtbl_world.cpp
@@ -3528,8 +3528,8 @@
 00585EF0 LightDef_FromRecord      // (LightDef*, const LightRec*): sphere, name, colour /255, sqrt intensity, ranges, clamps, box (name?); decompiled: src/obj/obj17.cpp
 0059C294 LightDef_Read            // (IffReader*, LightDef*) -> 1: versioned light record -> LightDef_FromRecord; decompiled: src/obj/obj18.cpp
 00735F28 Mem_NewArray                     // void* Mem_NewArray(u32 size): Mem_Alloc(size, 0, 16) (name?); decompiled: src/obj/obj21.cpp
-00578868 Quad_InClip              // (clip, quad) -> bool (name?)
-00577E40 Quad_InFrustum           // (quad, near plane, viewproj, planes) -> bool (name?)
+00578868 Quad_InClip              // bool Quad_InClip(clip, quad): corner inside / edge ray in [0, 1] (Planes_ClipRay) / volume edge through the quad (Quad_IntersectSegment) (name?); decompiled: src/gfx/gfx23.cpp
+00577E40 Quad_InFrustum           // bool Quad_InFrustum(quad, near plane, viewproj, planes): corner inside / all outside one plane / near-clipped polygon's fan vs the clip box (name?); decompiled: src/gfx/gfx23.cpp
 00598B3C Bank_PreUpdate           // (Obj*): once a frame: quads, view state, zone mask, sky flag, light grid, slots, items, view matrices (name?); decompiled: src/obj/obj18.cpp
 0058D448 Bank_DrawPrepare         // (Obj*): polygon offset (scaled for the depth format) + depth state GCM words; decompiled: src/obj/obj18.cpp
 0058D088 Bank_DrawItem                      // (-, Bank*) [Bank_DrawViewports]: queued draws, fade, packet x bank matrix to VP constants 0-3, DrawItem per flagged mesh; decompiled: src/gfx/gfx21.cpp
@@ -9985,3 +9985,7 @@
 004C1FE4 ReaderB220B0_Read_004C1FE4       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B220B0): +4 = 1, +12..+36 = 0, the flags word +40: bits 31..27 cleared, bits 26..25 = 2; then +12 / +16 / +20 / +28  (name?); decompiled: src/obj/mid3_xml.cpp
 0022083C Reader_Read_0022083C             // u32 f(?, XmlCursor* c, T* o): the bits 0x20 / 0x10 / 0x08 / 0x02 of the u8 +184 (through a stack byte, zeroed first; defaults: the bits), the hashes +188 / +192 (name?); decompiled: src/obj/mid3_xml.cpp
 003260F0 Section_SetModeBase_003260F0    // (Section* o, s32 mode, u8 flag): the section base SetMode, called last by Section_SetMode_0032AC78 (name?); not decompiled
+
+# Renderer sweep part 17
+0052D0F0 ViewCrop_Fit_0052D0F0    // void f(View* v, const f32 corners[8][4], const Matrix* m) [through a pointer]: projects the corners through m x view +48, fits an oriented 2D rectangle, prepends the crop to [-1, 1] to +48 and rebuilds the frustum +112 (name?); decompiled: src/gfx/gfx23.cpp
+00591A30 LightInstances_Start_00591A30 // void f(Bank* b) [Bank_Start]: the accepted light instances' animation records (holder at b +0, capacity n + 256), zone-vector registration, LOD, LightAnim_Init and a first evaluation (name?); decompiled: src/gfx/gfx23.cpp
