@@ -3532,7 +3532,7 @@
 00577E40 Quad_InFrustum           // (quad, near plane, viewproj, planes) -> bool (name?)
 00598B3C Bank_PreUpdate           // (Obj*): once a frame: quads, view state, zone mask, sky flag, light grid, slots, items, view matrices (name?); decompiled: src/obj/obj18.cpp
 0058D448 Bank_DrawPrepare         // (Obj*): polygon offset (scaled for the depth format) + depth state GCM words; decompiled: src/obj/obj18.cpp
-0058D088 Bank_DrawItem            // (Obj*, item) (name?)
+0058D088 Bank_DrawItem                      // (-, Bank*) [Bank_DrawViewports]: queued draws, fade, packet x bank matrix to VP constants 0-3, DrawItem per flagged mesh; decompiled: src/gfx/gfx21.cpp
 005E4068 Gcm_SetViewport          // inlined libgcm cellGcmSetViewport: (ctx, x, y, w, h; f1 min, f2 max; scale[4], offset[4]) (name?)
 
 # World event handler callees, part 15
@@ -3706,9 +3706,7 @@
 0058FD50 Bank_ComputeLightBounds  // (): box of type-2 light positions (+-64 x/z) + half size / inverse into bank globals +5264.. (name?); decompiled: src/obj/obj18.cpp
 0059541C ApeProceduralMatrixAnimMgr_Create // (mgr): animator free list, collects root geometry trees, peer list, World_AddObjects; decompiled: src/obj/obj18.cpp
 005A600C CameraInstance_ReadChunks // (IffReader*, parent) -> 1: new camera instance, chunks, AddChild or point offset + MarkDirty, map insert (name?); decompiled: src/obj/obj18.cpp
-00596A8C Bank_Stop596A8C          // (s32 mode): slot entries / skeleton compose / group levels (name?)
-005843C0 Bank_UpdateView5843C0    // (bank globals +40, View*) (name?)
-0058C53C Item_Update58C53C        // (item): emitter-like draw packet + VMX bound test (name?)
+00596A8C Bank_Stop596A8C                    // (s32 mode) [main, Bank_Destroy]: group levels (split to event slot 0 above 512), changed slots, skeleton compose, flagged list, frame counter (modes 1/2); decompiled: src/gfx/gfx21.cpp (name?)
 00726314 Libc_Shutdown726314      // () (name?)
 00732D98 VtB0D934_Dtor            // *this = vtable 0x00B0D934, then 0x004FC1A0(this) (template instance); decompiled: src/obj/obj18_tmpl.cpp
 00732E08 VtB0D99C_Dtor            // *this = vtable 0x00B0D99C, then 0x004FC1A0(this) (template instance); decompiled: src/obj/obj18_tmpl.cpp
@@ -7602,7 +7600,7 @@
 0075919C AdjDtor_0075919C         // p = this -384: vtables 0x00B126B8 / 0x00B12528 / 0x00B1200C at +0 / +384 / +380, then 0x000DF934(p) (template instance); decompiled: src/obj/obj19_tmpl3.cpp
 007591EC AdjDtor_007591EC         // p = this -380: vtables 0x00B126B8 / 0x00B12528 / 0x00B1200C at +0 / +384 / +380, then 0x000DF934(p) (template instance); decompiled: src/obj/obj19_tmpl3.cpp
 00391694 Node_Init                // (p, s16 id, const char* name) (name?); called by the NewNamed_* factories (src/obj/obj19_tmpl*.cpp); not decompiled
-004D3088 Node_Bind                // (owner, const char* name, k5, k6, -1, 0) -> binding (+64 a byte value, +76 cleared by callers) (name?); not decompiled
+004D3088 Node_Bind                        // Binding* (Owner* o, const char* name, s32 kind, u32 k6, s32 offset (-1 = o->+48), const void* value): 96-byte binding, value printed ("%d" / "%.2f") into a heap copy +80, pushed onto o->+8 (0 on a failed allocation), o->+48 += 1 / 2 (kind 6) / 3 (7) / 4 (8) (r4 = the new +48); decompiled: src/obj/mid1_node.cpp
 
 # Renderer sweep part 8
 005B9A1C LoadParams_005B9A1C              // [ShaderType LoadParams] (type, Material*, Desc*) textures d+4/+8/+12, params 0..2 (name?); decompiled: src/gfx/gfx14.cpp
@@ -9079,7 +9077,6 @@
 0042C1D4 List_AnySet_0042C1D4             // bool f(): one of the (u16 at 0x010AA69C) entries of *(T***)0x010AA694 has a nonzero +12 (u16) (r3..r7 as the loop leaves them) (name?); decompiled: src/obj/obj23.cpp
 00922918 Comp_GetF32_922918           // f32 f(T* p): read on o->+N + 224 by 0x001FB178 / 0x00244418 / 0x0024D9C0 (30+ callers) (name?); not decompiled
 005FC90C Fios_GetScheduler5FC90C      // () -> the scheduler passed to fios_Free 0x005FE784 (name?); not decompiled
-004FBFA8 Ctor_Base4FBFA8              // the base T::T(o, a) of the 0x00B0D9xx classes (vtables 0x00B0D934 / 0x00B0D968 / 0x00B0D99C / 0x00B0DA6C) (name?); not decompiled
 
 # World event handler part 26
 00358760 Scroller_Construct358760             // (Object*, Def*): base ctor, vtable 0x00B1F950, +232 target ids, 6 name hashes (+204..+224), PtrVector +304, 6 geometry slots +280 (d +172 hash each time, vt +56 (5) / +40 (0,1), Obj_CollectLodGroup), +268..+276 ids d +156..; decompiled: src/world/hevent26_a.cpp (name?)
@@ -9380,7 +9377,6 @@
 005E6578 Libm_Unary5E6578                 // f32 f(f32) in libm, called with a value clamped to [-1, 1] (acosf/asinf?) (name?); not decompiled
 0044D4C8 Handle_Get44D4C8                 // (p) -> 0 when none; 0x0043AE04 (name?); not decompiled
 0044D2E0 Handle_GetById44D2E0             // (s32 id) -> 0 when none; 0x0043AE04 (name?); not decompiled
-004F7128 Obj_Register4F7128               // (o, global) x3 from 0x0043C4F4 (name?); not decompiled
 00ABDDC4 Import_ABDDC4                    // import stub (h, a, b, 0) -> compared with b by 0x00427744 (name?)
 00ABDCE4 Import_ABDCE4                    // import stub (s32 handle): a close called by 0x004279A4 (name?)
 
@@ -9638,7 +9634,7 @@
 00107618 VtB13C18_Dtor                    // T::~T: vtable 0x00B13C18; when the skeleton +76 is set: Body_Remove931F00( its +8, it) when +8 is set, AnimSkel_Release7D4EA8(+76), +76 = 0; then vtable 0x00B0D (name?); decompiled: src/obj/obj25b.cpp
 0042C138 CmdList_Push_0042C138            // (cmd or null): pushes a script command built by the Cmd_Push* builders (name?); not decompiled
 000DB290 Obj_FindByHash_000DB290          // (owner, hash) -> component or 0 (name?); not decompiled
-000D7024 Obj_BaseDtor_000D7024            // the base destructor under VtB13718 / VtB123D0 (name?); not decompiled
+000D7024 Obj_BaseDtor_000D7024            // T::~T() (vtable 0x00B12278): owned +164 vfn[1], 0x0048F298(this, 1) on +176 & 0x2000, attached +160 gets the transform (+172 & 0x400), MarkDirty, vfn[10](0, 1), +276 = 0x25431D90, +280 = +204, vfn[2]; vectors +340 / +252 / +248 deleted; Dtor_B219D0_00464AD0 (name?); decompiled: src/obj/mid1_dtor.cpp
 000EB0F8 Obj_BaseDtor_000EB0F8            // the base destructor under VtB13528 (name?); not decompiled
 001AE468 Obj_BaseDtor_001AE468            // the base destructor under VtB174C0 (name?); not decompiled
 000C2DA0 Obj_BaseDtor_000C2DA0            // the base destructor under VtB15150 / VtB19510 (name?); not decompiled
@@ -9667,3 +9663,62 @@
 00B10ED0 vt_FreeListAglMaterial               // ApeTFreeList<AglMaterial> vtable; slot 0x00F8F114, 144-byte nodes (data) (name?)
 010BD6F0 g_CloudDownload                      // u8[4056] downloaded save (data) (name?)
 00F9D1B8 g_SaveErrorKind                      // s32: 7 PSN, 4 / 3 save error text, 1 (data) (name?)
+
+# Renderer sweep part 15
+004FBFA8 TuningVar_ConstructBase_004FBFA8   // (TuningVar*, const char* name): base vtable 0x00B23110, String +4, hash +68, appended to 0x010C2DBC; decompiled: src/gfx/gfx21.cpp (was Ctor_Base4FBFA8)
+004FC028 TuningVar_DestructBase_004FC028    // (TuningVar*): removed from the tuning table (shift down, count--, old last slot 0); decompiled: src/gfx/gfx21.cpp
+004FC1A0 TuningVar_DestructBase_004FC1A0    // identical copy of 004FC028 (used by the 0x00B0D9xx dtors); decompiled: src/gfx/gfx21.cpp
+004FC0CC TuningVar_Delete_004FC0CC          // deleting dtor: null-checked, unregister, Mem_FreeFrom(v, 0); decompiled: src/gfx/gfx21.cpp
+004FB388 Trophy_Shutdown_004FB388           // (Trophy*) [World_Destruct]: stop/join thread, destroy events, NP trophy handle/context/term, clear 0x00F668E8, free entry array; decompiled: src/gfx/gfx21.cpp
+004FD008 SubMesh_DestructBase_004FD008      // SubMesh base dtor (vtable 0x00B23148): pool parts +24/+44, buffers +72/+84, owned +16, ApeRoot_Destruct; decompiled: src/gfx/gfx21.cpp
+0056F9D8 PadDevice_UpdateRumble_0056F9D8    // (vtable slot) IntegrateAxes, motor accumulator +292, cellPadSetActDirect when the port has an actuator; decompiled: src/gfx/gfx21.cpp
+0059BEE4 LightDef_ReadChunks_0059BEE4       // IFF handler: new ApeLightDef (kind 21, class 0x00F8F130), read, registered in the class map; decompiled: src/gfx/gfx21.cpp
+0059CACC CameraDef_ReadChunks_0059CACC      // IFF handler: new ApeCameraDef (kind 23, class 0x00F8F134, frame from 0x01164BD0); decompiled: src/gfx/gfx21.cpp
+0059E208 PointDef_ReadChunks_0059E208       // IFF handler: new ApePointDef (kind 24, class 0x00F8F13C); decompiled: src/gfx/gfx21.cpp
+0059A134 SkinBankJob_Build_0059A134         // (vtable slot) (-, per, index) -> Bank_BuildViewJob's job + skinning inputs (skin buffers, locks, 32 KiB buffers per item); decompiled: src/gfx/gfx21.cpp (name?)
+0058C53C Item_Submit_0058C53C               // (Item*) [Bank_PreUpdate, EmitterInstance_Visit1]: stack draw packet, occluder-box VMX test, sink vfunc +20, vfunc +32; decompiled: src/gfx/gfx21.cpp (was Item_Update58C53C)
+005843C0 Boxes_PickNearest_005843C0         // (BoxSet*, View*) [Bank_PreUpdate]: 2 nearest visible oriented boxes -> inverse frames at +8 (was Bank_UpdateView5843C0); decompiled: src/gfx/gfx21.cpp (name?)
+00563368 PackEntry_Unpack_00563368          // (Pack*, i, out, void** buf, u32* size, bool swap) [f_00563808]: key words / u16 deltas / data into one MemStack buffer; decompiled: src/gfx/gfx21.cpp (name?)
+0056B93C Constants_Init_0056B93C            // static init: Vec2/Vec3/Vec4/matrix/quat/colour constants 0x01164888-0x01164CD4, chunk vector 0x01164E14, chunk map 0x01164E30; decompiled: src/gfx/gfx21.cpp
+0059D6BC SimpleEmitter_SetData_0059D6BC     // (vtable slot) (EmitterData*, Emitter*, mode 1): data ref, 80-byte instance (vt 0x00B23338) + ring buffer at e +116; decompiled: src/gfx/gfx21.cpp (name?)
+005908A0 GeomLod_Update_005908A0            // () [Bank_Start]: LOD scales/clamps on GeomDefs (kind-1 instance defs skipped), instance +312 radius^2, vfunc +36; decompiled: src/gfx/gfx21.cpp (name?)
+00577788 Tri_OverlapsBox_00577788           // (c[3], h[3], tri[3][4]) -> bool [Quad_InFrustum]: SAT triangle/box test + Plane_StraddlesBox (was f_00577788); decompiled: src/gfx/gfx21.cpp
+00599864 GeomJobs_Submit_00599864           // (vtable slot): geometry queue -> SPU jobs (32-80 entries), stream cursors, wait, draw records + LOD outputs, layer 0 flush, emitter jobs; decompiled: src/gfx/gfx21.cpp (name?)
+005894F8 SlotsWork_Prepare_005894F8         // () [f_00599154]: slots job work record 0x0117E280 (planes, matrices, rings, light frusta per light copy); decompiled: src/gfx/gfx21.cpp (name?)
+005E760C Thread_Join_005E760C               // (thread, u32* exit) -> s32: SDK pthread_join-like (sys_ppu_thread_join) (name?)
+005E6DB8 SyncObj_Destroy_005E6DB8           // (obj*): SDK sync object destroy (name?)
+0058D080 k_BankDrawConsts                   // f32 127, 1e-5 (data)
+00584390 k_PickConsts                       // f32 FLT_MAX, 0, then two vperm masks (data)
+00590894 k_LodConsts                        // f32 100, 1e-5 (data)
+005894F0 k_OrthoHalf                        // f32 -0.5, 0.5 (data)
+0056F9C8 k_PadRumbleConsts                  // f32 1, 0, 255 (data)
+00F8F130 g_LightDefClass                    // {ApeTFreeList*, heap, hook OPD, hook arg, map} (data) (name?)
+00F8F13C g_PointDefClass                    // {ApeTFreeList*, heap, hook OPD, hook arg, map} (data) (name?)
+011DE4B4 g_RingBufSimplePtlFreeList         // ApeTMemClassFL<ApeTRingBuf<AglSimplePtl>,1024> (data)
+0117E280 g_SlotsWork                        // slots job work record, 3228 bytes (data) (name?)
+
+# Game code medium sweep part 1
+004D3378 Owner_AddName                    // bool (Owner* o, const char* name, s32 kind): lists +28 / +32 made on first use (cap 5), 56-byte {name[50], +52 kind} pushed onto +32 (kind 3) or +28, +4++ ; returns 1 (r4 = the new +4) (name?); decompiled: src/obj/mid1_node.cpp
+004D2D90 Owner_Destruct                   // Owner::~Owner() (vtable 0x00B225D0): bindings +8 popped and freed with their name lists (+68) and strings (+80), name lists +28 / +32 emptied and freed (name?); decompiled: src/obj/mid1_node.cpp
+004F7128 Obj_RegisterParam                // void (Obj* o, ParamDesc* d {+4 name, +8 kind 0-9, +12 mode, +16 out, +20 default}): Node_Bind(o->+8, ...) (a zeroed value when mode 2), d->+16 = binding, +76 = default, Set_Insert_0079B55C(out, o + 48, &d) (name?); decompiled: src/obj/mid1_node.cpp
+004CFB24 Effect_New                       // Effect* (u32 key): def lookup in Set_Find(0)'s BST (+16 root, path +20[] / s16 +100, last node +104, def -> 0x011DE288), new 140-byte Effect pushed onto the effect list 0x010C2968 (guard 0x010C2960) (name?); decompiled: src/obj/mid1_effect.cpp
+004D0280 Effect_Delete                    // void (Effect* e): swap-remove e from the effect list 0x010C2968, Effect_Destruct + SmallFree(e, 140) (name?); decompiled: src/obj/mid1_effect.cpp
+003286D8 Obj_BaseDtor_003286D8            // T::~T() (vtable 0x00B1E1F8, under VtB1E3E0 / B1E458 / B1E4D0 / B1E918 / B1E990): world child release (+2572), new[] array +2544, five lists +2232[i], +2524 / +2512 / +2500 / +2488 freed, vector +2272 deleted, base 0x0048F6B0 (name?); decompiled: src/obj/mid1_dtor.cpp
+000CDB28 Obj_CopyQuery_000CDB28           // u32 (const Obj* o, Query* d): transform rows / params / flags (+132 bits 31..29 -> d+20 0x2000 / 0x1000 / 0x800, d+24 = +132 >> 21) and the 192-byte records of o->+16 appended to d->+0 (made on first use) (name?); decompiled: src/obj/mid1_query.cpp
+000DFBFC Obj_CopyQueryEx_000DFBFC         // u32 (const Obj* o, QueryEx* d): Obj_CopyQuery_000CDB28, d+184..+196, the 76-byte records o->+180 / o->+200 appended (74 bytes each) to d->+144 / +164 (name?); decompiled: src/obj/mid1_query.cpp
+000DFDF8 QueryEx_Construct_000DFDF8       // u32 (QueryEx* q, 21 Query_Init0CDD28 args; r7 = Def*): Query_Init0CDD28 (f1 = f2 = -1.0), two 76-byte record vectors +144 / +164, +184 = def ? def->+140 : 100.0, +188 / +192 / +196 from def; returns q->+4 (name?); decompiled: src/obj/mid1_query.cpp
+0020E7A4 Area_Enter                       // void (Area* area, Actor* actor): drop the actor's keys (+364 / +388 maps), push onto +344, vfn[24](1), actor +178++, vfn[7](0, vfn[8](0) + 1), world events kind 4 / 31 (0x00482D14), actor vfn[57](area) (name?); decompiled: src/obj/mid1_area.cpp
+0020EBC8 Area_Leave                       // void (Area* area, Actor* actor): drop the actor's keys, swap-remove from +344 with vfn[58](area) / vfn[10](0), vfn[24], vfn[7](0, vfn[8](0) - 1), world event kind 5 (name?); decompiled: src/obj/mid1_area.cpp
+0075EBFC Vector128_Push_0075EBFC          // s32 (Vector* v, const Rec* r): PushBack of a 128-byte record (field-wise; +120 top 11 flag bits one by one) -> index (name?); decompiled: src/obj/mid1_misc.cpp
+0035C100 SlotDef_Read                     // u32 (SlotDef* s, -, XmlCursor* cur): "name" / "prefix", geometry instance (0x2911AA63) with two flag bools, vec3s, hash, priority (<= 4), kind hash -> +84 (name?); decompiled: src/obj/mid1_slot.cpp
+0035D708 SlotDefB_Read_0035D708           // SlotDef* (SlotDefB* s, x, XmlCursor* cur): SlotDef_Read then floats / bool / 9 hashes / 3 colours (+148..+208) (name?); decompiled: src/obj/mid1_slot.cpp
+003602D4 SlotDefMsg_New_003602D4          // SlotDef* (x, XmlCursor* cur): new 176-byte def (vtable 0x00B1F7F0), SlotDef_Read, 3 hashes, UI elements titleText2D / msgText2D / acceptMsgText2D (name?); decompiled: src/obj/mid1_slot.cpp
+003616A4 SlotDefB748_New_003616A4         // SlotDef* (x, XmlCursor* cur): new 208-byte def (vtable 0x00B1F748), SlotDef_Read, bools / hashes / floats +152..+192 (name?); decompiled: src/obj/mid1_slot.cpp
+00361374 SlotDefB780_New_00361374         // SlotDef* (x, XmlCursor* cur): new 304-byte def (vtable 0x00B1F780), SlotDef_Read, hashes, floats, icon%d / sound%d / addBitScript%d x10 (name?); decompiled: src/obj/mid1_slot.cpp
+003604E0 SlotDef3DText_New_003604E0       // SlotDef* (x, XmlCursor* cur): new 160-byte def (vtable 0x00B1F828), SlotDef_Read, 16-byte entries per "3DTextObject" child (+148 / +152), hash +156 (name?); decompiled: src/obj/mid1_slot.cpp
+0079B55C Set_Insert_0079B55C              // (out, set, const T* key): insert into the set at o + 48 (called by Obj_RegisterParam) (name?); not decompiled
+0048F298 Obj_Flag13Off_0048F298           // (o, 1): called by Obj_BaseDtor_000D7024 when +176 has 0x2000 (name?); not decompiled
+0048F6B0 Obj_BaseDtor_0048F6B0            // the base destructor under Obj_BaseDtor_003286D8 (name?); not decompiled
+0012E8B0 Obj_Detach_0012E8B0              // (node, area): called by Area_Enter / Area_Leave when the node's +192 has 0x8 (name?); not decompiled
+004F9078 Xml_NextSibling_004F9078         // (cursor, name) -> the next sibling element named so, or 0 (name?); not decompiled
+0036196C SlotDef_Factory_0036196C         // builds the SlotDef kinds (003602D4 / 003604E0 / 00361374 / 003616A4 ...) (name?); not decompiled
