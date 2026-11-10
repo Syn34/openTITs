@@ -10245,12 +10245,6 @@
 
 # Game code large functions part 1
 000C3910 Damage_Read0C3910                // (x, XmlCursor*, const Damage* tmpl, const Def* parent, Damage* out) -> u32: damage attributes, "damageStateThreshold%d", 13 type bits of child 0xB2892E4A (name?); decompiled: src/obj/big1_xml.cpp
-0035DB38 SlotDef_New_0035DB38             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x043A35DD (name?)
-0035E21C SlotDef_New_0035E21C             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0xFC34BC83 (name?)
-0035E928 SlotDef_New_0035E928             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x3D883554 (name?)
-0035F074 SlotDef_New_0035F074             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x40BB98C4 (name?)
-0035F8FC SlotDef_New_0035F8FC             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x75AEE2B6 (name?)
-00361234 SlotDef_New_00361234             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x2B1B81AB (name?)
 00767D78 Material_FindByHash_00767D78     // (u32 hash) -> the live AglMaterial (node + 16) with +40 == hash, or 0 (name?)
 
 # Game code sweep part 28
@@ -10468,3 +10462,19 @@
 002E1220 Name_Resolve_002E1220            // (x, u32 hash) -> u32: QuerySpawn_00220560's object +428 from *(0x00F64C20) and the query's hash (name?); not decompiled
 00224170 Obj_SetMatrix_00224170           // (o, const f32 m[4][4]): LightObj_Ctor_00224448 with the identity rows (name?); not decompiled
 004ACD68 Light_Init_004ACD68              // (p, const Rec176* r): initializes the 176-byte light record object from the stack record (name?); not decompiled
+
+# Game code large functions part 2
+0035DB38 SlotDefCb_New_0035DB38           // (x, XmlCursor*) -> SlotDef*: 208-byte "Checkboxes" def (vt 0x00B1F940, +80 |= 0x2000): header s32/hashes +148..+164, checkboxes +172/+176, 28-byte 3D text entries +180/+184 (count = attr 0xDBA1AC01 or children), float +188, bool +192 (name?); decompiled: src/obj/big2_slot.cpp
+0035E21C SlotDefCb_New_0035E21C           // (x, XmlCursor*) -> SlotDef*: as 0035DB38, vt 0x00B1F908, +80 |= 0x1000, extra hash 0xA3DAD21C at +168 (name?); decompiled: src/obj/big2_slot.cpp
+0035E928 SlotDefCb_New_0035E928           // (x, XmlCursor*) -> SlotDef*: as 0035DB38, vt 0x00B1F8D0, +80 |= 0x800, hashes +168/+172, bool +197, later fields +4 (name?); decompiled: src/obj/big2_slot.cpp
+0035F074 SlotDefRec_New_0035F074          // (x, XmlCursor*) -> SlotDef*: 224-byte def (vt 0x00B1F898, +80 |= 0x400): vec3 +176, floats, 3D text entries +196/+200, 56-byte records of children 0x0026E1FE at +148/+152 (name?); decompiled: src/obj/big2_slot.cpp
+0035F8FC SlotDefState_New_0035F8FC        // (x, XmlCursor*) -> SlotDef*: 224-byte def (vt 0x00B1F860, +80 |= 0x200): 16-byte "State" entries +148/+152 (each with its own 16-byte 3D text entries), corners "TLPoint".."BRPoint" +172..+203 (name?); decompiled: src/obj/big2_slot.cpp
+00361234 SlotDefBool_New_00361234         // (x, XmlCursor*) -> SlotDef*: 160-byte def (vt 0x00B1F7B8, +80 |= 0x20), bool 0x280D85C8 into +145 (name?); decompiled: src/obj/big2_slot.cpp
+000C85A8 DamageColDef_Read_000C85A8       // (x, XmlCursor*, const DamageDef* tmpl, const Def* parent, DamageDef* out) -> u32 (unused): Damage_Read0C3910, default def (00745D88), parent copy (+20 bit 4), damage floats/bools, "targetingFlags", up to 32 160-byte ColRecords (0x6364B153 children, "colObjName") into out +124 (name?); decompiled: src/obj/big2_dmg.cpp
+00769BD8 Obj_Construct_00769BD8           // (Obj* o, const Def* d) -> u32 (unused): constructor of a 2572+-byte class (vt 0x00B1E1F8): buffers +2488.., deep copies of d's five slot lists (+2232), records +2272, strings +28/+156/+1180/+2461, pairs +2544 (name?); decompiled: src/obj/big2_obj.cpp
+00011D08 AiCtrl_Bind_00011D08             // (Ctrl* o, Body* b) -> u32 (unused): binds an AI controller to its body (+48 / b+244), camera-scaled b+208, nav node +224 (vfn[5] of b+220 or nearest of 0x00F557F4), RNG bit, normalised +192, registers in the lists at *0x00F557F0 (name?); decompiled: src/obj/big2_ai.cpp
+00745D88 DamageDef_Construct_00745D88     // (DamageDef* d, u32, const char*, const char*, ..., f1..f13 + param slots 19..33): fills the 224-byte damage def (name?)
+00745564 ColVec_Push_00745564             // (PtrVector*, const ColRecord*): appends a copy of the 160-byte record's fields (grows via PtrVector_Reserve) (name?)
+0071EC78 sscanf_0071EC78                  // (s, fmt, ...) -> fields converted (libc; used with "%d,%d,%d,%d,%d,%d")
+0048F27C Obj_BaseCtor_0048F27C            // (o): base constructor called first by Obj_Construct_00769BD8 (reads r3 only) (name?)
+0001199C AiCtrl_Fn0001199C                // (ctrl): called by AiCtrl_Bind when vfn[67] returns non-zero (name?)
