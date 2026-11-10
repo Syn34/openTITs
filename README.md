@@ -86,7 +86,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 
 ## Progress
 
-9,657 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
+9,661 of 24,164 functions. Every function is checked with `tools/ab.sh`: the game's memory (data, bss, heap pages and RSX memory) must be identical with and without the decompiled code. The check also reports how many decompiled functions actually ran.
 
 | Area | Folder | Decompiled |
 |---|---|---|
@@ -124,6 +124,7 @@ Any controller SDL recognises works as a DualShock 3. On the keyboard:
 | Engine core helpers: matrices, boxes, Bezier, file/memory readers, input and pad devices, event slots, default heap, draw-record list; SPURS job queue, banks and quads, type registration, IFF loaders, plane math, FIOS async; 86 sorted-map instances, input record/playback, light volumes, header apply; light ticks and cameras, banks, definition readers, OBB/frustum tests; bank teardown, shadow maps, spline/camera/geom readers, resource holders | `src/obj/obj14*.cpp` .. `src/obj/obj18.cpp` | 369 |
 | Game code sweep: field getters/setters, flag bits, globals, float and vector math, wrappers, vtable inits, the AVL remove template; condition nodes, hit event queue, vector math, typed values, message records; small 17–40 instruction functions (destructors, constructors, cached ids, virtual-call wrappers, XML readers, random numbers, tree lookups, script-command builders, quaternion math, message filters, clones, handle tables, command list push) | `src/obj/obj21*.cpp` .. `src/obj/obj27b.cpp` | 1,623 |
 | Game code medium functions: node bindings, effect list, base destructors, query copies, area enter/leave, XML slot defs; section destructors, multiple-inheritance thunks, slot-def factories, slot list push; tuning-variable static constructors/destructors, section mode, level name and element readers, action-script node factories; KVar resolvers, query spawns, template attach/read, talk updates, handle pools | `src/obj/mid1*.cpp` .. `src/obj/mid4*.cpp` | 122 |
+| Game code large functions: slot-def reader and factory, map-screen object constructor, damage settings reader | `src/obj/big1*.cpp` | 4 |
 | Template instances, part 20: AVL insert/remove, VMX matrix and vector builders, command records, slot lists, volume-shape and section destructors | `src/obj/obj20_tmpl.cpp` | 332 |
 | Template instances project-wide (108 helpers): destructors and deletes, factories, thunks, field accessors, free-list wrappers, small shared algorithms | `src/obj/obj19*.cpp` | 2,093 |
 | Template instances in 0x00730000–0x007A0000: vtable-store destructors, deleting destructors, map-unregistering destructors, u32 comparators, tail wrappers, constant returns, empty functions | `src/obj/obj18_tmpl.cpp` | 1,659 |

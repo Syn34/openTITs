@@ -9394,7 +9394,7 @@
 00B247B8 vt_PointDef                          // vtable (data) (name?)
 00B139B8 vt_View                              // vtable (data) (name?)
 0035AC7C Objects_CreateFromDefs35AC7C         // () -> 0x01070000: defs 0x0106C210 instantiated by +80 flag (UI variants 0x00B1F988 / 0x00B1FA48 / 0x00B1F6E0, Obj/Scroller/PathObj ctors), registered by +68 id in 0x0106C228 (type 4 also in 0x0106C258); ids 0x00F64D28 / 0x00F64CDC resolved into 0x0106C330 +100 / +104; decompiled: src/world/hevent28_g.cpp (name?)
-00356BA0 Obj_Construct356BA0                  // (Object* 976 bytes, Def*) (+80 bit 16) 1161 insns (name?)
+00356BA0 Obj_Construct356BA0              // (MapScreen* 976 bytes, Def*): map-screen object (vt 0x00B1FA08): links, scripts "%s_Intro"..., row world objects, AglMaterial textures, MapBlip clones (name?); decompiled: src/obj/big1_map.cpp
 0106C228 g_ObjectsById                        // {id, Object*} map (data) (name?)
 0106C258 g_ObjectsType4ById                   // {id, Object*} map of +80 bit 2 objects (data) (name?)
 
@@ -9720,7 +9720,7 @@
 0048F6B0 Obj_BaseDtor_0048F6B0            // the base destructor under Obj_BaseDtor_003286D8 (name?); not decompiled
 0012E8B0 Obj_Detach_0012E8B0              // (node, area): called by Area_Enter / Area_Leave when the node's +192 has 0x8 (name?); not decompiled
 004F9078 Xml_NextSibling_004F9078         // (cursor, name) -> the next sibling element named so, or 0 (name?); not decompiled
-0036196C SlotDef_Factory_0036196C         // builds the SlotDef kinds (003602D4 / 003604E0 / 00361374 / 003616A4 ...) (name?); not decompiled
+0036196C SlotDef_Factory_0036196C         // (x, XmlCursor*): every flagged child (+24 bit 0x80) built by tag (+20) into a SlotDef kind and appended to the def map 0x0106C210; tag 0xFA405F99 = 28-byte colour record into 0x0106C2A8 (name?); decompiled: src/obj/big1_slot.cpp
 
 # Game code sweep part 26
 0017BFDC Obj_OnMsg388_0017BFDC            // u32 f(T* o, Msg* m, s32* out): the +388 match, else 0x000DA85C (name?); decompiled: src/obj/obj26.cpp
@@ -9936,7 +9936,7 @@
 00360DE8 SlotDefD_New_00360DE8            // SlotDef* (x, XmlCursor*): new 176-byte def (vtable 0x00B1F978), SlotDefList_Read_0035C3E4, 40-byte records per 0x8BB559E6 child (+164 / +168), float +172 (name?); decompiled: src/obj/mid2_slot.cpp
 00785190 SlotList_PushFront_00785190      // void (Handle* out, SlotList* l, const u32* v): SlotList PushFront, grows via SlotList_Grow_00784FE4 (name?); decompiled: src/obj/mid2_slotlist.cpp
 0079A6D4 SlotList_PushFront_0079A6D4      // void (Handle* out, SlotList* l, const u32* v): SlotList PushFront, grows via SlotList_Grow_0079A528 (name?); decompiled: src/obj/mid2_slotlist.cpp
-0035CA00 SlotDefC_Read_0035CA00           // (SlotDefC*, x, XmlCursor*): the reader SlotDefC_New_0035D4B0 calls (684 instructions) (name?); not decompiled
+0035CA00 SlotDefC_Read_0035CA00           // (SlotDefC*, x, XmlCursor*) -> s: SlotDef_Read, 36-byte "3DTextObject" entries, corners "TLPoint".."BRPoint", names/hashes/colours (name?); decompiled: src/obj/big1_slot.cpp
 004FA2AC XmlCursor_ReadString_004FA2AC    // (cursor, hash, const char** out, const char* default) (name?); not decompiled
 
 # Renderer sweep part 16
@@ -10244,3 +10244,13 @@
 002404F0 QueryExSpawn_Ctor_002404F0       // (p, QueryEx* q): 640-byte object ctor (QueryExSpawn_00240C64) (name?); not decompiled
 0022FAA0 Obj_SetNumber_0022FAA0           // (o, u32 n): gets the world counter value from QueryExSpawn_00234324 (name?); not decompiled
 00240AC0 Obj_SetNumber_00240AC0           // (o, u32 n): the same for QueryExSpawn_00240C64 (name?); not decompiled
+
+# Game code large functions part 1
+000C3910 Damage_Read0C3910                // (x, XmlCursor*, const Damage* tmpl, const Def* parent, Damage* out) -> u32: damage attributes, "damageStateThreshold%d", 13 type bits of child 0xB2892E4A (name?); decompiled: src/obj/big1_xml.cpp
+0035DB38 SlotDef_New_0035DB38             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x043A35DD (name?)
+0035E21C SlotDef_New_0035E21C             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0xFC34BC83 (name?)
+0035E928 SlotDef_New_0035E928             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x3D883554 (name?)
+0035F074 SlotDef_New_0035F074             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x40BB98C4 (name?)
+0035F8FC SlotDef_New_0035F8FC             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x75AEE2B6 (name?)
+00361234 SlotDef_New_00361234             // (x, XmlCursor*) -> SlotDef*: constructor for tag 0x2B1B81AB (name?)
+00767D78 Material_FindByHash_00767D78     // (u32 hash) -> the live AglMaterial (node + 16) with +40 == hash, or 0 (name?)
