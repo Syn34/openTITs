@@ -10236,7 +10236,7 @@
 00389D00 TuningVars_Dtor_00389D00         // void f(): static (atexit) destructor of 32 tuning vars, 7 PtrVectors, 5 pool arrays. (name?); decompiled: src/obj/mid4_tuning.cpp
 002EBF94 TuningVars_Ctor_002EBF94         // void f(): static initializer of the streaming module's four sorted arrays (compare functions CmpU32_007670DC / 0076710C x2 / 0076713C), a PtrVector (capacity 32 (name?); decompiled: src/obj/mid4_tuning.cpp
 000F86DC TuningVars_Ctor_000F86DC         // void f(): static initializer of five sorted arrays, five PtrVectors (the first with capacity 256), an f32 global copied from rodata, four words cleared atomical (name?); decompiled: src/obj/mid4_tuning.cpp
-0020C868 QuerySpawn_BaseCtor_0020C868     // (p, Query* q, 32, 1): 432-byte object base ctor (QuerySpawn_00212828 / 00219A10 / 0020CEA0 / 00218980) (name?); not decompiled
+0020C868 QuerySpawn_BaseCtor_0020C868     // (Volume* o, Query* q, n, bool props): base init, vt 0x00B19558, PtrVector +344, arrays +364/+388, flags +412 from q +148..+153, Havok entity +416 (listener, properties 0xA734004D / 0x91C7CF5B, AABB centre +144); decompiled: src/obj/mid6_spawn.cpp
 00233728 QueryExSpawn_Ctor_00233728       // (p, QueryEx* q): 1104-byte object ctor (QueryExSpawn_00234324) (name?); not decompiled
 002404F0 QueryExSpawn_Ctor_002404F0       // (p, QueryEx* q): 640-byte object ctor (QueryExSpawn_00240C64) (name?); not decompiled
 0022FAA0 Obj_SetNumber_0022FAA0           // (o, u32 n): gets the world counter value from QueryExSpawn_00234324 (name?); not decompiled
@@ -10459,8 +10459,7 @@
 00097850 XmlElem_Ctor_00097850            // void f(T* o, XmlCursor* c): vtable 0x00B10D00; the hashes +12 (default 0) / +16 / +20, the f32 +24; three rates read through a zeroed local (default k[0]) and,  (name?); decompiled: src/obj/mid5_xmlctor.cpp
 002E6A88 Score_Submit_002E6A88            // (x, u32 profile, u32 rank): reads r4 / r5 only; called on a new high score with *(0x00F64C20) (name?); not decompiled
 002E1220 Name_Resolve_002E1220            // (x, u32 hash) -> u32: QuerySpawn_00220560's object +428 from *(0x00F64C20) and the query's hash (name?); not decompiled
-00224170 Obj_SetMatrix_00224170           // (o, const f32 m[4][4]): LightObj_Ctor_00224448 with the identity rows (name?); not decompiled
-004ACD68 Light_Init_004ACD68              // (p, const Rec176* r): initializes the 176-byte light record object from the stack record (name?); not decompiled
+004ACD68 Light_Init_004ACD68              // (Light* p, const LightRec* r) -> Matrix_IsScaled: copies the record, vt 0x00B21BF0, joins the light group map 0x010C1D50; decompiled: src/obj/mid6_light.cpp
 
 # Game code large functions part 2
 0035DB38 SlotDefCb_New_0035DB38           // (x, XmlCursor*) -> SlotDef*: 208-byte "Checkboxes" def (vt 0x00B1F940, +80 |= 0x2000): header s32/hashes +148..+164, checkboxes +172/+176, 28-byte 3D text entries +180/+184 (count = attr 0xDBA1AC01 or children), float +188, bool +192 (name?); decompiled: src/obj/big2_slot.cpp
@@ -10633,3 +10632,48 @@
 00767818 HandlePool_Grow                  // (pool, s32 capacity): the handle pool's growth (inlined allocator, unreachable from ObjPool_Create) (name?); not decompiled
 006C09B4 ProxyCinfo_Construct             // (cinfo*): Havok middleware, the 80-byte proxy cinfo on AiCtrl_RebuildProxy's stack (name?); not decompiled
 006C0FF8 Proxy_Create                     // (const desc*, const cinfo*) -> proxy: Havok middleware (name?); not decompiled
+
+# Game code medium sweep part 6
+00224170 Volume_GetTransform_00224170     // (Volume* o, f32 m[4][4] out): identity, then the entity's 3x4 transform (vfn[7] 1/2) or AABB centre (0); was Obj_SetMatrix_00224170 (it writes m); decompiled: src/obj/mid6_light.cpp
+001C0C64 XmlDef_Read_001C0C64             // (a0, c, def): 0x000CBE10 base + 9 f32 + 2 bits of +276; decompiled: src/obj/mid6_xml.cpp
+001BF2A0 XmlDef_Read_001BF2A0             // (a0, c, def): base + 8 f32, +272 = kind index (table 0x00F64A10), f32, 2 bools; decompiled: src/obj/mid6_xml.cpp
+0017EF48 XmlDef_Read_0017EF48             // (a0, c, def): base + 2 vec3 (deg->rad) + f32/hash/bool; decompiled: src/obj/mid6_xml.cpp
+00190C28 XmlDef_Read_00190C28             // (a0, c, def): base + 2 vec3 (deg->rad) + fields; +308 defaults to +304 (quirk); decompiled: src/obj/mid6_xml.cpp
+001CB740 XmlDef_Read_001CB740             // (a0, c, def): base + 8 f32, hash, f32 (3 clamped >= 0), s32, bools; decompiled: src/obj/mid6_xml.cpp
+001ED004 XmlDef_Read_001ED004             // (a0, c, def): base + 2 vec2, 9 hashes, f32, 8 bools; decompiled: src/obj/mid6_xml.cpp
+001AA360 XmlDef_New_001AA360              // (a0, c, name, tmpl) -> 272-byte def (vt 0x00B152F8); decompiled: src/obj/mid6_def.cpp
+001BDDC0 XmlDef_New_001BDDC0              // (a0, c, name, tmpl) -> 272-byte def (vt 0x00B16420); decompiled: src/obj/mid6_def.cpp
+00177D78 XmlDef_New_00177D78              // (a0, c, name, tmpl) -> 304-byte def (vt 0x00B14948); decompiled: src/obj/mid6_def.cpp
+001FAB38 XmlDef_New_001FAB38              // (a0, c, name, tmpl) -> 288-byte def, Mem_Alloc (vt 0x00B18B30); decompiled: src/obj/mid6_def.cpp
+002048A0 XmlDef_New_002048A0              // (a0, c, name, tmpl) -> 288-byte def (vt 0x00B19178); decompiled: src/obj/mid6_def.cpp
+001AE130 XmlDef_New_001AE130              // (a0, c, name, tmpl) -> 272-byte def, Mem_Alloc (vt 0x00B159A0); decompiled: src/obj/mid6_def.cpp
+001C3040 XmlDef_New_001C3040              // (a0, c, name, tmpl) -> 288-byte def (vt 0x00B16B30); decompiled: src/obj/mid6_def.cpp
+001D4328 XmlDef_New_001D4328              // (a0, c, name, tmpl) -> 288-byte def (vt 0x00B17710); decompiled: src/obj/mid6_def.cpp
+001B2718 XmlDef_New_001B2718              // (a0, c, name, tmpl) -> 272-byte def (vt 0x00B15E48), clamps; decompiled: src/obj/mid6_def.cpp
+001B0398 XmlDef_New_001B0398              // (a0, c, name, tmpl) -> 256-byte def (vt 0x00B15C08); decompiled: src/obj/mid6_def.cpp
+001AB7A0 XmlDef_New_001AB7A0              // (a0, c, name, tmpl) -> 272-byte def (vt 0x00B15538); decompiled: src/obj/mid6_def.cpp
+000764F0 XmlElem_New_000764F0             // (a0, c) -> 36-byte element (vt 0x00B0F748); decompiled: src/obj/mid6_xelem.cpp
+00085E10 XmlElem_New_00085E10             // (a0, c) -> 44-byte element (vt 0x00B100D0), +40 = index in 0x00F65BF8[33]; decompiled: src/obj/mid6_xelem.cpp
+0006F7C8 XmlElem_Ctor_0006F7C8            // (o, c): vt 0x00B0F310, kind-dependent vec3 / f32 / bool; decompiled: src/obj/mid6_xelem.cpp
+00075DD4 XmlElem_Ctor_00075DD4            // (o, c): vt 0x00B0F720, modes +36 / +40 from hash attributes; decompiled: src/obj/mid6_xelem.cpp
+000820E0 XmlElem_Ctor_000820E0            // (o, c) -> 0x86DF6221: vt 0x00B0FE50; +36 always ends 0x86DF6221 (quirk); decompiled: src/obj/mid6_xelem.cpp
+003F0530 XmlElem_Read_003F0530            // (a0, c, a2, o): kind-dependent field list; decompiled: src/obj/mid6_xelem.cpp
+004C30C8 XmlElem_Ctor_004C30C8            // (o, c) -> +61: vt 0x00B221A0, two vec3 via temporaries; decompiled: src/obj/mid6_xelem.cpp
+000E40E0 QueryEx_Construct_000E40E0       // (q, a1, def, a3..a7, stack s9..s12): Query_Init0CDD28 variant of QueryEx_Construct_000DFDF8; decompiled: src/obj/mid6_query.cpp
+0038D91C Block_Alloc_0038D91C             // (o, name, u16 a, u16 b, c) -> o->+0: sized Mem_Alloc block with hash and two record headers (name?); decompiled: src/obj/mid6_query.cpp
+0043E514 Statics_InitVt_0043E514          // (): static init, vtable 0x00B0DBF8 into 281 24-byte globals at 0x010AADB4..; decompiled: src/obj/mid6_static.cpp
+002E16E8 Scene_HasEntry_002E16E8          // (a0, hash) -> bool: SceneEntryFind != 0; decompiled: src/obj/mid6_misc.cpp
+002E1900 Scene_FindEntry_002E1900         // (a0, hash) -> entry: current scene's 536-byte entries filtered by save-profile bytes, key +492 (with 4 alias pairs); decompiled: src/obj/mid6_misc.cpp
+003557B8 Kind_FromHash_003557B8           // (hash) -> 0..28 (23 default) (name?); decompiled: src/obj/mid6_misc.cpp
+00288974 Choice_Pick_00288974             // (o, u32* out, key) -> bool: pick from o->+24 sources (RNG 0x01164888 in mode 1); decompiled: src/obj/mid6_misc.cpp
+003BE554 Flags_Latch_003BE554             // (o, in): ten sticky bytes +1532.. from in->+8 & in->+12 bits; decompiled: src/obj/mid6_misc.cpp
+0029F7A0 Records_RemoveKey_0029F7A0       // (o, key): swap-remove 128-byte records +112.. (count +2160) with +8 == key; decompiled: src/obj/mid6_misc.cpp
+003955EC NodeVec_Apply_003955EC           // (node, c) -> 0: target c->+12 +224/+228/+232/+240 = node float params 0..3, +176 |= 0x800 (callback); decompiled: src/obj/mid6_misc.cpp
+000CBE10 XmlDef_ReadBase_000CBE10         // (a0, c, def): shared part of the def readers (reads r4/r5 only) (name?); not decompiled
+0020C2BC Volume_Activate20C2BC            // (o) (name?); not decompiled
+0020C670 Volume_Prepare20C670             // (o) (name?); not decompiled
+009315F0 Hk_SetQualityLayer9315F0         // (world, entity, 0) Havok (name?)
+00928828 Hk_RemoveListener928828          // (entity, listener) Havok (name?)
+009288D8 Hk_AddListener9288D8             // (entity, listener) Havok (name?)
+0093FE00 Hk_AddProperty93FE00             // (entity, key, u64 value) Havok hkpWorldObject::addProperty (name?)
+0093FED8 Hk_RemoveProperty93FED8          // (hkpPropertyValue* out, entity, key) Havok removeProperty (name?)
