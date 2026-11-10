@@ -3657,7 +3657,7 @@
 0001B2F4 Scene_Resume1B2F4                    // (Scene*, u8): items +592 (count +0) whose vt +124 returns 0 -> Obj_SceneEnd0DD02C(item +48, u8, 0); decompiled: src/world/hevent18_b.cpp (name?)
 00351A40 Set_LoadLayers351A40                 // (Speaker*, List* {+0 count, +4 20-byte recs}): kind 0xFF45EF93 -> 0x0035133C, 0x19A18BC2 -> 0x00351898; decompiled: src/world/hevent18_b.cpp (name?)
 004A621C Effect_Bind4A621C                    // (Effect** slot, def, owner, value, u8 force) -> Effect*: release old, create / bind (comp 0x0027469E) / start; decompiled: src/world/hevent18_d.cpp (name?)
-002635E8 Comp_Create2635E8                    // (Object*, Component* tmpl, u8) -> Component* (name?)
+002635E8 Comp_Create2635E8                   // (Object*, Component* tmpl, u8) -> Component*: 46 kinds, 12 inlined ctors with entity registry 0x01056F1C insertion; decompiled: src/obj/big4_comp.cpp
 0011F0E4 Player_Settle11F0E4                  // (Player*, -, u8 restart): stance +432 from +184 flags, def sets +1376..+1392, 0x00297E3C / 0x00297EDC; decompiled: src/world/hevent18_e.cpp (name?)
 000D9474 Player_Get0D9474                     // (Player*) -> Obj_FindComponent(p, 17, 0); decompiled: src/world/hevent18_a.cpp (name?)
 00293264 Obj_Reset293264                      // (Component*): owner +164 animator: 0x003525A0 base, 0x00352190 x2, 0x00351B60 / 0x00351F30 x8; decompiled: src/world/hevent18_f.cpp (name?)
@@ -7058,7 +7058,7 @@
 0009A074 ClaimKey_0009A074        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 000F8528 ClaimKey_000F8528        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 000F85BC ClaimKey_000F85BC        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
-002F5D6C ClaimKey_002F5D6C        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
+002F5D6C WorldObj_MatchId2F5D6C              // ForEach callback (node, {id, out}): OPD 0x00F361F8 (name?); decompiled: src/obj/obj19_tmpl2.cpp
 0043B02C ClaimKey_0043B02C        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 004AFCB4 ClaimKey_004AFCB4        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 004D0ABC ClaimKey_004D0ABC        // (this, Slot* s) -> 0 and s->+4 = this when this->+204 (or 0x0056A710(vfn[3]())) is s->+0 (template instance); decompiled: src/obj/obj19_tmpl2.cpp
@@ -10624,12 +10624,11 @@
 00745564 ColVec_Push                      // s32 f(PtrVector* v, const ColRecord* r): copy r's fields into a new 160-byte element (replaces ColVec_Push_00745564); decompiled: src/obj/big3_dmg.cpp
 00745D88 DamageDef_Construct              // void f(DamageDef* d, a1, a2, a3, r7, r8, a6, const f32 vec[3], f1..f13, stack slots 11..25) (replaces DamageDef_Construct_00745D88); decompiled: src/obj/big3_dmg.cpp
 0001199C AiCtrl_RebuildProxy              // void f(AiCtrl* c): if c->vfn[67](): c->+212 = Havok proxy built from c's pose (0 without a nav world), nav query +216 rebuilt (replaces AiCtrl_Fn0001199C) (name?); decompiled: src/obj/big3_ai.cpp
-002EF938 PoolObj489E_Construct            // (obj, desc): 132-byte object of kind 0x489EBD81 made by ObjPool_Create (name?); not decompiled
-002F0058 PoolObjEB2F_Construct            // (obj, desc): 256-byte object of kind 0xEB2F2138 made by ObjPool_Create (name?); not decompiled
-002F0CD8 PoolObj9965_Construct            // (obj, desc): 20-byte object of kind 0x996564D0 made by ObjPool_Create (name?); not decompiled
-002ED6F4 PoolObj8733_Construct            // (obj, desc): 156-byte object of kind 0x8733FD75 made by ObjPool_Create (name?); not decompiled
-002EC920 PoolObjD0E9_Construct            // (obj, desc): 208-byte object of kind 0xD0E940EF made by ObjPool_Create (name?); not decompiled
-00767818 HandlePool_Grow                  // (pool, s32 capacity): the handle pool's growth (inlined allocator, unreachable from ObjPool_Create) (name?); not decompiled
+002EF938 PoolObj489E_Construct               // (obj, desc): 132-byte kind 0x489EBD81, vtable 0x00B1D5A0, bone attach via Skeleton_FindBone / WorldObj_ForEach(002F5D6C) (name?); decompiled: src/obj/big4_pool.cpp
+002F0058 PoolObjEB2F_Construct               // (obj, desc): 256-byte kind 0xEB2F2138 (ribbon between two bones), vtable 0x00B1D550 (name?); decompiled: src/obj/big4_pool.cpp
+002F0CD8 PoolObj9965_Construct               // (obj, desc): 20-byte kind 0x996564D0, vtable 0x00B1D578; writes the world env block World->+0x128168->+656->+36 (name?); decompiled: src/obj/big4_pool.cpp
+002ED6F4 PoolObj8733_Construct               // (obj, desc): 156-byte kind 0x8733FD75, vtables 0x00B1D4D8 -> 0x00B1D528, ends with Obj8733_Init (name?); decompiled: src/obj/big4_pool.cpp
+002EC920 PoolObjD0E9_Construct               // (obj, desc): 208-byte kind 0xD0E940EF (FXAnimControlGeoDisplay), vtable 0x00B1D500 (name?); decompiled: src/obj/big4_pool.cpp
 006C09B4 ProxyCinfo_Construct             // (cinfo*): Havok middleware, the 80-byte proxy cinfo on AiCtrl_RebuildProxy's stack (name?); not decompiled
 006C0FF8 Proxy_Create                     // (const desc*, const cinfo*) -> proxy: Havok middleware (name?); not decompiled
 
@@ -10677,3 +10676,11 @@
 009288D8 Hk_AddListener9288D8             // (entity, listener) Havok (name?)
 0093FE00 Hk_AddProperty93FE00             // (entity, key, u64 value) Havok hkpWorldObject::addProperty (name?)
 0093FED8 Hk_RemoveProperty93FED8          // (hkpPropertyValue* out, entity, key) Havok removeProperty (name?)
+
+# Game code large functions part 4
+00108AF8 VtB13CF0_Ctor_00108AF8              // (T* o, u32 a, Ref* ref, Holder* h, u32 keep_scale): vtable 0x00B13CF0 ctor, inlined Obj_SetRefs108A34 and 0x922D3BD1 property-set read (name?); decompiled: src/obj/big4_ctor.cpp
+00767818 HandlePool_Grow767818               // (pool, s32 cap) -> new free count: entries reallocated (no null check), new ones chained onto the free list (replaces "HandlePool_Grow", which is taken by 007839B8) (name?); decompiled: src/obj/big4_pool.cpp
+004B8EE4 VtB21C80_VisitChildren              // vfn[12] of vtables 0x00B21C68 / 0x00B21C80 / 0x00B21CC0: vfn[20] of +28 array, vfn[12] of +24 map values, vfn[20] of the +16 / +20 map values' lists; inlined in-order map iterator (name?); decompiled: src/obj/big4_tree.cpp
+002EC2F8 FxGeo_SetDef                        // (ObjD0E9*, GeomDef*) (name?)
+002ED468 Obj8733_Init                        // (Obj8733*): bone tables after the ctor (name?)
+002EFBF0 Obj_BoneMatrix                      // (f32 out[16], ObjEB2F*, const f32 parent[16], WorldObj*, s32 bone) (name?)
