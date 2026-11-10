@@ -2511,7 +2511,6 @@
 0056510C MemStack_AllocTop        // (s, size) -> block from +16 downwards (16-aligned) within +0, or 0 (name?); decompiled: src/obj/obj13_misc.cpp
 005602F8 Bezier_Tangent           // void Bezier_Tangent(f32 out[4], const f32 ctrl[4][4], f32 u); decompiled: src/obj/obj14_small.cpp
 004FD2E0 DrawRecordList_Add       // void DrawRecordList_Add(ListOwner* o, const SubmitRecord* r); decompiled: src/obj/obj14_draw.cpp
-00575D18 Fn_575D18                // 935-insn render pass (View_GetCurrent, FProgram_SetConstant/Upload, cellGcmSetDrawIndexArray), called by Fn_576BB4 (not decompiled) (name?)
 0071EDAC Libc_71EDAC              // String_Thunk71EDAC's callee (name?)
 0072354C Libc_72354C              // String_Append's callee (strcat?) (name?)
 00721D18 Libc_strtol              // (s, end, base) (name?)
@@ -3252,9 +3251,9 @@
 004FED94 Mesh_FindByHash          // Mesh* Mesh_FindByHash(u32 hash): *MeshMap_Find(*0x010DDC80, &hash) (name?); decompiled: src/obj/obj16_small.cpp
 00526300 Mesh_Default             // AglTopology* Mesh_Default(): default 4x4 sphere topology made on first use (name?); decompiled: src/obj/obj16_small.cpp
 00527FEC LodTarget_Apply          // void LodTarget_Apply(t, const f32 m[3][4], x, level): {-level, rec} into draw list A/B/C + 80-byte record (name?); decompiled: src/obj/obj16_small.cpp
-00589BC8 Slots_UpdateDirect       // (o): Slots_UpdateA's non-job path (name?)
+00589BC8 Slots_UpdateDirect       // void (Obj* o): Slots_UpdateA's non-job path: o vfunc +8, then the 128-byte slot records (table 0x01193004) through visibility mask / distance / 8 SoA planes (block 0x0117E280), Sphere_FrustumFine when crossing, occluders (sphere then box), LOD + fade; 16-byte draw entries from 0x0116E110, extra plane-set cursors (block +3156); decompiled: src/gfx/gfx24_slots.cpp (name?)
 0058B128 Slots_PrepareB           // void Slots_PrepareB(): fills the slot job parameter block 0x0118B180 (name?); decompiled: src/obj/obj16_small.cpp
-0058B4B8 Slots_UpdateDirectB      // () (name?)
+0058B4B8 Slots_UpdateDirectB      // void (): Slots_UpdateB's non-job path: Slots_PrepareB, records table +6+1 .. +8 of 0x01193004 against block 0x0118B180 as Slots_UpdateDirect (occluders rounded to 4, box test only with flag 0x20, no extra sets, no entry flags byte), entries from 0x01183100; r3 = the cursor's old word; decompiled: src/gfx/gfx24_slots.cpp (name?)
 0059845C Lights_Tick              // (List*; f1 dt): submits the per-64-object transform jobs (WorkQueue_SubmitF158), busy word 0x0116BD80 (name?); decompiled: src/obj/obj17.cpp
 005981D4 Lights_Tick2             // void Lights_Tick2(List*): waits for the jobs, then per job Fn_597C9C + UpdateTransforms / AddGroup (name?); decompiled: src/obj/obj16_small.cpp
 00597158 Lights_TickB             // (LightList*; f1 dt): advances the 80-byte light animation records, distance-culled (name?); decompiled: src/obj/obj17.cpp
@@ -3428,8 +3427,8 @@
 00576F28 Volume_SetFromBox        // void Volume_SetFromBox(Volume*, const Box*, const f32 q[4], const f32 off[3]) (name?); decompiled: src/obj/obj16_small.cpp
 00569CDC Debug_DrawLine           // void Debug_DrawLine(const Line*): a 2-vertex debug line when the draw buffer has room (name?); decompiled: src/obj/obj16_small.cpp
 00572228 Sysutil_StaticInit       // void Sysutil_StaticInit(): static initializer: sysutil mutex, job dispatcher mutexes / queues (name?); decompiled: src/obj/obj16_small.cpp
-00574370 LightVolume_DrawOutside  // (light, -, viewproj, proj, corners; f1 light +128) (name?)
-00573600 LightVolume_DrawStencil  // (light, mats, viewproj, proj, corners; f1 light +128) (name?)
+00574370 LightVolume_DrawOutside  // void (light, -, viewproj, proj, corners; f1 alpha): as LightVolume_DrawStencil with two stencil passes, Matrix_MulAffine called and Draw_InlineArray inlined; decompiled: src/gfx/gfx24_light.cpp (name?)
+00573600 LightVolume_DrawStencil  // void (light, mats, viewproj, proj, corners; f1 alpha): three stencil passes of the volume box (NOTEQUAL 8/12/8, write mask 247), then the lit pass (EQUAL 4): texture matrix as fconsts 0..3, depth range fconst 4, depth texture unit 0, light texture unit 1, alpha blend; decompiled: src/gfx/gfx24_light.cpp (name?)
 007A6EFC Sphere_FrustumFine       // (view, c[3], e[3], m[3][4]) -> bool: the oriented box inside the view's 8 planes (+96 / +160 SoA) (name? really an OBB test); decompiled: src/obj/obj17.cpp
 00576BD8 Obb_FromBox              // (f32 out[6][4], const Box*, const f32 m[4][4]): the box's 6 face planes transformed (corner table 0x00F8897C); decompiled: src/obj/obj17.cpp
 0057CE08 Def_FindByHash57CE08     // (u32 hash, s32 kind) -> def: the kind's map (8/20 geom, 9/21 light, 10/22 emitter, 11/23 camera, 12/24 point, 13/25 spline), others geom -> light -> emitter; decompiled: src/obj/obj17.cpp
@@ -10189,3 +10188,8 @@
 00764644 VtB1C8C8_Dtor                    // T::~T: VtB0DAACDtorBody with the vtable 0x00B1C8C8 (name?); decompiled: src/obj/obj27b.cpp
 0076539C VtB1CE68_Dtor                    // T::~T: VtB0DAACDtorBody with the vtable 0x00B1CE68 (name?); decompiled: src/obj/obj27b.cpp
 007709D8 VtB1F298_Delete                  // T::~T deleting form: vtables 0x00B1F298 / 0x00B1F314 (+20) / 0x00B1F2D0 (+8) / 0x00B1F2E4 (+12) / 0x00B1F300 (+16), the base 0x00884FB8(o), then the r13 pool (- (name?); decompiled: src/obj/obj27b.cpp
+
+# Renderer sweep part 18
+00575D18 GeomBatches_Draw         // void (): the static geometry batches (0x0116BF00, 272 bytes, count 0x0116E100): per batch blend / alpha test / depth / cull / texture / programs, per instance (80 bytes) distance + 8-plane sphere test, fade, LOD, vertex constants 0..8, bind_format + indexed draw; decompiled: src/gfx/gfx24_batch.cpp (name?) [was Fn_575D18]
+00518E78 Render_DrawFrame_00518E78 // void (Owner* o): Call_0051A6A0's path without o +48: GPU markers 126..146 (f_005E2650) around the layer draws, shadow shapes, geometry batches, DrawQueue_Begin, deferred segments (recorded at 0x010DD480.. when 0x00F66F94, else their bodies inline), GPU timer / bloom block, Draw_Pass, o vfunc +28 (-61 / 60), DeferredLists_Flush; decompiled: src/gfx/gfx24_frame.cpp (name?)
+005E2650 Gcm_Marker_005E2650      // (context, u32 id, u32 value) GPU marker written between frame stages (libgcm-style) (name?)
