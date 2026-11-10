@@ -10193,3 +10193,54 @@
 00575D18 GeomBatches_Draw         // void (): the static geometry batches (0x0116BF00, 272 bytes, count 0x0116E100): per batch blend / alpha test / depth / cull / texture / programs, per instance (80 bytes) distance + 8-plane sphere test, fade, LOD, vertex constants 0..8, bind_format + indexed draw; decompiled: src/gfx/gfx24_batch.cpp (name?) [was Fn_575D18]
 00518E78 Render_DrawFrame_00518E78 // void (Owner* o): Call_0051A6A0's path without o +48: GPU markers 126..146 (f_005E2650) around the layer draws, shadow shapes, geometry batches, DrawQueue_Begin, deferred segments (recorded at 0x010DD480.. when 0x00F66F94, else their bodies inline), GPU timer / bloom block, Draw_Pass, o vfunc +28 (-61 / 60), DeferredLists_Flush; decompiled: src/gfx/gfx24_frame.cpp (name?)
 005E2650 Gcm_Marker_005E2650      // (context, u32 id, u32 value) GPU marker written between frame stages (libgcm-style) (name?)
+
+# Game code medium sweep part 4
+00391B80 KVar_ResolveInt_00391B80         // void f(VarRef* a, Script* b): resolve a's int KVarData (type tag 0): "The KVarData (%s) is not type int!". (name?); decompiled: src/obj/mid4_kvar.cpp
+00392130 KVar_ResolveFloat_00392130       // void f(VarRef* a, Script* b): the same for a float (type tag 2). (name?); decompiled: src/obj/mid4_kvar.cpp
+003926E0 KVar_ResolveBool_003926E0        // void f(VarRef* a, Script* b): the same for a bool (type tag 3). (name?); decompiled: src/obj/mid4_kvar.cpp
+00392C90 KVar_ResolveHash_00392C90        // void f(VarRef* a, Script* b): the same for a hash (type tag 5). (name?); decompiled: src/obj/mid4_kvar.cpp
+003DEBF8 Flush_003DEBF8                   // void f(T* o): Flush (flag +117, PtrVector +120, index +252). (name?); decompiled: src/obj/mid4_marker.cpp
+003E5DF8 Flush_003E5DF8                   // void f(T* o): Flush (flag +2325, PtrVector +2340, index +2368). (name?); decompiled: src/obj/mid4_marker.cpp
+003F2718 Flush_003F2718                   // void f(T* o): Flush (flag +181, PtrVector +232, index +260). (name?); decompiled: src/obj/mid4_marker.cpp
+002916C0 Obj_ForwardToKind_002916C0       // void f(Obj* o, u8 a, u8 b): ForwardToKind through vfn[10]. (name?); decompiled: src/obj/mid4_misc.cpp
+002918C8 Obj_ForwardToKind_002918C8       // void f(Obj* o, u8 a, u8 b): ForwardToKind through vfn[13]. (name?); decompiled: src/obj/mid4_misc.cpp
+002B2CF8 List_TrackObject_002B2CF8        // void f(List* l, Obj* o): TrackObject (constants at 0x002B2CEC). (name?); decompiled: src/obj/mid4_misc.cpp
+002B5358 List_TrackObject_002B5358        // void f(List* l, Obj* o): TrackObject (constants at 0x002B5350). (name?); decompiled: src/obj/mid4_misc.cpp
+0037C7E0 Talk_Update_0037C7E0             // u32 f(T* t, u8 start, u8 stop): TalkUpdate (1.0f at 0x0037C7D8, effect hash table 0x00F64FE0). (name?); decompiled: src/obj/mid4_misc.cpp
+0037F5E8 Talk_Update_0037F5E8             // u32 f(T* t, u8 start, u8 stop): TalkUpdate (1.0f at 0x0037F5E4, effect hash table 0x00F64FFC). (name?); decompiled: src/obj/mid4_misc.cpp
+0038B588 Node_NotifyVars_0038B588         // void f(Node* n, Script* s): NotifyVars (kind slot +12, type slot +16). (name?); decompiled: src/obj/mid4_misc.cpp
+0038B78C Node_NotifyVars_0038B78C         // void f(Node* n, Script* s): NotifyVars (kind slot +16, type slot +20). (name?); decompiled: src/obj/mid4_misc.cpp
+004F32F4 Registry_AddFactories_004F32F4   // u16 f(Registry* r, Factory* const* f, u32 n): RegisterFactories (array +56, then vfn[4]). (name?); decompiled: src/obj/mid4_misc.cpp
+004F3554 Registry_AddFactories_004F3554   // u16 f(Registry* r, Factory* const* f, u32 n): RegisterFactories (array +8, then vfn[5]). (name?); decompiled: src/obj/mid4_misc.cpp
+00773C8C HandlePool_Free_00773C8C         // void f(u32* out, HandlePool* p, u32 handle): HandlePoolFree (template instance). (name?); decompiled: src/obj/mid4_misc.cpp
+0078967C HandlePool_Free_0078967C         // void f(u32* out, HandlePool* p, u32 handle): HandlePoolFree (template instance). (name?); decompiled: src/obj/mid4_misc.cpp
+00773A90 HandlePool_Init_00773A90         // u32 f(HandlePool* p, s32 cap): HandlePoolInit (template instance). (name?); decompiled: src/obj/mid4_misc.cpp
+00788EF4 HandlePool_Init_00788EF4         // u32 f(HandlePool* p, s32 cap): HandlePoolInit (the blocks' u16 +6 cleared too). (name?); decompiled: src/obj/mid4_misc.cpp
+00773E8C HandlePool_Resize_00773E8C       // u32 f(HandlePool* p, s32 cap): HandlePoolResize (template instance). (name?); decompiled: src/obj/mid4_misc.cpp
+007893B0 HandlePool_Resize_007893B0       // u32 f(HandlePool* p, s32 cap): HandlePoolResize (the blocks' u16 +6 cleared too). (name?); decompiled: src/obj/mid4_misc.cpp
+00775BF0 CondIsVar_New_00775BF0           // Node* New(s16 id): the "CIsVar" condition node (Mem_Alloc(24, 0, 16), record 16): VarName, Operator (an enum: default hash 0x03F26F14, a name list of 6 holding  (name?); decompiled: src/obj/mid4_node.cpp
+002105F8 QuerySpawn_002105F8              // Obj* f(Owner* o, Obj* t): QuerySpawn (keep bit +4 0x02000000, query +4 |= 0x02400000, a 624-byte object, ctor 0x00210478). (name?); decompiled: src/obj/mid4_spawn.cpp
+002130D0 QuerySpawn_002130D0              // Obj* f(Owner* o, Obj* t): QuerySpawn (keep bit +4 0x04000000, query +4 |= 0x04400000, a 624-byte object, ctor 0x00212FC8). (name?); decompiled: src/obj/mid4_spawn.cpp
+00212828 QuerySpawn_00212828              // Obj* f(Owner* o, Obj* t): QuerySpawn (keep bit +8 0x8, query +4 |= 0x00400000 / +8 |= 0x8, a 432-byte object of vtable 0x00B19B58). (name?); decompiled: src/obj/mid4_spawn.cpp
+00219A10 QuerySpawn_00219A10              // Obj* f(Owner* o, Obj* t): QuerySpawn (keep bit +8 0x4, query +4 |= 0x00400000 / +8 |= 0x4, a 432-byte object of vtable 0x00B1A150). (name?); decompiled: src/obj/mid4_spawn.cpp
+0020CEA0 QuerySpawn_0020CEA0              // Obj* f(Owner* o, Obj* t): QuerySpawn without the exclusion (query +4 |= 0x00400000, a 432-byte object of vtable 0x00B19698; quirk kept: the query's +150 is 1 wi (name?); decompiled: src/obj/mid4_spawn.cpp
+00218980 QuerySpawn_00218980              // Obj* f(Owner* o, Obj* t): QuerySpawn (keep bit +4 0x01000000, query +4 |= 0x01400000, a 432-byte object of vtable 0x00B19FE0). (name?); decompiled: src/obj/mid4_spawn.cpp
+00234324 QueryExSpawn_00234324            // Obj* f(Owner* o, Obj* t): QueryExSpawn (q->+12 |= 0xC00, numbered by 0x0022FAA0, a 1104-byte object, ctor 0x00233728). (name?); decompiled: src/obj/mid4_spawn.cpp
+00240C64 QueryExSpawn_00240C64            // Obj* f(Owner* o, Obj* t): QueryExSpawn (q->+12 |= 0x1400, numbered by 0x00240AC0, a 640-byte object, ctor 0x002404F0). (name?); decompiled: src/obj/mid4_spawn.cpp
+0023099C AttachControls_0023099C          // void f(Obj* o): AttachControls (+952 / +956 / +960). (name?); decompiled: src/obj/mid4_tmpl.cpp
+00246D5C AttachControls_00246D5C          // void f(Obj* o): AttachControls (+400 / +404 / +408). (name?); decompiled: src/obj/mid4_tmpl.cpp
+002B2814 XmlTmpl_Read_002B2814            // Tmpl* f(x, XmlCursor* c, u8 flag): ReadTmplF32x6 (kind 42, vtable 0x00B1CCC8). (name?); decompiled: src/obj/mid4_tmpl.cpp
+002B4E78 XmlTmpl_Read_002B4E78            // Tmpl* f(x, XmlCursor* c, u8 flag): ReadTmplF32x6 (kind 43, vtable 0x00B1CDA0). (name?); decompiled: src/obj/mid4_tmpl.cpp
+003417D8 TuningVars_Ctor_003417D8         // void f(): static initializer of the tuning vars Goal.BinocucomPhoto.* / Goal.BinocucomRecord.* (the default photo / record target angles and distances), Goal.Pe (name?); decompiled: src/obj/mid4_tuning.cpp
+00226288 TuningVars_Ctor_00226288         // void f(): static initializer of the tuning vars Debug.Display.Trigger.* (the per-trigger-type debug switches), Entity.Trigger.*, Audio.ZoneXFadeTime and the tri (name?); decompiled: src/obj/mid4_tuning.cpp
+001D4C28 TuningVars_Dtor_001D4C28         // void f(): static (atexit) destructor of 51 tuning vars. (name?); decompiled: src/obj/mid4_tuning.cpp
+00389D00 TuningVars_Dtor_00389D00         // void f(): static (atexit) destructor of 32 tuning vars, 7 PtrVectors, 5 pool arrays. (name?); decompiled: src/obj/mid4_tuning.cpp
+002EBF94 TuningVars_Ctor_002EBF94         // void f(): static initializer of the streaming module's four sorted arrays (compare functions CmpU32_007670DC / 0076710C x2 / 0076713C), a PtrVector (capacity 32 (name?); decompiled: src/obj/mid4_tuning.cpp
+000F86DC TuningVars_Ctor_000F86DC         // void f(): static initializer of five sorted arrays, five PtrVectors (the first with capacity 256), an f32 global copied from rodata, four words cleared atomical (name?); decompiled: src/obj/mid4_tuning.cpp
+00210478 QuerySpawn_Ctor_00210478         // (p, Query* q): 624-byte object ctor used by QuerySpawn_002105F8 (name?); not decompiled
+00212FC8 QuerySpawn_Ctor_00212FC8         // (p, Query* q): 624-byte object ctor used by QuerySpawn_002130D0 (name?); not decompiled
+0020C868 QuerySpawn_BaseCtor_0020C868     // (p, Query* q, 32, 1): 432-byte object base ctor (QuerySpawn_00212828 / 00219A10 / 0020CEA0 / 00218980) (name?); not decompiled
+00233728 QueryExSpawn_Ctor_00233728       // (p, QueryEx* q): 1104-byte object ctor (QueryExSpawn_00234324) (name?); not decompiled
+002404F0 QueryExSpawn_Ctor_002404F0       // (p, QueryEx* q): 640-byte object ctor (QueryExSpawn_00240C64) (name?); not decompiled
+0022FAA0 Obj_SetNumber_0022FAA0           // (o, u32 n): gets the world counter value from QueryExSpawn_00234324 (name?); not decompiled
+00240AC0 Obj_SetNumber_00240AC0           // (o, u32 n): the same for QueryExSpawn_00240C64 (name?); not decompiled
