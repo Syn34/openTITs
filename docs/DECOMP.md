@@ -89,6 +89,7 @@ Known dependencies on still-recompiled functions (whoever decompiles them must k
 - `0056AEFC` (Debug_Draw): `View_EndDraw_00522140` builds stream record 22 from the r4 it leaves.
 - `0045717C` reads r7 after `FrameBuffer_Reset_00523584` and after `CallbackList_Invoke`; both set or pass it through as the original does.
 - `00282638` reads f6 after its call to `Quat_FromTo_0074D4B8` at 002827F0 and f5 after the one at 00282D58; `Quat_FromTo_0074D4B8` sets both as the original leaves them.
+- `00057178` passes the r7 left by `Call_00548508` to `FrameBuffer_Reset_00523584`, which reads it; whoever decompiles `00548508` must keep its exit r7.
 
 ## Conventions
 
