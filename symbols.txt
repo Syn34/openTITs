@@ -13353,3 +13353,17 @@
 00073910 XmlRec_New_B0F590_00073910       // [vtable 0x00B0F590] (name?); decompiled: src/obj/obj46b.cpp
 00073D18 XmlRec_New_B0F5B8_00073D18       // [vtable 0x00B0F5B8]: byte +24 is not initialized (the read default is whatever the allocation held). (name?); decompiled: src/obj/obj46b.cpp
 0007AF38 XmlRec_New_B0F950_0007AF38       // Rec* f(-, XmlCursor* c): Mem_Alloc(28, 0, 16) (0 -> r3 = 0), Obj_InitVt_B21C98(p, c), +12..+24 = 0, vtable 0x00B0F950; the hashes 0x8A93973F / 0x7A30D7E3 into + (name?); decompiled: src/obj/obj46b.cpp
+
+# Game code big sweep part 25
+003FAF68 Prop_LeverTick_003FAF68          // void f(Lever* o; f32 dt): travel x +104 in [-1,1] with speed +108 (push +304 * gain - v * damping) / mass +112; speed effects 0x2874B3AD / 0x287AC552 via holder +292; end latch +352 fires 0xEA31D667 and flips +336; hinge quaternion about 0x01164B70 by the angle +124 into the model +300 (vfn 84/88, child 0x435538CB vfn 88); decompiled: src/obj/big25_lever.cpp
+00268300 RewardSeq_Step_00268300         // bool f(Seq* o, Obj* player, u8 check): one step of a reward stage (giver vfn[12] gives the hash, +52/+56 amounts scaled by Global_Get10C2478 / 0x0105BF80), spawns pickups (Obj_ApplyKind2 kind 0x693B0159 or 0x000F7E74 kind 0x99B7AAF2), advances step / stage; decompiled: src/obj/big25_reward.cpp
+0030FD68 MegaMode_Reset_0030FD68         // void f(T* o): Global_SetHashObj(o, "Mega"); +348 = clamp(+344, 0, 100); default state memmoved to +664; parts +776.. released; views +812/+824, fields, slots +704.., sub-objects +876 reset; effect 0x8C991A36; player pos to +976/+992; decompiled: src/obj/big25_mega.cpp
+0040EA08 Sumo_SpawnerTick_0040EA08       // void f(Spawner* o): state machine +88 (5: round count, 3/1: 0x0040E400 / 0x0040E6E0 with the caller's f1, 0: random spline from +24/+28/+32 via the RNG 0x01164888, animator restart 0x8919BDE9, "Target" spawn desc along the spline frame, def 0xC5877D2D vfn[28]); decompiled: src/obj/big25_sumo.cpp
+0037744C ThiefNet_FillPage_0037744C      // void f(ShopPage* o): six rows of name / price labels (0x00F64DD0 label names) for the scrolled item list +400 (u16 +408); "%d" price or "$HIDEOUT_THIEFNET_SOLD"; "$THIEFNET_NO_UPGRADES_AVAILABLE" when empty; decompiled: src/obj/big25_thiefnet.cpp
+000F7E74 Reward_SpawnAt_000F7E74         // (const SpawnFrame* f, const RewardInfo* info, u32 kind, PtrVector* out) (name?); called by 00268300
+0026621C Stage_Complete_0026621C         // (Stage*, Obj* owner, x) (reads r5) (name?); called by 00268300
+003055E8 Obj_AttachCam_003055E8          // (x, u8, -, u8; f32) (reads r3 r4 r6 f1) (name?); called by 0030FD68
+00304298 Mega_PostReset_00304298         // (Obj*) (name?); called by 0030FD68
+0040E220 Sumo_RoundEnd_0040E220          // (Game*) (name?); called by 0040EA08
+0040E400 Sumo_SpawnerState3_0040E400     // (Spawner*; f1) (name?); called by 0040EA08
+0040E6E0 Sumo_SpawnerState1_0040E6E0     // (Spawner*; f1) (name?); called by 0040EA08
