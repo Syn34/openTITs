@@ -9705,7 +9705,6 @@
 00361374 SlotDefB780_New_00361374         // SlotDef* (x, XmlCursor* cur): new 304-byte def (vtable 0x00B1F780), SlotDef_Read, hashes, floats, icon%d / sound%d / addBitScript%d x10 (name?); decompiled: src/obj/mid1_slot.cpp
 003604E0 SlotDef3DText_New_003604E0       // SlotDef* (x, XmlCursor* cur): new 160-byte def (vtable 0x00B1F828), SlotDef_Read, 16-byte entries per "3DTextObject" child (+148 / +152), hash +156 (name?); decompiled: src/obj/mid1_slot.cpp
 0079B55C Set_Insert_0079B55C              // void (Handle* out, SlotList* l, const u32* v): SlotList PushBack (handle idx << 16 | gen, gen counter 0x010C29DC), grows via SlotList_Grow_0079B3B0 (rename SlotList_PushBack_0079B55C?); decompiled: src/obj/mid2_slotlist.cpp
-0048F298 Obj_Flag13Off_0048F298           // (o, 1): called by Obj_BaseDtor_000D7024 when +176 has 0x2000 (name?); not decompiled
 0012E8B0 Obj_Detach_0012E8B0              // (node, area): called by Area_Enter / Area_Leave when the node's +192 has 0x8 (name?); not decompiled
 0036196C SlotDef_Factory_0036196C         // (x, XmlCursor*): every flagged child (+24 bit 0x80) built by tag (+20) into a SlotDef kind and appended to the def map 0x0106C210; tag 0xFA405F99 = 28-byte colour record into 0x0106C2A8 (name?); decompiled: src/obj/big1_slot.cpp
 
@@ -11863,7 +11862,6 @@
 00217470 AreaDef_Read217470               // (a0, c, x, tmpl, rec): area def reader (name?); not decompiled
 0047F588 XformKey_Read47F588              // (a0, XmlNode*, 64-byte key) -> bool (name?); not decompiled
 0022AD08 ChoiceEntry_Read22AD08           // (entry, a1, XmlNode*) (reads r3 / r5) (name?); not decompiled
-0033162C SlotObj_Construct33162C          // (p, a2, const f32 vec[3], hash, f1..f4, 7 bools on the stack): 2640-byte object ctor (name?); not decompiled
 0049EA74 QueryVar_KindOfTag               // (u32 tag) -> value kind 1..16 or 0 (name?); not decompiled
 
 # Game code large functions part 16
@@ -12449,7 +12447,6 @@
 002142E0 Area_TryLeave2142E0                // u32 (Area*, Actor*): counterpart: o->484 = 0, leave link list (List_Unlink_00441CB8), PushStack_Remove, Area_Leave unless state 0/3; decompiled: src/obj/mid17_e.cpp
 003CCC68 Obj_SetSplinePos3CCC68             // (Obj* o, const Vec3* p): t = SplineInstance_Nearest(o->108, p), point/tangent, heading blended into body o->4 (+128 row) -> Mat34_FromRotPos553B4C -> body vfn[84]; forward/backward/idle anim (0xA76CE5BD / 0xA76CE5B7 / 0xE1C7FA75) by t vs o->104 +- 0.001; o->104 = t, o->16 = pos; replaces the mid17 "(name?)" Obj_SetSplinePos3CCC68; decompiled: src/obj/mid18_a.cpp
 00058488 Obj_ApplySway58488                 // (Obj*, Mat34* frame; f1) (name?)
-000DCECC Effect_Spawn0DCECC                 // (-, u32 kind, const Mat34* m, 1) -> Effect* (reads r4..r6 only) (name?)
 00222654 Area_AddEffect222654               // u32 (Area*, Effect* e): when the u16 at 0x0119308C is set, in-order walk of the tree *(e+8 ->12) (stack e+24.., count s16 e+104, cur e+108); payloads with vfn[32]() == 5 and +28 part kind ((+4>>10)&0x3F) == 10 get EmitterInstance_Set340(part, 0x01193088); returns 0; decompiled: src/obj/mid18_a.cpp
 004286D8 Wave_Centre4286D8                  // (Vec3* out, Wave* o, o->0) (name?)
 004A83D8 Curve_Ease4A83D8                   // f32 (f32 a, f32 b, f32 c, f32 t) (name?)
@@ -12748,3 +12745,76 @@
 00F8F158 g_SplineInstanceAllocSlot        // -> {free list*, heap} of ApeTListAllocator<ApeSplineInstance>
 0106BFA0 g_WalkablePhantom                // hkpAabbPhantom* used by 00354C18
 0106BF48 g_WalkableMaxSlopeDeg            // f32
+
+# Game code sweep part 41
+002F92C0 Obj_ResetTree_002F92C0           // void f(T* o, u8 b): +44 = +48 = 0, u8 +72 = 0; for each e of the u16 counted pointer array o->+52 (count +60): u8 e->+57 = e->+58 = 0; for each f of e->+36 (cou (name?); decompiled: src/obj/obj41.cpp
+0033162C Obj_CtorB1EA08_0033162C          // T::T(o, a1, const f32* v, a3, f32 x, f32 y, f32 z, f32 w, b9 .. b15) (b9 .. b15 on the stack, bit 0 of each): the base Obj_Construct_00769BD8(o, a1), vtable 0x0 (name?); decompiled: src/obj/obj41.cpp
+00332AA8 Obj_LevelCross_00332AA8          // u32 f(T* o, a1, const s32* ev): unless u8 o->+18 is 4 this is sub_003252D8(o, a1, ev). Otherwise, with the target q = o->+2600 (bit 0x40000 of q->+172 set) and  (name?); decompiled: src/obj/obj41.cpp
+00338560 Obj_CollectHashes_00338560       // void f(T* o): collects up to 32 entries into o->+2772 (count +2900): the hash h of String_Format(0x00ADB994, o + 2740, 1) is looked up in (*0x00F8F154)->+16 (Po (name?); decompiled: src/obj/obj41.cpp
+004B5274 AnimNode_BindNames_004B5274      // void f(AnimNode* o): Owner_AddName(o, 0x00AEE358, 1), AnimClipNode_BindParams_004B2DA0(o); the binding b = Node_Bind(o, 0x00AEE910, 5, 0, -1, 0) is reserved for (name?); decompiled: src/obj/obj41.cpp
+004C71F8 Obj_DtorB22358_004C71F8          // Destructor: vtable 0x00B22358; until the tree root *(o->+36) is empty, its leftmost node (the path above it kept in the s16 stack o->+40, depth u16 +120, reset  (name?); decompiled: src/obj/obj41.cpp
+00743F94 Obj_DeleteB11E50_00743F94        // Deleting destructor (o = r3; r3 = 0 for o == 0): vtable 0x00B11E50; the pointer vectors +560, +412, +364, +316, +296, +276, +256, +212 and +192 are cleared (Ptr (name?); decompiled: src/obj/obj41.cpp
+00777300 NodeNew_B1FCE4_00777300          // Node* New(s16 id): a 24-byte node 0x00B1FCE4 with the bindings 0x00B1FCF4 (2, 0), 0x00B1FCFE (2, 0) and 0x00B1FD08 (2, 1) (NodeNew3Bind41). (name?); decompiled: src/obj/obj41.cpp
+00778FCC NodeNew_B1FF71_00778FCC          // Node* New(s16 id): a 24-byte node 0x00B1FF71 with the bindings 0x00B1FF83 (1, 1), 0x00B1FF91 (3, 1) and 0x00B1FF9A (3, 1) (NodeNew3Bind41). (name?); decompiled: src/obj/obj41.cpp
+007791D8 NodeNew_B1FFA3_007791D8          // Node* New(s16 id): a 24-byte node 0x00B1FFA3 with the bindings 0x00B1FFB1, 0x00B1FFB6 and 0x00B1FFC1 (all 2, 1) (NodeNew3Bind41). (name?); decompiled: src/obj/obj41.cpp
+0007A0E4 NewXmlB0F888_0007A0E4            // T* New(?, XmlCursor* x): a 28-byte object (Mem_Alloc(28, 0, 16); r3 = 0 on failure) made by Obj_InitVt_B21C98, vtable 0x00B0F888, +12 / +16 / +20 = 0 and bits 3 (name?); decompiled: src/obj/obj41.cpp
+0007BB18 Obj_SyncSlotFlag_0007BB18        // u32 f(T* o, Effect* x): when o->+12 is one of the nine ids of the table 0x00AC4D80 (index i) and o->+16 is set: flag = whether a type 23 component of the object (name?); decompiled: src/obj/obj41.cpp
+0008D564 User_RefreshFromMap_0008D564     // u32 f(T* o): with o->+12 >= 0 and o->+16 set, the user object o->+12 is refreshed (User_RefreshObject(*0x00F65CA0, o->+12, &m)) with the 4x3 matrix m (rows of 1 (name?); decompiled: src/obj/obj41.cpp
+0009DBF8 NewAnimCmdB11280_0009DBF8        // T* New(?, XmlCursor* x): a 32-byte anim command (Mem_Alloc(32, 0, 16); r3 = 0 on failure; AnimCmd_ConstructBase), vtable 0x00B11280, +12..+24 = 0, u8 +28 = 0; r (name?); decompiled: src/obj/obj41.cpp
+000BE030 Obj_TrackState_000BE030          // u32 f(T* o): the state s = o->vt[32](o, 2): 0 sends the effect o->+356 (when set) hash 0x6D6A39BB and calls o->vt[28](o, 2, 1); 1 sets the track k = Anim_TrackS (name?); decompiled: src/obj/obj41.cpp
+000D6614 Registry_AddUnique_000D6614      // u32 f(T* o): RegAddUnique41 on the registry 0x01013B5C with the warning 0x00AC6AD0. (name?); decompiled: src/obj/obj41.cpp
+000D6770 Registry_AddUnique_000D6770      // u32 f(T* o): RegAddUnique41 on the registry 0x01013B70 with the warning 0x00AC6B58. (name?); decompiled: src/obj/obj41.cpp
+000FBA18 Obj_StepParts_000FBA18           // u32 f(T* o, f32 dt): Obj_SyncWorld_000D85A4(o); the current part c = o->+364[u8 o->+345] (when the index and c are nonzero) gets c->vt[52](c, o + 480) with f1 = (name?); decompiled: src/obj/obj41.cpp
+001DC3A8 Obj_TeamGate_001DC3A8            // u32 f(T* a, Obj* b, s32 kind, d): 0 for kind 3 when bit 0 of the 64-bit b->+184 is set, a's target definition (Target_GetDef0D951C) has +68 <= 1, (a->+216)->+30 (name?); decompiled: src/obj/obj41.cpp
+001FC570 Obj_GetAimPos_001FC570           // Vec3* f(Vec3* out, Obj* o): o->vt[80](out, o) when CallK2_000D93AC(o) is set, or o->+416 is set and the 12 bytes (o->+216)->+208 differ from 0x01164B40; with +4 (name?); decompiled: src/obj/obj41.cpp
+002841BC Obj_DtorB1C578_002841BC          // Destructor: vtable 0x00B1C578; the buffer +100 (u16 count +96, low 15 bits, 192-byte entries) is freed (SmallFree) when set; World_ListRemove_0046B7A4(*0x00F65C (name?); decompiled: src/obj/obj41.cpp
+002E2E78 Obj_FlushWorldReq_002E2E78       // u32 f(T* o): FlushWorldReq41 (two identical copies, 0x002E2E78 / 0x002E2FD4). (name?); decompiled: src/obj/obj41.cpp
+002E2FD4 Obj_FlushWorldReq_002E2FD4       // u32 f(T* o): FlushWorldReq41 (the second copy). (name?); decompiled: src/obj/obj41.cpp
+002F9540 Obj_ReleaseParts_002F9540        // u32 f(T* o, a): the effect o->+52 is released (Effect_Release(e, a)); when o is one of the three slots +900 of its owner t = o->+56 (index i), the two parts *(t (name?); decompiled: src/obj/obj41.cpp
+003679C8 Obj_Start_003679C8               // u32 f(T* o, const char* name, u8 now, ?, u8 c, a5, a6, f32 x): unless o is 0 or bit 25 of +396 is set: o->vt[12](o), bit 30 of +396 set; with now Obj_Play363890 (name?); decompiled: src/obj/obj41.cpp
+003EFE40 NodeSet_Remove_003EFE40          // u32 f(T* o, Node* x): NodeSetRemove41 with the offset 0x003EFE38. (name?); decompiled: src/obj/obj41.cpp
+003EFFA0 NodeSet_Remove_003EFFA0          // u32 f(T* o, Node* x): NodeSetRemove41 with the offset 0x003EFF9C. (name?); decompiled: src/obj/obj41.cpp
+003FE918 Obj_CloseMenu_003FE918           // u32 f(T* o): when u8 o->+68 is set: World_ListRemove_0046B7A4( *0x00F65CA0, 0, 0x00F38648, o, 0), Handle_Notify36742C(0x811E9BA0, 0, 1, 0), SetSelect_491000(o,  (name?); decompiled: src/obj/obj41.cpp
+004ED8A8 Settings_Read_004ED8A8           // u32 f(XmlCursor* x): the settings record t = *0x010C2C28 (r3 = 0 without) reads the f32 "0x00AF0168" / "0x00AF0170" / "0x00AF0178" into +604 / +608 / +612 (defa (name?); decompiled: src/obj/obj41.cpp
+0077979C NodeNew_B20003_0077979C          // Node* New(s16 id): a 24-byte node 0x00B20003 with the bindings 0x00B20017 (3, 0), 0x00B2001E (4, 0) and 0x00B2002C (4, 1; +76 = 1) (NodeNew3Bind41). (name?); decompiled: src/obj/obj41.cpp
+0006C698 NewXmlB0F108_0006C698            // T* New(?, XmlCursor* x): a 32-byte object (Mem_Alloc(32, 0, 16); r3 = 0 on failure) made by Obj_InitVt_B21C98, vtable 0x00B0F108, +12..+24 = 0, u8 +28 = 1; read (name?); decompiled: src/obj/obj41.cpp
+00080010 NewXmlB0FC70_00080010            // T* New(?, XmlCursor* x): a 32-byte object (Mem_Alloc(32, 0, 16); r3 = 0 on failure) made by Obj_InitVt_B21C98, vtable 0x00B0FC70, +12 / +16 = 0, f32 +24 = -1.0, (name?); decompiled: src/obj/obj41.cpp
+00088160 EffCmd_SetEffect_00088160        // u32 f(T* o, Effect* x): the target t (EffTarget41) gets the effect object f = List_FindAfter_000D92B0(t, o->+20, 0): with kind f->+12 == 27 Obj_SetEffect108_002 (name?); decompiled: src/obj/obj41.cpp
+0008D8C4 EffCmd_TeamHit_0008D8C4          // u32 f(T* o, Effect* x): the target t (EffTarget41) with bit 30 of +196 set is hit by the team record (*0x00F65CA0) + 4208 + 0x20C80 * o->+20: Obj_OnTargetHit_00 (name?); decompiled: src/obj/obj41.cpp
+000DCECC Effect_NewAt_000DCECC            // Effect* f(?, a, const Mat43* m, u8 start): 0 for a == 0; otherwise a 140-byte effect (SmallAlloc(140), Effect_Construct(p, a); p = 0 on a failed allocation); it (name?); decompiled: src/obj/obj41.cpp
+000F4094 Obj_SetPivot_000F4094            // u32 f(T* o, Src* src): while f32 o->+656 < o->+672, the 4x3 matrix +448 (rows of 16 bytes) is set to the identity 0x01164BD0 with the translation src->vt[284](& (name?); decompiled: src/obj/obj41.cpp
+001BF8E8 Obj_StateEvent_001BF8E8          // u32 f(T* o): unless bit 5 of u8 +572 is set: once f32 +564 reaches 0x001BF8E0 the state +556 becomes 1 (+568 = +564, o->vt[420](o, 1, 0)); otherwise the state 1 (name?); decompiled: src/obj/obj41.cpp
+001F60D8 SpawnQuery_New_001F60D8          // T* f(a, b, c, d): a 320-byte spawn query (SmallAlloc(320); 0 on failure) built by Wrapper_0CC4D4(p, c, d, 0, 0x01164BD0, 0x01164B30, 1, 0, 0, -, 0) with f1 = 0x (name?); decompiled: src/obj/obj41.cpp
+002203F0 XmlDef_NewB1A9F0_002203F0        // T* f(a, b, Src* s, c): DefNewSmall41 (3.0f, 0, +32 = 1 kept over the read, name 0x00AD37F8; reader Def_ReadBase20BFE8; vtable 0x00B1A9F0). (name?); decompiled: src/obj/obj41.cpp
+002210C8 XmlDef_NewB1AB78_002210C8        // T* f(a, b, Src* s, c): DefNewSmall41 (0x00400000, 32, name 0x00AD3838; reader Def_ReadBase20BFE8; vtable 0x00B1AB78). (name?); decompiled: src/obj/obj41.cpp
+002251DC XmlDef_NewB1B150_002251DC        // T* f(a, b, Src* s, c): DefNewSmall41 (0x00400000, 128, name 0x00AD38DC; reader Xml_Load_0022515C; vtable 0x00B1B150). (name?); decompiled: src/obj/obj41.cpp
+00229490 Obj_TryReact_00229490            // u32 f(Obj* o, Msg* m): unless the global flag u8 0x010388F0 is set, bits 0x20000 / 0x40000 of o->+188 are set, o's owner (Obj_Owner0D93FC) has bit 12 of +40 set (name?); decompiled: src/obj/obj41.cpp
+0023B870 Obj_PickTarget_0023B870          // u32 f(T* o): +780 = 0; with bit 31 of +384: the flag f = bit 12 of *((o->+952)->vt[12](it) + 36); with the holder h = o->+948: the first target of CallK2_000D93 (name?); decompiled: src/obj/obj41.cpp
+0023BCA0 Obj_TimedEffect_0023BCA0         // u32 f(T* o): once the timer f32 o->+992 reaches (o->+396)->+1588: the effect o->+764 (when set) is spawned (SmallAlloc(140) + Effect_Construct; null on failure, (name?); decompiled: src/obj/obj41.cpp
+0027BC64 Obj_DeleteB1C0D0_0027BC64        // Deleting destructor (o = r3; r3 = 0 for o == 0): vtable 0x00B1C0D0, List1013B5C_Remove(o); the reference +92 gets vt[8] and is cleared; vtable 0x00B1BE30, Unlis (name?); decompiled: src/obj/obj41.cpp
+002D4030 Seq_Step_002D4030                // u32 f(T* o, Msg* m): for m->+8 == 0x69988172 while bit 30 of +92 is clear: a key m->+0 matching the next expected step (the 256-byte entry +64 of o->+68, its +2 (name?); decompiled: src/obj/obj41.cpp
+002D9740 Obj_CtorTables_002D9740          // T::T(o): u8 +404 = 0; the vectors +408 (element 4, u16 +414 = 129), +428 (16, +434 = 76, flag 1) and +448 (8, +454 = 12) are constructed and set up (PtrVector_C (name?); decompiled: src/obj/obj41.cpp
+00327684 Obj_RefreshSlots_00327684        // u32 f(T* o, a): with u8 o->+18 == 4 and Obj_CanShow2E2104(*0x00F64C20, o): each active entry e (u8 +12) of the 20-byte array (o->+2272)->+0 (u16 count +8, re-re (name?); decompiled: src/obj/obj41.cpp
+003489F4 Iff_RegisterKH_003489F4          // void f(): registers the nine 'KH' chunk handlers 'FSKH' / 'HSKH' / 'DSKH' / 'FMKH' / 'HMKH' / 'DMKH' / 'FAKH' / 'HAKH' / 'DAKH' (Iff_RegisterChunk(id, 0x00F373E (name?); decompiled: src/obj/obj41.cpp
+0037ECC0 Obj_SetVisible_0037ECC0          // u32 f(T* o, u8 on): (o->+24)->vt[40](it, on, 1) when set; each part e of the 28-byte array (o->+8)->+180 (count +184, e at +12) gets e->vt[88](e, on); turning o (name?); decompiled: src/obj/obj41.cpp
+003AE8B0 Obj_StartState_003AE8B0          // bool f(T* o, ?, u8 b, c, f32 x): 0 when the state o->vt[32](o, 0) is 7, or it is 3 and the track o->+96 is past both limits (time / length (Anim_TrackTime_000DC (name?); decompiled: src/obj/obj41.cpp
+00438DDC ObjCmd_Apply_00438DDC            // void f(Cmd* o): the object Obj_FindByHandle42C2B0(o->+12, bit 27 of +20), narrowed by Obj_FindByHash_000DB290(it, o->+16) when +16 is set, gets vt[88](it, bit 3 (name?); decompiled: src/obj/obj41.cpp
+004563A0 Group_Release_004563A0           // u32 f(T* o, u8 hide): for each group p of the chain o->+32 (next +72) whose flag byte (p->+48)->+12[4 * (*0x010AB1B8)->+64] is set: the count +24 is taken (clea (name?); decompiled: src/obj/obj41.cpp
+0048F298 Registry_Unlink_0048F298         // void f(T* o, u8 keep): o is unlinked from the node chains of the registry 0x010BB738 (u16 count +2, 8-byte {key, holder} entries +8; matched nodes {obj, next} g (name?); decompiled: src/obj/obj41b.cpp
+004C1D0C NewXmlB22178_004C1D0C            // T* New(?, XmlCursor* x): a 28-byte object (Mem_Alloc(28, 0, 16); r3 = 0 on failure), u16 +4 = 1, +12..+20 = 0, vtable 0x00B22178; read: hash 0x8A93973F into +16 (name?); decompiled: src/obj/obj41b.cpp
+004CA888 XmlInit_B223F8_004CA888          // u32 f(T* o, XmlCursor* x): u16 +4 = 1, +12..+20 = 0, vtable 0x00B223F8, u8 +24 = 0; read: hash 0xE42AC27C into +12 (default 0), 0xDA98E416 into +16, the f32 0x0 (name?); decompiled: src/obj/obj41b.cpp
+004CC928 Effect_PushLevel_004CC928        // u32 f(T* o, Effect* x): the level f32 o->+16 is refreshed from x's component o->+20 of kind 1 (vt[32]) through its vt[20] (0x004CC924 when the component is miss (name?); decompiled: src/obj/obj41b.cpp
+004F480C Tree_Visit_004F480C              // Node* f(Tree* o, Node* n): unless n is visited (u8 +33): a leaf (n->+8 == 0) is pushed on the slot list o + 104 (SlotList_PushFront_0079A6D4), otherwise {n->+8, (name?); decompiled: src/obj/obj41b.cpp
+007776B8 NodeNew_B1FD28_007776B8          // Node* New(s16 id): a 24-byte node 0x00B1FD28 with the bindings 0x00B1FD38 (5, 0), 0x00B1FD41 (5, 1; +76 = the string 0x00B1FD48) and 0x00B1FD49 (4, 1) (NodeNew3 (name?); decompiled: src/obj/obj41b.cpp
+000296BC Obj_EventPose_000296BC           // u32 f(T* o, u32 ev): the step +368 counts up, wrapping to 0 at +360; then o->vt[220](o, k) with k = 4 / 3 / 2 / 7 / 10 for the events 0x04B38BFF / 0x040A726F /  (name?); decompiled: src/obj/obj41b.cpp
+00033A40 Obj_TurnAround_00033A40          // u32 f(T* o, a): bit 3 of u8 +305 set, bit 1 of u8 +464 set and bit 0 cleared; the basis is rebuilt from the reversed direction -(+160..+168) (Basis_FromForward_ (name?); decompiled: src/obj/obj41b.cpp
+00075144 NewXmlB0F680_00075144            // T* New(?, XmlCursor* x): NewXml6_41 with the vtable 0x00B0F680. (name?); decompiled: src/obj/obj41b.cpp
+00076FC8 NewXmlB0F770_00076FC8            // T* New(?, XmlCursor* x): a 32-byte object (Mem_Alloc(32, 0, 16); r3 = 0 on failure) made by Obj_InitVt_B21C98, vtable 0x00B0F770, +12 = 0, f32 +16 = 1.0, +20 /  (name?); decompiled: src/obj/obj41b.cpp
+00088330 NewXmlB102D8_00088330            // T* New(?, XmlCursor* x): a 36-byte object (Mem_Alloc(36, 0, 16); r3 = 0 on failure) made by Obj_InitVt_B21C98, vtable 0x00B102D8, +12..+20 = 0, +24 = -1, +28 =  (name?); decompiled: src/obj/obj41b.cpp
+0008DB0C NewXmlB10800_0008DB0C            // T* New(?, XmlCursor* x): a 24-byte object (Mem_Alloc(24, 0, 16); r3 = 0 on failure) made by Obj_InitVt_B21C98, vtable 0x00B10800, +12 / +16 = 0, u8 +20..+23 = 0 (name?); decompiled: src/obj/obj41b.cpp
+0009057C EffCmd_Link_0009057C             // u32 f(T* o, Effect* x): the target t (EffTarget41) with bit 27 of +196 set is linked to the spline (*0x00F8F158)->+16 entry for o->+20 (SplineMap_Find; Obj_SetL (name?); decompiled: src/obj/obj41b.cpp
+00099B64 NewXmlB10E40_00099B64            // T* New(?, XmlCursor* x): NewXml6_41 with the vtable 0x00B10E40. (name?); decompiled: src/obj/obj41b.cpp
+000B7574 Obj_FlushEntries_000B7574        // u32 f(T* o, u32 key): each 8-byte entry e of the u16 counted array o->+52 (count +60) whose object e->+0 is set and either lacks bit 18 of +172 or has +168 == k (name?); decompiled: src/obj/obj41b.cpp
+00124034 Obj_SyncTree_00124034            // u32 f(T* o): Nop_000D8FC0(o); while bit 4 of u8 +968 is set (and not bit 5 / 6): with bit 8 of +172 Obj_UpdateFlagged_00123F70(o); bit 2 of +968 = bit 8 of +172 (name?); decompiled: src/obj/obj41b.cpp
+00177078 Obj_PickSetEffect_00177078       // u32 f(T* o, u32 key): SetPickEffect41 on +416. (name?); decompiled: src/obj/obj41b.cpp
+001771DC Obj_PickSetEffect_001771DC       // u32 f(T* o, u32 key): SetPickEffect41 on +420. (name?); decompiled: src/obj/obj41b.cpp
