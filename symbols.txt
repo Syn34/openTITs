@@ -8641,7 +8641,7 @@
 0074D744 Vec4x3_Copy_0074D744             // void f(V4 d[3], const V4 s[3]): 48 bytes copied (lvx / stvx, 16-byte aligned) (name?); decompiled: src/obj/obj22.cpp
 0074E3AC Obj_Clear_0074E3AC               // void f(Obj* o): o->+0 = o->+4 = 0 and the 64 bytes at +16 zeroed (stvx) (name?); decompiled: src/obj/obj22.cpp
 0074E7D0 Field_Mode136_68_0074E7D0        // u32 f(const Obj* o): o->+40 bit 31 set and bit 16 clear ? (o->+136->+68 >> 1) & 3 : 3 (name?); decompiled: src/obj/obj22.cpp
-00767A04 CmpF32_00767A04                  // s32 f(const f32* a, const f32* b): *a > *b ? 1 : *a < *b ? -1 : 0 (name?); decompiled: src/obj/obj22.cpp
+00767A04 CmpF32_00767A04                     // OPD 0x00F36170 (qsort comparator used by FxGeo_SetDef); decompiled: src/obj/obj22.cpp
 0077D7C4 CmpF32_0077D7C4                  // s32 f(const f32* a, const f32* b): *a > *b ? 1 : *a < *b ? -1 : 0 (name?); decompiled: src/obj/obj22.cpp
 00788264 Obj_CopyFields_00788264          // void f(Obj* d, const Obj* s): d's +4 (u8), +32 / +36 / +40 / +48 (f32), +52 (u8) from s (name?); decompiled: src/obj/obj22.cpp
 000653CC Call_398DAC_000653CC             // f(u32 id): sub_00398DAC(*(T**)0x00F65798, id) (name?); decompiled: src/obj/obj22.cpp
@@ -10681,6 +10681,13 @@
 00108AF8 VtB13CF0_Ctor_00108AF8              // (T* o, u32 a, Ref* ref, Holder* h, u32 keep_scale): vtable 0x00B13CF0 ctor, inlined Obj_SetRefs108A34 and 0x922D3BD1 property-set read (name?); decompiled: src/obj/big4_ctor.cpp
 00767818 HandlePool_Grow767818               // (pool, s32 cap) -> new free count: entries reallocated (no null check), new ones chained onto the free list (replaces "HandlePool_Grow", which is taken by 007839B8) (name?); decompiled: src/obj/big4_pool.cpp
 004B8EE4 VtB21C80_VisitChildren              // vfn[12] of vtables 0x00B21C68 / 0x00B21C80 / 0x00B21CC0: vfn[20] of +28 array, vfn[12] of +24 map values, vfn[20] of the +16 / +20 map values' lists; inlined in-order map iterator (name?); decompiled: src/obj/big4_tree.cpp
-002EC2F8 FxGeo_SetDef                        // (ObjD0E9*, GeomDef*) (name?)
-002ED468 Obj8733_Init                        // (Obj8733*): bone tables after the ctor (name?)
-002EFBF0 Obj_BoneMatrix                      // (f32 out[16], ObjEB2F*, const f32 parent[16], WorldObj*, s32 bone) (name?)
+002EC2F8 FxGeo_SetDef                        // (ObjD0E9*, GeomDef* unused): mesh o->12->132->48->0 copied into 32-byte vertices (+24/+28) and a far-to-near sorted triangle list (+32/+36) via an inlined sorted Array + qsort(CmpF32); decompiled: src/obj/big5_fx.cpp (name?)
+002ED468 Obj8733_Init                        // (Obj8733*) -> u32: releases the 8 delay copies at +116, makes (u16 +24 >> 1) & 31 copies "FXDly%02d_%s" (instance of +20 or source vfn[56](12)), vfn[52](byte(+56[8i] * 255)), clears +28/+30/+48; decompiled: src/obj/big5_fx.cpp (name?)
+002EFBF0 Obj_BoneMatrix                      // (f32 out[16], ObjEB2F*, const f32 parent[16], WorldObj* wo, s32 bone): identity, then wo's matrix (flag 0x8000 of +236: times the inverse of the rigid parent), else parent (bone < 0, flag clear), else pose bone of +212's vfn[28] (flag clear: times parent); VMX lane-exact; decompiled: src/obj/big5_mat.cpp (name?)
+
+# Game code large functions part 5
+00218DD8 Area_ApplyLayerSettings             // (Area*, Entity*): def +176 kind (0x86DF6221 / 0x04C5F92B / 0x3F2F1B0C / 0x7BF02FB1) picks the player's animator layer of type 11 / 15 / 7 / 1 and applies def +180 / +192 / +188 / +184; decompiled: src/obj/big5_area.cpp (name?)
+00216AB0 AreaDef_Construct                   // (AreaDef*, const Src*): base ctor 0x000C2B90, name +140, vtable 0x00B19FB0, kind +176 and its settings block (+180 128 B / +184 152 B / +188 144 B / +192 48 B) with descriptor defaults; decompiled: src/obj/big5_area.cpp (name?)
+0025C658 Obj_RebuildCMdl                     // (Owner*) -> u32: releases the 8 models at +2912, then per slot (u16 +2944, 360 bytes from +56) picks the profile's variant and makes "CMdl%02d_%s" models (GeomInstance vfn[56](13) or WorldObj_Instance of the def) placed at the entity's matrix, group 10; decompiled: src/obj/big5_cmdl.cpp (name?)
+000FEF54 AnimLayer_ApplySettingsA            // (Animator* layer, Settings* block, 0): kind 0x86DF6221 area settings onto a type-11 layer (name?)
+000FD7AC AreaSettingsA_Construct             // (block): the 128-byte kind-A settings block (name?)
