@@ -12279,7 +12279,6 @@
 003739D0 Obj_SpinY3739D0                    // u32 (-, Obj* o) callback: same with o->192 / o->352; decompiled: src/obj/mid16_a.cpp
 00106FB8 Cam_AimDir106FB8                   // void (Cam*, const Vec3* dir): pitch-window rotate dir -> c->512, c->528 = acos(dot(c->240)) scaled; decompiled: src/obj/mid16_a.cpp
 00101A60 Cam_LookAt101A60                   // f32 (Cam*, eye, target, Xf* out): pitch-window look-at, Cam_Fn0FD040, out->48 = target - dir*dist; returns dist; decompiled: src/obj/mid16_a.cpp
-001007D0 Cam_RotateToward1007D0             // (Vec3* out, const Vec3* axis, const Vec3* v; f1 angle) (name?)
 00020100 Obj_SnapToSpline20100              // bool (Obj*): nearest spline (filter 0x00F2D998) to o->176 + o->160*K, random t, pos/tangent, o->352 = tangent x up (flipped); decompiled: src/obj/mid16_b.cpp
 002C6F78 Obj_TurnToFocus2C6F78              // f32 (Obj*, f32 dt): eases o->208 toward focus dir (*(0x00F65CA0)+0x1281E0), timer o->464/468; returns angle; decompiled: src/obj/mid16_b.cpp
 0074C048 Quat_Slerp74C048                   // void (f32 out[4], const f32 a[4], const f32 b[4]; f1 t): lerp above dot 0.99, else slerp; decompiled: src/obj/mid16_b.cpp
@@ -12666,3 +12665,31 @@
 00F557F4 g_NodeGraph_00F557F4               // Graph*: +4 -> u16 +2 node count, +12 20-byte nodes (Walker_Step1574C) (name?)
 00F557F0 g_AvoidList_00F557F0               // List*: +24 count, +3732 entry pointers (Obj_ResetBase12928) (name?)
 001CCF40 Obj_ProbeContacts_001CCF40         // (Obj*, u8* a, u8* b): refreshes the two contact bytes (Obj_UpdateContacts1CE094) (not decompiled) (name?)
+
+# Game code VMX sweep part 5
+0001B8C0 AttachList_Add_0001B8C0        // u32 (List*, Obj*, a, -, -, -, hash, const f32 pos[3], a9, a10; f1..f3): attachment record e = l->+3732[l->+24] (pos through Rec80 rows or o/bone rows -> e+32); decompiled: src/obj/vmx5_obj.cpp
+0001E420 Obj_AwayPoint_0001E420         // void (f32 out[3], Obj*, const f32 dir[3]): point away from dir (type values via property descriptors; nav / box / leash range, else random spawn point); decompiled: src/obj/vmx5_obj.cpp
+00023420 Ai_ChaseStep_00023420          // void (Obj*): one chase step toward o->+52 (reach 2*value, facing turn by pi/4 - angle); decompiled: src/obj/vmx5_obj.cpp
+00040AE8 Ground_DropPoint_00040AE8      // void (-, const f32 p[3], f32 out[3]): ray down 20 from p+(0,1,0) (all-hits collector, filter 5) -> first hit or start; decompiled: src/obj/vmx5_hk.cpp
+000B33D8 Ground_DropPointB33D8          // void (const f32 p[3], f32 out[3]): as 00040AE8 (filter 4), first hit whose collidable +28 type != 8, else p; decompiled: src/obj/vmx5_hk.cpp
+000EE310 Launcher_Aim_000EE310          // bool (f32 dir[3], Launcher*): target point (+80 vt[284]) + offset in look frame, Aim_SolveLaunch query; decompiled: src/obj/vmx5_obj.cpp
+000EE710 Launcher_Fire_000EE710         // Obj* (Launcher*): Obj_SpawnDef0EDE30 with the aimed dir, aim frame +448..+520 on the spawn; decompiled: src/obj/vmx5_obj.cpp
+000EEB08 Launcher_AimBallistic_000EEB08 // bool (f32 vel[4], Launcher*): as 000EE310 with Ballistic_Solve4A2D78 (speed at vel+16); decompiled: src/obj/vmx5_obj.cpp
+000EEE80 Launcher_FireBallistic_000EEE80 // Obj* (Launcher*): as 000EE710 with 000EEB08; decompiled: src/obj/vmx5_obj.cpp
+001007D0 Vec_RotateToward_001007D0      // void (f32 out[3], const f32 from[3], const f32 to[3]; f32 maxAngle): turn from toward to by at most maxAngle; decompiled: src/obj/vmx5_math.cpp
+0010AD50 Cam_LookUpdate_0010AD50        // void (Cam*, -, f32 m[4][4]; f32 dt): pad-driven look camera (toggle 0x2000, eased yaw/pitch, RotationY/X on m); decompiled: src/obj/vmx5_math.cpp
+00112870 Cam_FreeLookUpdate_00112870    // void (T*; f32 dt): free-look camera (pad channels 3/2 -> pitch/yaw speeds +176/+180, rows +112.. turned); decompiled: src/obj/vmx5_math.cpp
+00185370 Obj_OnHitImpulse_00185370      // void (Obj*, HitEvent*): hit reaction with 0.25 s cool-down (+1616), body impulse (+224 vt[68]/vt[84]), vt[352] reaction; decompiled: src/obj/vmx5_hk.cpp
+00189B20 Obj_HkPushUpdate_00189B20      // void (Obj*; f32 dt): stick input -> body impulse (Hk_Activate + body+224 vt[96]), smoothed dir +1504..; decompiled: src/obj/vmx5_hk.cpp
+001E1B70 Obj_OffsetMatrix_001E1B70      // void (f32 out[4][4], Obj*): Quat_ToMatrix(p+400) x frame (o rows / o->+616 / bone), translation p+384 through it, NormalizeInPlace; decompiled: src/obj/vmx5_math.cpp
+001EEF20 Obj_ProbeRay_001EEF20          // bool (Obj*, const f32 from[3], const f32 dir[3], f32* dist, u8* seen): phantom +852 vt[64] cast, sorted 48-byte hits; decompiled: src/obj/vmx5_hk.cpp
+001F02A8 Obj_AimFrame_001F02A8          // void (f32 out[4][4], Obj*): aim frame (up x fwd, up, fwd of o->+500; offset through o->+856 rows tilted by RotationX); decompiled: src/obj/vmx5_math.cpp
+00277C90 HkShape_FromDesc_00277C90      // hkpShape* (const ShapeDesc*): 0 sphere (32), 1 capsule (64, 00899B24), 2 box (48), else 0 (HkAlloc); decompiled: src/obj/vmx5_hk.cpp
+002BB3F0 Hud_TrackTarget_002BB3F0       // void (T*): target pointer (target +144 through camera/view rows, View_ProjectPoint behind check) -> 002BB168 / 002BAC40; decompiled: src/obj/vmx5_ui.cpp
+0033E2C0 Popup_SpawnScore_0033E2C0      // u32 (Popups*, Obj*, s32 n, const f32 pos[3]): "+n"/"-n" popup record (144 bytes) appended to PtrVector t+2772; decompiled: src/obj/vmx5_obj.cpp
+003CC068 Carry_Update_003CC068          // void (Carry*): carried item on the carrier's bone 0x7E95647C, or put down (mode +88); decompiled: src/obj/vmx5_obj.cpp
+00436A90 Sweep_HitObjects_00436A90      // u32 (Sweep*): phantom +28 vt[64] cast s+96 -> s+112, unlisted game objects get vt[352](g, 0, 0; g->+344); decompiled: src/obj/vmx5_hk.cpp
+00899B24 HkCapsuleShape_Ctor            // (hkpCapsuleShape*, const hkVector4* a, const hkVector4* b; f1 radius) (name?)
+002BB168 Hud_Track_002BB168             // (T*, const f32 d[3]) (name?)
+002BAC40 Hud_Track_002BAC40             // (T*, const f32 d[3]; f1 scale) (name?)
+00F1DE58 Vt_RayAllHitsCollector48       // vtable of the 8-inline 48-byte-hit all-hits collector (data, name?)
