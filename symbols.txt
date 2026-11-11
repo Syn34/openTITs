@@ -8795,7 +8795,6 @@
 004AE414 Profile_Cached_F65F7C            // u32 f(): *(u32*)0x00F65F7C, set from Save_Profile0C9FC8(0x02D45643) when 0 (name?); decompiled: src/obj/obj22.cpp
 004B40CC Call_4D3378_0_004B40CC           // f(Obj* o): sub_004D3378(o, 0x00AEE340, 0); sub_004B2DA0(o) (name?); decompiled: src/obj/obj22.cpp
 004B499C Call_4D3378_1_004B499C           // f(Obj* o): sub_004D3378(o, 0x00AEE348, 1); sub_004B2DA0(o) (name?); decompiled: src/obj/obj22.cpp
-004D2BFC NodeOwner_Init                   // (p, name, 0, 0): inits the 52-byte binding owner made by Cond_Init (name?); not decompiled
 004D2BB8 Binding_Reserve                  // (binding, n) (already named); decompiled: src/obj/obj23.cpp
 
 # Renderer sweep part 11
@@ -11495,7 +11494,6 @@
 00371360 Obj_TalkResume                   // (o) (name?); called by 0x003735C8
 000E5EF0 Obj_RefreshBase                  // (o, x): reads r4 (passed through by 0x001C7C5C) (name?)
 000E02F8 Obj_SetRagdollBase             // (o, u8 full): full: o's hit-queue records (0x01022100) swap-removed (lvx/stvx), effect +356 ended (0x879D1B7A / component 0x0027469E), +364 = 0; then Obj_ShutdownBase_000D74C0; decompiled: src/obj/vmx1_hit.cpp
-000E4544 Obj_SoundOffBase                 // (o, full) base of 001E6FA0 (already in symbols.txt)
 000F6A68 Obj_ApplyKindEntry               // (a, entry, b, d, e, f) (name?); called by 0x000F8058
 
 # Game code medium sweep part 11
@@ -12005,7 +12003,6 @@
 0017FCE8 Trail_AddPoint17FCE8             // (vec, o): last point = o+144, append when > 1.0 away, drop inner points <= 0.01 apart; decompiled: src/obj/mid14_math.cpp
 007EE08C Hk_SetF32At_007EE08C             // (f32* field, const f32*) (Havok; name?)
 0012BD94 Cb_Apply_0012BD94                // (o, bool, u32) (reads r3..r5; name?)
-003044B0 SM_SetState_003044B0             // (o, u32 hash) (reads r3 / r4; name?)
 
 # Game code large functions part 19
 002464F0 Owner_StartEffects_002464F0    // (Obj* o): owner o+216; o+1376 from o+356; fills empty effect slots +1364 / +1352 / +1360 from the global effect set entries named by owner +880 / +872 / +876 (inlined TreeSelect), component 0x0027469E gets o+160, +1368/+1372 = sub-set values 2527 / 0x10CBB, Effect_Start, Effect_SetTime(.text 0x002464EC) (name?); decompiled: src/obj/big19_fx.cpp
@@ -12397,7 +12394,6 @@
 0021F4E8 Area_OnEnter_0021F4E8           // (o, x): the action of 0x0021F9E8 after Area_Enter (name?)
 003742E0 View_UpdateMarker_003742E0      // (o, u16 idx): called by 0x00374590 (name?)
 00489328 Spawn_FromCmd_00489328          // (world, c + 140, c + 9, c + 74, +160, +164, bool) from 0x004337D0 (name?)
-00015C98 Obj_SetPosFromRow_00015C98      // (o, row3) from 0x00015E40 (name?)
 004D3798 Game_ShutdownStep_004D3798      // () from 0x004D39B0 (name?)
 006D6514 Voice_GetItem_006D6514          // (voice, s16 j) from 0x0044C888 (name?)
 006F9CA8 VoiceItem_ReadParam_006F9CA8    // (item, f32* v, ? w) from 0x0044C888 (name?)
@@ -12914,7 +12910,6 @@
 001B9B70 Obj_Ctor_001B9B70               // (p, &def): 272-byte object from 001BB6C4 (name?)
 00111FE0 CamFollower_Ctor_00111FE0       // (p, cam, target, owner): 224-byte camera follower (name?)
 004F457C Xmlb_Apply_004F457C             // (dst, &doc, 0): applies the xmlb chunk loaded by 004F505C (name?)
-004F4B28 Xmlb_Apply_004F4B28             // (dst, &doc, 0): applies the xmlb chunk loaded by 004F52C4 (name?)
 0091A2CC Skel_BoneCount_0091A2CC         // (skel) -> s32 (name?)
 0091A7D8 Skel_BoneAt_0091A7D8            // (skel, i) -> bone (name?)
 00014004 Obj_ApplyAnimHash_00014004      // (o, hash): second mode name of 0003DED8 (name?)
@@ -13392,6 +13387,70 @@
 002B99C0 Attach_Release_002B99C0          // u32 f(T* o, x): release x from attachment table +24 (quirk: only entry 0 compared), FLT_MAX via Hk_SetF32At, effects hash 0x3E5C25CD, Body_SetMass (f1 = entry +128), Obj_Detach0D72C0; decompiled: src/obj/mid27_f.cpp
 00440CD8 Bank_ReadRecord_00440CD8         // (Array*, rec, Iff*, s32 *0x00F65B3C): reads one 112-byte bank record (reads r4-r6 only) (name?)
 0033C5B4 Section_RecordReset_0033C5B4     // (rec) from Section_Reset mode 4 (name?)
-00299F74 Obj_DropEntry_00299F74           // (o, e) per +64 entry in 0x0029A108 (reads r4 only) (name?)
 002C96A8 Obj_Fn2C96A8                     // (o; f1 unread per regflow) (name?)
 002C2420 Obj_Fn2C2420                     // (o, 0): may set u8 +320 (name?)
+
+# Game code sweep part 47
+00074354 SeqCmd_SpawnAt_00074354          // u32 f(Cmd* c) (sequence command, like SeqCmd_Spawn_0042EF6C): when Ptr_DerefNonZero(c->+20) fails, String_Format(0x00AC4B08, Hash_ToString(c->+12), Hash_ToStrin (name?); decompiled: src/obj/obj47.cpp
+00075880 Cmd_ApplyFlagBits_00075880       // u32 f(Cmd* c, X* x) (like Cmd_ApplyBytes_00075C04): the target t (CompTarget34(x, c->+12) when c->+12 is set, else / when that fails Obj_FindById(c->+16)), narr (name?); decompiled: src/obj/obj47.cpp
+0008A36C Cmd_New40_0008A36C               // T* New(-, Xml* x): a 40-byte command (0 when Mem_Alloc(40, 0, 16) fails): Obj_InitVt_B21C98(m, x), vtable 0x00B10490, +12 / +16 / the u64 +24 / u8 +32 = 0; hash (name?); decompiled: src/obj/obj47.cpp
+0009F464 Cmd_New36_0009F464               // T* New(-, Xml* x): a 36-byte command (0 when Mem_Alloc(36, 0, 16) fails): Obj_InitVt_B21C98(m, x), vtable 0x00B113C0, +12..+24 = 0, +28 = 1.0f, u8 +32 = 0, u8 + (name?); decompiled: src/obj/obj47.cpp
+000E74B8 Obj_AimPoint_000E74B8            // void f(Vec3* out, Obj* o): with a one-entry list o->+388 (u16 count +8 == 1) whose first 48-byte row's +28 is set, out = that object's +288 vec3 (r3 = out + 8). (name?); decompiled: src/obj/obj47.cpp
+0011A42C TunedObj_InitFwd_0011A42C        // void f(o, a1..a5, -, a7, f1, f4, stack args) (r3..r10 and the FPRs passed through): TunedObj_Init_00119FF0 with the caller's stack arguments copied down one fra (name?); decompiled: src/obj/obj47.cpp
+001E9D98 ObjB18260_Spawn_001E9D98         // T* f(A* a, B* b): SpawnFromRecord47 with rec->+8 |= 0x20000000, a 464-byte VtB18260_Ctor_001E9C90 object. (name?); decompiled: src/obj/obj47.cpp
+001AC38C Obj1AC1E8_Spawn_001AC38C         // T* f(A* a, B* b): SpawnFromRecord47 with rec->+8 |= 0x00008000, a 448-byte 0x001AC1E8 object. (name?); decompiled: src/obj/obj47.cpp
+001F9BA0 ColObj_New_001F9BA0              // T* f(x, XmlCursor* cur, const Def* tmpl, parent): the default 256-byte collision record d (Rec_Init7576D8(d, tmpl->+12, tmpl->+16, tmpl->+20, "", ...) with the  (name?); decompiled: src/obj/obj47.cpp
+0020DE3C Volume_FlushPending_0020DE3C     // u32 f(Volume* v): flushes the u16-counted pending list v->+396 (count +390; nothing to do -> r3 = v): +412 |= 0x02000000, the 8-byte entries memmove'd to the bu (name?); decompiled: src/obj/obj47.cpp
+00299F74 Owner_DeleteThing_00299F74       // void f(-, T* t) (t 0 -> nothing): t->+24 ->vslot 40(.., 0) when its s16 +178 is positive; t->+52 ->vslot 40(.., 1) when its +172 has 0x40000; each 8-byte entry  (name?); decompiled: src/obj/obj47.cpp
+002F7BC4 Obj2F6578_Spawn_002F7BC4         // T* f(A* a, B* b): SpawnFromRecord47 with rec->+4 |= 0x00080000, a 1136-byte 0x002F6578 object. (name?); decompiled: src/obj/obj47.cpp
+003072A8 Obj305A44_Spawn_003072A8         // T* f(A* a, B* b): SpawnFromRecord47 with rec->+4 |= 0x00040000, a 1088-byte 0x00305A44 object. (name?); decompiled: src/obj/obj47.cpp
+002AD2A4 VtB1CAB0_Dtor_002AD2A4           // T::~T(T* o): vtables 0x00B1CAB0 / +24 0x00B1CB10, Obj_ResetBody_002AD030(o), PtrVector_Clear / Nop of +280, +260, +240; then the base part: vtables 0x00B1BE30 / (name?); decompiled: src/obj/obj47.cpp
+0033DE30 Fader_Update_0033DE30            // void f(T* o, f32 dt): when u8 o->+2812 is set, for each element e of the u16-counted pointer array o->+2772 (count +2780): +88 += +92, +68 += +88 * dt (fmadds), (name?); decompiled: src/obj/obj47.cpp
+003A01E4 PoolOwner_Dtor_003A01E4          // T::~T(T* o): the global *(0x00F657FC) = 0; PtrVector_Clear / Nop(o + 92); when o->+76 is set, o->+80 ->vslot 8(.., o->+76, u16 +68 * (u16 +74 >> 1)); Array_Dest (name?); decompiled: src/obj/obj47.cpp
+003B0360 Actor_TryReact_003B0360          // u32 f(Actor* o): k = o->vslot 32(o, 0); with k 7 and u8 o->+159 clear, or with k 1 / 2 and the f32 o->+172 at least the threshold, o->vslot 28(o, 0, 8) and u8 + (name?); decompiled: src/obj/obj47.cpp
+00435978 AnimSet_Restart_00435978         // u32 f(T* o): for each 16-byte entry of the u16-counted array o->+80 (count +88) with an animator a (+0) and a key k (+8): when a->vslot 60(a) gives a track t, A (name?); decompiled: src/obj/obj47.cpp
+00446D50 SoundHandle_Release_00446D50     // void f(Handle* h): releases the sound s = h->+32 when its count +108 drops to 0: unlinked from the lists of 0x010ACC40 (prev +116 / next +120; head +8196 for th (name?); decompiled: src/obj/obj47.cpp
+00455728 Item_Spawn_00455728              // u32 f(Owner* o, const char* name) (name 0 -> nothing, r3 = o): the definition e = PointMap_Find(*(0x00F8F154)->+16, String_HashNoCase(name)) (missing: String_Fo (name?); decompiled: src/obj/obj47.cpp
+004BFE6C NodeSet_Clone_004BFE6C           // T* Clone(const T* src): a 44-byte node set (SmallAlloc(44); u16 +4 = 1, vtable 0x00B21EF8, PtrVector_Construct(+20) with u16 +26 = 4, +8 / +40 = 0; a failed all (name?); decompiled: src/obj/obj47.cpp
+004D2BFC NodeGraph_Construct_004D2BFC     // T::T(T* o, a, n, k): +4 = 0, vtable 0x00B225D0, the vector +8 (PtrVector_Construct, u16 +14 = 4, PtrVector_Init(+8, n or 2, 0, 0)), +28 / +32 two more vectors o (name?); decompiled: src/obj/obj47.cpp
+00767484 IndexPool_Init_00767484          // u32 f(Pool* o, u32 n): +0..+20 = 0, +24 = n, +28 = n 16-byte entries (Mem_Alloc(16 n, 0, 16), +8 of each cleared; none for n 0), u8 +32 = 1; with n: each entry  (name?); decompiled: src/obj/obj47.cpp
+0077CBE0 NodeRef_Acquire_0077CBE0         // u32 f(Handle* h, a, f32 x): h->+4 += 1; with h->+0 set, 0x0077C760(h, a, h->+0, h; f1 = x) (r3 = its result). Otherwise a 20-byte node from the shared free list (name?); decompiled: src/obj/obj47.cpp
+00015C98 Nav_CanReach_00015C98            // bool f(T* o, const Vec3* p): whether the navigation query o + 216 can reach p: a stack query (NavQuery_Towards6308AC(q, &copy of p, o + 216, 0x011AD1AC)); when  (name?); decompiled: src/obj/obj47b.cpp
+0001AE6C Group_NearestMember_0001AE6C     // Obj* f(Group* o, const Vec3* p, -, flag (r6); f32 r): of the s32 o->+0 members (pointers at +592) that pass vslot 120 and fail vslot 156 (and pass vslot 88 when (name?); decompiled: src/obj/obj47b.cpp
+00027E98 Obj_SetEffect356_00027E98        // u32 f(Obj* o, u8 on): the effect o->+356. On: when not there yet, Effect_New(0x5135BEBC) to +356 (0 -> r3 = 0), its component 0x0027469E (Effect_FindComponent;  (name?); decompiled: src/obj/obj47b.cpp
+0005C848 Obj_UpdateCamTarget_0005C848     // u32 f(Obj* o): the camera target o->+420 for the player body t (*(*(0x00F65CA0) + 4216) when its +192 has bit 2, else 0; read at t->+148 unchecked). Without one (name?); decompiled: src/obj/obj47b.cpp
+0006B918 Cmd_AttachTarget_0006B918        // u32 f(Cmd* c, X* x) (like Cmd_ApplyFlagBits_00075880): the target t (CompTarget34(x, c->+12), else Obj_FindById(c->+16)); its def d = Target_GetDef0D951C(t); no (name?); decompiled: src/obj/obj47b.cpp
+0009084C Cmd_SetFlag322_0009084C          // u32 f(Cmd* c, X* x): the object r: the target's +160 (CompTarget34(x, c->+12) unless u8 c->+21 is set, else Obj_FindById(c->+16)), or with no target and u8 +21  (name?); decompiled: src/obj/obj47b.cpp
+000DBE78 Npc_Say_000DBE78                 // bool f(Npc* o, a, b, u8 flag (r6), -, -, r9; f1, f2, f3; stack arg 9 v): plays the line a (0 -> r3 = 0) on the speaker o->+164 (0 -> 0): the animator Anim_Find3 (name?); decompiled: src/obj/obj47b.cpp
+001126D4 Obj_WorldToLocalMtx_001126D4     // u32 f(Obj* o, -, Mtx* out): out = o's 4x3 rows +112/+128/+144/+160 (row stride 16); a stack copy whose translation row becomes T - R v (v = Field_Get216_320v_00 (name?); decompiled: src/obj/obj47b.cpp
+00191E54 VtB14DE0_Dtor_00191E54           // T::~T(T* o): vtables 0x00B14DE0 / +380 0x00B14F88 / +384 0x00B14FB0, List1013B48_Remove(o); when *(*(0x00F65CA0) + 0x001281F4) has +52 bit 0x40000000: the leade (name?); decompiled: src/obj/obj47b.cpp
+001A44E0 VtB14FD8_Construct_001A44E0      // T::T(T* o, const Src* s): Thunk_000C2B90(o, s), vtable 0x00B14FD8, the vec3 vector +140 (PtrVector_Construct, u16 +146 = 12, PtrVector_Init(+140, 16, 0, 1)), +1 (name?); decompiled: src/obj/obj47b.cpp
+001ED358 XmlDef_New320_001ED358           // T* f(a, b, c, Def* d): a 320-byte object m (SmallAlloc; 0 on failure): Wrapper_0CC4D4(m, c, d, 0, 0x01164BD0, 0x01164B30, 1, 0, 0, -, 0; f1 = the .text f32 0x00 (name?); decompiled: src/obj/obj47b.cpp
+002EDB10 VtB1D528_Dtor_002EDB10           // T::~T(T* o): vtable 0x00B1D528; the ((u16 +24 >> 1) & 31) parts +116.. released (vslot 8); with +12: +20 (when set) and +16 released, +12 ->vslot 40(.., 1, 0) w (name?); decompiled: src/obj/obj47b.cpp
+003044B0 Obj_SetEffect40_003044B0         // u32 f(Obj* o, name): the effect o->+40 replaced: the old one destroyed (Effect_Destruct, SmallFree(e, 140)); d = EffectDef_Find(name, 0, 1) (none -> r3 = 0); a  (name?); decompiled: src/obj/obj47b.cpp
+0043E040 StatBlock_Construct_0043E040     // T* f(T* o) (leaf): six counters keyed by the global serial g = *(0x00F65AAC) (incremented): vtable 0x00B21444 with +4 = the word g of the table 0x00F6592C, +8 / (name?); decompiled: src/obj/obj47b.cpp
+00442FB8 SpawnParams_Copy_00442FB8        // u32 f(T* d, const T* s): d's fields +0..+8, +16..+24, +32..+56 copied from s (the bytes +44..+47 one by one); the references +60 / +64 replaced by s's (the old  (name?); decompiled: src/obj/obj47b.cpp
+004F4B28 XmlAssoc_Apply_004F4B28          // u32 f(-, XmlCursor* x, u8 b): x's first child c must be the element 0xC53F7E26 (hash +20 when u8 +24 has 0x80; else r3 = the hash or 0); with the context {u8 b, (name?); decompiled: src/obj/obj47b.cpp
+00789A1C SortedTbl_Find_00789A1C          // s32 f(Table* t, const u32* key): the 20-byte rows t->+8 (u16 count +2), first sorted (qsort(rows, n, 20, t->+32)) when u16 +6 has bit 1 (which is cleared); then (name?); decompiled: src/obj/obj47b.cpp
+00024230 Actor_PopState_00024230          // u32 f(Actor* o, u8 keep): unless keep, by the state o->+4: 1 -> the previous state restored (StatePop47); 12 -> o->vslot 220(o, 13), the pop, Obj_SetEffectHash_ (name?); decompiled: src/obj/obj47b.cpp
+00039178 Actor_FaceTarget_00039178        // u32 f(Actor* o, Obj* t, a): +436 = 0, +388 = a, the direction +192 = t->+176 - o->+176 (y zeroed unless u8 +305 has 0x20, when it has 0x40 or vslot 132 fails),  (name?); decompiled: src/obj/obj47b.cpp
+00080340 Cmd_Construct_B0FC98_00080340    // T::T(T* o, Xml* x): Obj_InitVt_B21C98(o, x), vtable 0x00B0FC98, f32s +12 = 1, +16 = 0, +20 = 1 read from 0x8F123DDD / 0xB7EA3D94 / 0xBBD6EAAF (defaults from the (name?); decompiled: src/obj/obj47b.cpp
+0008546C Cmd_DetachRecs_0008546C          // u32 f(Cmd* c, X* x): the object t (Effect_Bind4BB7E0(x, c->+16, 0), then with create = 1; else Obj_FindById(c->+12)->+160, Hash_ToString(c->+12) when not found) (name?); decompiled: src/obj/obj47b.cpp
+000DAF24 Obj_OnMessage_000DAF24           // u32 f(Obj* o, Msg* m): message hooks by the hash m->+8 (0x2FE47F7F: Obj_RandRange_00257F10 on Obj_FindComponent(o, 29, 0); 0x21595665 / 0x00C73980: o->+220 ->vs (name?); decompiled: src/obj/obj47b.cpp
+000E4544 Obj_SetRagdoll_000E4544          // u32 f(Obj* o, u8 on): with on, o->vslot 416(o, 4, 0) and, for each 48-byte row of the u16-counted list o->+388 (re-read after each row handled) with a skeleton  (name?); decompiled: src/obj/obj47b.cpp
+000EF3C8 Obj_LaunchFactor_000EF3C8        // u32 f(Obj* o): the launch speed factor o->+552 from the aim vector v (o->vslot 140(&v, o)): with a horizontal length sqrt(vx^2 + vz^2 + C0^2) above C4, the hori (name?); decompiled: src/obj/obj47b.cpp
+0016F350 Obj_ClampSpeed_0016F350          // u32 f(T* o, f32 x): the f32 o->+348 clamped between the .text f32 0x0016F348 and o->+344: for state o->+772 other than 1, +348 = clamp(+348 + x); for state 1, u (name?); decompiled: src/obj/obj47b.cpp
+001C70C8 Obj_SetLimbsRagdoll_001C70C8     // u32 f(Obj* o, u8 on): with on, the six 20-byte limb slots (+584 body, +588 link): a set link is released (->vslot 40(.., 1) when its +172 has 0x40000) and clear (name?); decompiled: src/obj/obj47b.cpp
+001F6808 Obj_CanTakeHit_001F6808          // bool f(Obj* o, a, b, c): o->vslot 32(o, 0) set or no +496 -> 0; with the f32 +508 at most the .text f32 0x001F6800 the target o->vslot 272(o) must exist and its (name?); decompiled: src/obj/obj47b.cpp
+0020D0C8 Query_New_0020D0C8               // T* New(-, Xml* x, y): a 192-byte query (Mem_Alloc(192, 0, 16); Query_BaseCtor_00746148(m, y, 0, 0, 1, 0, 1, 0, 0, 0); a failed alloc is used unchecked) whose fl (name?); decompiled: src/obj/obj47b.cpp
+0025CF78 Mesh_InitGrid_0025CF78           // u32 f(-, Mesh* b, w, h): a (w x (h + 1)) grid: +0 = 6, u16 +58 = w * h + h vertices (two Buffer_Alloc52F198 vertex buffers +4 / +20 of 24 bytes each, align 128) (name?); decompiled: src/obj/obj47b.cpp
+0034A1FC SoundSet_Release_0034A1FC        // u32 f(T* o, Item* x): for each entry e of the u16-counted list o->+92 (re-read every step) with a bank (+24): every sound s (+16[j], s32 count +20) whose owner  (name?); decompiled: src/obj/obj47b.cpp
+0036E2F0 Npc_SetAlert_0036E2F0            // u32 f(Npc* o, u8 on): the alert state ((o->+160 >> 1); low bit kept). On, from state 0: o->+24 ->vslot 40(.., 1, 1), Obj_Attach364408(o, +256) when set, state 1 (name?); decompiled: src/obj/obj47b.cpp
+001AC1E8 Obj1AC1E8_Ctor                    // (m, rec): 448-byte object ctor from a Record_Init_000E44E0 record (via 001AC38C) (name?)
+002F6578 Obj2F6578_Ctor                    // (m, rec): 1136-byte object ctor from a Record_Init_000E44E0 record (via 002F7BC4) (name?)
+00305A44 Obj305A44_Ctor                    // (m, rec): 1088-byte object ctor from a Record_Init_000E44E0 record (via 003072A8) (name?)
+001F85F0 ColObj_Ctor1F85F0                 // (m, const Rec256* d): 304-byte collision object ctor (via 001F9BA0) (name?)
+0077C760 NodeRef_AcquireExisting           // (h, a, h->+0, h; f1): the already-bound path of NodeRef_Acquire_0077CBE0 (name?)
+00F2FAF8 OPD_FindChildByName               // .opd of the WorldObj_ForEach callback used by 0008546C ({name, result} record) (name?)
+00F3A028 OPD_SortedTblCmpU32               // .opd of the default u32-key row comparator recognised by SortedTbl_Find_00789A1C (name?)
+00F65AAC g_StatSerial                      // u32 serial counter incremented by StatBlock_Construct_0043E040 (name?)
