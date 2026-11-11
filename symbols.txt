@@ -3609,7 +3609,7 @@
 # World event handler callees, part 16
 000A78D4 Param_SetName0A78D4                  // (Param*, const char* s): non-empty s -> String_Copy(p +20, s, 64), else returns s; was Param_SetMatrix0A78D4 (it copies a name, not a matrix); decompiled: src/world/hevent16_a.cpp (name?)
 0091EAB8 Hk_SetTransform91EAB8              // (body, const f32 m[4][4]) (existing name)
-00924B90 Hk_SetAabb924B90                     // (phantom, const vec4 aabb[2]): Havok range (name?)
+00924B90 Hk_SetAabb924B90                   // (already named) (body, const hkAabb*)
 000FC040 Camera_PushTarget0FC040              // (Camera*, Target*, -, u8 priority; f32 blend) -> u32: target stack +368 / count +345, blend state +704..+900; decompiled: src/world/hevent17_f.cpp (name?)
 0010BD88 Target_Construct10BD88               // (Target* 688 bytes, Camera*, Object*, Object* look): frame / bone 0x0021C5E0, "CompTargeting_Binocucom" component via the registry 0x01056F04; decompiled: src/world/hevent17_g.cpp (name?)
 0010D9B0 Target_Enable10D9B0                  // (Target*, u8 on) -> u8 count > 0: +180 s16 enable count, on clears +182 bits 14/15; decompiled: src/world/hevent17_a.cpp (name?)
@@ -11815,7 +11815,7 @@
 004B6894 Tree_SeekA_004B6894              // void f(T* o): TreeSeek35 on the tree 0x010C27B8 (current 0x011DE490), the found node's object getting vt[56]. (name?); decompiled: src/obj/obj35.cpp
 004B6C88 Tree_SeekB_004B6C88              // void f(T* o): TreeSeek35 on the tree 0x010C2820 (current 0x011DE4A0), the found node's object getting vt[24]. (name?); decompiled: src/obj/obj35.cpp
 00221F3C Target_Construct_00221F3C       // (obj, const TargetDef* rec), 192-byte object (name?)
-000CEA48 Slot_BuildMatrix_000CEA48       // (Mat* out, a, s32 b, c, Vec4* v, d) (name?)
+000CEA48 Slot_BuildMatrix_000CEA48          // (already named) out = (q rotation, t) through the bone / m+80 / o+96 frame; decompiled: src/obj/vmx4_math.cpp
 001C3EF0 Obj_Range_1C3EF0                // (o, 0) after leaving range in 001C4390 (name?)
 001AEA50 Obj_Check_001AEA50              // (o; f1) reads f1 (name?)
 000D74C0 Obj_ShutdownBase_000D74C0       // (o, full) base of 0020ABD8 (name?)
@@ -12456,14 +12456,12 @@
 004C07D0 Clone4C07D0                        // Obj* (const Obj*): vtable clone, SmallAlloc(68), vtable 0x00B21F40, copies +8/+24/+36..+64, +28/+32 = SystemState 0x011DE094 +16; decompiled: src/obj/mid17_e.cpp
 002140C0 Area_TryEnter2140C0                // u32 (Area*, Actor*): o->484 level, join link list (o->613/616/620, l->112, List_PushFront_00441C68), Field96_SetIfMoved_00441D18, PushStack_Push, Area_Enter unless state 0/3; decompiled: src/obj/mid17_e.cpp
 002142E0 Area_TryLeave2142E0                // u32 (Area*, Actor*): counterpart: o->484 = 0, leave link list (List_Unlink_00441CB8), PushStack_Remove, Area_Leave unless state 0/3; decompiled: src/obj/mid17_e.cpp
-00106770 Vec_TurnToward106770               // (Vec3* out, const Vec3* to, const Vec3* from; f1 rate) (name?)
 003CCC68 Obj_SetSplinePos3CCC68             // (Obj* o, const Vec3* p): t = SplineInstance_Nearest(o->108, p), point/tangent, heading blended into body o->4 (+128 row) -> Mat34_FromRotPos553B4C -> body vfn[84]; forward/backward/idle anim (0xA76CE5BD / 0xA76CE5B7 / 0xE1C7FA75) by t vs o->104 +- 0.001; o->104 = t, o->16 = pos; replaces the mid17 "(name?)" Obj_SetSplinePos3CCC68; decompiled: src/obj/mid18_a.cpp
 00058488 Obj_ApplySway58488                 // (Obj*, Mat34* frame; f1) (name?)
 000DCECC Effect_Spawn0DCECC                 // (-, u32 kind, const Mat34* m, 1) -> Effect* (reads r4..r6 only) (name?)
 00222654 Area_AddEffect222654               // u32 (Area*, Effect* e): when the u16 at 0x0119308C is set, in-order walk of the tree *(e+8 ->12) (stack e+24.., count s16 e+104, cur e+108); payloads with vfn[32]() == 5 and +28 part kind ((+4>>10)&0x3F) == 10 get EmitterInstance_Set340(part, 0x01193088); returns 0; decompiled: src/obj/mid18_a.cpp
 004286D8 Wave_Centre4286D8                  // (Vec3* out, Wave* o, o->0) (name?)
 004A83D8 Curve_Ease4A83D8                   // f32 (f32 a, f32 b, f32 c, f32 t) (name?)
-00213870 Area_Level213870                   // (Area*, const Vec3*) -> f1 (name?)
 
 # Game code VMX sweep part 3
 0001B590 Obj_PokeInRange_0001B590           // (List* l, -, u32 noRay, const Vec3* p; f32 r, f32 v): objects l+592.. with vfn[30] set / vfn[39] clear within r of p (and visible, CastRay filter 13) get vfn[43](); l+40 = v; decompiled: src/obj/vmx3_hk.cpp (name?)
@@ -12498,7 +12496,7 @@
 009F9ADC Comp_UpdateBase9F9ADC              // (o, -, a, b, c; f1 dt): base update called by 0023E0F0 (name?)
 009CEF60 HkProxy_SetPosition9CEF60          // (proxy, const Vec4* pos) (name?)
 009CEEAC HkProxy_Get9CEEAC                  // T* (proxy) (name?)
-00929E98 HkObj_SetTransform929E98           // (obj, const f32 rows[4][4]) (name?)
+00929E98 Hk_SetBodyTransform_00929E98       // (hkpRigidBody*, const f32 rows[4][4]) (name?); reads r3 / r4; Havok
 007CFA2C HkQs_ApproxEqual7CFA2C             // bool (const hkQsTransform* a, const hkQsTransform* b; f1 eps) (name?)
 007CF654 HkQs_ToTransform7CF654             // (const hkQsTransform*, hkTransform* out) (name?)
 0034C918 Anim_Advance34C918                 // (anim; f1 dt) (name?)
@@ -12536,3 +12534,24 @@
 000EDE30 Obj_SpawnDef0EDE30                 // Obj* (Def* b, Obj* a, const Mat33* rot, const Vec3* dir, -, u32 s, 0, 0, u32 arg9; f1) (reads r3-r6, r8-r10, f1; not r7) (name?)
 00F65844 g_GameCtx_00F65844                 // global object pointer: +80 / +84 start counters, +576 (name?)
 01193088 g_EmitterSel_01193088              // static emitter selector (u16 +4 gates Area_AddEffect222654) (name?)
+
+# Game code VMX sweep part 4
+0001D1E0 Hk_RayHitGround_0001D1E0           // bool f(from[3], to[3], out[3]/0): all-hits ray cast (stack collector), first hit of an accepted collidable type -> out = lerp(from, to, fraction); frees a reallocated hit array; decompiled: src/obj/vmx4_hk.cpp
+0001E068 Obj_RandomSpawnPoint_0001E068      // void f(f32 out[4], T* o): random point in the picked object's box (through its rows) or in a disc/hemisphere around o->+48 +80; 3 random steps; decompiled: src/obj/vmx4_obj.cpp
+000F2488 Obj_Ctor_000F2488                  // T::T(o, desc): base ctor, vtables 0x00B130E8, matrices, physics body activation, random facing / value; decompiled: src/obj/vmx4_ctor.cpp
+000F6630 Particle_RandomDir_000F6630        // void f(out[4], params*, d[3]): d through three random axis-angle rotations, scaled by a random speed; decompiled: src/obj/vmx4_math.cpp
+00106770 Dir_TurnToward_00106770            // void f(out[3], a[3], b[3]; f32 max): a's direction turned toward b's by at most max about the vertical; decompiled: src/obj/vmx4_math.cpp
+00119FF0 TunedObj_Init_00119FF0             // void f(T* o, 7 args, f1, f4, stack args...): fills o from args and tuning table 0x01038D1C, optional name copy; decompiled: src/obj/vmx4_ctor.cpp
+0017F8E8 Rope_Step_0017F8E8                 // void f(T* o, a, m[4][4]; f32 dt): spring step of a dangling point + ground probe (Rope_Probe); decompiled: src/obj/vmx4_obj.cpp
+001B3420 Obj_SyncAttachedPose_001B3420      // void f(T* o): attachment matrices from o+432 through two rigid inverses, skeleton update, MarkDirty, UpdateLod; decompiled: src/obj/vmx4_math.cpp
+001B5AA0 Body_KeyFrameAlong_001B5AA0        // void f(T* o, -, -, d[3]; dt, v0, acc): hard key frame of o->+576 along d; decompiled: src/obj/vmx4_hk.cpp
+001CAAEC Obj_RefreshMatrices_001CAAEC       // void f(T* o): cached matrices +560 / +624 from attachments +832..+848 or the body matrix; decompiled: src/obj/vmx4_math.cpp
+001CE92C Obj_WorldPoint_001CE92C            // void f(f32 out[3], Obj* o): world point from bone / attached matrix / offset through a frame (called through a pointer); decompiled: src/obj/vmx4_math.cpp
+001D0640 Obj_SetLocalMatrix_001D0640        // void f(-, Obj* o, m[4][4]): local +80 = m, world +16 = m in the parent's frame, MarkDirty; decompiled: src/obj/vmx4_math.cpp
+0020D7E8 Obj_SyncBodyTransform_0020D7E8     // void f(T* o, m[4][4]): rows +96 = m; body by motion kind: re-centred AABB or the rows; decompiled: src/obj/vmx4_hk.cpp
+00213870 Emitter_Gain_00213870              // f32 f(Emitter* o, p[3]): box / sphere falloff 1 - t^exp (inlined bit-pattern fast pow); decompiled: src/obj/vmx4_snd.cpp
+0027C478 Ctl_Refresh_0027C478               // void f(Ctl* o): stick (camera-relative), magnitude and 31 two-bit button fields from the pad (called through a pointer); decompiled: src/obj/vmx4_input.cpp
+002983C0 Obj_PlayTextAnimSlot_002983C0      // u32 f(T* o, text, key, bool; f1): slot-keyed text anim through the anim scope (handle +32), else Obj_PlayTextAnim_00298270; decompiled: src/obj/vmx4_obj.cpp
+002A60A0 Cam_ReAim_002A60A0                 // void f(-, m[4][4], f32* out, a, r[3][4], bool follow): aim rotation + follow position / height blend; decompiled: src/obj/vmx4_math.cpp
+00381ED0 Body_ReAim_00381ED0                // void f(T* o, m, out, a, r, bool follow): sibling of 002A60A0 on o's body rows (Matrix_Multiply); decompiled: src/obj/vmx4_math.cpp
+0017F430 Rope_Probe_0017F430                // u32 f(a, from[3], 0x01164B90, k*, to[3] (in/out), o+112, f32* lim, 0, 0 (9th, stack); f1 2.0): ground probe for Rope_Step (name?); reads r3-r5, r7-r10, f1; not decompiled
