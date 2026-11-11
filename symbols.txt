@@ -3135,7 +3135,6 @@
 002DE794 Loader_Leave2DE794                   // (Loader*, Entry*, UserBlock*): place the other users' objects (World +0x1280F0[i]) at the entry's points; decompiled: src/world/hevent13_c.cpp (name?)
 002DE41C Loader_Enter2DE41C                   // (Loader*, UserBlock*, Entry*): place the player at the entry / pending (World +0x128160) point, vt +84, owner vt +16, World +0x1281E0 slot vt +28; decompiled: src/world/hevent13_c.cpp (name?)
 00488178 User_Stay488178                      // (World*, UserBlock*, arg): player (ub +8) vt +84, 0x000D87CC, LOD update, vt +44, +192 bit 3 -> 0x0012C968 / 0x00129D94; decompiled: src/world/hevent13_b.cpp (name?)
-00484BE0 User_Travel484BE0                    // (World*, UserBlock*, level, UserBlock* +16, 0, 0, 0, 0, 1): 1568 instructions, not decompiled (similar to World_SpawnUsers487670) (name?)
 002DB70C Group_Start2DB70C                    // (Group*) -> bool: scenes at the group's current index (save +498) current (state 1), earlier/seen ones seen (2) + Upgrade_UnlockJob49E038; decompiled: src/world/hevent13_b.cpp (name?)
 
 # Engine core helpers, part 15 (job queue, banks, type registry, IFF loaders)
@@ -12001,7 +12000,7 @@
 
 # Game code large functions part 18
 00470750 World_SetMode_00470750           // void f(World* w, s32 mode, u8 arg): u8 +31 = mode, +32 = 0, +33 = arg; then (player and Obj_ShowPanel(player, 0x00F65E70[mode])) per mode: 0 +30 = +51; 1/2/3 fade in + flag-map 0x846BF162 listeners queued + HUD/pause/users vfunc 36, then shop StartMode / speaker talk / shop Obj_Play; 4 letterbox cutscene start; 5..20 Obj_SelectEntry(player, hash); 23..26 fade out; replaces Obj_SetMode470750; decompiled: src/obj/big18_world.cpp
-000C26D8 DefBase_Init_000C26D8            // (Def* p, const Record* rec): inner base constructor called first by DefBase_Ctor_000C2E8C (name?)
+000C26D8 DefBase_Init_000C26D8          // (Def* p, const Record* rec): def base init: flag word +32 from rec +24..+32, vtable 0x00B12230, name hashes +44/+48/+52 (name copied to +56), +4 = Def_FindByHash57CE08(+44) / +8 = WorldObj_FindByHash(+48) or spline, 0x00490360(p, rec+48), component hashes of **(rec+64) via registry 0x01056F04 into PtrVector +16, +128 = 0x0034B0F8(+124, owner+164), {+52, p} appended to the def table 0x01013B04, rec+72 > 0 -> +8 object's vfunc 64 (f1); decompiled: src/obj/big19_def.cpp
 
 # Game code medium sweep part 14
 0022AB00 ChoiceEntry_Construct22AB00      // (352-byte entry): five PtrVectors +240..+320 (elem 64), vec3/float defaults, +120 = 1.5*2.0 (0x0022AAF8); leaves r3 0x42480000; decompiled: src/obj/mid14_misc.cpp
@@ -12036,3 +12035,9 @@
 007EE08C Hk_SetF32At_007EE08C             // (f32* field, const f32*) (Havok; name?)
 0012BD94 Cb_Apply_0012BD94                // (o, bool, u32) (reads r3..r5; name?)
 003044B0 SM_SetState_003044B0             // (o, u32 hash) (reads r3 / r4; name?)
+
+# Game code large functions part 19
+002464F0 Owner_StartEffects_002464F0    // (Obj* o): owner o+216; o+1376 from o+356; fills empty effect slots +1364 / +1352 / +1360 from the global effect set entries named by owner +880 / +872 / +876 (inlined TreeSelect), component 0x0027469E gets o+160, +1368/+1372 = sub-set values 2527 / 0x10CBB, Effect_Start, Effect_SetTime(.text 0x002464EC) (name?); decompiled: src/obj/big19_fx.cpp
+00484BE0 User_Travel484BE0              // (World*, UserBlock*, level, Mat*, u8 a5..a8, u8 a9 stack): reuse/spawn the user's slot object for the level profile ("Player%02d_Controllable" descriptor), move the player state, layer-object retargeting, camera target; decompiled: src/obj/big19_user.cpp
+00490360 Def_ReadParams490360           // (Def* p, rec +48) (name?)
+0034B0F8 Def_Resolve34B0F8              // (u32 rec+56 hash, owner +164) -> value stored at def +128 (name?)
