@@ -12652,9 +12652,6 @@
 001CE094 Obj_UpdateContacts1CE094           // (Obj* o): 001CCF40(o, o+853, o+854) unless o->854 and vfn[32](0) in 2..4; edge of +853 -> vfn[420](2|6, 0), vfn[28](1,1), vfn[28](2,0); else edge of +854 (while +853) -> vfn[420](2|6, 0); decompiled: src/obj/mid19_b.cpp
 00F64738 g_ProjNameCounter_00F64738         // u32 running counter for "EntityCompWeapon_Proj_%i" (Obj_SpawnDef0EDE30) (name?)
 00B12CB8 VtSpawnQueryProj_00B12CB8          // vtable of the projectile spawn query (Obj_SpawnDef0EDE30) (name?)
-003CB260 Obj_Tick6_003CB260                 // (Obj*; f32 t): state 6 of Obj_Tick3CB968 (110 insns; not decompiled) (name?)
-003CB430 Obj_Tick4_003CB430                 // (Obj*; f32 t): state 4 of Obj_Tick3CB968 (116 insns; not decompiled) (name?)
-003CB808 Obj_Tick5_003CB808                 // (Obj*; f32 t): state 5 of Obj_Tick3CB968 (87 insns; not decompiled) (name?)
 001D218C Path_SetActive_001D218C            // (Obj*, bool): called on path gate changes by Obj_PathTick1D2370 (117 insns; not decompiled) (name?)
 001D0450 Path_Step_001D0450                 // bool (Obj*, u32): path record advance; non-zero -> pose update (not decompiled) (name?)
 00012544 AvoidList_Remove_00012544          // (List* *0x00F557F0, Obj*) (not decompiled) (name?)
@@ -12693,3 +12690,42 @@
 002BB168 Hud_Track_002BB168             // (T*, const f32 d[3]) (name?)
 002BAC40 Hud_Track_002BAC40             // (T*, const f32 d[3]; f1 scale) (name?)
 00F1DE58 Vt_RayAllHitsCollector48       // vtable of the 8-inline 48-byte-hit all-hits collector (data, name?)
+
+# Game code medium sweep part 20
+000133FC Obj_OnMsgBase133FC                 // u32 (Obj* o, Msg* m): base message handler (Obj_OnMsg248D0 and 9 others end in it): 0x7B5D8742 / 0xFB303547 set / clear byte o->304 bit 0x20; 0x76502F44 / 0x55BE125F byte o->305 bit 0x01 + Obj_SetPhysicsActive(o->68, 1/0); 0x9087CCEB / 0x9AB924F0 o->48 vfn[68]() -> vfn[44](1/0); 0x9A986484 -> 0x002E2E78(*0x00F64C20); r3 = o or the last call; decompiled: src/obj/mid20_a.cpp
+003CB260 Obj_ArcTick3CB260                  // (Obj* o; f32 dt): state 6 of Obj_Tick3CB968: arc o+64 -> o+80 over o->100 (clock o->96), height + 1 - (2t-1)^2, velocity from the body o->108 position; past the end state 5, o->52 = 2.5, Effect_Spawn(0x1BE27372); body pose via Mat34_FromRotPos553B4C + vfn[84]; decompiled: src/obj/mid20_a.cpp
+003CB808 Obj_FallTick3CB808                 // (Obj* o; f32 dt): state 5 of Obj_Tick3CB968: ballistic step (gravity -10, consts 0x003CB7F8), height o->36 clamped to >= 0, body pose; decompiled: src/obj/mid20_a.cpp
+003CB430 Obj_BounceTick3CB430               // (Obj* o; f32 dt): state 4 of Obj_Tick3CB968: ballistic step, floor 1.0 (o->48 = 0, o->52 *= -0.9 when falling, Effect_Spawn(0x1BE27372) above 0.5), body pose; decompiled: src/obj/mid20_a.cpp
+0008088C EffectRule_Enable8088C             // u32 (Rule* a, Effect* e) (vtable entry): target via kind-5 component a->12 (record +276 == 0x02235C33 -> +280) else Obj_FindById(a->12); optional Obj_FindByHash_000DB290(t, a->16); t vfn[352](0,0; t->344) when +192 bit 2 and byte a->20, else vfn[40](1); component record released (vfn[8]) unless a->16 / byte a->21; decompiled: src/obj/mid20_a.cpp
+001F4460 Obj_ReleaseParts1F4460             // u32 (Obj* o): handles o->828/832 vfn[40](1) + cleared, o->820 vfn[88](0,1,1,1) + Field_VCall404_10_001BD450, Obj_ReleaseChild_001ED85C(o, o->812), o->816 owner/part release + vfn[88]/[40](0)/[40](1), Obj_DropHeld_002B7704(Target_GetDef0D951C(o)); decompiled: src/obj/mid20_a.cpp
+0007E65C EffectRule_ForTarget7E65C          // u32 (Rule* a, Effect* e, x) (vtable entry): target (component a->12 / Obj_FindById(a->16)), optional gate byte a->49 (+172 bit 0x40000, vfn[320]), match keys a->20 (t->216->52) / a->24 (t->168) vs invert byte a->48 -> children a->28[u16 a->36] vfn[12](e, x); decompiled: src/obj/mid20_a.cpp
+000988C0 EffectRule_ByTargetKey988C0        // u32 (Rule* a, Effect* e, x) (vtable entry): target (component a->128 / Obj_FindById(a->132)); first of a->124 28-byte entries at a+12 matching keys +20 / +24 runs its list, else the default list a+136; children vfn[12](e, x); decompiled: src/obj/mid20_a.cpp
+0005E470 Obj_BindComponents5E470            // u32 (Obj* o): o->308 = 1, o->320 = 0, five components of o->428 vfn[272]() appended to o+352, then vfn[220](0); decompiled: src/obj/mid20_a.cpp
+00076150 EffectRule_AddRecord76150          // u32 (Rule* a, Effect* e) (vtable entry): slot from kind-2 component vfn[24]() or counter g->0x1283A4++; fills the 28-byte record g + 0x128334 + 28*idx from a+16..+44; returns idx; decompiled: src/obj/mid20_a.cpp
+00076708 EffectRule_Colour76708             // (u8 out[4], Rule* a, Effect* e, Params* p): colour a+28 or byte lerp from a+24 by 255*f (kind-1 component vfn[20] f1, or p->32 / a->32); decompiled: src/obj/mid20_a.cpp
+00396B6C Obj_LevelCue396B6C                 // u32 (Node* n, Obj* o) (vtable entry): level-table key of n (0x00F65038 rows, 0x0106CF70/7E offsets): 0x75208DC6 mode 2, 0x804F6B59 mode 1 (skipped when o->12 is busy), else 0 -> Obj_PlayByLevel_0001B4A0(*0x00F557F0, o->12, mode, 0); r3 = 0; decompiled: src/obj/mid20_a.cpp
+00033780 Obj_RandomFlinch33780              // (Obj* o, x) (vtable entry): modes 19/22/23/25, body state 1, one RNG step below the difficulty threshold -> anim 0xBCD6F543 / 0xE22B711A on o->64 (Anim_Restart2775A8; o->32), vfn[220](26); decompiled: src/obj/mid20_a.cpp
+001EFB30 Obj_SetLit1EFB30                   // u32 (Obj* o, u8 on, u8 force): o->980 bit 0x80000 state; light o->844 +392 scale, Obj_SetAnim / Obj_Dispatch362, effects 0xEAD85853 / 0x9E42A8A2 (bit 0x04000000); parts o->928[u16 o->936] vfn[40](0,0); decompiled: src/obj/mid20_a.cpp
+0007958C EffectRule_BindTarget7958C         // u32 (Rule* a, Effect* e) (vtable entry): target -> a->40 = t->160, a->36 = t->212; else WorldObj_FindByHash(a->24); a->48 = kind-1 component f1; ObjPool_Create(*0x00F64C38, a+32, &h) when a->40; decompiled: src/obj/mid20_a.cpp
+000BBEA8 Obj_ApplyPendingFlags0BBEA8        // u32 (Obj* o): state 4 with o->676 bits 0xF0000000 pending -> vfn[28](1,4) / vfn[28](2,3|4|5) by sub-state; bits cleared; r3 = 0; decompiled: src/obj/mid20_a.cpp
+002E899C Seq_Update2E899C                   // u32 (Seq* o, -, u8 f) (vtable entry): lead o->20 gate (vfn[12] start, vfn[20]), steps o->16[o->24] vfn[8](f); all done -> byte o->28 0x40 set / 0x80 cleared, lead callback +60 vfn[8](+68, +76); decompiled: src/obj/mid20_a.cpp
+004C64E4 EffectRule_IfComponent4C64E4       // u32 (Rule* a, Effect* e, x) (vtable entry): component a->36 match (active: vfn[20] f1 == a->32; kind 3: words +32..+40 == a+16..+24; kind 12: vfn[28]() == a->12) vs invert byte a->60 -> children a->40[u16 a->48] vfn[12](e, x); decompiled: src/obj/mid20_a.cpp
+003011E0 Group_SpawnMarkers3011E0           // u32 (Obj* o): members of groups o->1032[u16 o->1040]: vfn[352] without +244 state, else effect 0x61D2ACD0 bound to t->160 (component 0x0027469E) + Effect_SetTime; decompiled: src/obj/mid20_a.cpp
+00127BC8 Obj_CanTakeHit127BC8               // u32 (Obj* o, Obj* src, s32 kind, x) (vtable entry): hit filters (kind 5, health, team, flags o->188, kind-23 component, states, o->244 vfn[124]) before 0x000DF960; decompiled: src/obj/mid20_a.cpp
+0005BFD0 Obj_PlayRandomIdle5BFD0            // u32 (Obj* o): o->484 = (o->484 + 1 + rand%3) % 4; player anim 0xC7C116DA+i and o->64 anim 0xACDA2FD8+i (o->32); decompiled: src/obj/mid20_a.cpp
+00396930 Obj_LevelAnim396930                // u32 (Node* n, Obj* o) (vtable entry): o->12 animator plays Obj_AnimCall3541E0_00276E4C with the level-table rate (slot 0, or track length / slot 1); r3 = 0; decompiled: src/obj/mid20_a.cpp
+0004979C Script_Stage1_4979C                // u32 (Level* o): resets three objects by id, byte o->1804 = 1, hides two, o->400 vfn[304](1), stage bounds 0x00049060; decompiled: src/obj/mid20_a.cpp
+000499F8 Script_Stage2_499F8                // u32 (Level* o): stage 1, body health scale (*0x00F986CC), bounds, o->400 vfn[304](0), shows 0x8BD1C3E8 / 0x19F541C3, vfn[200](0xF6531EE1, ...); decompiled: src/obj/mid20_a.cpp
+00049C58 Script_Stage3_49C58                // u32 (Level* o): stage 2, two bounds, bytes o->1807 / o->1805, resets, o->404 vfn[304](1), hides 0x19F541C4; decompiled: src/obj/mid20_a.cpp
+0005BDC0 Obj_ResetCarry5BDC0                // u32 (Obj* o) (vtable entry): Obj_Flag13Off, detach the held o->416 from the player, pop layers o->420 / o->424, player effect 0xBC1BA9E7 + vfn[176](0), Obj_ResetBase12928; decompiled: src/obj/mid20_a.cpp
+001DB784 Obj_Release1DB784                  // u32 (Obj* o, u8 v) (vtable entry): detach from the def holder, state vfn[28](0,5) + effect 0xA2334D4F (o->592) + o->604 bits, Handle_Notify36742C(o->216->488), t->124 bit 0x100000 cleared; decompiled: src/obj/mid20_a.cpp
+000BB660 Obj_ShutdownFx0BB660               // u32 (Obj* o): o->672/676 cleared, effect 0x529EC2A4, layers o->648 / o->660 popped and released, o->640 vfn[304](0) + Body_Remove931F00, entity o->644 Hk_RemoveEntity92FFC8; decompiled: src/obj/mid20_a.cpp
+0030912C Obj_HitParts30912C                 // u32 (Obj* o, a, b): parts o->776[3] hit by 0x001F4DC0 -> effect 0xF7919930, state handler o->704[s] vfn[52], Obj_SetStateFx266E6C(def, 4); decompiled: src/obj/mid20_a.cpp
+0012E930 Obj_InteractTick12E930             // u32 (Obj* o; f32 dt): hold timer o->1176 by controller bits; a release in range triggers a save (Save_Profile0C9FC8 / Player_SetSave124D58) or Handle_Call 0x0036735C(0x1447B, ...); decompiled: src/obj/mid20_a.cpp
+00049060 Stage_SetBounds_00049060           // (Level* o, const f32 lo[3], const f32 hi[3], 0): stage bounds setter used by Script_Stage*_ (not decompiled) (name?)
+001F4DC0 Part_HitTest_001F4DC0              // bool (Part*, a, b; f32): hit test used by Obj_HitParts30912C (not decompiled) (name?)
+000DF960 Obj_CanTakeHitBase_000DF960        // u32 (Obj*, Obj* src, s32 kind, -): the base hit test after Obj_CanTakeHit127BC8 (not decompiled) (name?)
+00F65038 g_Level_00F65038                   // Level*: +24 128-byte rows indexed by node s16 +2 / +4 (Obj_LevelCue396B6C, Obj_LevelAnim396930) (name?)
+0106CF70 g_LevelSlotOff_0106CF70            // u16 row offset of the slot table (+0x0106CF7E: u16 offset of the byte list in row B) (name?)
+00F64C20 g_Session_00F64C20                 // Session*: 0x002E2E78 / World_GetSaveObj160 / Session_PartDone2E2740 argument (name?)
+00F64C38 g_ObjPool_00F64C38                 // HandlePool* for ObjPool_Create (EffectRule_BindTarget7958C) (name?)
