@@ -10684,8 +10684,8 @@
 00218DD8 Area_ApplyLayerSettings             // (Area*, Entity*): def +176 kind (0x86DF6221 / 0x04C5F92B / 0x3F2F1B0C / 0x7BF02FB1) picks the player's animator layer of type 11 / 15 / 7 / 1 and applies def +180 / +192 / +188 / +184; decompiled: src/obj/big5_area.cpp (name?)
 00216AB0 AreaDef_Construct                   // (AreaDef*, const Src*): base ctor 0x000C2B90, name +140, vtable 0x00B19FB0, kind +176 and its settings block (+180 128 B / +184 152 B / +188 144 B / +192 48 B) with descriptor defaults; decompiled: src/obj/big5_area.cpp (name?)
 0025C658 Obj_RebuildCMdl                     // (Owner*) -> u32: releases the 8 models at +2912, then per slot (u16 +2944, 360 bytes from +56) picks the profile's variant and makes "CMdl%02d_%s" models (GeomInstance vfn[56](13) or WorldObj_Instance of the def) placed at the entity's matrix, group 10; decompiled: src/obj/big5_cmdl.cpp (name?)
-000FEF54 AnimLayer_ApplySettingsA            // (Animator* layer, Settings* block, 0): kind 0x86DF6221 area settings onto a type-11 layer (name?)
-000FD7AC AreaSettingsA_Construct             // (block): the 128-byte kind-A settings block (name?)
+000FEF54 AnimLayer_ApplySettingsA         // (Layer* l, Settings* s, u8 top): s+120 = top; s pushed on l's list (+536 count, +540 array), inserted after the last unflagged entry; quirk: all flagged -> shifted, not added; decompiled: src/obj/big6_area.cpp
+000FD7AC AreaSettingsA_Construct          // (SettingsA* b): 29 tuning words copied raw, +124 = 0, +120 = 0; f1 = last lfs; decompiled: src/obj/big6_area.cpp
 
 # Game code medium sweep part 7
 0007DA1C AnimCmd_Ctor_0007DA1C            // u32 AnimCmd_Ctor_0007DA1C(AnimCmd* o, XmlCursor* c): vtable 0x00B0FBA8, children +24; hash +12, bool +20, +16 = (hash attribute 0x0027873A == 0x0023FEEC). (name?); decompiled: src/obj/mid7_cmd.cpp
@@ -10899,3 +10899,17 @@
 002E8CA0 Group_Reset_002E8CA0             // void f(T* o): bits 0x80 / 0x40 of the u8 o->+28 cleared, then each of the o->+24 elements o->+16[i] and the owner o->+20 (when set) get vt[16]() (name?); decompiled: src/obj/obj30b.cpp
 002FB4E0 VtB1D650_Dtor_002FB4E0           // T::~T() (vtable 0x00B1D650, base 0x00B1D600): every element e of the u16-counted PtrVector +24 gets vt[40](e, 0), the count is cleared and the vector destroyed  (name?); decompiled: src/obj/obj30b.cpp
 00332C84 Obj_AcquireTarget_00332C84       // void f(T* o): 0x00325CE4(o); in state 4 (u8 +18), o->vt[28](o, 0) and, without a target +2600, the object Obj_FindById(o->+2592) becomes it when it has bit 0x2  (name?); decompiled: src/obj/obj30b.cpp
+
+# Game code large functions part 6
+000E4720 Obj_KeyframeBodies               // (Obj* o, f32 dt): state 7: sync +96 from WorldObj, hard-keyframe Havok bodies to attachment matrices (applyHardKeyFrame, 1/dt); pending effect +376; tail 0x000D83C4(o, dt) (name?); decompiled: src/obj/big6_phys.cpp
+000E5000 Obj_SyncBodyShapes               // (Obj* o, f32 dt) -> u32: body volume shapes / driven WorldObj matrices, WorldObj update, state time +408 vs +404, vfn[416] state changes (name?); decompiled: src/obj/big6_phys.cpp
+000D7A00 Obj_PlaceAttachments             // (Object* o): attachment entries (+340, 240 bytes) placed at bones/nodes: L x M, normalised, child vfn[84], WorldObj moved/marked dirty (name?); decompiled: src/obj/big6_bone.cpp
+00250F40 BoneCtl_Target                   // (Ctl*, Out* m, u32 k, const f32* pos) -> m: base matrix by source, up-vector rebuild, euler (speed-blended) quat x base, random jitter, weight +68, normalised (name?); decompiled: src/obj/big6_ctl.cpp
+003D8C10 Char_SetAnimState                // (Char*, s32 s) -> 0: per-state Anim_Restart2775A8 keys (0..8), random walk variant/speed, +96 = s, +175 = 0 (name?); decompiled: src/obj/big6_anim.cpp
+003D95E0 Char2_SetAnimState               // (Char2*, s32 s) -> 0: sibling of 003D8C10 (idle pick, regress, track time, +72 vfn[200]); +92 = s, +172/+173 = 0 (name?); decompiled: src/obj/big6_anim.cpp
+000D83C4 Obj_UpdateBase0D83C4             // (o, f1 dt): tail of 0x000E4720 (name?)
+000E3534 Obj_AttachMatrix0E3534           // (o, f32 out[4][4], element, const f32 base[4][4]) (name?)
+000E0734 Obj_CanUpdate0E0734              // (o, f1 dt) -> bool (name?)
+009DD41C hkpKeyFrameUtility_applyHardKeyFrame // (const hkVector4* pos, const hkQuaternion* rot, f1 invDt, hkpRigidBody*) (Havok; name from argument pattern)
+00250AF0 BoneCtl_InitSource250AF0         // (ctl, f32 m[4][4], u32 k, 0) (name?)
+00011410 Shape_InitBody11410              // (Shape* out, system, body, 0, u32, u16 mask) (name?)
