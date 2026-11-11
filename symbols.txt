@@ -13307,9 +13307,9 @@
 002D1034 Obj_Dtor_B1D1E0_002D1034         // T::~T (vt 0x00B1D1E0/+24 0x00B1D230; Delete_002D127C): World_ListRemove(0, 0x00F35980, o, o->+8), 0x002D0BA0(o,0), component +36 vt[40], skeleton +32 parts released, RefNode_Release x2, registry removal, List1013B5C_Remove; decompiled: src/obj/mid26_e.cpp
 00269348 Obj_Dtor_B1BF48_00269348         // T::~T (vt 0x00B1BF48/+24 0x00B1BF9C; Delete_002695D8): Havok entity / body leave world W = o->+28->+4, parts +36 x3 dropped (Array_RemoveSwap_00346698) and released, registry B removal, List1013B5C_Remove; decompiled: src/obj/mid26_e.cpp
 00355A90 Tuning_DestroyGlobals_00355A90   // void f(void) (atexit): handle 0x0106BFF8 object, 0x00ABF3E4(0x0106BFC8), pool arrays, 25 tuning variables (vtables 0x00B0D968/99C/934/9D0 + TuningVar_DestructBase_004FC1A0), vectors; decompiled: src/obj/mid26_f.cpp
-0033CE20 Section_Reset_0033CE20           // (o, 0, 1) from 0x0033D008 (name?)
-00441178 Bank_FillPairs_00441178          // (Array* tmp, T* o): fills the 8-byte (key, object) temp array for 0x0044F0C0 (name?)
-004413A4 Bank_FillPairs_004413A4          // (Array* tmp, T* o): as 0x00441178 for 0x0044F3BC (name?)
+0033CE20 Section_Reset_0033CE20           // (o, mode, u8): Section_SetModeBase_003260F0; mode 4: f_0033C5B4 per +2572 record, Registry_Unlink, flag hash 0xA8B960FF, +2772 records freed; mode 5: groups (+68) cleared/released; decompiled: src/obj/mid27_b.cpp
+00441178 Bank_FillPairs_00441178          // (Array*, Iff*): n = "iSize"; n x 112-byte records (defaults, global vec 0x01164B40) read by f_00440CD8, appended {rec->+0, rec}; returns n; decompiled: src/obj/mid27_b.cpp
+004413A4 Bank_FillPairs_004413A4          // (Array*, Iff*): n x 252-byte records: "iSoundHash" key + 3x3x3 {s8 "iTargetRegisterValue", f32 "fFadeDuration"}; appended {key, rec}; decompiled: src/obj/mid27_b.cpp
 
 # Game code big sweep part 24
 000A88C0 Ar_ProbeSubnet_000A88C0         // u8 (): AR server probe: TCP connect sweep of the console's /24 on port 333 (hosts .3-.254 one by one, then batches of 100 with a 333 ms timebase wait; found = errno 56 on reconnect); result to u8 0x00F558E2 and r3; decompiled: src/obj/big24_net.cpp
@@ -13367,3 +13367,31 @@
 0040E220 Sumo_RoundEnd_0040E220          // (Game*) (name?); called by 0040EA08
 0040E400 Sumo_SpawnerState3_0040E400     // (Spawner*; f1) (name?); called by 0040EA08
 0040E6E0 Sumo_SpawnerState1_0040E6E0     // (Spawner*; f1) (name?); called by 0040EA08
+
+# Game code medium sweep part 27
+002BC728 Obj_Dtor_B1CFD8_002BC728         // T::~T (vt 0x00B1CFD8; Delete_002BCA1C): slots +44/+80 detached/stopped/released, effect +324, body +320 (entity leaves world, def +184 bit 0x20000 cleared), handles +56/+92, World_ListRemove 0x00F35850, Anim_Set2549F8(o,1), PtrVector +328, 0x00B1BE30 base; decompiled: src/obj/mid27_a.cpp
+0029A108 Obj_Dtor_B1C8D8_0029A108         // T::~T (vt 0x00B1C8D8; Delete_0029A3C0): RefNode_Release(+2256), +2268 vt8, effect +2276, +2176 vt40(c,1) when +172 bit 0x40000, f_00299F74 per +64 entry, nav query +2328, 4 PtrVectors, base; decompiled: src/obj/mid27_a.cpp
+00289AA8 Obj_Dtor_B1C680_00289AA8         // T::~T (vt 0x00B1C680; Delete_00289D7C): leaves list 0x01057770 (count 0x01057870, swap-remove), PairBuffer_PushData unless +404==3, +244 zeroed, TableEntry_Release(o+240), Obj_FindPair_0034F580, 6 pool parts, base; decompiled: src/obj/mid27_a.cpp
+00291228 Obj_Dtor_B1C788_00291228         // T::~T (vt 0x00B1C788; Delete_00291480): Obj_SetField20_00276558(o,0), f_00275110, List1013B70_Remove, 7 members vt8, base (registry re-read variant); decompiled: src/obj/mid27_c.cpp
+002BA884 Obj_Dtor_B1CF28_002BA884         // T::~T (vt 0x00B1CF28; Delete_002BABC4): mapped +36/+40 (Map_Register or Obj_Dispatch362, vt20), +44/+48 vt40, two World_ListRemove kind 6, +68/+76 vt8, base; decompiled: src/obj/mid27_c.cpp
+002C9910 Obj_Dtor_B1D070_002C9910         // T::~T (vt 0x00B1D070/+24 0x00B1D0BC; Delete_002C9C50): effects +328/+284, f_002C5C34/f_002C96A8, +296, list +292, animator +280 popped, Obj_Dispatch362 on +436/+424, members +624/+24, base; decompiled: src/obj/mid27_c.cpp
+001BB9B0 Obj_Dtor_B162C8_001BB9B0         // T::~T (vt 0x00B162C8; Delete_001BBBC8): table +400/+404 and 96-byte records +388 released, attachment +384 detached/reset (0x02235C33), World_ListRemove 0x00F332F8, Thunk_000D729C; decompiled: src/obj/mid27_c.cpp
+003366F0 Obj_Dtor_B1EDE8_003366F0         // T::~T (vt 0x00B1EDE8; Delete_00336A80): +2608 x5 vt40(e,1), Registry_Unlink, paused-state restore (u8 +2980), 0x00B1E1F8 section base (Ptr_FreeAndClear entries); decompiled: src/obj/mid27_c.cpp
+00344398 Obj_Dtor_B1F328_00344398         // T::~T (vt 0x00B1F328; Delete_003448C0): skeleton +4 and nested arrays released, 5 Havok arrays freed via allocator 0x011DF31C (twice, inlined bases); r3 = 0x80000000; decompiled: src/obj/mid27_c.cpp
+00353334 Obj_Dtor_B1F558_00353334         // T::~T (vt 0x00B1F558; Delete_0035357C): owned Havok object +28 (4 arrays) freed to the thread memory router (r13-28332 +44 vt12), skeleton +24 released; decompiled: src/obj/mid27_c.cpp
+000DE6DC Obj_Shutdown_000DE6DC            // (o, u8 on) vtable method: effect +352 released (0x879D1B7A), skeleton +348 leaves world, bones released, properties 0xA734004D/0x91C7CF5B removed; Obj_ShutdownBase_000D74C0; decompiled: src/obj/mid27_c.cpp
+0010C3C8 Binocucom_Dtor_0010C3C8          // T::~T (vt 0x00B13DA0 -> 0x00B0DAEC; Delete_0010C60C): UI ".InGame.BinocucomPhoto" vt88, camera matrix re-orthonormalised around up o+80 -> vt84; r3 = 0x00B0DAEC; decompiled: src/obj/mid27_d.cpp
+00184280 Gadget_Dtor_B14B90_00184280      // T::~T (vt 0x00B14B98/+380/+384; Delete_00184700): Track_SelectKey (f1 = +348), camera +1312 matrix + Msg_Post 0x0C8B8AB8, globals 0x00F6498C..A0 vt8, Havok array +1676, 0x00B12550 base; decompiled: src/obj/mid27_d.cpp
+0030CDD0 Obj_SoundOff_0030CDD0            // (o, u8 on) vtable method: records +656/+660/+872 freed, +704 x12 vt4, Records_Forget loop, +876 entries vt40, player byte +2338 bit 8, effects +940..+952; Obj_SoundOffBase; decompiled: src/obj/mid27_e.cpp
+002EA464 FileReader_Reset_002EA464        // (Reader*) from VtB1D4B8_Dtor: streams vt16, pending FsOp cancelled/closed/freed, handle +96 closed, buffer +40 freed, +104 = -1 (r3 = -1); decompiled: src/obj/mid27_e.cpp
+002766A8 Obj_Reset_002766A8               // u32 f(T*) vtable method: component 23 field reset for 4 def kinds, PopBodies, Anim_Stop, emitter pairs stopped, SwapEffect(o,0,1), flag words +40/+24 masked; r3 = new +40; decompiled: src/obj/mid27_f.cpp
+002B72DC Grab_Begin_002B72DC              // u32 f(T* o, x): filter callback +72, state (+68 > 1 refuses), Obj_SetStateFx 2, target +64 = x (u16 +178++), d vt248, Reset6, state 2/0 transitions, done callback +80; decompiled: src/obj/mid27_f.cpp
+002B1A14 FxBind_Apply_002B1A14            // u32 f(T* o, x): binding-tree lookup (path stack +16, depth u16 +96, node +100, global 0x011DE2A8) for x->+8 in o->+40 then o->+8 vt272 effect; Effect_SetHash4CF988 when found; decompiled: src/obj/mid27_f.cpp
+002C9E28 Obj_Reset_B1D070_002C9E28        // u32 f(T*) vtable method of the 0x002C9910 object: state bytes reset, 12-byte records +356 stopped/released, flag words +64/+52 and defaults 0x01164AFC, base +24 vt28, f_002C96A8 (f1 = *0x002C9E20); decompiled: src/obj/mid27_f.cpp
+002E9FE0 World_RegisterKey_002E9FE0       // (key, a, b, c) from World_Construct: key added with a/b/c to sorted maps 0x010686C4/0x010686DC (Find766DCC)/0x010686F4 (Find766F54) if absent; decompiled: src/obj/mid27_f.cpp
+002B99C0 Attach_Release_002B99C0          // u32 f(T* o, x): release x from attachment table +24 (quirk: only entry 0 compared), FLT_MAX via Hk_SetF32At, effects hash 0x3E5C25CD, Body_SetMass (f1 = entry +128), Obj_Detach0D72C0; decompiled: src/obj/mid27_f.cpp
+00440CD8 Bank_ReadRecord_00440CD8         // (Array*, rec, Iff*, s32 *0x00F65B3C): reads one 112-byte bank record (reads r4-r6 only) (name?)
+0033C5B4 Section_RecordReset_0033C5B4     // (rec) from Section_Reset mode 4 (name?)
+00299F74 Obj_DropEntry_00299F74           // (o, e) per +64 entry in 0x0029A108 (reads r4 only) (name?)
+002C96A8 Obj_Fn2C96A8                     // (o; f1 unread per regflow) (name?)
+002C2420 Obj_Fn2C2420                     // (o, 0): may set u8 +320 (name?)
