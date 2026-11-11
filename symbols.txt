@@ -9317,7 +9317,7 @@
 000D6CC0 Obj_VCall28_000D6CC0             // f(Obj* o, a): o's virtual +28 (o, a), 0 for a null o (name?); decompiled: src/obj/obj24.cpp
 000D86F8 Obj_AnimFlag_000D86F8            // bool f(const Obj* o, k): bit 0x08000000 of Anim_Find34CC34(o->+164, k)->+12 (false when either is null) (name?); decompiled: src/obj/obj24.cpp
 000DEC64 Obj_EffectHash352_000DEC64       //  (name?); decompiled: src/obj/obj24.cpp
-000E0B64 Obj_EffectHash356_000E0B64       //  (name?); decompiled: src/obj/obj24.cpp
+000E0B64 Obj_EffectHash356_000E0B64         // (Obj*, u32 hash, 1) (already named; plays an effect hash); decompiled: src/obj/obj24.cpp
 000DF7E0 Obj_VCall208_000DF7E0            // f(Obj* o, a): bit 0x20000000 of o->+376 set, then o->+244's virtual +208 (p, a) when set; else returns a (r4..r6 left) (name?); decompiled: src/obj/obj24.cpp
 00129B58 Obj_Flush480_00129B58            // u32 f(T* o): when the u16 +482 is set, 0x002F20A4(*(T**)0x00F64C38, the word +480) and +482 = 0; 0 (name?); decompiled: src/obj/obj24.cpp
 0017A178 Obj_Call4CF548x2_0017A178        // f(const T* o, a): 0x004CF548(p, a) for p = o->+416 and o->+420, each when set (name?); decompiled: src/obj/obj24.cpp
@@ -12288,7 +12288,6 @@
 000FD040 Cam_Fn0FD040                       // (Vec3* io, Xf* out) (name?)
 00020100 Obj_SnapToSpline20100              // bool (Obj*): nearest spline (filter 0x00F2D998) to o->176 + o->160*K, random t, pos/tangent, o->352 = tangent x up (flipped); decompiled: src/obj/mid16_b.cpp
 002C6F78 Obj_TurnToFocus2C6F78              // f32 (Obj*, f32 dt): eases o->208 toward focus dir (*(0x00F65CA0)+0x1281E0), timer o->464/468; returns angle; decompiled: src/obj/mid16_b.cpp
-002C5140 Obj_Fn2C5140                       // (Obj*, const Vec3* facing) (name?)
 0074C048 Quat_Slerp74C048                   // void (f32 out[4], const f32 a[4], const f32 b[4]; f1 t): lerp above dot 0.99, else slerp; decompiled: src/obj/mid16_b.cpp
 00106B80 Contact_Update106B80               // u32 (Contact* c, Event* ev): plane refresh from c->20/24 +288/+240, distance test vs c->160 toggles ev->24->15 bit 0x8, ++c->164; decompiled: src/obj/mid16_b.cpp
 000F90F8 Body_SpringRot0F90F8               // void (Body*, f32 k, f32 d, f32 dt): implicit spring on angular velocity s->32, quaternion s->16 update; decompiled: src/obj/mid16_b.cpp
@@ -12432,3 +12431,37 @@
 004D3798 Game_ShutdownStep_004D3798      // () from 0x004D39B0 (name?)
 006D6514 Voice_GetItem_006D6514          // (voice, s16 j) from 0x0044C888 (name?)
 006F9CA8 VoiceItem_ReadParam_006F9CA8    // (item, f32* v, ? w) from 0x0044C888 (name?)
+
+# Game code medium sweep part 17
+002C5140 Obj_SetFacing2C5140                // u32 (Obj* o, const Vec3* facing): o->208 = facing, Cam_RotateToward1007D0 by o->168 when o->276 vfn[64]() +416 kind 3, align to o->224's z (y=0) and Vec_TurnToward106770 at rate o->256, Obj_SetRange_00101958(o->124, o->128); replaces Obj_Fn2C5140; decompiled: src/obj/mid17_a.cpp
+003EC3A0 Ring_ComputeProfile3EC3A0          // u32 (-, Ring* o): 25-sample profile o->4[] from neighbour links +232..+260 (hidden bit 0x40000000 in +268), cosine wobble o->212/216, smoothed copy o->104[]; decompiled: src/obj/mid17_a.cpp
+002025B0 Obj_ForwardEulerPose2025B0         // u32 (Obj* o, Obj* x): quat from Euler angles (x->216 +1552 when x flag 0x8, else zero) + pos -> World_Forward12847C_00489DF8(..., 0x010549D0; f1 o->216->440); decompiled: src/obj/mid17_a.cpp
+0005A388 Obj_SwayTick5A388                  // u32 (Obj*): tuning T(a)=f32 a+72 driven sway; timer o->5136, rotated frame from 0x01164BD0 + o->176, 00058488(o, &frame); decompiled: src/obj/mid17_a.cpp
+003CD290 Obj_FollowSpline3CD290             // u32 (Obj*; f32 dt): player stick (pads 0x010B19E0) along the spline (*(game+0x1281E0)) via WorldObj_SplinePointTangentAt(o->108; o->104), 003CCC68(o, &pos), velocity o->32 = (o->16 - pos) * c/dt; decompiled: src/obj/mid17_a.cpp
+00115900 Params_Blend115900                 // u32 (Params* a, const Params* b; f32 t): ease fields +8, +16 vec (Curve_Lerp3_004A8598), +32..+44 via 004A83D8 where |a-b| >= eps, a->48 = b->48; decompiled: src/obj/mid17_a.cpp
+0002D130 Mover_FleeNearest2D130             // u32 (Mover*; f32 dt): steer driver o->48 away from the nearest player (heading w->484 = atan2f), Mover_Fn2CC64 on timer, random heading jitter (0x01164888), o->328 += dt; decompiled: src/obj/mid17_b.cpp
+00248BB0 Obj_UpdateStanceFx248BB0           // u32 (Obj*): stance effect hash o->1376 from a stack table by o->1217 (o->500/501), transition hashes, Obj_EffectHash356_000E0B64; decompiled: src/obj/mid17_c.cpp
+002360A8 Obj_UpdateStanceFx2360A8           // u32 (Obj*): same switch on o->1012, wanted hash from busy (o->612 tracks) and o->972/980 vs *(0x002360A0); decompiled: src/obj/mid17_c.cpp
+00248958 Obj_UpdateEffectFx248958           // u32 (Obj*): Effect version (o->1352 / o->1356, Effect_SetHash4CF988), 0x7D22E5CD when o->1216 clear; decompiled: src/obj/mid17_c.cpp
+00235DC0 Obj_UpdateEffectFx235DC0           // u32 (Obj*): Effect version (o->768 / o->772), 0x7D22E5CD when o->1004 == *(0x00235DBC); decompiled: src/obj/mid17_c.cpp
+004F30AC Trees_Clear4F30AC                  // u32 (): empties the AVL trees 0x010C2CAC (TreeFind_00798DF8/Avl_Remove_00798208) and 0x010C2BC0 (TreeFind_00797C08/Avl_Remove_00797018); returns 0; decompiled: src/obj/mid17_c.cpp
+00070894 Obj_Destroy70894                   // u32 (Obj*): o->0 = vtable 0x00B0F3B0, empties trees o+440/332/224/116/12 (TreeFind_0073AF5C / Avl_Remove 0x0073A36C), VtB11B20_DtorTrivial_004BB41C; decompiled: src/obj/mid17_c.cpp
+003EFC28 Obj_IsHidden3EFC28                 // bool (Obj*): point +96 and parts o->112[] project off screen (View_ProjectPoint, box *(0x003EFC20..24)), no o->144[] +40, Vec_AnyOnScreen_003EDB08 for o->164[]; decompiled: src/obj/mid17_d.cpp
+00043784 Obj_LaunchSlots43784               // u32 (Obj* o, u32 k): launch each free 112-byte slot o->308[o->316] from o->664 (+128) with tuning values, WorldObj_MarkDirty/UpdateLod, Effect_SetHash4CF988(+80, 0x9020A4D6); decompiled: src/obj/mid17_d.cpp
+00126E04 Obj_OnHit126E04                    // u32 (Obj*, HitEvent*): Obj_TestE0BCC, attacker resolve (+428/+392/+400), damage ev->48 * (o->500 | Comp_GetF32_922918 * o->496) [* T(0x01038940) same team], 00125A80(o, 0x80F43146, ev, 0x80F43146; f1); decompiled: src/obj/mid17_d.cpp
+002228C8 Area_SpawnGrid2228C8               // u32 (Area* o, T* a): o->656 = view pos; fills empty 3x3x3 effect slots o+428.. via 000DCECC(a, d->176, &m, 1), Effect_SetTime, 00222654; decompiled: src/obj/mid17_d.cpp
+004288C8 Wave_Apply4288C8                   // u32 (Wave*; f32 dt): parabolic-sine wave (K 0x004288A0) * Math_Ramp_004A6BF0 * Falloff_004A6B98 displaces grid 0x010AA1B0 points; o->36 += dt, o->32 cleared at end; decompiled: src/obj/mid17_d.cpp
+00327A58 Obj_PushNearest327A58              // u32 (Ctx* a, Vector* out, List* l): Vector128_Push_0075EBFC of up to a->2588 records, nearest-to-player selection by insertion sort when 16 >= n > limit; decompiled: src/obj/mid17_d.cpp
+000463A8 Obj_PickTurnAnim463A8              // u32 (Obj*): facing vs move angle vs cosf(T(0x00F954EC)*57.29), picks turn / state anim, Anim_Restart2775A8, o->32 = anim; decompiled: src/obj/mid17_d.cpp
+0025D114 Mesh_InitGrid25D114                // u32 (-, Mesh* m, u32 w, u32 h): Buffer_Alloc52F198 x3 (2 vertex + index) and the fan-strip u16 index list; decompiled: src/obj/mid17_e.cpp
+004C07D0 Clone4C07D0                        // Obj* (const Obj*): vtable clone, SmallAlloc(68), vtable 0x00B21F40, copies +8/+24/+36..+64, +28/+32 = SystemState 0x011DE094 +16; decompiled: src/obj/mid17_e.cpp
+002140C0 Area_TryEnter2140C0                // u32 (Area*, Actor*): o->484 level, join link list (o->613/616/620, l->112, List_PushFront_00441C68), Field96_SetIfMoved_00441D18, PushStack_Push, Area_Enter unless state 0/3; decompiled: src/obj/mid17_e.cpp
+002142E0 Area_TryLeave2142E0                // u32 (Area*, Actor*): counterpart: o->484 = 0, leave link list (List_Unlink_00441CB8), PushStack_Remove, Area_Leave unless state 0/3; decompiled: src/obj/mid17_e.cpp
+00106770 Vec_TurnToward106770               // (Vec3* out, const Vec3* to, const Vec3* from; f1 rate) (name?)
+003CCC68 Obj_SetSplinePos3CCC68             // (Obj*, const Vec3* pos) (name?)
+00058488 Obj_ApplySway58488                 // (Obj*, Mat34* frame; f1) (name?)
+000DCECC Effect_Spawn0DCECC                 // (-, u32 kind, const Mat34* m, 1) -> Effect* (reads r4..r6 only) (name?)
+00222654 Area_AddEffect222654               // (Area*, Effect*) (name?)
+004286D8 Wave_Centre4286D8                  // (Vec3* out, Wave* o, o->0) (name?)
+004A83D8 Curve_Ease4A83D8                   // f32 (f32 a, f32 b, f32 c, f32 t) (name?)
+00213870 Area_Level213870                   // (Area*, const Vec3*) -> f1 (name?)
