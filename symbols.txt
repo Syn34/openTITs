@@ -6985,7 +6985,7 @@
 0046564C EventInit_0046564C       // (o, src, a, b, c): kind 19, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 004656EC EventInit_004656EC       // (o, src, a, b, c): kind 20, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0046578C EventInit_0046578C       // (o, src, a, b, c): kind 21, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
-0046582C EventInit_0046582C       // (o, src, a, b, c): kind 22, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
+0046582C EventInit_0046582C               // (Event*, o, 0, 0, 0) (already named); decompiled: src/obj/obj19_tmpl2.cpp
 00465970 EventInit_00465970       // (o, src, a, b, c): kind 24, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 00465A10 EventInit_00465A10       // (o, src, a, b, c): kind 25, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 00465BB0 EventInit_00465BB0       // (o, src, a, b, c): kind 32, the time, src-derived defaults (template instance); decompiled: src/obj/obj19_tmpl2.cpp
@@ -11089,9 +11089,23 @@
 0049FFE0 Obj_AimMatrix                    // (Obj*, f32 out[4][4], AttachMat*, s32 bone, WorldObj*, pos[3], aim[3], quat[4]): identity, else quat@pos x base matrix; aim offset in the look-at-camera frame added; decompiled: src/obj/big7_aim.cpp
 002CE360 Volume_UpdateAabb                // (Volume* v, u8 grounded[4]) -> r3: capsule-like corner points -> hkpAabbPhantom::setAabb; four rays (all-hits collector) -> grounded[i] from entity property 0x418F096F; decompiled: src/obj/big7_aabb.cpp
 001B5EB0 Probe_CastRay                    // (Obj* self, hkpWorld*, dir[3], from[3], f1 len, -, f32* near, f32* far, Obj** obj) -> bool: all-hits ray, two-ended scan of sorted hits, solid kinds 1/3/27/28, object (prop 0x91C7CF5B) vfunc +32 block state; decompiled: src/obj/big7_probe.cpp
-000E0620 Obj_Reinit0E0620                 // (Obj* o): called by Obj_TickBase on a state match / reset (name?)
 0092E2E8 HkWorld_CastRay92E2E8            // (hkpWorld*, const hkpWorldRayCastInput*, hkpWorldRayCastOutput*) (Havok) (name?)
 00925408 HkPhantom_CastRay925408          // (hkpAabbPhantom*, const hkpWorldRayCastInput*, hkpRayHitCollector*) (Havok) (name?)
 00887E28 HkAllHits_Sort887E28             // (hkpAllRayHitCollector*): sort hits by fraction (Havok) (name?)
 007CF51C HkTransform_SetMul7CF51C         // (out, a, b) (Havok) (name?)
 007CF188 HkTransform_SetMulEq7CF188       // (this, a) (Havok) (name?)
+
+# Game code large functions part 8
+002C2780 Obj_LineOfSight                  // (Src*, Obj* target, s32 srcMode, s32 dstMode, f1 radius) -> bool: src point by mode (vfunc +80 / +284 of src+276, attachment +172 offset through Obj_BoneMatrix, world camera +0x1281E0, +144) to target point; radius > 0: 4 rays at square corners (up row of identity), else 1; each ray's first entity hit (prop 0x91C7CF5B) must be target; decompiled: src/obj/big8_probe.cpp
+000E0620 Obj_Reinit                       // (Obj* o) -> r3: once (+376 0x4000): effect hash 0xB1BC9747, event (0x0046582C) -> World_Query (queue kind or -1), Msg_Post(o, 0x6A817B9D, 0x35A7B402, +168); decompiled: src/obj/big8_obj.cpp
+000E38F0 PhysObj_Init                     // (PhysObj* o, const Tmpl* t) -> r3: base init 0x000E01C0, vtables 0x00B12898 (+380 0x00B12A44, +384 0x00B12A6C), one Havok body record (48 bytes, PtrVector +388) per def +192 shape entry: name, properties, listeners, bone, transform; post-init 0x000E2FF0(o, 7 or 1, 0); decompiled: src/obj/big8_obj.cpp
+00160000 Ai_ChooseMoveState               // (Obj* o, const u8 open[4]) -> bool: target in reach -> state 8 (SetRef380); else by input direction / mover flags states 6/5/10/9/3/1/2 via vfunc +28 (o, layer, state); decompiled: src/obj/big8_ai.cpp
+000E01C0 PhysObjBase_Init0E01C0           // (o, tmpl): base-class init called first by PhysObj_Init (name?)
+000E2FF0 PhysObj_PostInit0E2FF0           // (o, u32 mode 1/7, 0) (name?)
+00F31D20 WorldObj_FindByNameCb            // OPD (data): WorldObj_ForEach callback, ctx {u32 hash, Obj* found} (name?)
+002CDA40 Mover_Aim2CDA40                  // (Mover* c, const f32 v[2]) -> u8 (name?)
+002CDD68 Mover_Try2CDD68                  // (Mover* c, u32 kind 1/3, -, -, 0, 0; f1 2.0, f2 10.0) -> bool (name?)
+002CEB80 Mover_Check2CEB80                // (Mover* c; f1) -> bool (name?)
+007CE950 HkBody_SetName7CE950             // (body + 120, const char* name) (Havok, name?)
+0091A82C HkBody_AddListener91A82C         // (body, listener) (Havok, name?)
+0091A5F8 HkBody_AddListener91A5F8         // (body, listener) (Havok, name?)
