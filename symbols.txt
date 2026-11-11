@@ -11547,7 +11547,6 @@
 001F5BA8 XmlDef_NewF5BA8                  // factory of XmlDef_Read_001F5938, 368 B, vtable 0x00B188C0; decompiled: src/obj/mid11_dmg2.cpp
 002F8EE0 XmlDef_New2F8EE0                 // factory of 002F8CF0 + 80 B child items (0x002F8AFC), 336 B, vtable 0x00B1D5C8; decompiled: src/obj/mid11_misc.cpp
 00307A78 XmlDef_New307A78                 // factory of 003078D8, 368 B, vtable 0x00B1DA78, then 0x0030743C(p, c); decompiled: src/obj/mid11_misc.cpp
-000C30E8 DefLeaf_Construct_000C30E8       // (Def* p, const Record* rec): leaf def base constructor (not decompiled)
 001BE8CC DamageColDef_FromRecBE8CC        // (p, rec) ctor used by DamageColDef_NewBED98 (not decompiled)
 001C011C DamageColDef_FromRecC011C        // (p, rec) ctor used by DamageColDef_NewC0658 (not decompiled)
 001CFE00 DamageColDef_FromRecCFE00        // (p, rec) ctor used by DamageColDef_NewD0208 (not decompiled)
@@ -11902,7 +11901,6 @@
 00AC68B4 s_from                         // "from"
 00AC68C4 s_objDefName                   // "objDefName"
 00AC68D4 s_objInstName                  // "objInstName"
-000C79C0 DamageDef_Ctor_000C79C0        // (Def* p 304 bytes, const Record* rec) (reads r3/r4; not decompiled here) (name?)
 
 # Game code sweep part 36
 004E81C0 Obj_VCall156Chain_004E81C0       // void f(T* o): when bit 0x80000000 of o->+136 is set, vt[156](p) for each set word p of o->+204..+236 (9); then, when that bit is (still) set, the same call for  (name?); decompiled: src/obj/obj36.cpp
@@ -11984,3 +11982,23 @@
 0034B594 NamePair_Read_0034B594           // bool f(Reader* r): ReadNamePair36 with the buffer 0x0106C060 (flag 0x0106C058) and the words 0x0106BFAC / 0x0106BFB0. (name?); decompiled: src/obj/obj36b.cpp
 0034B884 NamePair_Read_0034B884           // bool f(Reader* r): ReadNamePair36 with the buffer 0x0106C0F0 (flag 0x0106C0E8) and the words 0x0106BFA4 / 0x0106BFA8. (name?); decompiled: src/obj/obj36b.cpp
 0034BB58 NamePair_Read_0034BB58           // bool f(Reader* r): ReadNamePair36 with the buffer 0x0106C180 (flag 0x0106C178) and the words 0x0106BFB4 / 0x0106BFB8. (name?); decompiled: src/obj/obj36b.cpp
+
+# Game code large functions part 17
+000C79C0 DamageDef_Ctor_000C79C0        // u32 f(Def* p 304 bytes, const Record* rec): def base, tuning words -> p +204..+296, vtable 0x00B12838; per 160-byte entry of rec +124: hkpRigidBodyCinfo from the named world entity or a box (+0..+8, r 0.05) in a translate shape (0, +4, 0), filter info / motion / quality, 544-byte rigid body, 160-byte record pushed to p +192; returns the entry count (existing name); decompiled: src/obj/big17_def.cpp
+000C30E8 DefLeaf_Construct_000C30E8     // u32 f(Def* p 416 bytes, const Record* rec): leaf def ctor, vtable 0x00B12C88, words +168..+336 -> p +192..+368, one rigid body (entity rec +144 or box p +384) -> p +400, mass / damping / flags; r3 0 / 6 / release result (existing name); decompiled: src/obj/big17_def.cpp
+001FA238 PhysObj_Ctor_001FA238          // u32 f(Obj* o, const Def* d): vtable 0x00B18B48, takes the body of template o +216 ->+296 (vfunc 32) -> o +416, name, transform d +48..+104, mass d +244, velocities d +208 / +224, properties 0xA734004D / 0x91C7CF5B, listeners o +380 / +384; returns 0x001F9F70(o, 1, 0) (name?); decompiled: src/obj/big17_phys.cpp
+000C2E8C DefBase_Ctor_000C2E8C          // (Def* p, const Record* rec): shared def base constructor (reads r3/r4) (name?)
+00745720 BodyVector_Add_00745720        // (PtrVector* v, const BodyRec* 160 bytes): push a copy (reads r3/r4) (name?)
+00898B30 Hk_TranslateShapeCtor_00898B30 // (shape, 10, child, 1; f1 child radius) hkpConvexTranslateShape-style ctor; vtable 0x00F1E7F8 stored after (reads r3/r4/r6/r7/f1) (Havok; name?)
+0091D470 Hk_SetMotionFlags_0091D470     // (body, 1|5, 1, 0) motion change for keyframed / fixed / dynamic bodies (reads r3..r6) (Havok; name?)
+0091D618 Hk_SetMass_0091D618            // (body; f1 mass) (reads r3, f1 passed) (Havok; name?)
+001F9F70 PhysObj_Finish_001F9F70        // (o, 1, 0) -> r3 (reads r3/r4) (name?)
+00B12838 vt_DamageDef                   // 304-byte damage def vtable (000C79C0)
+00B12C88 vt_DefLeafBase                 // 416-byte leaf def vtable before the leaf ctors overwrite it (000C30E8)
+00B18B40 vt_PhysObj                     // +8 object vtable, +416 / +456 listener vtables (001FA238)
+00F1E7F8 vt_HkTranslateShape            // stored over a new translate shape after 0x00898B30 (Havok)
+00AC6838 k_EntityCopyKeys               // u32[10] property keys copied from a named entity to its replacement body (000C79C0)
+00F9203C k_BoxConvexRadius              // f32 0.05 (box shapes in 000C79C0 / 000C30E8)
+000C7980 k_DmgCtorPoolC7980             // .text f32 0, lane masks {0,~0,0,0} {0,0,~0,0} {0,0,0,~0} at +16/+32/+48
+000C30A0 k_LeafCtorPoolC30A0            // .text f32 0, lane masks at +16/+32/+48, f32 1 at +64
+001FA1F0 k_PhysObjPool1FA1F0            // .text f32 0, lane masks at +16/+32/+48, f32 FLT_MAX at +64
