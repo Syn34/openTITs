@@ -192,7 +192,7 @@ inline Vec4 VRow3(u32 x, u32 y, u32 z, const Vec4 m[3]) {
 // the masks at `masks`, the 48-byte constant pool before the function) on
 // the stack, and the component's +16 object's slot 20 called with (that
 // object, &matrix, k = the pool's first f32, &result); result +0..8 and
-// +16..24 copied to out +0..8 / +16..24. r5 = the entry address and r7-r10
+// +16..24 copied to out +0..8 / +16..24, f1 left as the result's x. r5 = the entry address and r7-r10
 // = 192, the OPD, the object and its vtable, as the original leaves them.
 inline void TXformVCall(PPUContext& ctx, u32 off, u32 fallback, u32 gmat, u32 masks) {
     const u32 out = arg<u32>(ctx, 0), o = arg<u32>(ctx, 1);
@@ -214,6 +214,13 @@ inline void TXformVCall(PPUContext& ctx, u32 off, u32 fallback, u32 gmat, u32 ma
     ctx.fpr[1] = static_cast<f64>(load<f32>(masks));
     call_ptr(ctx, opd, {obj, mat, load<u32>(opd), res, 192, opd, obj, vt});
     for (u32 k : {0u, 4u, 8u, 16u, 20u, 24u}) store<u32>(out + k, load<u32>(res + k));
+    // f1 is left holding the result's x, as the original's lfs f1 leaves it
+    // (bit for bit: a NaN keeps its payload and is not quieted).
+    const u32 x = load<u32>(res);
+    if ((x & 0x7F800000u) == 0x7F800000u && (x & 0x007FFFFFu) != 0)
+        ctx.fpr[1] = std::bit_cast<f64>((static_cast<u64>(x >> 31) << 63) | (0x7FFull << 52) | (static_cast<u64>(x & 0x007FFFFFu) << 29));
+    else
+        ctx.fpr[1] = static_cast<f64>(std::bit_cast<f32>(x));
 }
 
 // Vec3ToVec4(out, const f32* p): out = {p[0], p[1], p[2]} with w from the

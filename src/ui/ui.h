@@ -27,7 +27,7 @@ inline u32 vfunc(u32 obj, u32 offset) { return load<u32>(load<u32>(obj) + offset
 // ---------------------------------------------------------------- functions
 namespace ufn {
 constexpr u32 Ui_UpdateTimeline = 0x004D3B00;   // (Timeline*, f32 dt) -> bool, ui/timeline.cpp
-constexpr u32 Ui_FindAtPoint = 0x004D3E60;      // (Element*, user, const f32 pt[2], f32* best) -> Element* (VMX, not decompiled)
+constexpr u32 Ui_FindAtPoint = 0x004D3E60;      // (Element*, user, const f32 pt[2], f32* best) -> Element* (decompiled: src/obj/vmx2_ui.cpp)
 constexpr u32 Ui_FindInDirection = 0x004D4178;  // (Element*, user, Element* focus, const f32 dir[2], f32* best) -> Element*
 constexpr u32 Math_Acos = 0x005E649C;           // f32 (f32) (name?)
 }  // namespace ufn

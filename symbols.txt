@@ -183,7 +183,7 @@
 # Per frame: players, UI, audio, world
 004D4178 Ui_FindInDirection       // recursive focus search; decompiled: src/ui/navigate.cpp (name?)
 004D3B00 Ui_UpdateTimeline        // (Timeline*, f32 dt) -> bool; decompiled: src/ui/timeline.cpp (name?)
-004D3E60 Ui_FindAtPoint           // (Element*, user, f32 pt[2], f32* best) -> Element*; VMX (name?)
+004D3E60 Ui_FindAtPoint                     // (Element*, user, f32 pt[2], f32* best) -> Element*; VMX; decompiled: src/obj/vmx2_ui.cpp (name?)
 0044B310 Audio_Update             // (Listener* = World+0x128230, f32 dt); decompiled: src/game/frame_audio.cpp (name?)
 0045A9B8 World_SubmitFrame        // (World*) render jobs; decompiled: src/game/frame_world.cpp (name?)
 000AB93C Overlay_GetValue         // decompiled: src/game/frame_misc.cpp (name?)
@@ -3608,7 +3608,7 @@
 
 # World event handler callees, part 16
 000A78D4 Param_SetName0A78D4                  // (Param*, const char* s): non-empty s -> String_Copy(p +20, s, 64), else returns s; was Param_SetMatrix0A78D4 (it copies a name, not a matrix); decompiled: src/world/hevent16_a.cpp (name?)
-0091EAB8 Hk_SetTransform91EAB8                // (rigid body, const f32 m[4][4]): Havok range (name?)
+0091EAB8 Hk_SetTransform91EAB8              // (body, const f32 m[4][4]) (existing name)
 00924B90 Hk_SetAabb924B90                     // (phantom, const vec4 aabb[2]): Havok range (name?)
 000FC040 Camera_PushTarget0FC040              // (Camera*, Target*, -, u8 priority; f32 blend) -> u32: target stack +368 / count +345, blend state +704..+900; decompiled: src/world/hevent17_f.cpp (name?)
 0010BD88 Target_Construct10BD88               // (Target* 688 bytes, Camera*, Object*, Object* look): frame / bone 0x0021C5E0, "CompTargeting_Binocucom" component via the registry 0x01056F04; decompiled: src/world/hevent17_g.cpp (name?)
@@ -9368,7 +9368,7 @@
 001CAA88 Obj_Scale500_001CAA88            // void f(T* o): +500 = (o->+780 - 1) * o->+736->+1232 when +780 > 1 and that value (k = *(f32*)0x001CAA80 when +736 is null) is > k (r4 / r5 / f1 / f2 left) (name?); decompiled: src/obj/obj24.cpp
 005E6578 Libm_Unary5E6578                 // f32 f(f32) in libm, called with a value clamped to [-1, 1] (acosf/asinf?) (name?); not decompiled
 00ABDDC4 Import_ABDDC4                    // import stub (h, a, b, 0) -> compared with b by 0x00427744 (name?)
-00ABDCE4 Import_ABDCE4                    // import stub (s32 handle): a close called by 0x004279A4 (name?)
+00ABDCE4 sys_net_socketclose_import         // Import_ABDCE4 (s): socketclose (name?)
 
 # World event handler part 28
 004F2678 GeomSet_LoadScene4F2678              // (GeomSet*, Scene*, u32 a) -> r3 of Geom_BindClassTextures (0 without a bank): config fog/depth (scene +656 / defaults 300 / 50), child scenes (node map 0x010C2CB8) recursively, banks (Bank_Open at +16 position), xml paths, cameras +8 / +4 with camera def 0xFCCCF4CC (or allocator node / default matrix, fov 55), HookEffects, +276 scenes (Geom_LoadScene4F05A8), class textures; decompiled: src/world/hevent28_a.cpp (name?)
@@ -11286,7 +11286,7 @@
 004168B0 CamRig_Update4168B0            // (CamRig*; f32 dt): anchor objects at points, step mode +80 (0..15); decompiled: src/obj/big10_cam.cpp
 00483050 World_PlayerEvent483050        // (World*, s32 player, EventObj*, u8 quiet): pickup/event effects + HUD + World_Query record; decompiled: src/obj/big10_hud.cpp
 004A22D8 SplineInst_FromKey4A22D8       // (Obj* key, RefObj* ref) -> SplineInstance*: was Item_Find4A22D8 (it creates, not finds); decompiled: src/obj/big10_obj.cpp
-007D170C HkTransform_InvPos7D170C       // (vec4* out, const hkTransform*, const vec4* in): to local space (name?) (Havok)
+007D170C HkTransform_InvPos7D170C           // (out, const hkTransform*, const Vec4* p) (existing name)
 007D17E0 HkTransform_InvDir7D17E0       // (vec4* out, const hkTransform*, const vec4* dir): to local direction (name?) (Havok)
 0090CE9C HkLimitedHinge_Ctor90CE9C      // (data) 256-byte limited hinge constraint data ctor (name?) (Havok)
 0090CC18 HkLimitedHinge_SetWorld90CC18  // (data, transA, transB, pivot, axis) setInWorldSpace (name?) (Havok)
@@ -11730,7 +11730,6 @@
 0016A828 XmlDef_Read16A828                // (a0, c, x, tmpl, o) -> 1: Damage_Read0C3910, empty names -> "", o+124 "colObjName" attr, 14 floats o+128.., hash o+188 (tmpl flag 0x400 / body tmpl+244), byte o+24 = 1; decompiled: src/obj/mid13_rd.cpp
 0016A448 XmlDef_FromRec16A448             // (p, rec) ctor of 0016ADC4
 00203718 XmlDef_Read203718                // (a0, c, x, tmpl, o): Damage_Read0C3910, enum 0x0027873A (6 hashes 0x00AD2C54) o+124, s32 o+128, 8 floats, 2 hashes (tmpl flag 0x1000 / body tmpl+200); decompiled: src/obj/mid13_rd.cpp
-00203380 XmlDef_FromRec203380             // (p, rec) ctor of 00203BE4
 001668B4 XmlDef_Read1668B4                // reader of 00167080
 001664C8 XmlDef_FromRec1664C8             // (p, rec) ctor of 00167080
 0017CD54 XmlDef_Read17CD54                // reader of 0017D640
@@ -12301,3 +12300,40 @@
 002411B0 Cursor_ReadInput2411B0             // void (Ui*, f32 out[3]): d-pad + stick (pad 0x010B1A90) clamped, or projected o->576 direction; decompiled: src/obj/mid16_b.cpp
 001DFFB8 Cursor_ReadInput1DFFB8             // void (Ui*, f32 out[2]): d-pad + both sticks, dead zone c->536, squared, invert flags *(0x00F65CA0)+4144; decompiled: src/obj/mid16_b.cpp
 000F1E00 Obj_AlignToTarget0F1E00            // u32 (Obj*, f32 s) callback: o->96 matrix = target +240 copy, or frame z = target+432, RotationZ(def->256*s), Multiply; decompiled: src/obj/mid16_b.cpp
+
+# Game code VMX sweep part 2
+000B37F0 OBox_ClampPointXZ                  // (Vec4* p, const OrientedBox* b{+0 mat4, +64 min, +80 max}): clamp p in the box's xz plane, y kept; decompiled: src/obj/vmx2_math.cpp
+000B4B90 Node_UpdateWorld_000B4B90          // (Node* o; f32 t): +16 world 4x3 from link +224 (x owner +212->+160 +80) / def +216 +80 / owner; copy to +144, +236 = t; decompiled: src/obj/vmx2_math.cpp (name?)
+0023CE5C Obj_ResetMotion_0023CE5C           // (Obj*): clears motion state, vfn[34]/[96](zero), def +1040 vector through rows scaled by vfn[98], vfn[94]/[97], effect hash 0x707A34AB; decompiled: src/obj/vmx2_obj.cpp (name?)
+00105360 Part_SyncBody_00105360             // (T* o, a, u8 flag): body (+20) moved to +16's vfn[39] position, velocities zeroed, then 0x00103AC0; decompiled: src/obj/vmx2_obj.cpp (name?)
+001E4EDC Obj_PushXform_001E4EDC             // (Obj*): +512 matrix to parent +424 (MarkDirty) or vfn[21]; UpdateLod; attachment +620 rows + def +320 offset; decompiled: src/obj/vmx2_obj.cpp (name?)
+002AD030 Obj_ResetBody_002AD030             // (Obj*) -> u32: clears counters, re-seats the +8 wrapper's body at pos +112 / rot +128, zero velocities; decompiled: src/obj/vmx2_obj.cpp (name?)
+000DDA30 Obj_SyncBodyXform_000DDA30         // (Obj*): Hk_SetTransform(+348, def +164 model +240 matrix x o+96); decompiled: src/obj/vmx2_obj.cpp (name?)
+003B4EC0 Obj_AttachInPlace_003B4EC0         // (T* o, Obj* b, Vec3* out): Obj_Attach0D15C0(o->+104, desc with b's position in its frame); decompiled: src/obj/vmx2_obj.cpp (name?)
+00194160 Obj_SetWorldMatrix_00194160        // (Obj*, const f32 m[4][4]): o+96 = m, body +388 Hk_SetTransform (+Body_Moved when moved), CopyMat43(+244); decompiled: src/obj/vmx2_obj.cpp (name?)
+002D2660 Matrix_PlaceRotY_002D2660          // (f32 m[4][4], const T* a): RotationY(a+52) placed so the shape position maps to pivot + up*a+40 + model translation; decompiled: src/obj/vmx2_obj.cpp (name?)
+00169D50 Obj_ApplyRotation_00169D50         // (Obj*): world object 0x45A6A51A's matrix = Quat_ToMatrix(o+432) x m, MarkDirty chain; decompiled: src/obj/vmx2_obj.cpp (name?)
+00025F00 Obj_AnchorPoint_00025F00           // (Vec3* out, -, Obj* o): record 0x2AF3A6AD +48 through matrix / body aabb top-centre / box centre with max y; decompiled: src/obj/vmx2_obj.cpp (name?)
+001277F8 Obj_FocusPoint_001277F8            // (Vec3* out, Obj* o): rider's vfn[71], else def +1440 / shape position through o's matrix; decompiled: src/obj/vmx2_obj.cpp (name?)
+0027E508 Input_StickDir_0027E508            // (T*): pad stick -> +32 circle-mapped, +64 magnitude, +48 camera-space dir, 11 button states at +68; decompiled: src/obj/vmx2_obj.cpp (name?)
+0027FCB8 Input_StickDir_0027FCB8            // the same, one button (pool 0x0027FC60, tables 0x00AD4820 / 0x00AD472C); decompiled: src/obj/vmx2_obj.cpp (name?)
+00255CA8 Comp_Construct_00255CA8            // (T*, const Tmpl*): component ctor (vtable 0x00B1C4C8) with entity registry push; decompiled: src/obj/vmx2_ctor.cpp (name?)
+004274D0 NetServer_Open_004274D0            // (const NetAddr*) -> Server*: LAN TCP server socket/setsockopt/bind/listen into 0x00F65850; decompiled: src/obj/vmx2_net.cpp (name?)
+004AB690 HkBody_CylinderImpulse_004AB690    // (Body*, const Cylinder*, const hkTransform*): buoyancy-style impulse/torque, "TtCylinder" profiler markers; decompiled: src/obj/vmx2_hk.cpp (name?)
+001016A0 Hk_PhantomOverlapsOther_001016A0   // (T* o; f32 r) -> bool: phantom +1028 overlaps anything but o's bodies; decompiled: src/obj/vmx2_hk.cpp (name?)
+00203380 SphereBody_Construct_00203380      // (T*, const XmlDef*): sphere rigid body (vtable 0x00B19148) from the def; decompiled: src/obj/vmx2_hk.cpp (name?)
+004360CC Trigger_Construct_004360CC         // (T*, u32, u8, u8): sphere trigger phantom object (vtable 0x00B21178), added to the world; decompiled: src/obj/vmx2_hk.cpp (name?)
+0024C230 Obj_PhysStep_0024C230              // (Obj*; f32 dt) -> bool: speed-clamped body tracking (5.0/s), matrix snapshot +1104, input vector +1248; decompiled: src/obj/vmx2_hk.cpp (name?)
+0028A300 Cam_ObjInView_0028A300             // (Cam*, Obj*) -> bool: capsule as two Cam_SphereInView28A0E8 spheres; decompiled: src/obj/vmx2_cam.cpp (name?)
+001FBC80 Obj_OnHitPush_001FBC80             // (Obj*, HitEvent*) -> u32: body push impulse at the hit point, damage vfn[88] (0x045D9554), Trophy_OnMsg; decompiled: src/obj/vmx2_hit.cpp (name?)
+0091E8C8 HkBody_SetPosition91E8C8           // (body, const Vec4*) (name?)
+00103AC0 Part_Update103AC0                  // (T* o, a, u8 flag) (name?)
+0091A228 HkBody_SetMotion91A228             // (hkpEntity*, const T* motion) (name?)
+0091ECA8 HkBody_SetPosRot91ECA8             // (hkpRigidBody*, const Vec4* pos, const Vec4* rot) (name?)
+0089ECA8 HkShape_Radius89ECA8               // f1 (const Shape*) (name?)
+004AA740 HkCyl_Displace4AA740               // (body, p0, p1; f1 r; out n (r7), out d (r8)) (name?)
+00929FDC HkPhantom_SetPos929FDC             // (phantom, const Vec4* pos; f1) (name?)
+00228E38 Obj_CanStep228E38                  // bool (Obj*; f1 dt) (name?)
+0024B064 Obj_PhysPre24B064                  // (Obj*; f1 dt) (name?)
+0024BD80 Obj_PhysPost24BD80                 // (Obj*; f1 dt) (name?) [VMX candidate]
+000D85A4 Obj_Prep0D85A4                     // (Obj*) (name?)
