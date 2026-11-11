@@ -1713,7 +1713,6 @@
 00472234 World_BeginLevel472234               // (World*); decompiled: src/world/hevent4_g.cpp (name?)
 004BDEDC EffectDef_Find                       // (u32 hash, u32 set_name, u8 search_all) -> def; decompiled: src/world/hevent6_a.cpp (name?)
 004C8E80 Effect_Destruct                      // (Effect*); decompiled: src/world/hevent6_a.cpp (name?)
-00470750 Obj_SetMode470750                    // (o, 3, 0) (name?)
 003632C8 Player_Set3632C8                     // (o, value, which): slot vfuncs +188/+148; decompiled: src/world/hevent5_a.cpp (name?)
 003636EC Obj_Reset3636EC                      // (o); decompiled: src/world/hevent5_a.cpp (name?)
 00362D28 Obj_SetState362D28                   // (o, s32 state, u8); decompiled: src/world/hevent5_a.cpp (name?)
@@ -9358,7 +9357,7 @@
 0042E3AC VtB20E00_Ctor                    // T::T(T* o, bool a, bool b): the 0x00B20CC8 base (o, 1), bits 0x00800000 / 0x00400000 of +8 = a / b, vtable 0x00B20E00 (r3 / r4 left) (name?); decompiled: src/obj/obj24.cpp
 0043DA44 VtB217E8_Delete                  // delete T: nothing for null; vtable 0x00B217E8, the global 0x00F658D4 = 0, Thunk_004F41AC(this), Mem_FreeFrom(this, 0) (name?); decompiled: src/obj/obj24.cpp
 0044BCE0 Video_Mode_0044BCE0              // u32 f(): 6 when the u8 0x010AEC60 is set and 0x006D4F80() is 3, 8 when it is 4, else 2 (name?); decompiled: src/obj/obj24.cpp
-004705F8 Queue_Push_004705F8              // void f(a, b, c, d, u8 e): appends the 20-byte record {a, b, c, d, e} to the queue at 0x010BA138 (count 0x010BA134, at most 128) unless e is set and b is 0 (r8.. (name?); decompiled: src/obj/obj24.cpp
+004705F8 Queue_Push_004705F8              // (already named) inlined 4x in World_SetMode_00470750; decompiled: src/obj/obj24.cpp
 004AD298 Pooled_Delete_004AD298           // delete T (pooled): nothing for null; 0x004AD154(this), then the pool behind r13 - 28332 takes it back: pool->vfn[3](pool, this, this->+4) (name?); decompiled: src/obj/obj24.cpp
 004C0008 New44_004C0008                   //  (name?); decompiled: src/obj/obj24.cpp
 004C09D8 New68_004C09D8                   //  (name?); decompiled: src/obj/obj24.cpp
@@ -11987,12 +11986,12 @@
 000C79C0 DamageDef_Ctor_000C79C0        // u32 f(Def* p 304 bytes, const Record* rec): def base, tuning words -> p +204..+296, vtable 0x00B12838; per 160-byte entry of rec +124: hkpRigidBodyCinfo from the named world entity or a box (+0..+8, r 0.05) in a translate shape (0, +4, 0), filter info / motion / quality, 544-byte rigid body, 160-byte record pushed to p +192; returns the entry count (existing name); decompiled: src/obj/big17_def.cpp
 000C30E8 DefLeaf_Construct_000C30E8     // u32 f(Def* p 416 bytes, const Record* rec): leaf def ctor, vtable 0x00B12C88, words +168..+336 -> p +192..+368, one rigid body (entity rec +144 or box p +384) -> p +400, mass / damping / flags; r3 0 / 6 / release result (existing name); decompiled: src/obj/big17_def.cpp
 001FA238 PhysObj_Ctor_001FA238          // u32 f(Obj* o, const Def* d): vtable 0x00B18B48, takes the body of template o +216 ->+296 (vfunc 32) -> o +416, name, transform d +48..+104, mass d +244, velocities d +208 / +224, properties 0xA734004D / 0x91C7CF5B, listeners o +380 / +384; returns 0x001F9F70(o, 1, 0) (name?); decompiled: src/obj/big17_phys.cpp
-000C2E8C DefBase_Ctor_000C2E8C          // (Def* p, const Record* rec): shared def base constructor (reads r3/r4) (name?)
-00745720 BodyVector_Add_00745720        // (PtrVector* v, const BodyRec* 160 bytes): push a copy (reads r3/r4) (name?)
+000C2E8C DefBase_Ctor_000C2E8C            // u32 f(Def* p, const Record* rec): 0x000C26D8(p, rec), vtable 0x00B11D98, fields from rec +76..+122, +144 = EffectDef_Find(rec +80, 0, 1) with "missing lifetime script" / "has no commands" reports; decompiled: src/obj/big18_def.cpp
+00745720 BodyVector_Add_00745720          // u32 f(BodyVector* v, const BodyRec* src): push a copy of the 160-byte record (grow x2 when full; top 4 bits of +124 merged), bump count / high-water mark; returns the new count - 1; decompiled: src/obj/big18_def.cpp
 00898B30 Hk_TranslateShapeCtor_00898B30 // (shape, 10, child, 1; f1 child radius) hkpConvexTranslateShape-style ctor; vtable 0x00F1E7F8 stored after (reads r3/r4/r6/r7/f1) (Havok; name?)
 0091D470 Hk_SetMotionFlags_0091D470     // (body, 1|5, 1, 0) motion change for keyframed / fixed / dynamic bodies (reads r3..r6) (Havok; name?)
 0091D618 Hk_SetMass_0091D618            // (body; f1 mass) (reads r3, f1 passed) (Havok; name?)
-001F9F70 PhysObj_Finish_001F9F70        // (o, 1, 0) -> r3 (reads r3/r4) (name?)
+001F9F70 PhysObj_Finish_001F9F70          // u32 f(PhysObj* o, s32 mode): mode in bits 0xF000 of u16 +432; 0/4 remove body from the Havok world, 1 re-add (filter +44 from +204, vfunc 168 / template vfunc 12 / vfunc 76 -> Shape_InitBody on volume +436), 3 clear +420; returns the new u16 +432 (or the body when unchanged); decompiled: src/obj/big18_def.cpp
 00B12838 vt_DamageDef                   // 304-byte damage def vtable (000C79C0)
 00B12C88 vt_DefLeafBase                 // 416-byte leaf def vtable before the leaf ctors overwrite it (000C30E8)
 00B18B40 vt_PhysObj                     // +8 object vtable, +416 / +456 listener vtables (001FA238)
@@ -12002,3 +12001,7 @@
 000C7980 k_DmgCtorPoolC7980             // .text f32 0, lane masks {0,~0,0,0} {0,0,~0,0} {0,0,0,~0} at +16/+32/+48
 000C30A0 k_LeafCtorPoolC30A0            // .text f32 0, lane masks at +16/+32/+48, f32 1 at +64
 001FA1F0 k_PhysObjPool1FA1F0            // .text f32 0, lane masks at +16/+32/+48, f32 FLT_MAX at +64
+
+# Game code large functions part 18
+00470750 World_SetMode_00470750           // void f(World* w, s32 mode, u8 arg): u8 +31 = mode, +32 = 0, +33 = arg; then (player and Obj_ShowPanel(player, 0x00F65E70[mode])) per mode: 0 +30 = +51; 1/2/3 fade in + flag-map 0x846BF162 listeners queued + HUD/pause/users vfunc 36, then shop StartMode / speaker talk / shop Obj_Play; 4 letterbox cutscene start; 5..20 Obj_SelectEntry(player, hash); 23..26 fade out; replaces Obj_SetMode470750; decompiled: src/obj/big18_world.cpp
+000C26D8 DefBase_Init_000C26D8            // (Def* p, const Record* rec): inner base constructor called first by DefBase_Ctor_000C2E8C (name?)
