@@ -8,7 +8,7 @@
 004FC8BC CrtStart                 // runs _init, calls main, then exit
 0071B570 exit
 0071F460 _exit                    // sys_process_exit
-00726E54 memset
+00726E54 memset                           // libc
 00553684 String_Copy              // strncpy(dst, src, size-1) + terminate; decompiled: src/string/string.cpp
 0056A710 String_HashNoCase        // h = h * 31 + toupper(c); decompiled: src/string/string.cpp
 
@@ -53,7 +53,7 @@
 00724588 vsprintf                 // (name?) decompiled: src/game/load_util.cpp
 00551A58 FreeList_Init            // (list, elem_size, count, heap, bool); decompiled: src/game/load_util.cpp
 0045CC18 World_Construct          // (obj, initial state) object of 0x1286B0 bytes at Game+0
-0071C3F0 memmove                          // (dst, src, n) (already m2fn::memmove)
+0071C3F0 memmove                          // libc
 00723884 strcmp
 00555D94 String_Compare           // strcmp; decompiled: src/string/string_misc.cpp
 00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
@@ -786,7 +786,6 @@
 004E02DC Ui_BringToFront          // (ui, 1) (name?); decompiled: src/world/misc.cpp
 0044D740 Audio_SetFilterScale     // (f32) (name?)
 004437CC Audio_IsEmitterValid             // (u32 handle) -> bool: index h >> 16, serial h & 0xFFFF in the 272-byte records at 0x010B0200->+28 (existing symbols.txt name); decompiled: src/obj/obj26.cpp
-0044CCF8 Audio_SetEmitterFilter   // (u32 handle, f32 cutoff) (name?)
 00520368 View_SetFov              // (View*, f32) (name?); decompiled: src/world/misc.cpp
 00787408 Ease                     // (f32 t, f32 shape) -> f32 (name?); decompiled: src/world/misc.cpp
 000AE784 SaveData_Write           // stub: returns 3; decompiled: src/world/misc.cpp
@@ -2385,7 +2384,7 @@
 005CC240 SlyTerrain_Draw                      // shader vtable 0x00B25EC0 slot 12; decompiled: src/gfx/shader5_draw.cpp
 0050C018 Material_ParamSlot                   // (Material*, u32 index) -> u32* &params[index]: grows material +124 (u8 capacity +121) via SmallAlloc; decompiled: src/gfx/shader6_util.cpp
 0055499C Matrix_MultiplyTo                    // (out[16], a[16], b[16]) -> out: rows of a through b (4x Vec4_TransformByMatrix); decompiled: src/gfx/shader6_util.cpp
-005E62E8 libm_tanf                            // f1 -> f1 (libm; leave recompiled) (name?)
+005E62E8 libm_tanf                        // libm
 005D4FF0 SlyWater3_UploadFragment             // (Material*) fragment constants 3 / 4 and the screen copy on texture unit 5; decompiled: src/gfx/shader6_util.cpp
 005C6EB8 SlyHeightFog_BuildMatrices           // (Material*, f32 a[16], f32 b[16]) two rotated / scrolled / scaled UV matrices; decompiled: src/gfx/shader6_util.cpp
 
@@ -10726,7 +10725,6 @@
 001D7470 XmlDef_Read_001D7470             // (a0, c, def): reader of the 001D7D98 def (reads r4/r5) (name?); not decompiled
 00759508 SortedMap_Insert759508           // (map, const u32* key, value) (name?); not decompiled
 0012E824 Volume_EnterItem12E824           // (item, volume) (name?); not decompiled
-004B6C88 AnimCmd_FromElem                 // (XmlNode*) -> AnimCmd* or 0 (name?); not decompiled
 0009810C AnimCmd_ReadSlot9810C            // (o, node, slot) -> bool (name?); not decompiled
 00266570 Tmpl_AddEntry266570              // (tmpl, entry) (name?); not decompiled
 
@@ -11510,7 +11508,7 @@
 00371360 Obj_TalkResume                   // (o) (name?); called by 0x003735C8
 000E5EF0 Obj_RefreshBase                  // (o, x): reads r4 (passed through by 0x001C7C5C) (name?)
 000E02F8 Obj_SetRagdollBase               // (o, u8 on) (name?); tail of the ragdoll releases (RagdollRelease33)
-000E4544 Obj_SoundOffBase                 // (o, u8 on) (name?); tail of 0x001CC338 / 0x001D46E8
+000E4544 Obj_SoundOffBase                 // (o, full) base of 001E6FA0 (already in symbols.txt)
 000F6A68 Obj_ApplyKindEntry               // (a, entry, b, d, e, f) (name?); called by 0x000F8058
 
 # Game code medium sweep part 11
@@ -11775,3 +11773,74 @@
 00F64CCC g_HideoutSelectHandle          // u32 handle of the hideout "select" prompt (Handle_ResolveBit1) (name?)
 000C3FF8 k_DefLeafConsts                // .text f32 {100, 1, 10, 0.5, 0, -1, pi/180, pi/360, 60, 360} (DefLeaf_ReadBase_000C4020)
 00AC66CC k_DefLeafFlagNames             // u32[13] hashes of the leaf def +336 flag bits
+
+# Game code sweep part 35
+0008CCB8 VtB10738_NewXml_0008CCB8         // T* New(-, Xml* x): a 24-byte record (Mem_Alloc(24, 0, 16); 0 on failure) built by AnimCmd_ConstructBase(m), +12 / +16 cleared, vtable 0x00B10738, u8 +20 cleared (name?); decompiled: src/obj/obj35.cpp
+0008FB8C VtB10850_NewXml_0008FB8C         // T* New(-, Xml* x): XmlHHBB35 with vtable 0x00B10850, the hashes 0x7A30D7E3 / 0x7F247172 and the bools 0xF395ADCC / 0x1E389259. (name?); decompiled: src/obj/obj35.cpp
+00090738 VtB108F0_NewXml_00090738         // T* New(-, Xml* x): XmlHHBB35 with vtable 0x00B108F0, the hashes 0x8A93973F / 0x7A30D7E3 and the bools 0x7A281983 / 0x6334AE6F. (name?); decompiled: src/obj/obj35.cpp
+00090FE0 Effect_ApplyToTarget_00090FE0    // void f(T* o, X* x): the target: when o->+12 names a component of x (Effect_FindComponent(x, +12)) whose vt[32]() is 5 and whose +28 owner has the class hash 0x0 (name?); decompiled: src/obj/obj35.cpp
+00096478 VtB10B98_NewXml_00096478         // T* New(-, Xml* x): XmlHHHH35 with vtable 0x00B10B98 and the hashes 0x8A93973F / 0x7A30D7E3 / 0x03D1FCFC / 0x044DDD31. (name?); decompiled: src/obj/obj35.cpp
+0009A3E4 VtB10F10_NewXml_0009A3E4         // T* New(-, Xml* x): NewXml34 (28 bytes): u8 +12 = 1, vtable 0x00B10F10, +20 / +24 cleared (+16 is left to the read); the bool 0xCBF1C4F3 to +12 (default 1), the  (name?); decompiled: src/obj/obj35.cpp
+0009CC08 VtB11190_NewXml_0009CC08         // T* New(-, Xml* x): XmlHHBB35 with vtable 0x00B11190, the hashes 0x7A30D7E3 / 0x04B8CC71 and the bools 0xF5897C08 / 0x466FBEF5. (name?); decompiled: src/obj/obj35.cpp
+000A583C VtB11940_NewXml_000A583C         // T* New(-, Xml* x): XmlHHBB35 with vtable 0x00B11940, the hashes 0x0024728B / 0x00255BF3 and the bools 0x469D7C52 / 0xF5897C08. (name?); decompiled: src/obj/obj35.cpp
+001280F8 Obj_SetMatrix_001280F8           // void f(T* o, const Mat43* m): unless m is nearly o's matrix +96 (Matrix_NearlyEqual(m, o + 96; f1 = the tolerance at 0x001280F4)), the 3x3 rows and the position (name?); decompiled: src/obj/obj35.cpp
+0018E8E8 Obj_ClampF348_0018E8E8           // void f(T* o, f32 d): the f32 o->+348 kept at max(K, min(v, o->+344)) (K the constant at 0x0018E8E0): with o->+1708 == 1 v is the partner o->+1704's +348 after p (name?); decompiled: src/obj/obj35.cpp
+001C4390 Obj_RangeSwitch_001C4390         // bool f(T* o, U* u; f32 a, f32 b): when o's +552 lacks 0x20000000 and (b < K or a >= b; K the constant at 0x001C438C): o->vt[420](o, 3, 0), then 0x001C3EF0(o, 0) (name?); decompiled: src/obj/obj35.cpp
+001C9A28 Obj_SlotsNotify_001C9A28         // bool f(T* o): 0 when 0x001AEA50(o) fails (it reads the caller's f1, passed through); else, when o's +172 has 0x200, for each of the 6 slots i whose flag byte (o (name?); decompiled: src/obj/obj35.cpp
+001E6FA0 Obj_SoundOff_001E6FA0            // void f(T* o, bool full): with full, o is taken off the world list (World_ListRemove_0046B7A4(*0x00F65CA0, 3, 0x00F33C18, o, 0)), its references +584 / +588 and  (name?); decompiled: src/obj/obj35.cpp
+002221D8 Def_NewTarget_002221D8           // T* f(a, Xml* x, P* p, Def* d): a target def read into a stack record with its defaults (Def_ReadTarget_002220C8(a, x, p, d, &rec); +12 = p->+12, vtables 0x00AD3 (name?); decompiled: src/obj/obj35.cpp
+002B92F8 Slot_FreePos_002B92F8            // Vec3* f(Vec3* out, T* t): out = the default 0x01164B40, then, when t->+64 < the u16 count +32 (signed), the position of the first free 144-byte entry of t->+24  (name?); decompiled: src/obj/obj35.cpp
+003280F8 Obj_DisplayName_003280F8         // const char* f(T* o): for a type-4 o (u8 +18), the first entry p of the chain +2576 / +2564 that is also type 4 with u8 +2460 set and whose p->vt[48](p) is a non (name?); decompiled: src/obj/obj35.cpp
+003AEAAC Obj_ReadChannels_003AEAAC        // void f(T* o): the channel record c = 0x010B19E0 + 11968 * (the u8 at (*0x00F65CA0)->+4209) + 176: o's bytes +154 / +155 / +156 = whether c->+8 & c->+12 has 0x80 (name?); decompiled: src/obj/obj35.cpp
+003B0104 Anim_Restart_003B0104            // bool f(T* o, -, u8 b, u32 w; f32 t): when o->vt[32](o, 0) is 8 or 6 and the track 0 of o->+96 is at most K through (Anim_TrackTime_000DC488 / Anim_TrackLength16 (name?); decompiled: src/obj/obj35.cpp
+004285B8 StaticInit_004285B8              // Static init: the pointer vectors 0x0108A13C (u16 +6 = 304), 0x0108A110 (132; PtrVector_Init(v, 32, 0, 0)), 0x0108A128 (16; 256) and 0x0108A150 (292; 16), then t (name?); decompiled: src/obj/obj35.cpp
+0044A78C Voice_SetParamByHandle_0044A78C  // void f(u32 h, a, s8 c): when voice is on (u8 0x010AEC60) and the handle h (index h >> 16 below the count 0x010B0218, serial h & 0xFFFF != 0) matches its 272-byt (name?); decompiled: src/obj/obj35.cpp
+004A8CD0 Dialog_Request_004A8CD0          // void f(const char* title, a, Ui* b, Ui* c, T* d): the dialog request record 0x010C1B88: its title (cleared, then String_CopyN(rec, title, 127) for a non-empty o (name?); decompiled: src/obj/obj35.cpp
+004B2A04 Pool_FreeHandle_004B2A04         // void f(Pool* o, u32 h): frees the handle h (index h >> 16 below o->+252, serial h & 0xFFFF != 0) when its 16-byte entry e of o->+256 matches (serial (e->+12 >>  (name?); decompiled: src/obj/obj35.cpp
+004B42CC Rec_Reset_004B42CC               // s16 f(T* o): resets the record o: the index of "..." (0x00AEE2E8) in the 5-entry, 20-byte name-hash table 0x00F65F88 (String_HashNoCase; not found: String_Forma (name?); decompiled: src/obj/obj35.cpp
+004ED58C Level_ReadRecord_004ED58C        // bool f(Xml* x): the current level record (Mem_Alloc(1168, 0, 16) built by 0x004EAD20; 0 on failure) to 0x010C2C28; with an attribute "..." (0x00AF0120) its name (name?); decompiled: src/obj/obj35.cpp
+004F86B0 StrTable_Lookup_004F86B0         // const char* f(Table* o, u32 key, const char* dflt, bool quiet): the string for key in o->+4 (binary search of its sorted {key, index} pairs +24, count +20; a ne (name?); decompiled: src/obj/obj35.cpp
+0074D900 Quat_FromEuler_0074D900          // void Quat_FromEuler(Quat* q; f32 x, f32 y, f32 z): with k the f32 at 0x0074D8F8 (half-angle scale), a = y k, b = z k, c = x k (singles) and their cosines / sine (name?); decompiled: src/obj/obj35.cpp
+0075140C VtB15308_Delete_0075140C         // void delete(T* o): Delete424_35 with the class 0x00B15308 and 480 bytes. (name?); decompiled: src/obj/obj35.cpp
+00756DCC VtB18030_Delete_00756DCC         // void delete(T* o): Delete424_35 with the class 0x00B18030 and 624 bytes. (name?); decompiled: src/obj/obj35.cpp
+0076A800 Vec32_Push_0076A800              // u32 f(Vec32* v, const Rec* r): appends r to the u16-counted vector of 32-byte records v (data +0, capacity +4 doubled through PtrVector_Reserve when full, count (name?); decompiled: src/obj/obj35.cpp
+0002EC04 Obj_Detach_0002EC04              // void f(T* o): when bit 1 of o's u8 +304 is set it is cleared, and with an attachment +256: unless o->vt[124](o), the attachment's vt[40](it, 0); +256 = 0, (o->+ (name?); decompiled: src/obj/obj35.cpp
+00060100 Game_StartOnce_00060100          // void f(Game* o): once (u8 +512): +416 = the word at g + 0x1281E0 (g = *0x00F65CA0, the game itself); when g's player (g->+4216) has flags 2 and 8 in +192, its u (name?); decompiled: src/obj/obj35.cpp
+0006EE44 VtB0F270_NewXml_0006EE44         // T* New(-, Xml* x): NewXml34 (24 bytes): +12 / u8 +20 cleared, f32 +16 = 1.0, vtable 0x00B0F270, u8 +21 cleared; the hash 0x001EBA11 to +12 (default 0), the f32  (name?); decompiled: src/obj/obj35.cpp
+00075768 VtB0F6D0_NewXml_00075768         // T* New(-, Xml* x): NewXml34 (28 bytes): +12..+20 cleared, vtable 0x00B0F6D0, u8 +24 cleared; the hashes 0x8A93973F (+12, default 0) / 0x7A30D7E3 / 0x03D1FCFC an (name?); decompiled: src/obj/obj35.cpp
+00090AE4 VtB10918_NewXml_00090AE4         // T* New(-, Xml* x): NewXml34 (48 bytes): +12 cleared, the vec3 +16 = the default 0x01164B90, vtable 0x00B10918, the u8s +32 / +33 cleared; the hash 0xA12A9A30 to (name?); decompiled: src/obj/obj35.cpp
+00097D38 VtB10D28_NewXml_00097D38         // T* New(-, Xml* x): NewXml34 (20 bytes): +12 / u8 +16 / u8 +17 cleared, vtable 0x00B10D28, u8 +18 cleared; the hash 0x000107E5 to +12 (default 0) and the bools 0 (name?); decompiled: src/obj/obj35.cpp
+000A40C8 VtB11788_NewXml_000A40C8         // T* New(-, Xml* x): XmlHHBB35 with vtable 0x00B11788, the hashes 0x8A93973F / 0x00255BF3 and the bools 0x7A281983 / 0xF5897C08. (name?); decompiled: src/obj/obj35.cpp
+000B2AE0 Trophy_OnMsg_000B2AE0            // void f(T* o, Msg* m): when o->+244 is set and m's sender (+4) has flag 1 of +188: the trophy check for each of the flags 0x400 / 0x800 of m's u16 +12 (TrophyChe (name?); decompiled: src/obj/obj35.cpp
+000BFD7C Obj_StateRestart_000BFD7C        // void f(T* o): by o->vt[32](o, 2): 0 -> the effect +356 (when set) gets Effect_SetHash4CF988(it, 0x5BA5377E) and o->vt[28](o, 2, 1); 1 -> the track reset (Anim_T (name?); decompiled: src/obj/obj35.cpp
+000DE454 Obj_CopyQueryRecs_000DE454       // void f(T* o, Query* q): Obj_CopyQuery_000CDB28(o, q), q->+164 = o->+200, then each 76-byte record of o (+180, u16 count +188) appended (74 bytes, memmove) to q' (name?); decompiled: src/obj/obj35.cpp
+0010EBE8 Set_EaseBit_0010EBE8             // void f(Set* o, u32 i, Vec3* cur, const Vec3* tgt; f32 a, f32 b): while bit i of o's bit set +12 is on, cur eases toward tgt: once every axis is within eps (the  (name?); decompiled: src/obj/obj35.cpp
+0012E41C Obj_ClearKnownFlags_0012E41C     // void f(T* o): for an o whose +216 def has the class hash 0x1D8C2817 at +192: every entry e (Obj_EntryAt3769C4(h, k) for k below Obj_Kind376A08(h), re-counted ea (name?); decompiled: src/obj/obj35.cpp
+001C6FB0 Obj_CopyState_001C6FB0           // void f(T* o, U* u): Thunk_000E44C0(o, u), then u takes o's state: the f32 +236 = o->+268, the 7 words +208.. = o->+240.., the top 15 bits of +20 = 4 (<< 17), +2 (name?); decompiled: src/obj/obj35.cpp
+0020ABD8 Obj_Shutdown_0020ABD8            // void f(T* o, bool full): with full, o leaves the list 0x01013B48 (List1013B48_Remove) and the world list (World_ListRemove_0046B7A4( *0x00F65CA0, 10, 0x00F34340 (name?); decompiled: src/obj/obj35.cpp
+0020DB54 Obj_FindKeyValue_0020DB54        // u32 f(T* o): for an o of kind (s8 +24) 1 or 2, the value of the key 0x91C7CF5B in the 16-byte {key, -, -, value} table (+124, count +128) of the block at o + (s (name?); decompiled: src/obj/obj35.cpp
+00220B48 Obj_CopyQueryFlags_00220B48      // void f(T* o, Query* q): Obj_CopyQuery_000CDB28(o, q), then q's +144 = o->+180, the bools +148..+153 = the flags 0x80 / 0x40 / 0x20 / 0x10 / 0x08 / 0x02 of o's u (name?); decompiled: src/obj/obj35.cpp
+0028BC28 Cam_SetFov_0028BC28              // void f(Cam* o; f32 v): for v > 0: e = the view record (*0x011950AC) + 128 * o->+240; by o's mode +24: 0 (perspective) -> h = e->+80 * 2 * tanf(v * (pi / 180) *  (name?); decompiled: src/obj/obj35.cpp
+002AF294 Obj_PopAll_002AF294              // void f(T* o): pops every entry of the u16-counted pointer stacks +32 (count +40; each gets vt[8](it)) and +52 (count +60; vt[40](it, 1)), the count stored befor (name?); decompiled: src/obj/obj35.cpp
+002CBD94 VtB1BE30_Dtor_002CBD94           // ~T() body: the effect +28 (when set; vtable 0x00B1D100 first) gets flag 0x200 of +136 and is dropped, vtable 0x00B1BE30, o's entry (+4 == o) removed from the 8- (name?); decompiled: src/obj/obj35.cpp
+002F9424 Part_Release_002F9424            // void f(T* o, u32 h): the effect +52 (when set) gets Effect_Release(it, h); when o is one of the three parts p->+900.. of its owner p = o->+56, that part's two h (name?); decompiled: src/obj/obj35.cpp
+0030C5C8 Set_FindLedge_0030C5C8           // f32 f(Set* o, U* u): the height of the first of o's objects (+8, u16 count +16; each object's position at +128) whose distance from the origin is within 1.5 (th (name?); decompiled: src/obj/obj35.cpp
+0032D510 Obj_TimerEvent_0032D510          // void f(T* o, a, Ev* e): for a type-4 o (u8 +18): event 6 counts the f32 +2576 down by e->+24 and, at or below 0 (the f32 at 0x0032D508), o->vt[104](o, 5, 0); ev (name?); decompiled: src/obj/obj35.cpp
+00330798 VtB1E918_NewXml_00330798         // T* f(-, Xml* x, P* p): reads {s32 0x04B8CADE (default 0), hash 0x922D3BD1 (0), f32 0x39FB22A9 (4.0)} into a stack record, then a 2592-byte object (SmallAlloc; O (name?); decompiled: src/obj/obj35.cpp
+00332624 Section_SetMode_00332624         // void f(Section* o, s32 mode, bool force): unless the mode is 4, a forced or changed mode (u8 +18) first gets o->vt[28](o, 0); mode 4 clears flag 0x01000000 of + (name?); decompiled: src/obj/obj35.cpp
+0036D9E4 Obj_SyncParts_0036D9E4           // void f(T* o): the state "on" = the source +24 has flag 0x8000 of +164 and o's u8 +192 has 0x40; the parts +196 (nothing without it) and +204 whose own 0x8000 fl (name?); decompiled: src/obj/obj35.cpp
+0036E750 Obj_SetPartsOn_0036E750          // void f(T* o, bool on): with a source +24: on -> every part of the u16-counted list +164 (count +172) and then the source get vt[40](it, on, 0); off -> the count (name?); decompiled: src/obj/obj35.cpp
+003EDB08 Vec_AnyOnScreen_003EDB08         // bool f(Vec* v): 0 when any entry's object (**(data +0)[i], count u16 +8) projects (View_ProjectPoint(view, &xy, obj + 144), view = the word at g + 0x128168, g = (name?); decompiled: src/obj/obj35.cpp
+0044CCF8 Voice_SetVolumeByHandle_0044CCF8 // void f(u32 h; f32 v): for a live voice handle h (as Voice_SetParamByHandle_0044A78C checks it): a zeroed 220-byte parameter block (memset; size +0 = 220, flags  (name?); decompiled: src/obj/obj35.cpp
+004B4AEC Rec_Reset_004B4AEC               // s16 f(T* o): Rec_Reset_004B42CC's twin for "..." (0x00AEE2F8): the same index lookup, the same fields in a different store order, the u8 +20 getting 0x10 (0xE4  (name?); decompiled: src/obj/obj35.cpp
+004B6894 Tree_SeekA_004B6894              // void f(T* o): TreeSeek35 on the tree 0x010C27B8 (current 0x011DE490), the found node's object getting vt[56]. (name?); decompiled: src/obj/obj35.cpp
+004B6C88 Tree_SeekB_004B6C88              // void f(T* o): TreeSeek35 on the tree 0x010C2820 (current 0x011DE4A0), the found node's object getting vt[24]. (name?); decompiled: src/obj/obj35.cpp
+002973B8 Target_Apply_002973B8           // (t, a, b) called by Effect_ApplyToTarget_00090FE0 (name?)
+00221F3C Target_Construct_00221F3C       // (obj, const TargetDef* rec), 192-byte object (name?)
+000CEA48 Slot_BuildMatrix_000CEA48       // (Mat* out, a, s32 b, c, Vec4* v, d) (name?)
+001C3EF0 Obj_Range_1C3EF0                // (o, 0) after leaving range in 001C4390 (name?)
+001C8A74 Obj_SlotInfo_001C8A74           // (out, o, i) fills a 64-byte stack block (name?)
+001AEA50 Obj_Check_001AEA50              // (o; f1) reads f1 (name?)
+000D74C0 Obj_ShutdownBase_000D74C0       // (o, full) base of 0020ABD8 (name?)
+006D612C Voice_SetParams_006D612C        // (voice, const Params220* p) (name?)
+004EAD20 Level_RecordConstruct_004EAD20  // (rec) 1168-byte level record (name?)
