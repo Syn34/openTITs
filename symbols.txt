@@ -11150,11 +11150,8 @@
 002CEB80 Mover_RayHit                     // (Mover*; f1 dist) -> bool: one all-hits ray from pos+0.5*up along 0x01164B90 * dist hits an entity (name?); decompiled: src/obj/big9_mover.cpp
 00053A80 Game_SetPhase                    // (GameObj* o, s32 phase) -> r3: +308 phase, per-phase vfunc +220 state, effects +1744/+1748, items +5084.., camera target +6216, +60->+348 clamp, "MsDecibel", coach reset (name?); decompiled: src/obj/big9_game.cpp
 0040DBA0 Flyer_Respawn                    // (Flyer* o, const SpawnDef* d, Cfg* cfg) -> r3: random spline of 3 (RNG 0x01164888), spawn params vt 0x00B12260 "Pterodactyl", profile vfunc +28 spawn at +76 (name?); decompiled: src/obj/big9_spawn.cpp
-000D3578 Obj_BaseInit0D3578               // (o, tmpl): object base init called by PhysObjBase_Init (name?)
-000E2AB0 PhysObj_BodyAttach0E2AB0         // (PhysObj* o, u32 body index, const f32 axis[4]): per-body attach hook (entry +124 0x10000000) (name?)
-000533A0 Game_PhaseFx533A0                // (GameObj* o): called by Game_SetPhase phases 3 / 8 (name?)
-004A22D8 Item_Find4A22D8                  // (u32 key, u32 set) -> item object (vfunc +64 with f1) (name?)
-00115B90 CamTarget_Construct115B90        // (CamTarget* t (224 bytes), Camera*, player or 0, u32; f1 f32) (name?)
+000D3578 Obj_BaseInit0D3578             // (o, ObjTemplate*): base object construction from a template; decompiled: src/obj/big10_obj.cpp
+00115B90 CamTarget_Construct115B90      // (CamTarget*, Camera*, RefObj* a, RefObj* b; f32 blend): b is a refcounted object too (+178 u16), not a u32; decompiled: src/obj/big10_obj.cpp
 
 # Game code sweep part 32
 001244A4 Obj_ResetCtl_001244A4            // void f(T* o, u8 on): with the controller c = o->+424: its +244 child k gets k->vt[204](k, o->+216 + 448); Obj_Reset121FA8(o, 0, 0, 0, 0, 1); with no child and o (name?); decompiled: src/obj/obj32.cpp
@@ -11191,7 +11188,7 @@
 004C0B24 XmlHashNode_New_004C0B24         // T* f(?, Xml* x): a new 28-byte node (SmallAlloc, vt 0x00B21F90, u16 +4 = 1, +8/+20/+24 = 0) reading the hash 0x0024728B -> +8 and 0x00014B01 -> +20, or when tha (name?); decompiled: src/obj/obj32.cpp
 004EDA10 Settings_ReadF4_004EDA10         // bool f(Xml* x): with the settings t = *0x010C2C28: the f32s named 0x00AF0194 / 0x00AF01A4 / 0x00AF01BC / 0x00AF01CC into t+660..+672 (defaults *0x004EDA04, *0x0 (name?); decompiled: src/obj/obj32.cpp
 004EE990 Settings_ReadMisc_004EE990       // bool f(Xml* x): with the settings t = *0x010C2C28: the bool named 0x00AF0144 -> u8 t+805, the s32 named 0x00AF02F0 -> u8 t+806, the f32s 0x00AF02F8 / 0x00AF0308 (name?); decompiled: src/obj/obj32.cpp
-007348D8 Node_SetFlags64_007348D8         // void f(Node* n, u64 mask, u8 set, u8 rec): the u64 flags n->+184 |= mask (set) or &= ~mask; for rec, the same for every child (240-byte entries of n->+340, u16  (name?); decompiled: src/obj/obj32.cpp
+007348D8 Obj_SetFlags64_7348D8          // (o, u64 mask, 1, 1) (name?); decompiled: src/obj/obj32.cpp
 00743A04 Dtor_B11E20_00743A04             // T::~T() (vt 0x00B11E20): the vectors +92 / +72 / +52 / +32 / +12 cleared, then the base vtable 0x00B11DC4 (r3 = it). (name?); decompiled: src/obj/obj32.cpp
 00750408 Dtor_B16088_00750408             // T::~T() (vt 0x00B16088): the vector +236 cleared, vt 0x00B12868, the vectors +200 / +180 cleared, vt 0x00B12260; the 20-byte vector object +16 (when set) cleare (name?); decompiled: src/obj/obj32.cpp
 00765BEC Dtor_B1D370_00765BEC             // Deleting ~T() (vt 0x00B1D370): +376 = 0; unless bit 0x80000000 of +380, the allocator g = 0x011DF31C frees +372 (g->vt[20](g, +372, (s32)(+380 << 2))); +372 = 0 (name?); decompiled: src/obj/obj32.cpp
@@ -11295,3 +11292,36 @@
 004332B0 Msg_SpawnEffect_004332B0         // void f(Msg* m): with the effect definition EffectDef_Find(m->+36, +40, 1): m->+44 = a new 140-byte effect (Effect_Construct; 0 on failure, then the following wr (name?); decompiled: src/obj/obj32c.cpp
 00438FB4 Msg_SceneEnd_00438FB4            // void f(Msg* m): the object Obj_FindByHandle(m->+12, 0) (a String_Format( 0x00AE2738, Hash_ToString(id)) message when missing) gets, with b = the bit 0x80000000  (name?); decompiled: src/obj/obj32c.cpp
 0044D4C8 Voice_IsLiveByKey_0044D4C8       // bool Voice_IsLive(u32 key): the voice handle mapped to key in 0x010AFEF8 (KeyMap_Find; 12-byte entries at +8, handle +4; the default *0x010AFF08 when absent) is (name?); decompiled: src/obj/obj32c.cpp
+
+# Game code large functions part 10
+000533A0 Game_BuildEffectSplines533A0   // (GameObj*): 5 splines (+5084) x 37 points along the effect's bone chain; was Game_PhaseFx533A0; decompiled: src/obj/big10_game.cpp
+000E2AB0 PhysObj_AttachHingeMotor0E2AB0 // (PhysObj*, u32 body, const vec4* axis): motorised limited hinge to the template's +100 body; was PhysObj_BodyAttach0E2AB0; decompiled: src/obj/big10_obj.cpp
+00402970 Obj_StickDirAnim402970         // (o): pad stick picks one of four direction anims (+216/+224 state); decompiled: src/obj/big10_anim.cpp
+004168B0 CamRig_Update4168B0            // (CamRig*; f32 dt): anchor objects at points, step mode +80 (0..15); decompiled: src/obj/big10_cam.cpp
+00483050 World_PlayerEvent483050        // (World*, s32 player, EventObj*, u8 quiet): pickup/event effects + HUD + World_Query record; decompiled: src/obj/big10_hud.cpp
+004A22D8 SplineInst_FromKey4A22D8       // (Obj* key, RefObj* ref) -> SplineInstance*: was Item_Find4A22D8 (it creates, not finds); decompiled: src/obj/big10_obj.cpp
+007D170C HkTransform_InvPos7D170C       // (vec4* out, const hkTransform*, const vec4* in): to local space (name?) (Havok)
+007D17E0 HkTransform_InvDir7D17E0       // (vec4* out, const hkTransform*, const vec4* dir): to local direction (name?) (Havok)
+0090CE9C HkLimitedHinge_Ctor90CE9C      // (data) 256-byte limited hinge constraint data ctor (name?) (Havok)
+0090CC18 HkLimitedHinge_SetWorld90CC18  // (data, transA, transB, pivot, axis) setInWorldSpace (name?) (Havok)
+0090CA30 HkLimitedHinge_SetMotor90CA30  // (data, motor) (name?) (Havok)
+0090CBC0 HkLimitedHinge_MotorOn90CBC0   // (data, instance, u8 on) (name?) (Havok)
+00915E60 HkMotor_Ctor915E60             // (motor 28 bytes; f1, f2, f3 max force) (name?) (Havok)
+0090AA54 HkConstraintInst_Ctor90AA54    // (inst 56 bytes, entityA, entityB, data, priority) (name?) (Havok)
+00933938 HkWorld_AddConstraint933938    // (hkpWorld*, instance) (name?) (Havok)
+0016B5F0 Player_AddScore16B5F0          // (player obj, u32 new total) (name?)
+001753C0 Player_SetCount1753C0          // (player obj, u32 count) (name?)
+00416360 CamRig_Mode2_416360            // (rig; f1 dt) (name?)
+00415F10 CamRig_Mode3_415F10            // (name?)
+00415DA0 CamRig_Mode4_415DA0            // (name?)
+00415830 CamRig_Mode5_415830            // (name?)
+00415680 CamRig_Mode6_415680            // (name?)
+00415088 CamRig_Mode7_415088            // (name?)
+00414CB0 CamRig_Mode8_414CB0            // (name?)
+004149D0 CamRig_Mode9_4149D0            // (name?)
+004142F0 CamRig_Mode10_4142F0           // (name?)
+00414058 CamRig_Mode11_414058           // (name?)
+00413DF8 CamRig_Mode12_413DF8           // (name?)
+00413BAC CamRig_Mode13Done_413BAC       // (rig target +76) (name?)
+00413970 CamRig_Mode14_413970           // (name?)
+00413804 CamRig_Mode15_413804           // (name?)
