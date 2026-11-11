@@ -11681,7 +11681,7 @@
 000D87CC Obj_SetMatrixD87CC             // u32 f(Obj* o, const Mat44* m): o->160 world object rows +16..+72 = m's xyz rows, WorldObj_MarkDirty when any differ; o->172 |= 0x800 (returns it; m without a world object) (name?); decompiled: src/obj/big14_game.cpp
 007CEBD8 Hk_ToMatrix7CEBD8              // (Mat44* out, const in[16 bytes]) (name?)
 0075D154 Mat44_MulInPlace75D154         // (Mat44* m, const Mat44* by) (name?)
-0078FD34 Avl_RemoveF32_0078FD34         // (tree, Node** slot, -, u8* changed; f32 key f1): f32-keyed AVL remove (name?)
+0078FD34 Avl_RemoveF32_0078FD34           // void (AVL*, Node** slot, -, u8* changed; f32 key): AVL<float, ApeAnimScriptEvent*> recursive delete (float twin of Map_Erase78D670; NaN keys delete; free list 0x00F8F0FC, vtable 0x00B22530); r5 passed through to the recursion; decompiled: src/obj/big23_avl.cpp
 00F34C30 LinkCallback_F34C30            // OPD queued by Player_SetRate2371F8 via World_AddTimedCallback(world, 1, opd, p, p) (data; name?)
 
 # Game code medium sweep part 12
@@ -13114,7 +13114,6 @@
 0041D158 Obj_GesturePick41D158            // u32 (Obj* o; f32 dt): cooldown u8 +484 / f32 +488; else picks mode 0..3 from the local player's record flags (0x010B19E0 + 11968*idx, +184/+188), scans list +104 (u16 +112) with f_0041B200, restarts one of 8 clips via Anim_Restart2775A8, 0.3 cooldown when ready; decompiled: src/obj/big22_gesture.cpp
 00043BC0 Obj_RespawnSlots43BC0            // u32 (Obj* o): re-arms the 112-byte slots (+308, u16 +316), toggles +700/+704 (vfn[76]), hash 0x8C0A3A7E on +624, +648 = 4, spawns world objects + effects (0x4838D5DC) for one random set of the +612 table record +716 group +688, places +656/+660 at +664/+668, then Obj_LaunchSlots43784(o, n); decompiled: src/obj/big22_slots.cpp
 002FBF00 Dragon_AttackSpawn2FBF00         // u32 (Dragon* o, Emitter* s, u32 msg, Def* def): msgs 0x952A45AC/AD/AE and 0x0969AF51 spawn projectiles with Obj_SpawnAt2FBCC8 from s's frame toward o+480 (clamped x/z for AE; 0969AF51 focuses the player and returns the object); decompiled: src/obj/big22_dragon.cpp
-0041B200 Item_Matches41B200               // bool (Item*, u32 mode) (callee of Obj_GesturePick41D158) (name?)
 002696E0 Obj_Push2696E0                   // (Obj*, const Vec3*; f32) (reads r3 r4 f1; callee of Player_Launch309440) (name?)
 
 # Game code sweep part 44
@@ -13211,3 +13210,14 @@
 004F3CB4 Obj_Dtor_B22FC8_004F3CB4        // T::~T (vt 0x00B22FC8; Delete_004F4164): record/object arrays, hash table +112..+132 values vt[4], buffer +4, pool arrays; decompiled: src/obj/mid25_f.cpp
 003C5E38 Obj_RekeyBindings_003C5E38      // Anim_Restart on +1588 source, mode 2: Obj_SyncBindingPoses + binding keys 0x32A3716C/0x5F9B8391/0xB6162705; decompiled: src/obj/mid25_g.cpp
 00376C98 Obj_376C98                      // (o, 0) called by the 0x00376F88 destructor before its frees (name?)
+
+# Game code big sweep part 23
+00100C18 Cam_UpdateFocus100C18            // void (Cam* c; f32 dt): target c+16 vfn[39] position p0 + rows +112/+128; gate sets the u8 c+192 / anchor c+176 (rider vfn[16] kind 1/3..6, vfn[8](0)==1 / (1)==2 flags); focus = kFocusBase (0x01032EF0) lerped to c+624 by height t, in the frame {up x row, up, ...} (VMX chain, acosf pi/4 picks the row); lead velocity c+480 (zeroed / Curve_Lerp3), c+464 = p0, c+704 lead scaled c+660/664 (or vfn[35] vector when 0x01035410 == 2), y clamped [c+668, c+672]; c+193 snaps, else velocity c+976 and Spring_Step3F8C70(c+912); c+992 = max(c+640, 0), c+304 = p0 + c+928; decompiled: src/obj/big23_cam.cpp
+0041B200 Item_GestureStep41B200           // bool (Item* it, s32 mode): 0 unless +160 == mode; timer +84 += +88 * 0.4; state +80 (4 done; 1/2 fire unless +164 + effect sync; 3 while timer < 0.1) - fire = state 4 + Anim_Restart2775A8 clip 0x42350C50, sync = owner +4 vfn[68] effect component 0x87208BC1 gets the owner rows (when its vfn[8] == 4), Effect_SetHash4CF988 0xA105407B; list +76 counts +460 and sets u8 +483 at 1/3 and 2/3 of +88->+56 (replaces Item_Matches41B200); decompiled: src/obj/big23_item.cpp
+0074A210 AvlMulti_RemoveF32_74A210        // void (AVL*, Node** slot, u32 value, -, u8* changed; f32 key): f32-keyed multimap remove (24-byte nodes, value chain +8 / next +20; value 0 removes the head; follower swapped in, else the node deleted with SmallFree); rebalances skip the reloaded-slot null check; r6 passed through; decompiled: src/obj/big23_avl.cpp
+0046EFB8 OptionsMenu_HandleInput46EFB8    // void (Menu* m, const UiEvent* e): options page 1 by widget hash (e+12 +128): u8 choices settings(m+4144) +8/+9/+10 (6/3/6-way, setters 0044D9B8 / 0044D9BC / Global_10B0100_Set), f32 sliders +16/+24/+12/+20 (step 1 / s32 0x010BC120, clamp [0,1]; mirrors 0x00F65B40/44/48), Sound_Play44C474 (m+0x128604 toggle, +0x128608 slide, +0x12860C blocked), u8 m+4180 = 1, Ui_SendEvent(16, e+4, player+340, 0); decompiled: src/obj/big23_menu.cpp
+0046FBD0 OptionsMenu_HandleInput2_46FBD0  // void (Menu* m, const UiEvent* e): options page 2: sliders +4 / +28 (types 10/11 only), settings word toggles 0x04000000 / 0x02000000 / 0x08000000, AR toggle 0x01000000 (0x000A88C0, AR object m+0x1286A4 made with Ar_Init0A85C0 / released via vfn[1]), language index m+4184 (0x010B8A64 == 1; count 0x00F65DD0, ids 0x00F65D90 -> settings +32, u8 m+4183); decompiled: src/obj/big23_menu.cpp
+000F8C70 Spring_Step3F8C70                // (Spring3* s; f32 k, f32 damping, f32 dt): critically damped 3D spring step (reads r3 f1 f2 f3; callee of Cam_UpdateFocus100C18) (name?)
+0078FA2C AvlF_TakeMax78FA2C               // (AVL*, Node** slot, Node** left, u8* changed): float AVL's two-child delete helper (callee of Avl_RemoveF32_0078FD34) (name?)
+00749FD0 AvlMulti_TakeMax749FD0           // (AVL*, Node** slot, Node** left, u8* changed): the multimap's two-child delete helper (callee of AvlMulti_RemoveF32_74A210) (name?)
+000A88C0 Ar_Probe_000A88C0                // () -> u8: the AR thread's probe (Thread_Run_000ABAD4 stores it to 0x00F558E2; called by OptionsMenu_HandleInput2_46FBD0) (name?)
