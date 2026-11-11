@@ -11549,7 +11549,6 @@
 001F5BA8 XmlDef_NewF5BA8                  // factory of XmlDef_Read_001F5938, 368 B, vtable 0x00B188C0; decompiled: src/obj/mid11_dmg2.cpp
 002F8EE0 XmlDef_New2F8EE0                 // factory of 002F8CF0 + 80 B child items (0x002F8AFC), 336 B, vtable 0x00B1D5C8; decompiled: src/obj/mid11_misc.cpp
 00307A78 XmlDef_New307A78                 // factory of 003078D8, 368 B, vtable 0x00B1DA78, then 0x0030743C(p, c); decompiled: src/obj/mid11_misc.cpp
-000C4020 DefLeaf_ReadBase_000C4020        // (a0, c, x, tmpl, o): leaf def base reader (1340 instructions; not decompiled)
 000C30E8 DefLeaf_Construct_000C30E8       // (Def* p, const Record* rec): leaf def base constructor (not decompiled)
 001BE8CC DamageColDef_FromRecBE8CC        // (p, rec) ctor used by DamageColDef_NewBED98 (not decompiled)
 001C011C DamageColDef_FromRecC011C        // (p, rec) ctor used by DamageColDef_NewC0658 (not decompiled)
@@ -11706,8 +11705,8 @@
 001DEE48 Obj_SetPairAnimState1DEE48     // (Obj*, s32 state -1..5): p->704 = state, paired Anim_Restart2775A8 on target def +64 and p by state / variant p->740; decompiled: src/obj/big13_game.cpp (name?)
 004B7DF0 MapSet4_Destruct4B7DF0         // (T*) dtor body, vtables 0x00B21C68 -> 0x00B11B20: releases values of 4 maps +12/+24/+16/+20 (f32-keyed +20), empties and frees them (104), PtrVector +28 (20); decompiled: src/obj/big13_game.cpp (name?)
 009FDF0C Hk_Curve9FDF0C                 // (f1..f4) -> f1; reads only f1..f4 (name?)
-00236DB8 Player_DriveLink236DB8         // (Player*, link, const Mat44*, -, bool r7; f32 rate); reads f1/r4/r5/r7 only (name?)
-000D87CC Obj_SetMatrixD87CC             // (obj, const Mat44*) (name?)
+00236DB8 Player_DriveLink236DB8         // u16 f(Player*, Link*, const Mat44*, -, bool r7; f32 rate): 20-byte entries {def, driver, obj, f32, f32}: rate blend into driver +112 (+16, +108->+8), obj rows = Quat_ToMatrix(def) x m, MarkDirty, UpdateLod(obj, -, 0); returns the count (name?); decompiled: src/obj/big14_game.cpp
+000D87CC Obj_SetMatrixD87CC             // u32 f(Obj* o, const Mat44* m): o->160 world object rows +16..+72 = m's xyz rows, WorldObj_MarkDirty when any differ; o->172 |= 0x800 (returns it; m without a world object) (name?); decompiled: src/obj/big14_game.cpp
 007CEBD8 Hk_ToMatrix7CEBD8              // (Mat44* out, const in[16 bytes]) (name?)
 0075D154 Mat44_MulInPlace75D154         // (Mat44* m, const Mat44* by) (name?)
 0078FD34 Avl_RemoveF32_0078FD34         // (tree, Node** slot, -, u8* changed; f32 key f1): f32-keyed AVL remove (name?)
@@ -11768,3 +11767,11 @@
 0020A0F0 XmlDef_FromRec20A0F0             // (p, rec) ctor of 0020A298
 0033273C Obj_Construct33273C              // (p, x, const Vector* f32 list) 2608 B object of 00332898
 000C9AB8 XmlTree_ReadC9AB8                // recursive 192 B node reader (324; looked at, released)
+
+# Game code large functions part 14
+003BCB20 HideoutMenu_RefreshJobs3BCB20  // u32 f(Menu*, s32 cur, s32 sel, s32 prev, s32 mode): mode 1 opens (back / buy prompts, animator 0x7CDE2234), per-entry state hashes (0xC20B1F0C / 0x9CD94DEF / 0xC181C0F0 / 0xACC3FD87, +104 |= 0x80), at sel the camera target and "$HIDEOUT_JOB_AVAILABLE" select prompt; Effect_SetHash4CF988(m->32, job +240) (name?); decompiled: src/obj/big14_ui.cpp
+000C4020 DefLeaf_ReadBase_000C4020      // void f(a0, XmlCursor* c, x, Def* tmpl, LeafDef* o): Damage_Read0C3910, defaults from o (or tmpl with +20 bit 0x2000; else XmlCursor_DocPath(a0)), then vec3/f32/hash/22 bool fields +128..+340 and child nodes 0x7C28C95E (+336 bits) / 0x1DD0B478 (+324..) / 0x03C599D8 (+304..); decompiled: src/obj/big14_def.cpp
+00ADF560 s_HideoutButtonBack            // "$HIDEOUT_BUTTON_BACK"
+00F64CCC g_HideoutSelectHandle          // u32 handle of the hideout "select" prompt (Handle_ResolveBit1) (name?)
+000C3FF8 k_DefLeafConsts                // .text f32 {100, 1, 10, 0.5, 0, -1, pi/180, pi/360, 60, 360} (DefLeaf_ReadBase_000C4020)
+00AC66CC k_DefLeafFlagNames             // u32[13] hashes of the leaf def +336 flag bits
