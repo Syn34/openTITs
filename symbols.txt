@@ -71,7 +71,7 @@
 004F986C XmlCursor_ReadBool       // 0 ok / 1 missing / 2 wrong type; decompiled: src/xml/node.cpp
 004F99BC XmlCursor_ReadS32        // decompiled: src/xml/node.cpp
 004F9B20 XmlCursor_ReadF32        // default in f1; decompiled: src/xml/node.cpp
-004F9C9C XmlCursor_ReadVec2       // decompiled: src/xml/node.cpp
+004F9C9C XmlCursor_ReadVec2             // (c, hash, f32 out[2], const f32 default[2]) -> status (existing name); decompiled: src/xml/node.cpp
 004F9E0C XmlCursor_ReadVec3       // decompiled: src/xml/node.cpp
 004F9F9C XmlCursor_ReadColor      // u8[4] (name?) decompiled: src/xml/node.cpp
 004FA14C XmlCursor_ReadHash       // decompiled: src/xml/node.cpp
@@ -10616,7 +10616,7 @@
 002F0E0C ObjPool_Create                   // Obj* f(HandlePool* pool, const Desc* desc, u32* handle): one of five object kinds in a new handle-pool entry (name?); decompiled: src/obj/big3_pool.cpp
 0048F27C ObjBase_Construct                // void f(Obj* o): o->+4 = 0 (u8), vtable 0x00B21A30 (replaces Obj_BaseCtor_0048F27C); decompiled: src/obj/big3_dmg.cpp
 00745564 ColVec_Push                      // s32 f(PtrVector* v, const ColRecord* r): copy r's fields into a new 160-byte element (replaces ColVec_Push_00745564); decompiled: src/obj/big3_dmg.cpp
-00745D88 DamageDef_Construct              // void f(DamageDef* d, a1, a2, a3, r7, r8, a6, const f32 vec[3], f1..f13, stack slots 11..25) (replaces DamageDef_Construct_00745D88); decompiled: src/obj/big3_dmg.cpp
+00745D88 DamageDef_Construct            // (rec, a, b, c, r7, r8, 0x9260C26E, zero vec3; f1..f13; stack) damage def defaults record (reads r3..r6, r9, r10, f1..f13) (existing name); decompiled: src/obj/big3_dmg.cpp
 0001199C AiCtrl_RebuildProxy              // void f(AiCtrl* c): if c->vfn[67](): c->+212 = Havok proxy built from c's pose (0 without a nav world), nav query +216 rebuilt (replaces AiCtrl_Fn0001199C) (name?); decompiled: src/obj/big3_ai.cpp
 002EF938 PoolObj489E_Construct               // (obj, desc): 132-byte kind 0x489EBD81, vtable 0x00B1D5A0, bone attach via Skeleton_FindBone / WorldObj_ForEach(002F5D6C) (name?); decompiled: src/obj/big4_pool.cpp
 002F0058 PoolObjEB2F_Construct               // (obj, desc): 256-byte kind 0xEB2F2138 (ribbon between two bones), vtable 0x00B1D550 (name?); decompiled: src/obj/big4_pool.cpp
@@ -11553,7 +11553,6 @@
 001CFE00 DamageColDef_FromRecCFE00        // (p, rec) ctor used by DamageColDef_NewD0208 (not decompiled)
 001D3A24 DamageColDef_FromRecD3A24        // (p, rec) ctor used by DamageColDef_NewD3E58 (not decompiled)
 001D5A40 DamageColDef_FromRecD5A40        // (p, rec) (not decompiled)
-001DD3F8 DamageColDef_ReadDD3F8           // reader (1152; not decompiled)
 001E5170 DamageColDef_FromRecE5170        // (p, rec) (not decompiled)
 003078D8 XmlDef_Read3078D8                // (a0, c, x, tmpl, o) reader (99; not decompiled)
 002F8CF0 XmlDef_Read2F8CF0                // (a0, c, x, tmpl, o) reader (118; not decompiled)
@@ -11844,7 +11843,6 @@
 001C2058 DamageColDef_ReadC2058         // void f(a0, c, x, tmpl, o): ReadAD1F8 + 0x80000, 0x01000000 group: u32 PtrVectors +320 (hashes) / +340 (s32 max(v-1,0)), f32 +360, bools +364..+367; decompiled: src/obj/big15_dmg.cpp
 001C49E8 DamageColDef_ReadC49E8         // void f(a0, c, x, tmpl, o): ReadAD1F8 + 0x80000, 0x00400000 group (+320..+374, 11 bools) and six 80-byte slots +384 from children 0xEB9EE198 (euler -> quat); decompiled: src/obj/big15_dmg.cpp
 001D62A8 DamageColDef_ReadD62A8         // void f(a0, c, x, tmpl, o): Read_000C85A8, tmpl+28 bit 1 group (+222 "hudPromptMsg" string, vec3s, f32s, +412 flag bits) and children by tag 0x3257217B / 0x89F23F47 / 0x89F1FF19 (+352 type, +356 kind, +360..+404); decompiled: src/obj/big15_dmg.cpp
-001D6164 DamageColDef_KindFromHashD6164 // u32 f(u32 hash) -> kind (reads r3 only; 75 instructions; not decompiled) (name?)
 001C2044 k_DmgPoolC2044                 // .text f32 {100, 0, 0.3, 1, -1} (DamageColDef_ReadC2058)
 001AFA5C k_DmgPoolAFA5C                 // .text f32 {100, 0, 0.3, 1, -1, 1e-5, pi/180} (DamageColDef_ReadAFA78)
 001CA064 k_DmgPoolCA064                 // .text f32 {100, 0, 0.3, 1, -1, pi/180} (DamageColDef_ReadCA080)
@@ -11890,3 +11888,18 @@
 0022AD08 ChoiceEntry_Read22AD08           // (entry, a1, XmlNode*) (reads r3 / r5) (name?); not decompiled
 0033162C SlotObj_Construct33162C          // (p, a2, const f32 vec[3], hash, f1..f4, 7 bools on the stack): 2640-byte object ctor (name?); not decompiled
 0049EA74 QueryVar_KindOfTag               // (u32 tag) -> value kind 1..16 or 0 (name?); not decompiled
+
+# Game code large functions part 16
+001DD3F8 DamageColDef_ReadDD3F8         // void f(a0, c, x, tmpl, o): Read_000C85A8, 0x40000000 group (+224..+556: hashes/vec3s, two euler->quat +320/+368, f32 clamps, deg->rad, kind index of 0x79545A55 in 0x00AD1ED8 -> +512, "playerName" string {len,buf} +516/+520, vec2 +552, [0,1] clamps +456..+480; rec+k = tmpl+k+80); decompiled: src/obj/big16_dmg.cpp
+001D6164 DamageColDef_KindFromHashD6164 // u32 f(s32 hash) -> kind bit (1..8192, default 64; signed compares; reads r3 only); decompiled: src/obj/big16_dmg.cpp
+000CA038 XmlDef_NewFromNodeCA038        // Def* f(a0, XmlCursor* c, u8 flag): "name"/"from"/"objDefName"/"objInstName" header x on the stack, then dispatch on the node tag to 66 factories (+ inline damage 0x93DEF0C4 / leaf 0xA77EB5E9 defs; 0x03D3E53D none); tree vector -> def +136; decompiled: src/obj/big16_def.cpp
+001DD3C8 k_DmgPoolDD3C8                 // .text f32 {100, 0, 0.3, 1, -1, pi/180, 0.5}, f64 {0, 1} at +32/+40 (DamageColDef_ReadDD3F8)
+000CA018 k_DefPoolCA018                 // .text f32 {-1, 0, 100, 0.3, 1, 10, 0.5} (XmlDef_NewFromNodeCA038)
+00AD1ED8 k_DmgKindHashesAD1ED8          // u32[2] {0x0024A738, 0xE01ED3CB} (DamageColDef_ReadDD3F8 +512 index)
+00AD1EE4 s_playerName                   // "playerName"
+01013B04 g_DefTable                     // def table by name hash (Table_Find74493C; XmlDef_NewFromNodeCA038)
+00AC689C s_name                         // "name"
+00AC68B4 s_from                         // "from"
+00AC68C4 s_objDefName                   // "objDefName"
+00AC68D4 s_objInstName                  // "objInstName"
+000C79C0 DamageDef_Ctor_000C79C0        // (Def* p 304 bytes, const Record* rec) (reads r3/r4; not decompiled here) (name?)
