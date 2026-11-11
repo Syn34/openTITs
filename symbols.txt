@@ -10726,14 +10726,12 @@
 0006CC68 XmlElem_Ctor_0006CC68            // u32 XmlElem_Ctor_0006CC68(XmlElem* o, XmlCursor* c): vtable 0x00B0F158; vec3 +16 (+69 = 1 when present), the euler angles 0x898B7952 (degrees, scaled by the f32 (name?); decompiled: src/obj/mid7_xelem.cpp
 00088704 AnimCmd_Ctor_00088704            // u32 AnimCmd_Ctor_00088704(AnimCmd* o, XmlCursor* c): vtable 0x00B10300 and defaults; hashes +12 / +16 / +20, bool +28, s32 +32, f32 +36..+48, bool +96, vec3s +6 (name?); decompiled: src/obj/mid7_xelem.cpp
 0049EF40 QueryDef_ReadChild               // (XmlNode*, PtrVector*): reads a spawn-query def child into the vector (name?); called by the 0x000CBE10 family; not decompiled
-001C6838 XmlDef_Read_001C6838             // (a0, c, def): reader of the 001C6D30 def (reads r4/r5) (name?); not decompiled
 001D7470 XmlDef_Read_001D7470             // (a0, c, def): reader of the 001D7D98 def (reads r4/r5) (name?); not decompiled
 00759508 SortedMap_Insert759508           // (map, const u32* key, value) (name?); not decompiled
 0012E824 Volume_EnterItem12E824           // (item, volume) (name?); not decompiled
 004B6DA0 AnimCmd_IsCmdElem                // (XmlNode*) -> bool: command-map lookup of the element hash, iterator state at 0x010C2820, value in 0x011DE4A0 (name?); not decompiled
 004B6C88 AnimCmd_FromElem                 // (XmlNode*) -> AnimCmd* or 0 (name?); not decompiled
 0009810C AnimCmd_ReadSlot9810C            // (o, node, slot) -> bool (name?); not decompiled
-00265D60 TmplEntry_Read265D60             // (a0, node, u8 flag) -> entry or 0 (name?); not decompiled
 00266570 Tmpl_AddEntry266570              // (tmpl, entry) (name?); not decompiled
 004F9768 XmlCursor_AttrType               // (c, hash, u32* type) -> non-zero when present (name?); not decompiled
 
@@ -10913,3 +10911,46 @@
 009DD41C hkpKeyFrameUtility_applyHardKeyFrame // (const hkVector4* pos, const hkQuaternion* rot, f1 invDt, hkpRigidBody*) (Havok; name from argument pattern)
 00250AF0 BoneCtl_InitSource250AF0         // (ctl, f32 m[4][4], u32 k, 0) (name?)
 00011410 Shape_InitBody11410              // (Shape* out, system, body, 0, u32, u16 mask) (name?)
+
+# Game code medium sweep part 8
+00292210 LegDef_Read292210                // LegDef* LegDef_Read292210(?, XmlCursor* c) (reads r4 only): a 192-byte def (Mem_Alloc(192, 0, 16); when that succeeded: vec3 +128 the vector at 0x01164B70, +144 (name?); decompiled: src/obj/mid8_def.cpp
+002929EC IkChainDef_Read2929EC            // Def* IkChainDef_Read2929EC(a0, XmlCursor* c): the attributes are gathered on the stack first: "name" (+0), the index (0 / 1) of the hash 0x0027873A in the table (name?); decompiled: src/obj/mid8_def.cpp
+00292618 IkChainDef_Read292618            // Def* IkChainDef_Read292618(a0, XmlCursor* c): as IkChainDef_Read2929EC, 208 bytes, map 0x010578A4: "name" (+0), the index (0 / 1) of the hash 0x0027873A in the  (name?); decompiled: src/obj/mid8_def.cpp
+00291E6C HeadDef_Read291E6C               // Def* HeadDef_Read291E6C(?, XmlCursor* c) (reads r4 only): gathered on the stack first: "name" (+0) and "headJoint" (+36; default the empty string at 0x00AD4B7C) (name?); decompiled: src/obj/mid8_def.cpp
+002741F4 DefNew_002741F4                  // Def* DefNew_002741F4(a0, XmlCursor* c): the "name" attribute (none, or a def of that String_HashNoCase already in the map 0x01057544 -> XmlCursor_DocPath(a0), 0 (name?); decompiled: src/obj/mid8_def.cpp
+002C0EA4 DefNew_002C0EA4                  // Def* DefNew_002C0EA4(a0, XmlCursor* c): the "name" attribute (none, or a def of that String_HashNoCase already in the map 0x0105ABB8 -> XmlCursor_DocPath(a0), 0 (name?); decompiled: src/obj/mid8_def.cpp
+001F5E50 XmlDef_Read_001F5E50             // u32 XmlDef_Read_001F5E50(a0, XmlCursor* c, Def* o): the base part (XmlDef_ReadBase), hash +240, vec3 +256, the euler angles 0xC7400937 (degrees, default zero; c (name?); decompiled: src/obj/mid8_def.cpp
+001C6838 XmlDef_Read_001C6838             // u32 XmlDef_Read_001C6838(a0, XmlCursor* c, Def* o): the reader of the 001C6D30 def: the base part (XmlDef_ReadBase), f32 +268 / +240..+264, hashes +272 / +276,  (name?); decompiled: src/obj/mid8_def.cpp
+0033322C DefNew_0033322C                  // Def* DefNew_0033322C(?, XmlCursor* c, x) (reads r4 / r5): the fields are read on the stack (hash 0x7A30D7E3, vec3 0x8ACA5893 (zero), bools 0x5D28E3FC / 0x9446A0 (name?); decompiled: src/obj/mid8_def.cpp
+00223D38 XmlDef_Read_00223D38             // u32 XmlDef_Read_00223D38(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8(a0, c, x, tmpl, o)), +32 = 1; with a template lacking  (name?); decompiled: src/obj/mid8_def.cpp
+00219FF8 XmlDef_Read_00219FF8             // u32 XmlDef_Read_00219FF8(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8), then the defaults (zero, or with a template having b (name?); decompiled: src/obj/mid8_def.cpp
+00481828 Def_ReadKind481828               // u32 Def_ReadKind481828(a0, XmlCursor* c, Def* o): the kind hash 0x0027873A picks +5416 and what is read (absent: return that non-zero ReadHash result): 0x61313E (name?); decompiled: src/obj/mid8_def.cpp
+00335858 SlotObj_New335858                // Obj* SlotObj_New335858(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2632 bytes, vtable 0x00B1EC68, 13 record words: hashes 0xA2A0911A / 0xAE38532C / 0xBB68E5 (name?); decompiled: src/obj/mid8_slot.cpp
+00335350 SlotObj_New335350                // Obj* SlotObj_New335350(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2656 bytes, vtable 0x00B1EBE8, 19 record words: hashes 0xA2A0911A, 0x441D9642..45, 0x5BCA (name?); decompiled: src/obj/mid8_slot.cpp
+00338DE8 SlotObj_New338DE8                // Obj* SlotObj_New338DE8(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2648 bytes, vtable 0x00B1EE60, 17 record words: hashes 0xA2A0911A / 0x60DE0653 / 0x987C58 (name?); decompiled: src/obj/mid8_slot.cpp
+0028E624 TmplRead_0028E624                // Tmpl* TmplRead_0028E624(a0, XmlCursor* c, u8 flag): kind 21, 2904 bytes, vtable 0x00B1C6C8: +20 the count of up to 8 groups of 360 bytes at +24 ({char name[32], (name?); decompiled: src/obj/mid8_tmpl.cpp
+00291AD0 TmplRead_00291AD0                // Tmpl* TmplRead_00291AD0(a0, c, flag): kind 17, 96 bytes, vtable 0x00B1C7D0, all zero: the ChildHash values of up to 8 0x75215015 children (+20), 8 0x6AD11467 ch (name?); decompiled: src/obj/mid8_tmpl.cpp
+002B44AC TmplRead_002B44AC                // Tmpl* TmplRead_002B44AC(a0, c, flag): kind 46, 44 bytes, vtable 0x00B1CD48: the vector +20 (20-byte records, capacity 32) of the 0x7480D3BA children with a non- (name?); decompiled: src/obj/mid8_tmpl.cpp
+002B9C74 TmplRead_002B9C74                // Tmpl* TmplRead_002B9C74(a0, c, flag): kind 29, 304 bytes, vtable 0x00B1CEC0: hashes +20 (0xE2E902C9) / +24 (0x85D98325), f32 +28 (1), +32 / +36 (0), bools +40 / (name?); decompiled: src/obj/mid8_tmpl.cpp
+00283D58 TmplRead_00283D58                // Tmpl* TmplRead_00283D58(a0, c, flag): kind 15, 128 bytes, vtable 0x00B1C568: the flags word +32 (bit 31 bool 0x002480E8, bit 30 bool 0x724F4DDA, bits 22..29 s32 (name?); decompiled: src/obj/mid8_tmpl.cpp
+0026F2D0 TmplRead_0026F2D0                // Tmpl* TmplRead_0026F2D0(a0, c, flag): kind 1, 224 bytes, vtable 0x00B13C74: six 24-byte records at +20 ({s32 +0 0, f32 +4 0, +8 90, +12 -FLT_MAX, vec2 +12 / +16 (name?); decompiled: src/obj/mid8_tmpl.cpp
+002B8328 TmplRead_002B8328                // Tmpl* TmplRead_002B8328(a0, c, flag): kind 28, 64 bytes, vtable 0x00B1CE68: the vector +20 of 144-byte records (pushed by Vec144_Push75FF20) from the 0xA7E419C3 (name?); decompiled: src/obj/mid8_tmpl.cpp
+00265D60 TmplEntry_Read265D60             // Entry* TmplEntry_Read265D60(?, XmlCursor* node) (reads r4 only): a 64-byte entry (SmallAlloc; when that succeeded: +0 the quaternion at 0x01164C90, +16 the zero (name?); decompiled: src/obj/mid8_tmpl.cpp
+00299A60 TmplRead_00299A60                // Tmpl* TmplRead_00299A60(a0, c, flag): kind 24, 96 bytes, vtable 0x00B1C8C8; no XmlCursor_DocPath without a name. The u32 vector +20 (capacity 4) gets, from the  (name?); decompiled: src/obj/mid8_tmpl.cpp
+002BC208 TmplRead_002BC208                // Tmpl* TmplRead_002BC208(a0, c, flag): kind 36, 304 bytes, vtable 0x00B1CFC8 (EntityCompWheelchair): s32 +20 0xF4EF8B5F, hashes +24 / +28 / +32 / +36 (0); up to  (name?); decompiled: src/obj/mid8_tmpl.cpp
+00286378 TmplRead_00286378                // Tmpl* TmplRead_00286378(a0, c, flag): kind 16, 40 bytes, vtable 0x00B1C5C0: bool 0x2A9B2CB7 (+17, default 0); the vector +20 of 60-byte records from the 0x00010 (name?); decompiled: src/obj/mid8_tmpl.cpp
+000A2568 XmlElem_Ctor_000A2568            // u32 XmlElem_Ctor_000A2568(XmlElem* o, XmlCursor* c): vtable 0x00B115F8; hashes +12 / +16 / +20 (default 0; +16 / +20 then make the ref node +24), f32 +28 (1), h (name?); decompiled: src/obj/mid8_xelem.cpp
+000928D0 Prompt_New_000928D0              // Prompt* Prompt_New_000928D0(?, XmlCursor* c) (reads r4 only): a 272-byte prompt (Mem_Alloc(272, 0, 16); 0 when that fails), Obj_InitVt base, vtable 0x00B10A58:  (name?); decompiled: src/obj/mid8_xelem.cpp
+000A1D34 XmlElem_Ctor_000A1D34            // u32 XmlElem_Ctor_000A1D34(XmlElem* o, XmlCursor* c): vtable 0x00B115A8, Obj_ResetBlock_000A1C28 defaults; the name attribute of c and of each 0x04624710 child i (name?); decompiled: src/obj/mid8_xelem.cpp
+000838F4 XmlElem_Ctor_000838F4            // u32 XmlElem_Ctor_000838F4(XmlElem* o, XmlCursor* c): vtable 0x00B0FF40; the target hash 0xE3A6DCCD (+28) or else 0x3A1B33FA (+12) - neither: return that (non-ze (name?); decompiled: src/obj/mid8_xelem.cpp
+000A1224 XmlElem_Ctor_000A1224            // u32 XmlElem_Ctor_000A1224(XmlElem* o, XmlCursor* c): vtable 0x00B11558; hash +164 (else the non-empty "message" attribute copied to +12, 64 bytes), hash +168 (e (name?); decompiled: src/obj/mid8_xelem.cpp
+00093150 XmlElem_Ctor_00093150            // u32 XmlElem_Ctor_00093150(XmlElem* o, XmlCursor* c): vtable 0x00B10AD0; hashes +12 / +16 (0) / +20, vec3 +32 / +48 (zero), the euler angles 0x313AB844 (degrees; (name?); decompiled: src/obj/mid8_xelem.cpp
+00093D50 XmlElem_Ctor_00093D50            // u32 XmlElem_Ctor_00093D50(XmlElem* o, XmlCursor* c): vtable 0x00B10AF8, constants at 0x00093D40 {default, deg -> rad, 0.5}: hash +12, f32 +16 / +20 (default k[0 (name?); decompiled: src/obj/mid8_xelem.cpp
+000A0558 XmlElem_Ctor_000A0558            // u32 XmlElem_Ctor_000A0558(XmlElem* o, XmlCursor* c): vtable 0x00B114D8 (a button prompt); constants at 0x000A054C: hashes +84 / +88 (0, the ref node +92's key), (name?); decompiled: src/obj/mid8_xelem.cpp
+00079938 XmlElem_Ctor_00079938            // u32 XmlElem_Ctor_00079938(XmlElem* o, XmlCursor* c): vtable 0x00B0F860 and defaults; the hash 0x8A93973F (+12; absent -> return that non-zero ReadHash result),  (name?); decompiled: src/obj/mid8_xelem.cpp
+0075FF20 Vec144_Push75FF20               // (PtrVector* v, const Rec144* r): push of a 144-byte record (grow 0x00551718 when full, field-wise copy) (name?); not decompiled
+00273E90 Def_Construct273E90             // (Def* 128 bytes, const Record* r): builds the 002741F4 def from its stack record (name?); not decompiled
+0020BFE8 Def_ReadBase20BFE8              // (a0, c, x, tmpl, o): shared base of the 00219FF8 / 00223D38 def readers (reads r3..r7) (name?); not decompiled
+00480E68 Def_Read480E68                  // (a0, c, o): kind 0x61313EAC branch of Def_ReadKind481828 (name?); not decompiled
+003F0990 Def_Read3F0990                  // (a0, c, o): kind 0xA7CFB837 branch of Def_ReadKind481828 (name?); not decompiled
+00332E28 Obj_Construct332E28             // (p, x, hash, b6, const f32 vec[3], b0..b5, hash2): 12 arguments, 2624-byte object of DefNew_0033322C (name?); not decompiled
