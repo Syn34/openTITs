@@ -12647,16 +12647,10 @@
 001CE094 Obj_UpdateContacts1CE094           // (Obj* o): 001CCF40(o, o+853, o+854) unless o->854 and vfn[32](0) in 2..4; edge of +853 -> vfn[420](2|6, 0), vfn[28](1,1), vfn[28](2,0); else edge of +854 (while +853) -> vfn[420](2|6, 0); decompiled: src/obj/mid19_b.cpp
 00F64738 g_ProjNameCounter_00F64738         // u32 running counter for "EntityCompWeapon_Proj_%i" (Obj_SpawnDef0EDE30) (name?)
 00B12CB8 VtSpawnQueryProj_00B12CB8          // vtable of the projectile spawn query (Obj_SpawnDef0EDE30) (name?)
-001D218C Path_SetActive_001D218C            // (Obj*, bool): called on path gate changes by Obj_PathTick1D2370 (117 insns; not decompiled) (name?)
-001D0450 Path_Step_001D0450                 // bool (Obj*, u32): path record advance; non-zero -> pose update (not decompiled) (name?)
-00012544 AvoidList_Remove_00012544          // (List* *0x00F557F0, Obj*) (not decompiled) (name?)
 0030E1E0 Anim_PickState_0030E1E0            // u32 (Ctl*): next state for AnimTask_Update3129E8 (not decompiled) (name?)
-00407130 Spawner_TickChild_00407130         // (Child*; f32 dt) (not decompiled) (name?)
-004089F0 Spawner_Spawn_004089F0             // (Spawner*; f32) (not decompiled) (name?)
 003CF0F8 Obj_State1_003CF0F8                // (Obj*; f32 dt): state 1 of Obj_StateTick3CF648 (VMX; vmx agent) (name?)
 00F557F4 g_NodeGraph_00F557F4               // Graph*: +4 -> u16 +2 node count, +12 20-byte nodes (Walker_Step1574C) (name?)
 00F557F0 g_AvoidList_00F557F0               // List*: +24 count, +3732 entry pointers (Obj_ResetBase12928) (name?)
-001CCF40 Obj_ProbeContacts_001CCF40         // (Obj*, u8* a, u8* b): refreshes the two contact bytes (Obj_UpdateContacts1CE094) (not decompiled) (name?)
 
 # Game code VMX sweep part 5
 0001B8C0 AttachList_Add_0001B8C0        // u32 (List*, Obj*, a, -, -, -, hash, const f32 pos[3], a9, a10; f1..f3): attachment record e = l->+3732[l->+24] (pos through Rec80 rows or o/bone rows -> e+32); decompiled: src/obj/vmx5_obj.cpp
@@ -12717,8 +12711,6 @@
 000BB660 Obj_ShutdownFx0BB660               // u32 (Obj* o): o->672/676 cleared, effect 0x529EC2A4, layers o->648 / o->660 popped and released, o->640 vfn[304](0) + Body_Remove931F00, entity o->644 Hk_RemoveEntity92FFC8; decompiled: src/obj/mid20_a.cpp
 0030912C Obj_HitParts30912C                 // u32 (Obj* o, a, b): parts o->776[3] hit by 0x001F4DC0 -> effect 0xF7919930, state handler o->704[s] vfn[52], Obj_SetStateFx266E6C(def, 4); decompiled: src/obj/mid20_a.cpp
 0012E930 Obj_InteractTick12E930             // u32 (Obj* o; f32 dt): hold timer o->1176 by controller bits; a release in range triggers a save (Save_Profile0C9FC8 / Player_SetSave124D58) or Handle_Call 0x0036735C(0x1447B, ...); decompiled: src/obj/mid20_a.cpp
-001F4DC0 Part_HitTest_001F4DC0              // bool (Part*, a, b; f32): hit test used by Obj_HitParts30912C (not decompiled) (name?)
-000DF960 Obj_CanTakeHitBase_000DF960        // u32 (Obj*, Obj* src, s32 kind, -): the base hit test after Obj_CanTakeHit127BC8 (not decompiled) (name?)
 00F65038 g_Level_00F65038                   // Level*: +24 128-byte rows indexed by node s16 +2 / +4 (Obj_LevelCue396B6C, Obj_LevelAnim396930) (name?)
 0106CF70 g_LevelSlotOff_0106CF70            // u16 row offset of the slot table (+0x0106CF7E: u16 offset of the byte list in row B) (name?)
 00F64C20 g_Session_00F64C20                 // Session*: 0x002E2E78 / World_GetSaveObj160 / Session_PartDone2E2740 argument (name?)
@@ -12818,3 +12810,42 @@
 00124034 Obj_SyncTree_00124034            // u32 f(T* o): Nop_000D8FC0(o); while bit 4 of u8 +968 is set (and not bit 5 / 6): with bit 8 of +172 Obj_UpdateFlagged_00123F70(o); bit 2 of +968 = bit 8 of +172 (name?); decompiled: src/obj/obj41b.cpp
 00177078 Obj_PickSetEffect_00177078       // u32 f(T* o, u32 key): SetPickEffect41 on +416. (name?); decompiled: src/obj/obj41b.cpp
 001771DC Obj_PickSetEffect_001771DC       // u32 f(T* o, u32 key): SetPickEffect41 on +420. (name?); decompiled: src/obj/obj41b.cpp
+
+# Game code medium sweep part 21
+001F4DC0 Part_HitTest_001F4DC0              // bool (Obj* o, const f32* p0, const f32* p1; f32 r2): o->820 part chain (bit 0x10000000 of o->980): first segment i (Field_At388x96 +48 points) with Seg_DistSq4A44C8(p0, p1, a, b) <= r2 -> 0x001F46D4(o, i) and 1 when Field_404Bit15(o->820) and bit 0x100 of o->820->172; decompiled: src/obj/mid21_a.cpp
+000DF960 Obj_CanTakeHitBase_000DF960        // u32 (Obj* o, Obj* src, s32 kind): kind 3 needs component 27 (+16 set, +68 <= 1); handler o->244 vfn[84]; src bit 0x01 of +192; (src->vfn[296](src, kind, o) & a) == a with a = o->vfn[300](o, kind, src); decompiled: src/obj/mid21_a.cpp
+00012544 Scene_RemoveObj12544               // (Scene* *0x00F557F0, Obj* x): swap-removes x from lists B (+592, s32 +0) / A (+1616, s32 +4), clears B[i]->52 == x; owner (x->vfn[124]) -> x->60 out of list C (+3664, s32 +16), else releases C[j]->244 handlers bound to x->48; decompiled: src/obj/mid21_a.cpp
+00407130 Spawner_TickChild_00407130         // (Child* c; f32 dt): state c->112: 0 -> 1 (+124 = +60); 1/2 -> 0x00406E60; 3/6/9 start phases (timers +124/+128, Anim_Restart key 0x9284C2DB / 0xFD6C2598); 10/11/12 -> 0x00406A40 / 0x00405FB8 / 0x00405C18; decompiled: src/obj/mid21_a.cpp
+004089F0 Spawner_Spawn_004089F0             // Child* (Spawner* o; f32 scale): SmallAlloc(224) child (vtable 0x00B20990) appended to u16 vector o+100 (+108 count, +104 cap, +110 high-water), o->200++, 0x00405560(p, o->88, o, 0x802B5FF9, o->88->8), o->212 = 0, p->116 = scale * o->88->28; decompiled: src/obj/mid21_a.cpp
+001CCF40 Obj_ProbeContacts_001CCF40         // (Obj* o, u8* a, u8* b) leaf: thresholds o->768 / o->772 vs 0x001CCF3C, o->820 forces, link o->752 (+352), else nearest world slot object (*0x00F65CA0 +29 count, 0x20C80-byte slots at +4208) within range of o+608; decompiled: src/obj/mid21_a.cpp
+001D218C Path_SetActive_001D218C            // (Obj* o, u8 on): bit 0x08000000 of o->972; on: Effect_SetHash(o->356, 0xA6CB0022); off: o->888 = 0, follower o->820 (+1268 bit 0x40000000, Obj_SetTarget_00296758), Obj_SelectColor_00289DC4(o->816, 0), o+832/848/864 = *0x01164B40, cue 0xF6239C09; then vfn[88] or o->816->vfn[48]; decompiled: src/obj/mid21_a.cpp
+001D0450 Path_Step_001D0450                 // u32 (Obj* o, u8 hold): path record step (28-byte records o->556, index o->892, u16 count o->564, reverse bit 0x40000000 of o->972, end mode o->964: 0 bounce / 1 wrap (r3 = 1)); speeds o->896/900/904, o->944 from 0x001D0444; decompiled: src/obj/mid21_a.cpp
+00252DFC Switch_SetOn252DFC                 // (Switch* o, u8 on): state o->52 from the target kind (Obj_Notify26(o->24)->244 >> 20), effect cues on o->28 (on 0xA6CB0022/0xC0FD2685/0x12252850, off 0xF6239C09/0x1A67FE7E/0xF96B3877), o->8->vfn[96](on), byte o->16 = on; decompiled: src/obj/mid21_b.cpp
+003B92D8 Obj_PartEffects3B92D8              // u32 (Obj* o, -, u32* out): *out = 0; per part of def o->60 (u8 +2636, 288-byte entries +2640): Effect_Spawn(Session_PartDone2E2740 ? +2924 : +2920 hash, t->160, t->164, 1); component 0x81BAD6B3 kind 5: c->28->vfn[40](0, 1) unless part o->192 done; decompiled: src/obj/mid21_b.cpp
+00407520 Child_ArcLand407520                // u32 (Child* c): state 10 arc height (constants 0x00407500) entering (-1.2, 2.1) -> state 11, owner effect c->4->vfn[272]() component 0x87208BC1 posed from c->4+96, cue 0xFD2A, c->120 = c->116 + 0.2, r3 = 1; decompiled: src/obj/mid21_b.cpp
+0001B028 Scene_FindFacing1B028              // Obj* (Scene* L, const f32 pos[3], -, const f32 dir[3]; f32 maxDist, f32 maxAngle): smallest acosf(dot(dir, x+144 - pos)/dist) among active (vfn[120]) non-excluded (vfn[156]) entries L+592 (s32 L->0), x = e->48; decompiled: src/obj/mid21_b.cpp
+00443EC0 Handle_Acquire443EC0               // (u32* out, Slot* a, Params* p): validates handle a->4 (pool 0x010B0200, enabled 0x010AEC60), default param block (2x *0x01164B40, 1.0f), 0x00443CE0(h, p) + 0x00443A78(a->4, 0) + a->98 = 1 unless 0x00F65B88 / a->102 (a->100 = 1), releases block handlers +60/+64; decompiled: src/obj/mid21_b.cpp
+003B5388 Obj_CueEffects3B5388               // (Obj* o): cue 0xAAC9DC92 (component 0xE965B9B4 kind 1 +20 = o->96->316) on o->104->vfn[272](), o->132->32->vfn[272]() and o->32; decompiled: src/obj/mid21_b.cpp
+000BE7F0 Obj_Layer2TickBE7F0                // (Obj* o) vtable entry: layer-2 state o->vfn[32](o, 2): 0 -> cue 0x081279EA, vfn[28](2, 1); 1/2 after Anim_TrackSet36(o->720)/Anim_TrackSet164(o) -> cues 0xFEF79CEC/0xB3F507F7, (1: 0x000B6208(o->488, o->20 + u16 o->6 words)), vfn[28](2, 2/3); decompiled: src/obj/mid21_b.cpp
+0031A5A8 Ctl_HoldEnter31A5A8                // (State* s) vtable entry: hold-state entry (constants 0x0031A598, clips 0x0B131C5A / 0x6BB381E9): s->64 from Obj_Check_001F465C(x->776 / x->784), Motion_Set4A0C20, Anim_SetTarget_0030DBF0(x, 0xDB8DE820), Anim_Restart2775A8; decompiled: src/obj/mid21_c.cpp
+0031A0E8 Ctl_HoldEnter31A0E8                // (State* s) vtable entry: as Ctl_HoldEnter31A5A8 with constants 0x0031A0D8, clips 0x9E21728B / 0x0D592198, Anim_Restart 4th argument 1; decompiled: src/obj/mid21_c.cpp
+00240288 Spawn_Effect240288                 // (Obj* o): effect def keyed by o->216->944 in the Set_Find(0) tree (path s+20, s->100/104, *0x011DE288), SmallAlloc(140) + Effect_Construct -> o->548, component 0x0027469E handler o->160, +136 bit 0x200 clear, Effect_Start, Effect_SetTime(*0x00240284); decompiled: src/obj/mid21_c.cpp
+0025A8A8 Spawn_Effect25A8A8                 // Effect* (Obj* o, u32 key, u8 flag): as Spawn_Effect240288 for key, component 0x618B8D94 handler o->2268, +136 bit 0x200 = flag, Effect_SetTime(*0x0025A8A4); decompiled: src/obj/mid21_c.cpp
+000E7FF0 Obj_CanTakeHitScaledE7FF0          // u32 (Obj* o, Obj* src, s32 kind, f32* dmg): states (o->392 >> 1) 1 / >6; kind 2 free slot in component 28 -> 1; kinds 0/2: o->420 bit 0x40000000, src == o->400, *dmg *= 5 * o->216->296; then the Obj_CanTakeHitBase_000DF960 filter inline; decompiled: src/obj/mid21_c.cpp
+003BB1AC Obj_ReleaseAll3BB1AC               // (Obj* o): player (world o->vfn[76]() + 0x1281E0) drops component 0x760CB725 handler of o->32, vfn[176](0), +164->40 bit 0x1000; same per member +80 of the u16 o->112 128-byte entries o->104 (component e->216->52); decompiled: src/obj/mid21_c.cpp
+0046D398 Options_RefreshLabels46D398        // (Options* a, Screen* s): "Menu" (Ui_Find under s->12) options "CameraX"/"CameraY" ($STR_INVERTED/$STR_NORMAL by a->4144 bits 0x40000000/0x20000000) and "Vibration" ($STR_ON/$STR_OFF by bit 0x10000000) via vfn[188]; decompiled: src/obj/mid21_c.cpp
+00297900 EmitterOwner_Destruct297900        // (Owner* o): destructor body (vtable 0x00B1C880): frees o->360 handles (Pool_FreeHandle_004B2A04(*0x00F557F8 + 4)), stops the o+384 (handle, x) pairs (s32 o->448), PtrVector_Clear(o+360); base vtable 0x00B1BE30: removed from table 0x01056F1C, List1013B5C_Remove(o); decompiled: src/obj/mid21_c.cpp
+00434EFC Cmd_ResetPlayer434EFC              // (Cmd* o) vtable entry: player (world + 0x1281E0) pose p->160->160 -> o+16, vfn[176](0) with p->592 = 0.5f, weapon p+364[u8 p->345] (vfn[8] == 11 -> SetU8_214_001071C4(x, 1)), world slot object q (+192 bit 8: q->384 vfn[44](1)/vfn[16], Obj_Reset84 / Field_SetNot88b on kind-5 q->380), Flag_Set8_40000000(o); decompiled: src/obj/mid21_c.cpp
+002AEE58 Obj_AddContact2AEE58               // (Obj* o, Pair* pr): up to 16 contacts: other side x (pr->4 / pr->8 vs o->8->vfn[144]) with property 0x91C7CF5B (+12 != 0): counter o->280[i]++ or append to o+240 / o+280 (=1); new and not in o->260 (u16 o->268) -> o->336 |= 0x80; decompiled: src/obj/mid21_c.cpp
+00297BA8 EmitterOwner_Refresh297BA8         // (Owner* o): stack param block (owner o->8 position +144 / +320, flags 0x0A) to 0x00443CE0 for each (handle, x) pair of o+384 (s32 o->448); dead ones stopped and swap-removed; SpawnRec_Dtor_00440AC4 / SpawnRec_Dtor2_00440A40(block, 0); decompiled: src/obj/mid21_c.cpp
+0004F530 Ai_RespawnTick4F530                // u32 (Ai* o) vtable entry: states 20/21 -> 0; pending bit 0x80 of o->305: d->348 raised (rows 0x00F98684 + 76 * (o->1800 + 0x6C271198), +72), state 18 posts Event1_Init + World_Query482D14(*0x00F65CA0, -1, ev) and vfn[220](20 / 16); else o->1764 >= *0x00F98848 -> o->1812 = 1, vfn[220](18); decompiled: src/obj/mid21_c.cpp
+001F46D4 Part_OnHit_001F46D4                // (Obj* o, u32 i): the hit on part segment i (callee of Part_HitTest_001F4DC0) (not decompiled) (name?)
+00405560 Child_Init_00405560                // (Child* p, Def* d, Spawner* o, 0x802B5FF9, d->8) (callee of Spawner_Spawn_004089F0) (not decompiled) (name?)
+00405C18 Child_State12_00405C18             // (Child*; f32 dt) (callee of Spawner_TickChild_00407130) (not decompiled) (name?)
+00405FB8 Child_State11_00405FB8             // (Child*; f32 dt) (not decompiled) (name?)
+00406A40 Child_State10_00406A40             // (Child*; f32 dt) (not decompiled) (name?)
+00406E60 Child_Run_00406E60                 // (Child*; f32 dt): child states 1 / 2 (not decompiled) (name?)
+00443CE0 Handle_Open_00443CE0               // (u32 handle, Params* p) -> 0 when the emitter is gone (callee of Handle_Acquire443EC0 / EmitterOwner_Refresh297BA8) (not decompiled) (name?)
+000B6208 Obj_SlotApply_000B6208             // (x, w0, w1) (callee of Obj_Layer2TickBE7F0) (not decompiled) (name?)
+01056F1C g_VtB1BE30Table_01056F1C           // u16 count +2, 8-byte entries +8 (+4 = object) of the vtable 0x00B1BE30 objects (name?)
+00F98684 g_RespawnRows_00F98684             // 76-byte rows indexed by key + 0x6C271198 (+72 = limit) (Ai_RespawnTick4F530) (name?)
