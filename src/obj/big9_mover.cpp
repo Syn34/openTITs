@@ -23,7 +23,7 @@ constexpr u32 kUp = 0x01164B60u;         // f32[3] the up axis
 constexpr u32 kRayDir = 0x01164B90u;     // f32[3] fixed ray direction (down?)
 constexpr u32 kCollectorBaseVt = 0x00B0EF40u;  // base ray collector vtable (the collector's state after use)
 constexpr u32 kHkGetBody = 0x009D19C8u;  // Hk_GetBody9D19C8 (entity) -> rigid body
-constexpr u32 kObjTransform = 0x002CCFF0u;     // Obj_Transform2CCFF0 (Mover*, const f32 pos[3], 1, f32 out[3], a, 0, 0) -> bool
+constexpr u32 kObjTransform = 0x002CCFF0u;     // Ledge_Probe2CCFF0 (Mover*, const f32 pos[3], 1, f32 out[3], a, 0, 0) -> bool
 constexpr u32 kHitSize = 80;
 constexpr u32 kHitInline = 8;
 constexpr u32 kOwner = 8;                // Mover: owner object (vfunc +64 -> its physics object; +96 matrix)
@@ -128,7 +128,7 @@ DECOMP(002CDA40, Mover_NearestDir) {
 // none) from its position raised by +68 along row 1: a ray (all hits,
 // sorted, filter info = physics object +428) shortens maxDist to the
 // nearest entity hit; less than minDist gives false. Then from minDist in
-// steps of 0.5 below that reach, Obj_Transform2CCFF0(c, point, 1, out, a,
+// steps of 0.5 below that reach, Ledge_Probe2CCFF0(c, point, 1, out, a,
 // 0, 0) is tried at each point; the third success gives true, with out
 // (when given) lowered by the raise. False when the reach runs out.
 DECOMP(002CDD68, Mover_ProbeDir) {

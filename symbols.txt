@@ -7698,7 +7698,6 @@
 00368870 Obj_SetMode368870                    // (Object*, -, u8 flag, Node*; f32 t): +532 gated; mode 2/3 -> Speaker_SayId4A5C90 / Effect_SetHash4CF988 bits, 0/4 -> +204 node, 0x00368770; decompiled: src/world/hevent21_a.cpp (name?)
 00108480 Obj_Refresh108480                  // void (Obj*): +360..504 from link->216+1140 (link o->20 flag 0x8 @192) or table 0x010334D0 (stride 76); +12 = -1, +16 |= 0x1F, +208 bit 0x20000000; decompiled: src/obj/mid16_a.cpp
 000FE828 Target_Update0FE828                  // (Target*) (name?)
-002CCFF0 Obj_Transform2CCFF0                  // (Obj*, const f32* pos, u8, a, b, c, d): trig-heavy, not done
 004B20B8 Clip_Load4B20B8                      // (Owner*, XmlDoc*, path) -> 1: "AnimSet" children by "Name" hash into the +72 clip map (48-byte clips, 0x004B1708 init); decompiled: src/world/hevent21_a.cpp (name?)
 00342A30 Obj_Start342A30                      // (Obj*): Havok rigid body (stack cinfo, 944-byte body -> +4, +80..+88 pos), 48-byte box shape, 544-byte shape, Hk_AddEntity92F2A8, references released; decompiled: src/world/hevent22_d.cpp (name?)
 002DDAB0 Session_Stop2DDAB0                   // (Session*): drains user block 0's object queue (+80 / u16 +88): kind 4 handle notify, vt +28 / +4; +100 bit 0x40000000 around it; decompiled: src/world/hevent21_a.cpp (name?)
@@ -9376,7 +9375,7 @@
 00486854 World_SpawnPlayers486854             // (World*) -> u8 user count: session (0x00F64C20 +72) slots: profile items notified, "Player%02d_Controllable" spawned (w +0x1280F0), then user blocks placed + User_Travel484BE0; decompiled: src/world/hevent28_c.cpp (name?)
 000F9854 View_Init0F9854                      // (View*, ViewDef*) -> controller: fields from def (+148 split, +152 mode), main camera (def +28 name) and "%s_additive" camera from fresh camera defs (allocator *0x00F8F134 vt +12), controllers (Ctl_Construct34BDEC); decompiled: src/world/hevent28_d.cpp; was View_Update0F9854 (name?)
 004F05A8 Geom_LoadScene4F05A8                 // (GeomSet*, Scene*, u32 a, bool first, bool top) 1926 insns: calls the three 4F0xxx pieces above and the PropTable getters (name?)
-00F65F80 g_SpawnCooldown                      // f32 (data) (name?)
+00F65F80 g_SpawnAltCooldown              // f32 cooldown of the alternate spawn profile (SpawnQueue_Burst4AED50 / SpawnQueue_Update4AE498) (data) (name?)
 010C2480 g_SpawnQueue                         // vector of 128-byte delayed spawn records (+0 data, u16 +8 count) (data) (name?)
 011944E0 g_BankOpenPos                        // f32[3] position for Bank_Open (data) (name?)
 00F8F134 g_CameraDefAllocSlot                 // {allocator*, nodes per block, +8 heap, +12 owner}; +16 camera def map (data) (name?)
@@ -12964,3 +12963,13 @@
 001EFDE8 Part_BuildChain_001EFDE8          // (o, o->804, n, rows, x, 0, def+352, def+368) -> new part chain (callee of Part_BreakAt1F46D4) (not decompiled) (name?)
 01067AF8 g_TargetTable_01067AF8            // 32 {u32 0, f32 FLT_MAX} pairs, init flag u8 0x01067AF0 (Targets_Collect270258) (name?)
 01056EE0 g_SinCache_01056EE0               // f32 sin(K) cache, valid flag u8 0x01056ED8 (Player_RateCheck23B3E8) (name?)
+
+# Game code big sweep part 20
+004AED50 SpawnQueue_Burst4AED50          // (SpawnReq* p): aim matrix of source p+16, target tDist toward the player (nav probe 0x00010980 / Nav_SnapPoint), profile + id (vfunc 100/104), count from p+28/+32/+36 (scaled by p+40 or tweaks), pushes 128-byte records onto g_SpawnQueue 0x010C2480 on a circle (Math_Cosf/Sinf, nav snap), ballistic velocity when profile +20 bit 0x20, alternate profile 0x00F65F7C with cooldown 0x00F65F80; decompiled: src/obj/big20_spawn.cpp
+00010980 Nav_Probe10980                  // bool f(Nav*, const Vec3* p, -, -, -, Vec3* out; f32 2, -3, 3): reads r3 r4 r8 f1-f3 only (name?)
+00F65F74 g_ProfileCacheF65F74            // u32 cached Save_Profile0C9FC8(0xF214F06E) (data) (name?)
+00191128 Obj_UpdateOrient191128          // (Obj* o): o+664 set: o+96 matrix rows -> world obj o+160 (+16), WorldObj_MarkDirty; else matrix from yaw o+488 (Math_Cosf/Sinf of axes 0x01164B70 / 0x01164B50), position o+388 +288 (lvx); carrier o+616: WorldObj_UpdateLod(o+624 +256), rows from o+624 +80, position + spin(o+656/2 about 0x01164B60) * quat o+640 * conj; no o+624: smoothed up vector o+464 (4% toward 0x01164B60) and shortest-arc quaternion; result to vfunc 84 (o, f32[4][4]) (name?); decompiled: src/obj/big20_orient.cpp
+002CCFF0 Ledge_Probe2CCFF0               // bool (Obj* o, const f32 pos[3], u8 high, f32 outPt[3], f32 outN[3], u8* grab, u8* kind): two Havok casts (world o+116 vfunc 64, all-hits collector 0x00F1DE58, HkHits_Sort8871E8) from points 0.3 apart along the owner's row 0, forward along row 2; hits on world objects with property 0x418F096F / 0x15E9DC74 (grab flag, kind = 0x2CC3F147), normal within sin(o+36) and facing; edge between the hits, normal (edge x 0x01164B60) within cos(o+28/o+40); Seg2_Intersect of the edge and the forward segment -> outPt (x, base y, z), outN; replaces the old name Obj_Transform2CCFF0; decompiled: src/obj/big20_ledge.cpp
+01164B50 g_YawSinAxis                    // f32[3] constant used with Math_Sinf in Obj_UpdateOrient191128 (Constants_Init_0056B93C) (data) (name?)
+01164B70 g_YawCosAxis                    // f32[3] constant used with Math_Cosf in Obj_UpdateOrient191128 (data) (name?)
+01164B60 g_UpAxis                        // f32[3] up axis constant (Obj_UpdateOrient191128, Ledge_Probe2CCFF0) (data) (name?)
