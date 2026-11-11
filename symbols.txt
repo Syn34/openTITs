@@ -10715,7 +10715,6 @@
 001D7470 XmlDef_Read_001D7470             // (a0, c, def): reader of the 001D7D98 def (reads r4/r5) (name?); not decompiled
 00759508 SortedMap_Insert759508           // (map, const u32* key, value) (name?); not decompiled
 0012E824 Volume_EnterItem12E824           // (item, volume) (name?); not decompiled
-0009810C AnimCmd_ReadSlot9810C            // (o, node, slot) -> bool (name?); not decompiled
 
 # Game code sweep part 30
 0003A92C Obj_ResetChild_0003A92C          // T* f(T* o): unless bit 0x02 of the u8 o->+464 is set or o->+4 is 40, returns 0x00016A40(o, o->+68, o->+4); otherwise, when the child c = o->+68 is set, r = c->v (name?); decompiled: src/obj/obj30.cpp
@@ -11732,7 +11731,6 @@
 00244980 XmlDef_FromRec244980             // (p, B) ctor of 00245A30
 0023E590 XmlDef_Read23E590                // reader of 0023FA28
 00226A28 XmlDef_FromRec226A28             // (p, B) base ctor used by 0023FA28
-0020A0F0 XmlDef_FromRec20A0F0             // (p, rec) ctor of 0020A298
 
 # Game code large functions part 14
 003BCB20 HideoutMenu_RefreshJobs3BCB20  // u32 f(Menu*, s32 cur, s32 sel, s32 prev, s32 mode): mode 1 opens (back / buy prompts, animator 0x7CDE2234), per-entry state hashes (0xC20B1F0C / 0x9CD94DEF / 0xC181C0F0 / 0xACC3FD87, +104 |= 0x80), at sel the camera target and "$HIDEOUT_JOB_AVAILABLE" select prompt; Effect_SetHash4CF988(m->32, job +240) (name?); decompiled: src/obj/big14_ui.cpp
@@ -11856,7 +11854,6 @@
 00217470 AreaDef_Read217470               // (a0, c, x, tmpl, rec): area def reader (name?); not decompiled
 0047F588 XformKey_Read47F588              // (a0, XmlNode*, 64-byte key) -> bool (name?); not decompiled
 0022AD08 ChoiceEntry_Read22AD08           // (entry, a1, XmlNode*) (reads r3 / r5) (name?); not decompiled
-0049EA74 QueryVar_KindOfTag               // (u32 tag) -> value kind 1..16 or 0 (name?); not decompiled
 
 # Game code large functions part 16
 001DD3F8 DamageColDef_ReadDD3F8         // void f(a0, c, x, tmpl, o): Read_000C85A8, 0x40000000 group (+224..+556: hashes/vec3s, two euler->quat +320/+368, f32 clamps, deg->rad, kind index of 0x79545A55 in 0x00AD1ED8 -> +512, "playerName" string {len,buf} +516/+520, vec2 +552, [0,1] clamps +456..+480; rec+k = tmpl+k+80); decompiled: src/obj/big16_dmg.cpp
@@ -13321,3 +13318,38 @@
 009250F0 HkPhantom_CastRay_009250F0       // (Phantom*, const hkpWorldRayCastInput*, hkpWorldRayCastOutput*) (Havok) (name?)
 001F9078 ColDef_Read_001F9078             // (x, XmlCursor* cur, tmpl, parent, Def* out): Damage_Read0C3910, default record via Rec_Init7576D8 (or parent copy with parent->+20 & 0x20), size/offset vec3s +128/+144, "colObjName" +160, 24 floats +164.., hash +244, 13 bools -> +252 bits 0x8000>>k, "targetingFlags" bytes +248..+253; decompiled: src/obj/big24_coldef.cpp
 003FA110 Prop_SwayTick_003FA110           // (Prop* o; f32 dt): three-phase bob (+144/+148/+152, wrap quirk 3.7) into body pose (Mat34_FromRotPos + vfn[84]); spring tilt +124/+132 toward clamp(+140 * limit) with effects 0x603D2AEE / 0xA7BE93F5 on direction change (+368); lean toward the game's reference object via quaternion -> Quat_ToMatrix / Matrix_MulRot(o+160) -> body vfn[84]; decompiled: src/obj/big24_sway.cpp
+
+# Game code sweep part 46
+004015D0 Obj_Construct_B208F8_004015D0    // T* f(T* o, a1, a2, u8* cfg, a4): SubMachine_Construct(o, a1, cfg, a2->+72, a4) (r7 passed through: the callee reads it), then the fields: bytes +53/+54/+68/+80. (name?); decompiled: src/obj/obj46.cpp
+00412D50 Obj_Enter_00412D50               // void f(T* o): byte +479 = 0; Handle_Call363A3C(0xBB9F16F3, 0, 1, -, 0, 0, 0x01164CA4; -1.0f); o->+92->vt[88](it, 1, 1, 1, 1); SetSelect_491000(o, 0x164A530C); t (name?); decompiled: src/obj/obj46.cpp
+00455468 Obj_SpawnNamed_00455468          // The 92-byte record of 0x004551C8. (name?); decompiled: src/obj/obj46.cpp
+0049E0DC Unlock_Buy_0049E0DC              // bool f(s32 id): the 152-byte entry e of the table 0x010BE8BC (count 0x010C1A9C) with e->+0 == id, its flag byte b = *(0x00F65CA0)->+80 + 3948 + index. Unless (b (name?); decompiled: src/obj/obj46.cpp
+0049E8E4 Value_Get_0049E8E4               // u32 f(void* dst, Value* v): v 0 -> r3 = dst. Else by the kind v->vt[32](v): 12 and 2 -> *dst = v->vt[24](v) (u32); 1 -> *dst = the f1 of v->vt[20](v); 4 -> the  (name?); decompiled: src/obj/obj46.cpp
+004CB5F8 XmlDef_Read_B22470_004CB5F8      // u32 f(Def* o, XmlCursor* c): vtable 0x00B22470, u16 +4 = 1, the vectors +16 / +48 = 0x01164B30, +12/+32/+64/+68/+72 = 0; then the hash 0x8A93973F into +12 (defa (name?); decompiled: src/obj/obj46.cpp
+007392D8 VtB0E888_Dtor                    // ~T() [vtable 0x00B0E888]: the PtrVectors +492/+472/+452, SmallFree of the buffer +428 (+444 * 16 bytes), the PtrVectors +408 down to +308 (step 20), then the ba (name?); decompiled: src/obj/obj46.cpp
+000131C8 Obj_SyncBasis_000131C8           // u32 f(T* o): unless the word o->+48->+172 has bit 0x40 (r3 = the word) or 0x20 (r3 = 1): o->vt[236](o); the basis A (+128) = B (+144) x C (+160), then B = C x A (name?); decompiled: src/obj/obj46.cpp
+0009810C Xml_CollectPaths_0009810C        // bool f(-, XmlCursor* c, PtrVector* v): c 0 or v not empty -> 0. Counts the children of c for which Tree_FindPath_004B6DA0 succeeds (none -> 0), reserves that ma (name?); decompiled: src/obj/obj46.cpp
+0009AF60 XmlRec_New_B10F88_0009AF60       // Rec* f(-, XmlCursor* c): a 24-byte record (Mem_Alloc(24, 0, 16); 0 -> r3 = 0), Obj_InitVt_B21C98(p, c), vtable 0x00B10F88, the hashes 0x040EFE5F / 0x03F47A7A in (name?); decompiled: src/obj/obj46.cpp
+0009EC00 XmlRec_New_B11348_0009EC00       // Rec* f(-, XmlCursor* c): a 40-byte record (Mem_Alloc(40, 0, 16); 0 -> r3 = 0), Obj_InitVt_B21C98(p, c), vtable 0x00B11348, +12..+36 = 0; the hashes 0x7A30D7E3 / (name?); decompiled: src/obj/obj46.cpp
+00122830 Obj_ResetBodies_00122830         // u32 f(Obj* o): o->vt[28](o, 0, 0); every component c (any kind) gets c->vt[16](c) and Body_SetMode(c, 1); every kind 21 component Call_28EBB8_0(c); +436 / +440  (name?); decompiled: src/obj/obj46.cpp
+0016CED8 Obj_RestartIdle_0016CED8         // u32 f(Out* out, Obj* x): with p = CallK2_000D94F4(x) set: out->+8 = x->+728, out->+4 = p->+1232 (t); t > k0 -> t = k1 / t; p->+1224 / +1228 = k1 / (t + k2) (k = (name?); decompiled: src/obj/obj46.cpp
+001B4848 Obj_BuildVolume_001B4848         // u32 f(Obj* o): once (byte +592), when o->+216->+240 is 0xA970EC1F (else r3 = o->+216): the box of o->+216->vt[12](&box, it) gives the extent d = max - min; Shap (name?); decompiled: src/obj/obj46.cpp
+001FF4B0 Obj_SetRagdoll_001FF4B0          // u32 f(Obj* o, bool on): on -> World_ListRemove_0046B7A4(*(0x00F65CA0), 3, 0x00F34078, o, o), o->+564 (when set) ->vt[40](it, 0) and +564 = 0; o->vt[396](o, 4, 0 (name?); decompiled: src/obj/obj46.cpp
+0020A0F0 Obj_Construct_B19378_0020A0F0    // T* f(T* o, const Desc* d): Thunk_000C2B90(o, d), vtable 0x00B19378; the vector d->+92 into +156, +144 / +148 = d->+80 / +84, +164.. = d->+100.. (floats +156..+1 (name?); decompiled: src/obj/obj46.cpp
+00214E1C Trigger_New_00214E1C             // T* f(a0, a1, Desc* d, a3): TriggerDef_ReadKinds214C28(a0, a1, d, a3, &def) into a stack def (+0 0x00C00000, +12 d->+12, +16 / +20 the empty string 0x00AD366C, + (name?); decompiled: src/obj/obj46.cpp
+0021D838 XmlDef_ReadFlags_0021D838        // u32 f(-, XmlCursor* c, T* o): the bools 0xBEF25C9F / 0x1EF4F9F5 / 0x2D407057 / 0x778A1C92 into the bits 0x20 / 0x10 / 0x08 / 0x02 of the byte +184 (defaults: th (name?); decompiled: src/obj/obj46.cpp
+0024A2E0 Obj_TickAim_0024A2E0             // u32 f(Obj* o, f32 dt): +1264 = 0; unless bit 0x80000000 of +384 is clear (r3 = 0): +1380 += dt (t), o->+400->vt[12](it) = info; ready = bit 0x1000 of info->+36  (name?); decompiled: src/obj/obj46.cpp
+002E142C Session_StartEntry_002E142C      // bool f(Session* s, s32 id): the 860-byte entry of the array +20 (count +24) with +724 == id (none -> 0): Session_Stop2DDAB0(s), Set_Stop4BD1CC of Set_Find(0x771 (name?); decompiled: src/obj/obj46.cpp
+00396250 Obj_ApplyCell_00396250           // bool f(const Key* k, Obj* o): with c = o->+12 (bit 0x8 of +192 set), x = c->vt[60](c) and y = x->+36 all set (else 0): Obj_SetByteByHash_0035327C(y, the word ce (name?); decompiled: src/obj/obj46.cpp
+003976C8 Obj_SetCellHash_003976C8         // u32 f(const Key* k, T* o): the 132-byte slot k->+6 of o (+152, count u16 +144; out of range or its +0 >= 10 -> none, address 0) gets at +4 + u16 *(0x0106CF80) t (name?); decompiled: src/obj/obj46.cpp
+003DE5F0 Tree_FindF32_003DE5F0            // T* f(T* o, u32 key): the node keyed key in the tree *(o->+160) (search stack u16 +244 / slots +164): none or an empty tree -> +248 = the last node (0 for an emp (name?); decompiled: src/obj/obj46.cpp
+003F834C Obj_Construct_B20850_003F834C    // T* f(T* o, a1, Cfg* cfg, u8* a3, a4): SubMachine_Construct(o, a1, a3, cfg->+0, a4) (r7 passed through), then +72 / +112 / +116 = 1.0f, bit 0x80000000 of +92 cle (name?); decompiled: src/obj/obj46.cpp
+00455038 Obj_SpawnNamed_00455038          // The 140-byte record of 0x00061810 (see SpawnNamed46). (name?); decompiled: src/obj/obj46.cpp
+0049EA74 Value_KindOfHash_0049EA74        // s32 f(u32 hash): the value kind of a type-name hash (0 for unknown): 0x00014B07 1, 0x7A30D7E3 2, 0xEB9EE198 3, 0xB2E59948 4, 0xE89DF217 5, 0x044DC6AB 6, 0xAB275 (name?); decompiled: src/obj/obj46.cpp
+0077B384 VtB20558_Dtor                    // ~T() [vtable 0x00B20558]: the PtrVector +392, the buffer +368, the PtrVector +112, the buffers +88 and +64, then Dtor_B219D0_00490B34(o). (name?); decompiled: src/obj/obj46.cpp
+00796114 UiElem920_Delete                 // [vtable 0x00B22920 +4]: 176 bytes. (name?); decompiled: src/obj/obj46b.cpp
+007966F8 UiElemD08_Delete                 // [vtable 0x00B22D08 +4]: 192 bytes. (name?); decompiled: src/obj/obj46b.cpp
+007968F4 UiElemE98_Delete                 // [vtable 0x00B22E98 +4]: 192 bytes. (name?); decompiled: src/obj/obj46b.cpp
+00073910 XmlRec_New_B0F590_00073910       // [vtable 0x00B0F590] (name?); decompiled: src/obj/obj46b.cpp
+00073D18 XmlRec_New_B0F5B8_00073D18       // [vtable 0x00B0F5B8]: byte +24 is not initialized (the read default is whatever the allocation held). (name?); decompiled: src/obj/obj46b.cpp
+0007AF38 XmlRec_New_B0F950_0007AF38       // Rec* f(-, XmlCursor* c): Mem_Alloc(28, 0, 16) (0 -> r3 = 0), Obj_InitVt_B21C98(p, c), +12..+24 = 0, vtable 0x00B0F950; the hashes 0x8A93973F / 0x7A30D7E3 into + (name?); decompiled: src/obj/obj46b.cpp
