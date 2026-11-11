@@ -11502,7 +11502,7 @@
 00371BA8 Obj_TalkBegin                    // (o, 0) (name?); called by 0x003735C8
 00371360 Obj_TalkResume                   // (o) (name?); called by 0x003735C8
 000E5EF0 Obj_RefreshBase                  // (o, x): reads r4 (passed through by 0x001C7C5C) (name?)
-000E02F8 Obj_SetRagdollBase               // (o, u8 on) (name?); tail of the ragdoll releases (RagdollRelease33)
+000E02F8 Obj_SetRagdollBase             // (o, u8 full): full: o's hit-queue records (0x01022100) swap-removed (lvx/stvx), effect +356 ended (0x879D1B7A / component 0x0027469E), +364 = 0; then Obj_ShutdownBase_000D74C0; decompiled: src/obj/vmx1_hit.cpp
 000E4544 Obj_SoundOffBase                 // (o, full) base of 001E6FA0 (already in symbols.txt)
 000F6A68 Obj_ApplyKindEntry               // (a, entry, b, d, e, f) (name?); called by 0x000F8058
 
@@ -12137,3 +12137,35 @@
 004ADD68 Area_Test_004ADD68              // (q, m): gate for the +440 callback in 0x00224E20 (name?); not decompiled
 0028D7B0 World_SubmitRest_0028D7B0       // (o): tail of 0x000D016C (name?); not decompiled
 00746148 Query_BaseCtor_00746148         // (m, c, 0, 0, 1, 0, 1, 0, 0, 0) base of the 240-byte query (name?); not decompiled
+
+# Game code VMX sweep part 1
+0002B430 Obj_TargetInFrontOfAttach      // bool (Obj* o, const T* target): attach entry 0x001F0BAF point/direction (o's matrix) or defaults 0x01164BD0+32/+48; target +16 in front and |dy| < 1.2 (quirk: x/z replaced by 0.0); decompiled: src/obj/vmx1_a.cpp
+0023A6F0 Obj_BlendOffset_0023A6F0       // void (T* o, Out* out): t = share of o->+612 entries (+36 set); lerp of (+396)+1424 +32/+16, optional y-scale of o->+112, minus base, to out+32 (x,y,z,0); decompiled: src/obj/vmx1_a.cpp
+000E99B0 Comp_Xform_000E99B0            // (out, obj): obj+400 component's +16 slot 20 with the matrix at 0x01164BD0, else 0x000CB934(out, obj) (template instance, masks 0x000E9980); decompiled: src/obj/vmx1_a.cpp
+004277A8 Net_BroadcastSubnet_004277A8   // s32 (const void* packet): sendto the 304-byte packet to hosts 1..256 of our /24 (cellNetCtlGetInfo IP), port 14120, socket *0x00F65854; decompiled: src/obj/vmx1_net.cpp
+00033568 Obj_MayAct_00033568            // bool (Obj* o): state o->+256 flags; pass table + position inside both 4x4 matrices of world +0x128168 (+368/+432) and scene timer +68 < 0; else +192 bit 4 random 1/4 (0x01164888 step); decompiled: src/obj/vmx1_a.cpp
+002462D8 Obj_CreateSpherePhantom_002462D8 // T (Obj* o): once: radius 0.5*|def+800|, hkpSphereShape (32) + phantom (352) from the r13 Havok router, identity transform, filter (o->+416 ? +44 hi : 0)|(10/11); o->+1344; added to the world; decompiled: src/obj/vmx1_a.cpp
+003B5170 Obj_OffsetPoint_003B5170       // void (Obj* o, const T* holder, f32 out[4]): out = holder matrix (+96) x (o->+96)+240 + rotation (o->+128 ->+40 +80 / identity) x (o->+96)+224; w lane from stack junk; decompiled: src/obj/vmx1_a.cpp
+001FC200 Obj_OnHitImpulse_001FC200      // u32 (Obj* o, HitEvent* ev): Obj_TestE0BCC; impulse to body +416 (slot 21 of body+224); damage via o->vfn[88] hash 0x811B1D5E; ev->+14 bit 0x100; decompiled: src/obj/vmx1_hit.cpp
+000E7DC4 Obj_GetAttachPoint_000E7DC4    // void (f32 out[3], Obj* o): kind-27 component: o->+144; else attach matrix (Obj_AttachMatrix / base) translation or matrix x def+192 entry +128; decompiled: src/obj/vmx1_a.cpp
+001DC988 Obj_ApplyYawPitch_001DC988     // void (T* o): o->+512 = +448 x RotY(o->+580) x RotX(o->+576), normalised (Matrix_NormalizeInPlace result copied back); decompiled: src/obj/vmx1_a.cpp
+00127ED8 Obj_SetMatrix_00127ED8         // void (Obj* o, const f32 m[4][4]): unless within 1e-5: o->+96 = m; vfn[16] target gets m moved by its mode offset (Call_260D70_1); o->+244 copy; decompiled: src/obj/vmx1_a.cpp
+00289EC0 Cam_UpdateViewCache_00289EC0   // u8 (Cam* c): flag +456 0x40: inverse look-at of view record (0x011950A0 +12)[c->+240] into +420/+432; 0x80: +444/+448/+452 projection terms; decompiled: src/obj/vmx1_a.cpp
+001976A8 Spline_VisibleFrom_001976A8    // bool (SplineInstance* s, const Query* q): mode 12 + flags; bounding sphere through s's matrix within q range, optional 45-degree cone (acosf); decompiled: src/obj/vmx1_a.cpp
+0040C848 Obj_TiltRestart_0040C848       // u32 (T* o): (o->+80)->+464: o->+84 = 4; matrix +208 rotated -pi/4 about x to (o->+4)->vfn[21]; restart (o->+4)->vfn[15] anim with key 0x04BE8B4E; decompiled: src/obj/vmx1_a.cpp
+004E4FB0 Widget_HitTest_004E4FB0        // Widget* (Widget* w, const f32 pt[2]): children (+152/+156, vfn[44]) with flag bit 31, else w itself (inverse frame matrix, vfn[40]) unless bit 29; decompiled: src/obj/vmx1_ui.cpp
+004E1140 Widget_HitTestEnabled_004E1140 // Widget* (Widget* w, const f32 pt[2]): as 004E4FB0 but only with flag bit 31 and byte +135; decompiled: src/obj/vmx1_ui.cpp
+002084C0 Obj_OnHitFalloff_002084C0      // u32 (Obj* o, HitEvent* ev): falloff (ev +48/+52/+96), impulse ev+64*0x01054C58 to body +388, damage ev+60*0x01054C08 (hash 0x03C599D8), ev->+14 |= 0x100; decompiled: src/obj/vmx1_hit.cpp
+001929D0 Obj_OnHitScaled_001929D0       // u32 (Obj* o, HitEvent* ev): falloff; impulse scaled by def+208; damage by def+204 (hash 0x03C599D8); ev->+14 |= 0x100; decompiled: src/obj/vmx1_hit.cpp
+00208730 Obj_OnHitSourced_00208730      // u32 (Obj* o, HitEvent* ev): kind 0x04E8CCF7 from a +192-bit-28 source: vfn[7](o,0,4); else impulse/strength with globals 0x01054CF8/0x01054CA8, damage hash 0x811B1D5E; decompiled: src/obj/vmx1_hit.cpp
+0016FA70 Obj_OnHitHeading_0016FA70      // u32 (Obj* o, HitEvent* ev): falloff impulse (def+208), damage (def+204) and o->+736 = hit heading in degrees (atan2f); decompiled: src/obj/vmx1_hit.cpp
+001FEF38 PhysObj_Ctor_001FEF38          // u32 (Obj* o, const Def* d): PhysObj_Ctor_001FA238 + vtables 0x00B18F58 (+8/+416/+456), quaternions, flags +592, zeroed +496 block, entity group 29, level object +564, +588/+432; decompiled: src/obj/vmx1_ctor.cpp
+004AD340 Src_Direction_004AD340         // void (const Src* s, const f32 p[3], f32 out[4]): mode s->+20: 0 = s->+64; 1/2 = normalised s->+80 - p (negated for 2); decompiled: src/obj/vmx1_a.cpp
+003ACB90 Obj_OffsetByAttach_003ACB90    // void (Obj* o; f2 scale): (o->+96)->vfn[52] matrix; a's matrix translated by its rotation of that translation * scale, to a->vfn[21]; decompiled: src/obj/vmx1_a.cpp
+003D33AC Obj_MountPairs_003D33AC        // u32 (T* o): for 2 (o->+88[i], o->+96[i]) pairs: skeleton update, bone 0xAACCC4A2 / 0x0408E092 matrix x world to target vfn[21], then vfn[22](1,1,1,1) (no null check); decompiled: src/obj/vmx1_a.cpp
+000992D8 Player_PushFromEffect_000992D8 // u32 (const Push* p, Effect* fx): direction p+16 turned by fx component node matrix, normalised, * p+32 -> World_PlayerCall_00488004 / Player_Dispatch_00488078; decompiled: src/obj/vmx1_a.cpp
+0024C530 Obj_SetMatrixBody_0024C530     // void (Obj* o, const f32 m[4][4]): o->+96 = m; with world physics and body +416: Hk_SetTransform91EAB8(body, m with w=0), o->+1104 = m; decompiled: src/obj/vmx1_a.cpp
+001DFC58 Obj_AimPoint_001DFC58          // void (f32 out[3], Obj* o): kind-19 component point (+208 + 160*(+1264)) through o's matrix (+424 / +160 +80) + 200 along its z row; zero vector without it; decompiled: src/obj/vmx1_a.cpp
+0024DA10 Obj_ResetMotion_0024DA10       // void (Obj* o): clears motion fields, vfn[34]/vfn[96](zero), def+992 direction x matrix x vfn[98] -> vfn[97](&v, vfn[94] sret), +392 = 0.5, effect 0x707A34AB; decompiled: src/obj/vmx1_a.cpp
+00184E60 Obj_OnHitCooldown_00184E60     // u32 (Obj* o, HitEvent* ev): cooldown +1612 (0.25); Obj_TestE0BCC; impulse -(ev+32)*ev+68*def+200 at ev+16 (body+224 vfn[22]); damage hash 0x045D9554; decompiled: src/obj/vmx1_hit.cpp
+0092A718 Hk_PhantomCtor_0092A718        // (hkpSimpleShapePhantom* p, shape, const hkTransform* t, u32 filterInfo) (Havok; name?); not decompiled
