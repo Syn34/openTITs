@@ -13204,7 +13204,6 @@
 004B1114 Clips_Dtor_004B1114             // T::~T (Thunk_004B1308): Clips_Release4B0E70, record array +256, pool arrays +72/+48/+24, PoolBuffer_Free; decompiled: src/obj/mid25_f.cpp
 004F3CB4 Obj_Dtor_B22FC8_004F3CB4        // T::~T (vt 0x00B22FC8; Delete_004F4164): record/object arrays, hash table +112..+132 values vt[4], buffer +4, pool arrays; decompiled: src/obj/mid25_f.cpp
 003C5E38 Obj_RekeyBindings_003C5E38      // Anim_Restart on +1588 source, mode 2: Obj_SyncBindingPoses + binding keys 0x32A3716C/0x5F9B8391/0xB6162705; decompiled: src/obj/mid25_g.cpp
-00376C98 Obj_376C98                      // (o, 0) called by the 0x00376F88 destructor before its frees (name?)
 
 # Game code big sweep part 23
 00100C18 Cam_UpdateFocus100C18            // void (Cam* c; f32 dt): target c+16 vfn[39] position p0 + rows +112/+128; gate sets the u8 c+192 / anchor c+176 (rider vfn[16] kind 1/3..6, vfn[8](0)==1 / (1)==2 flags); focus = kFocusBase (0x01032EF0) lerped to c+624 by height t, in the frame {up x row, up, ...} (VMX chain, acosf pi/4 picks the row); lead velocity c+480 (zeroed / Curve_Lerp3), c+464 = p0, c+704 lead scaled c+660/664 (or vfn[35] vector when 0x01035410 == 2), y clamped [c+668, c+672]; c+193 snaps, else velocity c+976 and Spring_Step3F8C70(c+912); c+992 = max(c+640, 0), c+304 = p0 + c+928; decompiled: src/obj/big23_cam.cpp
@@ -13284,3 +13283,34 @@
 007430AC Desc_Init_007430AC                // (desc*, a, b, c): 768-byte stack description
 000BAAC8 Desc_Fill_000BAAC8                // (a, b, def, e, desc*)
 000B76E4 Obj_FromDesc_000B76E4             // (obj, desc*)
+
+# Game code medium sweep part 26
+003C5588 Obj_RekeyBindings_003C5588       // u32 f(Obj* o) (via 0x003C60C8): Anim_Restart2775A8 on the +1588 source, pops/releases animator +1516, mode 3: bindings with an owner get key 0xBA291C90, SyncBindingPoses, child 0xFE11127C vt[88](0,1,1,1); Handle_Notify36742C(0x1447B,0,1,0) (r3); decompiled: src/obj/mid26_a.cpp
+003C5878 Obj_RekeyBindings_003C5878       // u32 f(Obj* o): pops/releases animator +600, re-arms child +1608 (vt[88](1,1,1,1)); mode 2: SyncBindingPoses, flagged player -> non-+1600 bindings key 0x32A3716C, kind 0x27EAE169 def -> +1600 bindings 0xB6162705; decompiled: src/obj/mid26_a.cpp
+003C5B54 Obj_RekeyBindings_003C5B54       // u32 f(Obj* o): mode 3: bindings re-keyed 0xBA291C90 by owner (+1604 / +1608 / def kind 0x27EAE169), SyncBindingPoses, child re-armed; Handle_Notify36742C(0x1447B,0,1,0) (r3); decompiled: src/obj/mid26_a.cpp
+00376C98 Obj_SetPartsEnabled_00376C98     // void f(T* o, u8 on) (from Obj_Dtor_B1F8E0_00376F88): +24 vt[40](on,1), def parts (+184/+188, 28 B, +12) vt[88](on), children +288 / 3x6 slots +328.. vt[40](0,1), level-keyed world object (0x00F64E00 table, WorldObj_FindByHash) vt[40](on,1); decompiled: src/obj/mid26_a.cpp
+0037A58C Obj_SetPartsEnabled_0037A58C     // void f(T* o, u8 on) (from 0x0037A93C): +24, def parts (+180/+184), slot +376[+256], +288 x4, 6 x (+304..+456; +408 unchecked) vt[40]; on == 0: World_ListRemove(3, 0x00F37AF8); decompiled: src/obj/mid26_b.cpp
+0037A93C Obj_Dtor_B1F918_0037A93C         // T::~T (vt 0x00B1F918; Delete_0037AC20): unlist (8)/(3), 0x0037A58C(o, 0), free +232, vt[8] parts, base tail 0x00B1F678; decompiled: src/obj/mid26_b.cpp
+003817E0 Obj_SetPartsEnabled_003817E0     // void f(T* o, u8 on) (from 0x00381AA8): +24 vt[40](on,1); on == 0: parts +248/+296/+344 x12, +392, +396, +212 x9, +400 x32, +528 vt[40](0,1); decompiled: src/obj/mid26_b.cpp
+00381AA8 Obj_Dtor_B1F9C8_00381AA8         // T::~T (vt 0x00B1F9C8; Delete_00381DF8): 0x003817E0(o, 0), vt[8] parts (+392/+396/+528 cleared), base tail 0x00B1F678; decompiled: src/obj/mid26_b.cpp
+003848FC Obj_Dtor_B1FA08_003848FC         // T::~T (vt 0x00B1FA08; Delete_00384E9C): unlist (8)/(6)/(4), def notify, record vt[4]s, frees +236, vt[8] parts, RefNode_Release x2, Emitter_Stop, base tail; decompiled: src/obj/mid26_b.cpp
+00764848 Tmpl_Dtor_B1C978_00764848        // T::~T (vt 0x00B1C978): frees +104..+148, +168, +172; vt 0x00B0DAAC, SortedMap_Remove7330C0(0x01056F04, o + 4); decompiled: src/obj/mid26_b.cpp
+00764A60 Tmpl_Delete_B1C978_00764A60      // deleting ~T (vt 0x00B1C978): null -> 0; body of 0x00764848, SmallFree(o, 436); decompiled: src/obj/mid26_b.cpp
+0044F0C0 Bank_LoadPairs_0044F0C0          // u32 f(T* o) (table entry): temp pool array (type 0x00F39AD0) filled by 0x00441178(arr, o), pairs appended to *0x00F65B38 + 8 (objects +4 = G), *0x00F65B3C = 0; returns 1; decompiled: src/obj/mid26_c.cpp
+0044F3BC Bank_LoadPairs_0044F3BC          // u32 f(T* o) (table entry): as 0x0044F0C0 with filler 0x004413A4, vector G + 32, no back-link; returns 1; decompiled: src/obj/mid26_c.cpp
+003266E4 Obj_Dtor_B1E278_003266E4         // T::~T (vt 0x00B1E278 -> 0x00B1E1F8; Delete_003269F0): chain +2576 vt[4], counted array +2544, 5 vector-of-vector slots +2232, buffers, Registry_Unlink2_0048F6B0; decompiled: src/obj/mid26_d.cpp
+002FE63C Obj_Dtor_B1D7C0_002FE63C         // T::~T (vt 0x00B1D7C0, +380/+384; Delete_002FE8E8): 7 vectors, 5 effects (Effect_Destruct + SmallFree 140), vector +388, VtB12550_Dtor_000DF934; decompiled: src/obj/mid26_d.cpp
+00303A4C Obj_Dtor_B1DA78_00303A4C         // T::~T (vt 0x00B1DA78; Delete_00303CEC): buffers +304, 56-byte records +324 (objects vt[4]) / +344, Thunk_000E2A34; decompiled: src/obj/mid26_d.cpp
+002346A4 Obj_Dtor_B1B740_002346A4         // T::~T (vt 0x00B1B740, +388/+392; Delete_002348B0): Emitter_Stop x3, RefNode_Release x9, 3 vectors, 4 SmallFree buffers, VtB12550_Dtor_000DF934; decompiled: src/obj/mid26_d.cpp
+00121BDC Obj_Dtor_B14168_00121BDC         // T::~T (vt 0x00B14168; Delete_00121E24): StateMachine_Shutdown, refs +392/+388/+384 vt[4], 8 effects +796 flagged 0x200, RefNode_Release x7, pool array +916, VtB12550_Dtor_000DF934; decompiled: src/obj/mid26_d.cpp
+0026694C Obj_Dtor_B1BF00_0026694C         // T::~T (vt 0x00B1BF00; Delete_00266BF4): groups +28 (objects with +172 bit 0x40000 vt[40](1)), vt 0x00B1BE30, registry 0x01056F1C removal, List1013B5C_Remove; decompiled: src/obj/mid26_d.cpp
+002DD604 Level_ReleaseData_002DD604       // void f(LevelData* o) (World_Destruct): session ptr 0x00F64C20 = 0, frees the pair arrays 0x01068184..0x010681E4 and vector 0x010681FC, +20/+28, Level_Release2D9A14(+8), zeroes +0..+16; r3 = 0; decompiled: src/obj/mid26_d.cpp
+0033D008 Obj_Dtor_B1EFD0_0033D008         // T::~T (vt 0x00B1EFD0; Delete_0033D49C): 0x0033CE20(o,0,1), records +2572 (0x0033C03C, 4 vectors, SmallFree 156), +2592 / +2772 freed, Obj_Flag13Off_0048F298(o,0), 4 vectors, 0x00B1E1F8 base part; decompiled: src/obj/mid26_d.cpp
+002B6E2C Obj_Dtor_B1CE20_002B6E2C         // T::~T (vt 0x00B1CE20; Delete_002B7074): attachment +64 (0x0012D290 when +192 bit 8, vt[40](0)), +128, rigid body +92 out of the Havok world, +112 vt[8], effect +108 deleted, registry B removal, List1013B5C_Remove; decompiled: src/obj/mid26_e.cpp
+002CC960 Obj_Dtor_B1D158_002CC960         // T::~T (vt 0x00B1D158/+24 0x00B1D1A8; Delete_002CCBE8): body re-owned when attached (+376), bodies +116/+120 removed and released, +380 vt[40](0), handler *0x011DF31C+20(+352, +360*4), registry B removal, List1013B5C_Remove; decompiled: src/obj/mid26_e.cpp
+002D1034 Obj_Dtor_B1D1E0_002D1034         // T::~T (vt 0x00B1D1E0/+24 0x00B1D230; Delete_002D127C): World_ListRemove(0, 0x00F35980, o, o->+8), 0x002D0BA0(o,0), component +36 vt[40], skeleton +32 parts released, RefNode_Release x2, registry removal, List1013B5C_Remove; decompiled: src/obj/mid26_e.cpp
+00269348 Obj_Dtor_B1BF48_00269348         // T::~T (vt 0x00B1BF48/+24 0x00B1BF9C; Delete_002695D8): Havok entity / body leave world W = o->+28->+4, parts +36 x3 dropped (Array_RemoveSwap_00346698) and released, registry B removal, List1013B5C_Remove; decompiled: src/obj/mid26_e.cpp
+00355A90 Tuning_DestroyGlobals_00355A90   // void f(void) (atexit): handle 0x0106BFF8 object, 0x00ABF3E4(0x0106BFC8), pool arrays, 25 tuning variables (vtables 0x00B0D968/99C/934/9D0 + TuningVar_DestructBase_004FC1A0), vectors; decompiled: src/obj/mid26_f.cpp
+0033CE20 Section_Reset_0033CE20           // (o, 0, 1) from 0x0033D008 (name?)
+00441178 Bank_FillPairs_00441178          // (Array* tmp, T* o): fills the 8-byte (key, object) temp array for 0x0044F0C0 (name?)
+004413A4 Bank_FillPairs_004413A4          // (Array* tmp, T* o): as 0x00441178 for 0x0044F3BC (name?)
