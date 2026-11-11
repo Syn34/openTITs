@@ -422,7 +422,7 @@
 00523748 Draw_EndPrims            // empty; decompiled: src/world/draw.cpp
 004D7E70 UiElem_GetScale          // vfunc +168, sret vec3, inherits parent's; decompiled: src/text/glyph_transform.cpp
 00522750 View_ProjectPoint        // (view, out vec4, in vec3) -> [0,1] screen; decompiled: src/text/glyph_transform.cpp
-005541F0 Matrix_Multiply          // (Matrix* a, const Matrix* b): a = rows(a) x b, w lanes from stack junk; decompiled: src/obj/obj12_math.cpp
+005541F0 Matrix_Multiply                    // (Mat34* io, const Mat34*); decompiled: src/obj/obj12_math.cpp
 005115F0 View_Update              // void View_Update(View* v, bool force): when forced or dirty (+52 0x80): projection +1008 (ortho / perspective / + oblique clip +496), raw copy +1264, x view +1328, vfunc +16, screen rotation (+48 bits 13..15, aspect fix +50 0x10), view x proj +880 (+944 transposed), frustum +272, view rotation transposed +1072, roll +1136 (name?); decompiled: src/gfx/gfx23.cpp
 00553A2C Vec_TransformByMatrix    // (out, in xyz, m); decompiled: src/view/vector.cpp
 004E1B58 UiElem_GetSize           // vfunc +140, cached at +140; decompiled: src/uielem/vtbl_size.cpp
@@ -2462,7 +2462,7 @@
 005BE100 SlyCharacterEye_Draw                 // shader vtable 0x00B259D8 slot 12; decompiled: src/gfx/shader6_draw.cpp
 005BFD20 SlyCharacterFur_Draw                 // shader vtable 0x00B25A28 slot 12; decompiled: src/gfx/shader6_draw.cpp
 00554858 Matrix_SplitScale        // (const f32 m[16], f32 rot[16], f32 scale[3]) scale = row lengths (rows 0..2), rot = rows / length, row 3 xyz copied; w lanes unwritten; leaves f1 = m[14]; decompiled: src/gfx/gfx7_math.cpp (name?)
-00553F18 Matrix_RotationZ         // (f32 out[16]; f1 angle) -> f1 cos: z rotation, angle wrapped to [-pi, pi], parabola sine refined by 0.225; w lanes unwritten; leaves r4 = 0, r5 = 1.0f; decompiled: src/gfx/gfx7_math.cpp (name?)
+00553F18 Matrix_RotationZ                   // (Mat34*; f1 angle); decompiled: src/gfx/gfx7_math.cpp
 005BFB50 Fur_ShellCount           // (Shader*, DrawItem*, f32* fade) -> u16 shells from the item's view depth (view_matrix . item+48) and material param word +76; decompiled: src/gfx/gfx7_math.cpp (name?)
 
 # World-object helpers, part 13 (lights, followers, draw records)
@@ -2868,7 +2868,7 @@
 00553BC4 Matrix_ScaleDiag         // void Matrix_ScaleDiag(f32 m[4][4], const f32 s[3]): rows 0-2 the unit (name?); decompiled: src/obj/obj14_small.cpp
 00553C70 Matrix_Translation       // void Matrix_Translation(f32 m[4][4], const f32 pos[3]): rows 0-2 the (name?); decompiled: src/obj/obj14_small.cpp
 00553D18 Matrix_RotationX         // f32 Matrix_RotationX(f32 m[4][4], f32 a) / Matrix_RotationY: the; decompiled: src/obj/obj14_small.cpp
-00553E18 Matrix_RotationY         // f32 Matrix_RotationX(f32 m[4][4], f32 a) / Matrix_RotationY: the; decompiled: src/obj/obj14_small.cpp
+00553E18 Matrix_RotationY                   // (Mat34*; f1 angle) -> Mat34* (already used by name in funcinfo); decompiled: src/obj/obj14_small.cpp
 005540F8 Matrix_ScaleAxes         // void Matrix_ScaleAxes(f32 m[4][4], const f32 s[3]): every row's x, y, z (name?); decompiled: src/obj/obj14_small.cpp
 00554414 Matrix_Scale3            // void Matrix_Scale3(f32 m[4][4], f32 s): rows 0-2 (x, y, z) times s,; decompiled: src/obj/obj14_small.cpp
 005544FC Matrix_IsScaled          // bool Matrix_IsScaled(const f32 m[4][4], f32 eps): a row (0-2) whose (name?); decompiled: src/obj/obj14_small.cpp
@@ -7696,7 +7696,7 @@
 00390724 TrackPool_Update390724               // (Pool*) -> capacity: releases live objects (0x0038DC0C) along the live list, relinks the 16-byte free list; decompiled: src/world/hevent21_b.cpp (name?)
 00566318 Buffer_Sync566318                    // (Buffer*, u32 size): realloc with the memory system's lazy init inlined; not done (memory manager internals)
 00368870 Obj_SetMode368870                    // (Object*, -, u8 flag, Node*; f32 t): +532 gated; mode 2/3 -> Speaker_SayId4A5C90 / Effect_SetHash4CF988 bits, 0/4 -> +204 node, 0x00368770; decompiled: src/world/hevent21_a.cpp (name?)
-00108480 Obj_Refresh108480                    // (Obj*) (name?)
+00108480 Obj_Refresh108480                  // void (Obj*): +360..504 from link->216+1140 (link o->20 flag 0x8 @192) or table 0x010334D0 (stride 76); +12 = -1, +16 |= 0x1F, +208 bit 0x20000000; decompiled: src/obj/mid16_a.cpp
 000FE828 Target_Update0FE828                  // (Target*) (name?)
 002CCFF0 Obj_Transform2CCFF0                  // (Obj*, const f32* pos, u8, a, b, c, d): trig-heavy, not done
 004B20B8 Clip_Load4B20B8                      // (Owner*, XmlDoc*, path) -> 1: "AnimSet" children by "Name" hash into the +72 clip map (48-byte clips, 0x004B1708 init); decompiled: src/world/hevent21_a.cpp (name?)
@@ -12280,3 +12280,24 @@
 00453578 Pending_Flush_00453578           // u32 f(T* o, u8 on) (from several callers): when the u8 field (*0x010AB1B8)->+64 of o->+48's table (+12) is set: the pending count +24 is taken (cleared) and eac (name?); decompiled: src/obj/obj38b.cpp
 004B707C AnimCmd_Dispatch_004B707C        // u32 f(AnimCmd* o) (from Instance_Base4B71BC): the key k = o->+20 when bit 7 of the u8 +24 is set (else 0) is looked up in the tree of the table T = 0x010C28F0 ( (name?); decompiled: src/obj/obj38b.cpp
 004EE320 Settings_PushName_004EE320       // bool f(XmlCursor* x) (no direct caller): with the settings g = *0x010C2C28 (r3 = 0 without them): 1 when the u8 g->+585 is set; otherwise the attribute push Pus (name?); decompiled: src/obj/obj38b.cpp
+
+# Game code medium sweep part 16
+000FE3E8 Params_Overlay0FE3E8               // void (Owner* s, Params* out): base block s+736 -> out (128 B), then per-overlay (list s+540, count s+536) mask-bit field replace; decompiled: src/obj/mid16_a.cpp
+00387B00 Frame_FromPoints387B00             // void (Mat34* m, Obj* o, f32 t[2]): frame from points o->316/320/324 (+128), t rescaled by o->572..584, Matrix_NormalizeInPlace; decompiled: src/obj/mid16_a.cpp
+00376598 ThunkSpinY376598                   // u32 (Obj* o): target (o->224 / o->24) world+local matrix = RotationY(o->232 deg); MarkDirty, UpdateLod; decompiled: src/obj/mid16_a.cpp
+003739D0 Obj_SpinY3739D0                    // u32 (-, Obj* o) callback: same with o->192 / o->352; decompiled: src/obj/mid16_a.cpp
+00106FB8 Cam_AimDir106FB8                   // void (Cam*, const Vec3* dir): pitch-window rotate dir -> c->512, c->528 = acos(dot(c->240)) scaled; decompiled: src/obj/mid16_a.cpp
+00101A60 Cam_LookAt101A60                   // f32 (Cam*, eye, target, Xf* out): pitch-window look-at, Cam_Fn0FD040, out->48 = target - dir*dist; returns dist; decompiled: src/obj/mid16_a.cpp
+001007D0 Cam_RotateToward1007D0             // (Vec3* out, const Vec3* axis, const Vec3* v; f1 angle) (name?)
+000FD040 Cam_Fn0FD040                       // (Vec3* io, Xf* out) (name?)
+00020100 Obj_SnapToSpline20100              // bool (Obj*): nearest spline (filter 0x00F2D998) to o->176 + o->160*K, random t, pos/tangent, o->352 = tangent x up (flipped); decompiled: src/obj/mid16_b.cpp
+002C6F78 Obj_TurnToFocus2C6F78              // f32 (Obj*, f32 dt): eases o->208 toward focus dir (*(0x00F65CA0)+0x1281E0), timer o->464/468; returns angle; decompiled: src/obj/mid16_b.cpp
+002C5140 Obj_Fn2C5140                       // (Obj*, const Vec3* facing) (name?)
+0074C048 Quat_Slerp74C048                   // void (f32 out[4], const f32 a[4], const f32 b[4]; f1 t): lerp above dot 0.99, else slerp; decompiled: src/obj/mid16_b.cpp
+00106B80 Contact_Update106B80               // u32 (Contact* c, Event* ev): plane refresh from c->20/24 +288/+240, distance test vs c->160 toggles ev->24->15 bit 0x8, ++c->164; decompiled: src/obj/mid16_b.cpp
+000F90F8 Body_SpringRot0F90F8               // void (Body*, f32 k, f32 d, f32 dt): implicit spring on angular velocity s->32, quaternion s->16 update; decompiled: src/obj/mid16_b.cpp
+0002CEB0 Mover_Steer2CEB0                   // void (Mover*, f32 dt): driver jitter (w->548), re-steer timer o->328, heading w->484 reflect via atan2f; decompiled: src/obj/mid16_b.cpp
+0002CC64 Mover_Fn2CC64                      // (Mover*) re-picks steer (name?)
+002411B0 Cursor_ReadInput2411B0             // void (Ui*, f32 out[3]): d-pad + stick (pad 0x010B1A90) clamped, or projected o->576 direction; decompiled: src/obj/mid16_b.cpp
+001DFFB8 Cursor_ReadInput1DFFB8             // void (Ui*, f32 out[2]): d-pad + both sticks, dead zone c->536, squared, invert flags *(0x00F65CA0)+4144; decompiled: src/obj/mid16_b.cpp
+000F1E00 Obj_AlignToTarget0F1E00            // u32 (Obj*, f32 s) callback: o->96 matrix = target +240 copy, or frame z = target+432, RotationZ(def->256*s), Multiply; decompiled: src/obj/mid16_b.cpp
