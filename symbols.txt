@@ -11720,7 +11720,6 @@
 0020A298 XmlDef_New20A298                 // factory with inlined reader (Rec_CopyFields_000C387C, tmpl flag 0x80 in +28), 192 B via 0x0020A0F0; decompiled: src/obj/mid12_fac.cpp
 0055578C String_Alloc_0055578C            // (n) -> char* (reads r3 only; used before String_CopyN) (name?)
 0030386C XmlItem_Read30386C               // (item, child) for the 0xD9ABF25D list of 0030743C (118; not decompiled)
-000C0B80 XmlDef_FromRecC0B80              // (p, rec) ctor of 000C1780 (not decompiled)
 0016A828 XmlDef_Read16A828                // (a0, c, x, tmpl, o) -> 1: Damage_Read0C3910, empty names -> "", o+124 "colObjName" attr, 14 floats o+128.., hash o+188 (tmpl flag 0x400 / body tmpl+244), byte o+24 = 1; decompiled: src/obj/mid13_rd.cpp
 0016A448 XmlDef_FromRec16A448             // (p, rec) ctor of 0016ADC4
 00203718 XmlDef_Read203718                // (a0, c, x, tmpl, o): Damage_Read0C3910, enum 0x0027873A (6 hashes 0x00AD2C54) o+124, s32 o+128, 8 floats, 2 hashes (tmpl flag 0x1000 / body tmpl+200); decompiled: src/obj/mid13_rd.cpp
@@ -11812,7 +11811,6 @@
 004B6C88 Tree_SeekB_004B6C88              // void f(T* o): TreeSeek35 on the tree 0x010C2820 (current 0x011DE4A0), the found node's object getting vt[24]. (name?); decompiled: src/obj/obj35.cpp
 00221F3C Target_Construct_00221F3C       // (obj, const TargetDef* rec), 192-byte object (name?)
 000CEA48 Slot_BuildMatrix_000CEA48          // (already named) out = (q rotation, t) through the bone / m+80 / o+96 frame; decompiled: src/obj/vmx4_math.cpp
-001C3EF0 Obj_Range_1C3EF0                // (o, 0) after leaving range in 001C4390 (name?)
 001AEA50 Obj_Check_001AEA50              // (o; f1) reads f1 (name?)
 000D74C0 Obj_ShutdownBase_000D74C0       // (o, full) base of 0020ABD8 (name?)
 006D612C Voice_SetParams_006D612C        // (voice, const Params220* p) (name?)
@@ -12722,10 +12720,31 @@
 000BB660 Obj_ShutdownFx0BB660               // u32 (Obj* o): o->672/676 cleared, effect 0x529EC2A4, layers o->648 / o->660 popped and released, o->640 vfn[304](0) + Body_Remove931F00, entity o->644 Hk_RemoveEntity92FFC8; decompiled: src/obj/mid20_a.cpp
 0030912C Obj_HitParts30912C                 // u32 (Obj* o, a, b): parts o->776[3] hit by 0x001F4DC0 -> effect 0xF7919930, state handler o->704[s] vfn[52], Obj_SetStateFx266E6C(def, 4); decompiled: src/obj/mid20_a.cpp
 0012E930 Obj_InteractTick12E930             // u32 (Obj* o; f32 dt): hold timer o->1176 by controller bits; a release in range triggers a save (Save_Profile0C9FC8 / Player_SetSave124D58) or Handle_Call 0x0036735C(0x1447B, ...); decompiled: src/obj/mid20_a.cpp
-00049060 Stage_SetBounds_00049060           // (Level* o, const f32 lo[3], const f32 hi[3], 0): stage bounds setter used by Script_Stage*_ (not decompiled) (name?)
 001F4DC0 Part_HitTest_001F4DC0              // bool (Part*, a, b; f32): hit test used by Obj_HitParts30912C (not decompiled) (name?)
 000DF960 Obj_CanTakeHitBase_000DF960        // u32 (Obj*, Obj* src, s32 kind, -): the base hit test after Obj_CanTakeHit127BC8 (not decompiled) (name?)
 00F65038 g_Level_00F65038                   // Level*: +24 128-byte rows indexed by node s16 +2 / +4 (Obj_LevelCue396B6C, Obj_LevelAnim396930) (name?)
 0106CF70 g_LevelSlotOff_0106CF70            // u16 row offset of the slot table (+0x0106CF7E: u16 offset of the byte list in row B) (name?)
 00F64C20 g_Session_00F64C20                 // Session*: 0x002E2E78 / World_GetSaveObj160 / Session_PartDone2E2740 argument (name?)
 00F64C38 g_ObjPool_00F64C38                 // HandlePool* for ObjPool_Create (EffectRule_BindTarget7958C) (name?)
+
+# Game code VMX sweep part 6
+0020AD00 SpinAttach_Update_0020AD00       // bool f(Obj* o; f32 dt): Registry_Add, Obj_UpdateBase; attachment o->+420 gets world pos (+112 through o's rows) and quat (o rows x Euler(+144, +148 + spin o->+424, +152 deg)), +172 = 1; spin += dt * (o->+216)->+172; returns 1; decompiled: src/obj/vmx6_obj.cpp
+001EF330 Obj_PlaceOnGround_001EF330       // u32 f(Obj* o): rows +432..+480 = Quat_ToMatrix(Euler(d+400 rad), d+384) through o+96 (d = o->+216); Havok ray 2 above -> 2 below (filter 13), snaps the point on a hit; returns the root collidable; decompiled: src/obj/vmx6_obj.cpp
+0007CBD4 AnimCmd_PushPoint_0007CBD4       // u32 f(Cmd* t, Effect* owner): Vec3List_Push(target, point +48 / kind-3 comp +32 through frame obj rows +96); target = binding +12 or Obj_FindById(+16); decompiled: src/obj/vmx6_obj.cpp
+0006E1BC AnimCmd_SendAt_0006E1BC          // u32 f(Cmd* t, Effect* owner): stack event record (vtable 0x00B0F048) for the bound / player-slot target at +16 (through comp +12's rows +80) -> 0x000E1C28; decompiled: src/obj/vmx6_obj.cpp
+000C0B80 XmlDef_FromRecC0B80              // (Def* o, const Rec* rec): box-volume def ctor (vtable 0x00B12048): copies, then box shape (0.05) in a translate shape {0, half y, 0} and a rigid body into +240; decompiled: src/obj/vmx6_hk.cpp
+000FE050 CamProbe_UpdateShape_000FE050    // (CamProbe* o): two-point Havok shape ({0,0,0.5}, o+32); creates phantom o->+28 via 009399D0 or updates (o->+28)->+12 via 0090E9FC; decompiled: src/obj/vmx6_hk.cpp
+002108A8 ShapeObj_RefreshPhantom_002108A8 // (ShapeObj* o): phantom o->+416: AABB (flag 0x08000000 of +412) or kind +428 0 = sphere (+488) / 3 = box ((+512 - +496) / 2) shape swap + HkPhantom_SetPos(o+592); decompiled: src/obj/vmx6_hk.cpp
+001C3EF0 Obj_EnableBodies_001C3EF0        // (Obj* o, u8 on): adds (posed via Obj_PoseOrDefault) / removes o's Havok bodies (+576, u16 +584) when (o->+216)->+447, then part vfunc +40(part, on, 1) for +556 (u16 +564); was Obj_Range_1C3EF0; decompiled: src/obj/vmx6_phys.cpp
+00049060 Region_QueryEntities_00049060    // u32 f(Region* q, const f32 lo[3], const f32 hi[3], u8 mode): broadphase AABB query; game objects (prop 0x91C7CF5B, +192 & 0x20) get events 0x806E6EA2 / 0x879F2BDA (mode 0) or join q's list +1820 (u32 +1816, max 127); decompiled: src/obj/vmx6_phys.cpp
+00110E08 Obj_KinematicVelocity_00110E08   // u32 f(Obj* o, ?, Mat* out; f32 dt): body velocity from the animated translation delta / dt (eased with Curve_Lerp3 under player input), motion vfunc +68; out rows = o+512..; decompiled: src/obj/vmx6_phys.cpp
+00243A80 Obj_TeleportBody_00243A80        // u32 f(Obj* o, const Mat* m): o rows = m, +80 shifted by the move; body +396 SetTransform + zero linear / angular velocity; clears +448..+524; decompiled: src/obj/vmx6_phys.cpp
+00023B00 Mover_Update_00023B00            // u32 f(Mover* t; f32 dt): timer +316 / flags +304, vfunc +260, f_000131C8, follow f_006C1CC0 (flag 0x10), owner body SetTransform(+128 rows) + Body_Moved when moved > 1e-5; decompiled: src/obj/vmx6_phys.cpp
+004AC210 Force_Apply_004AC210             // u32 f(Force* t): scales t's vectors +16 / +32 by def factors, motion vfuncs +96 / +104 (f1 = t->+52) on body t->+48; decompiled: src/obj/vmx6_phys.cpp
+00354C18 Ray_CastWalkable_00354C18        // {u8} f(ret*, ?, from, to, f32* frac, Vec4* normal): ray via walkable phantom 0x0106BFA0 (both ends in its AABB) or the world; hit only if acos(normal.y) < slope 0x0106BF48 deg; decompiled: src/obj/vmx6_phys.cpp
+004AB2B0 Floater_TriangleForce_004AB2B0   // u32 f(Floater* t, const Tri* tri, const hkTransform* xf): "TtTriangle" marker; triangle normal / area / centroid, drag of relative velocity, adds force +16 / torque +32; decompiled: src/obj/vmx6_phys.cpp
+003E7030 Spline_FindNearestInstance_003E7030 // SplineInstance* f(Obj* self, const f32 p[3], ?, f32* t, f32* dist; f32 maxDist): nearest active spline instance (creates the ApeSplineInstance free list on first use); decompiled: src/obj/vmx6_spline.cpp
+000E1C28 Obj_SendEvent_000E1C28           // (const Event* e) (reads r3 only) (name?)
+00F8F158 g_SplineInstanceAllocSlot        // -> {free list*, heap} of ApeTListAllocator<ApeSplineInstance>
+0106BFA0 g_WalkablePhantom                // hkpAabbPhantom* used by 00354C18
+0106BF48 g_WalkableMaxSlopeDeg            // f32
