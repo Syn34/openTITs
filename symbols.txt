@@ -10942,12 +10942,8 @@
 00093D50 XmlElem_Ctor_00093D50            // u32 XmlElem_Ctor_00093D50(XmlElem* o, XmlCursor* c): vtable 0x00B10AF8, constants at 0x00093D40 {default, deg -> rad, 0.5}: hash +12, f32 +16 / +20 (default k[0 (name?); decompiled: src/obj/mid8_xelem.cpp
 000A0558 XmlElem_Ctor_000A0558            // u32 XmlElem_Ctor_000A0558(XmlElem* o, XmlCursor* c): vtable 0x00B114D8 (a button prompt); constants at 0x000A054C: hashes +84 / +88 (0, the ref node +92's key), (name?); decompiled: src/obj/mid8_xelem.cpp
 00079938 XmlElem_Ctor_00079938            // u32 XmlElem_Ctor_00079938(XmlElem* o, XmlCursor* c): vtable 0x00B0F860 and defaults; the hash 0x8A93973F (+12; absent -> return that non-zero ReadHash result),  (name?); decompiled: src/obj/mid8_xelem.cpp
-0075FF20 Vec144_Push75FF20               // (PtrVector* v, const Rec144* r): push of a 144-byte record (grow 0x00551718 when full, field-wise copy) (name?); not decompiled
-00273E90 Def_Construct273E90             // (Def* 128 bytes, const Record* r): builds the 002741F4 def from its stack record (name?); not decompiled
-0020BFE8 Def_ReadBase20BFE8              // (a0, c, x, tmpl, o): shared base of the 00219FF8 / 00223D38 def readers (reads r3..r7) (name?); not decompiled
 00480E68 Def_Read480E68                  // (a0, c, o): kind 0x61313EAC branch of Def_ReadKind481828 (name?); not decompiled
 003F0990 Def_Read3F0990                  // (a0, c, o): kind 0xA7CFB837 branch of Def_ReadKind481828 (name?); not decompiled
-00332E28 Obj_Construct332E28             // (p, x, hash, b6, const f32 vec[3], b0..b5, hash2): 12 arguments, 2624-byte object of DefNew_0033322C (name?); not decompiled
 
 # Game code sweep part 31
 0034284C Obj_EvalPredicate_0034284C       // void f(u8* out, T* o, a, b): *out = the u8 0x00885750 writes for (o, a, b) when the predicate OPD o->+256 is null or fp(a, b) is true, else 0 (r3 = *out) (name?); decompiled: src/obj/obj31.cpp
@@ -11109,3 +11105,45 @@
 007CE950 HkBody_SetName7CE950             // (body + 120, const char* name) (Havok, name?)
 0091A82C HkBody_AddListener91A82C         // (body, listener) (Havok, name?)
 0091A5F8 HkBody_AddListener91A5F8         // (body, listener) (Havok, name?)
+
+# Game code medium sweep part 9
+0075FF20 Vec144_Push75FF20                // u32 Vec144_Push75FF20(PtrVector* v, const Rec144* r): pushes a 144-byte record onto the vector {+0 data, +4 u16 capacity, +8 u16 count, +10 u16 high-water} (Ptr (name?); decompiled: src/obj/mid9_def.cpp
+00273E90 Def_Construct273E90              // u32 Def_Construct273E90(Def* d, const Record* r): builds the 128-byte def of DefNew_002741F4 from its stack record: vtable 0x00B1C030; +72 r->4; the flags word  (name?); decompiled: src/obj/mid9_def.cpp
+0020BFE8 Def_ReadBase20BFE8               // u32 Def_ReadBase20BFE8(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the shared base of the 0020BFE8-family def readers: Rec_CopyFields_000C387C (a0, c, x, tmp (name?); decompiled: src/obj/mid9_def.cpp
+00332E28 Obj_Construct332E28              // u32 Obj_Construct332E28(Obj* p, x, u32 hash, u8 b6, const f32 vec[3], u8 b0, u8 b1, u8 b2, u8 b3, u8 b4, u8 b5, u32 hash2) (12 arguments, the last four on the s (name?); decompiled: src/obj/mid9_def.cpp
+001C96B8 Owner_New1C96B8                  // Obj* Owner_New1C96B8(Owner* o, Def* x): OwnerNew (656 bytes, ctor 0x001C8DB8): Fill7 (constant 0x001C96B4), then the flag 0x00800000. (name?); decompiled: src/obj/mid9_defnew.cpp
+001ADF30 Owner_New1ADF30                  // Obj* Owner_New1ADF30(Owner* o, Def* x): OwnerNew (Mem_Alloc(560, 0, 16), ctor 0x001ADD08): Fill7 (constant 0x001ADF2C). (name?); decompiled: src/obj/mid9_defnew.cpp
+001C2E20 Owner_New1C2E20                  // Obj* Owner_New1C2E20(Owner* o, Def* x): OwnerNew (608 bytes, ctor 0x001C2BE0): Fill7 (constant 0x001C2E18), f32 +240 = o->440 (or the f32 at 0x001C2E1C), the fl (name?); decompiled: src/obj/mid9_defnew.cpp
+001C0A10 Owner_New1C0A10                  // Obj* Owner_New1C0A10(Owner* o, Def* x): OwnerNew (592 bytes, ctor 0x001C08AC): Fill7 (constant 0x001C0A04), f32 +240 = o->408 (or the f32 at 0x001C0A08), bits 3 (name?); decompiled: src/obj/mid9_defnew.cpp
+001D40A8 Owner_New1D40A8                  // Obj* Owner_New1D40A8(Owner* o, Def* x): OwnerNew (576 bytes, ctor 0x001ADD08): Fill7 (constant 0x001D409C), +240 = o->400 (or 0), f32 +244 = o->404 (or the f32  (name?); decompiled: src/obj/mid9_defnew.cpp
+001A9C80 Owner_New1A9C80                  // Obj* Owner_New1A9C80(Owner* o, Def* x): OwnerNew (480 bytes, ctor 0x001A990C; four zero stack arguments): f32 +208..+220 = o->304..316 (or the f32 at 0x001A9C7C (name?); decompiled: src/obj/mid9_defnew.cpp
+001B1EE8 Owner_New1B1EE8                  // Obj* Owner_New1B1EE8(Owner* o, Def* x): OwnerNew (576 bytes, ctor 0x001B1990; four zero stack arguments): f32 +208..+224 = o->316..332 (or the constants k[0], k (name?); decompiled: src/obj/mid9_defnew.cpp
+001AAF38 Owner_New1AAF38                  // Obj* Owner_New1AAF38(Owner* o, Def* x): OwnerNew (480 bytes, ctor 0x001AACEC; four zero stack arguments): f32 +208..+224 = o->304..320 (or the f32 at 0x001AAF30 (name?); decompiled: src/obj/mid9_defnew.cpp
+001AF830 Owner_New1AF830                  // Obj* Owner_New1AF830(Owner* o, Def* x): OwnerNew (480 bytes, ctor 0x001AF6A0; four zero stack arguments): f32 +208 / +212 / +216 = o->348 / 352 / 360 (or the f3 (name?); decompiled: src/obj/mid9_defnew.cpp
+001E60E0 Owner_New1E60E0                  // Obj* Owner_New1E60E0(Owner* o, Def* x): OwnerNew (624 bytes, ctor 0x001E5CD8): +208 = o->432 (or 0), f32 +224 / +228 / +232 = o->448..456 (or the f32 at 0x001E6 (name?); decompiled: src/obj/mid9_defnew.cpp
+00168950 Obj_OnHit168950                  // void Obj_OnHit168950(Obj* o, const HitEvent* e): ObjOnHit, kind 1 (class data +200 / +196, the literal pool 0x00168910, hash 0x045D9554). (name?); decompiled: src/obj/mid9_hk.cpp
+00178CA0 Obj_OnHit178CA0                  // void Obj_OnHit178CA0(Obj* o, const HitEvent* e): as Obj_OnHit168950 with the class data +204 / +200 (literal pool 0x00178C60). (name?); decompiled: src/obj/mid9_hk.cpp
+00192750 Obj_OnHit192750                  // void Obj_OnHit192750(Obj* o, const HitEvent* e): as Obj_OnHit168950 (literal pool 0x00192710). (name?); decompiled: src/obj/mid9_hk.cpp
+00168E50 Obj_OnHit168E50                  // void Obj_OnHit168E50(Obj* o, const HitEvent* e): ObjOnHit, kind 2 (class data +228 / +224, the literal pool 0x00168E10, hash 0x811B1D5E). (name?); decompiled: src/obj/mid9_hk.cpp
+001791A0 Obj_OnHit1791A0                  // void Obj_OnHit1791A0(Obj* o, const HitEvent* e): as Obj_OnHit168E50 with the class data +232 / +228 (literal pool 0x00179160). (name?); decompiled: src/obj/mid9_hk.cpp
+00192C50 Obj_OnHit192C50                  // void Obj_OnHit192C50(Obj* o, const HitEvent* e): as Obj_OnHit168E50 (literal pool 0x00192C10). (name?); decompiled: src/obj/mid9_hk.cpp
+00169AB0 Obj_SetMatrix169AB0              // void Obj_SetMatrix169AB0(Obj* o, const Matrix4* m): ObjSetMatrix with the literal pool 0x00169A80. (name?); decompiled: src/obj/mid9_hk.cpp
+00188040 Obj_SetMatrix188040              // void Obj_SetMatrix188040(Obj* o, const Matrix4* m): ObjSetMatrix with the literal pool 0x00188010. (name?); decompiled: src/obj/mid9_hk.cpp
+0017BD28 Obj_SetMatrix17BD28              // void Obj_SetMatrix17BD28(Obj* o, const Matrix4* m): ObjSetMatrix with the literal pool 0x0017BCF0, the tolerance test (the body +8 checked). (name?); decompiled: src/obj/mid9_hk.cpp
+001FD2C8 Obj_SetMatrix1FD2C8              // void Obj_SetMatrix1FD2C8(Obj* o, const Matrix4* m): as Obj_SetMatrix17BD28 with the body at +416 (literal pool 0x001FD290). (name?); decompiled: src/obj/mid9_hk.cpp
+002B2FC0 Obj_WakeBodies2B2FC0             // u32 Obj_WakeBodies2B2FC0(Owner* o): ObjWakeBodies with the literal pool 0x002B2F80. (name?); decompiled: src/obj/mid9_hk.cpp
+002B5620 Obj_WakeBodies2B5620             // u32 Obj_WakeBodies2B5620(Owner* o): ObjWakeBodies with the literal pool 0x002B55E0. (name?); decompiled: src/obj/mid9_hk.cpp
+00335CC8 SlotObj_New335CC8                // Obj* SlotObj_New335CC8(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2652 bytes, vtable 0x00B1ECE8, 18 record words: hashes 0xCF4A1DD4 / 0x760CB725 (+0 / +4), (name?); decompiled: src/obj/mid9_slot.cpp
+00336210 SlotObj_New336210                // Obj* SlotObj_New336210(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2648 bytes, vtable 0x00B1ED68, 17 record words: hashes 0xA2A0911A / 0xCAD37C1E (+0 / +4), (name?); decompiled: src/obj/mid9_slot.cpp
+0032A560 SlotObj_New32A560                // Obj* SlotObj_New32A560(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2672 bytes, vtable 0x00B1E550, 23 record words: hashes 0xCF4A1DD4 / 0x760CB725 / 0x9E6358 (name?); decompiled: src/obj/mid9_slot.cpp
+003373E8 SlotObj_New3373E8                // Obj* SlotObj_New3373E8(?, XmlCursor* c, const Def* d) (reads r4 / r5): the fields are read on the stack first (hashes 0x35107D59 (default 0x35107ACF), 0x268C74E (name?); decompiled: src/obj/mid9_slot.cpp
+002124D0 TriggerAlertDef_Read2124D0       // u32 TriggerAlertDef_Read2124D0(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8(a0, c, x, tmpl, o)), then the bool 0x4E6A50D1 (+ (name?); decompiled: src/obj/mid9_trig.cpp
+00212DC8 TriggerSoundZoneDef_New212DC8    // Def* TriggerSoundZoneDef_New212DC8(a0, XmlCursor* c, x, const Def* tmpl): a default TriggerSoundZone record (flags 0x04400000, +32 1, objPrefix "TriggerSoundZon (name?); decompiled: src/obj/mid9_trig.cpp
+00214C28 TriggerDef_ReadKinds214C28       // u32 TriggerDef_ReadKinds214C28(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8(a0, c, x, tmpl, o)), +32 = 1; the kind hash 0x00 (name?); decompiled: src/obj/mid9_trig.cpp
+0021B898 TriggerDeathDef_New21B898        // Def* TriggerDeathDef_New21B898(a0, XmlCursor* c, x, const Def* tmpl): a default TriggerDeath record (flags 0x10400000, objPrefix "TriggerDeath_", +84 0x03D3CDC0 (name?); decompiled: src/obj/mid9_trig.cpp
+0021DEE0 TriggerFxDef_Read21DEE0          // u32 TriggerFxDef_Read21DEE0(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8(a0, c, x, tmpl, o)), +32 = 1. The defaults come fro (name?); decompiled: src/obj/mid9_trig.cpp
+001F5938 XmlDef_Read_001F5938             // u32 XmlDef_Read_001F5938(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (DamageColDef_Read_000C85A8(a0, c, x, tmpl, o)), hash +224, vec3 +240, the (name?); decompiled: src/obj/mid9_xdef.cpp
+000E44E0 Record_Init_000E44E0            // (rec, r, owner, 0, &vecA, &vecB, 1, 0): stack record base of the Owner_New family (name?); not decompiled
+003556AC Body_Moved3556AC                // (body): after Hk_SetTransform91EAB8 when the translation changed (reads r3) (name?); not decompiled
+0074FD80 Def_Construct74FD80             // (rec, ..., 13 f32 args + ~30 stack args): stack record builder of the DamageColDef readers (001A9EA8 family) (name?); not decompiled
+0074596C Def_Construct74596C             // the same for the 000C4020 family (000C5B30 / 000C5528 / 000C5FF0) (name?); not decompiled
