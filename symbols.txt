@@ -11515,3 +11515,68 @@
 000E02F8 Obj_SetRagdollBase               // (o, u8 on) (name?); tail of the ragdoll releases (RagdollRelease33)
 000E4544 Obj_SoundOffBase                 // (o, u8 on) (name?); tail of 0x001CC338 / 0x001D46E8
 000F6A68 Obj_ApplyKindEntry               // (a, entry, b, d, e, f) (name?); called by 0x000F8058
+
+# Game code medium sweep part 11
+000C5528 DefLeaf_Read5528                 // leaf def reader (0x20000 group: hash/floats/bools at +344..+378); decompiled: src/obj/mid11_leaf.cpp
+000C58A8 DefLeaf_New58A8                  // leaf def factory, 448 B, vtable 0x00B134F8; decompiled: src/obj/mid11_leaf.cpp
+000C5B30 DefLeaf_Read5B30                 // leaf def reader (0x10000 group: 5 floats +344..+360); decompiled: src/obj/mid11_leaf.cpp
+000C5DC8 DefLeaf_New5DC8                  // leaf def factory, 432 B, vtable 0x00B132D8; decompiled: src/obj/mid11_leaf.cpp
+000C5FF0 DefLeaf_Read5FF0                 // leaf def reader (0x4000 group, enum 0xE8DB4898, scaled +368/+372); decompiled: src/obj/mid11_leaf.cpp
+000C63B0 DefLeaf_New63B0                  // leaf def factory, 448 B, vtable 0x00B130B8; decompiled: src/obj/mid11_leaf.cpp
+000D5A18 XmlReg_ReadD5A18                 // registry 0x0103214C entry {hash, s32, s32} read by name hash; decompiled: src/obj/mid11_reg.cpp
+000D54B0 XmlReg_ReadD54B0                 // registry 0x01032164 entry (176 B object, 0x000D5330); decompiled: src/obj/mid11_reg.cpp
+000D5748 XmlReg_ReadD5748                 // registry 0x01032164 entry (160 B object, 0x000D4E28); decompiled: src/obj/mid11_reg.cpp
+001A7878 Def_Read1A7878                   // def reader on Rec_CopyFields_000C387C (flag 0x800, +76..+104); decompiled: src/obj/mid11_reg.cpp
+001B0120 DamageColDef_NewB0120            // factory of 001AFA78, 384 B via 001AF598; decompiled: src/obj/mid11_dmg3.cpp
+001BD668 DamageColDef_NewBD668            // inlined reader+factory, 336 B, vtable 0x00B163F0; decompiled: src/obj/mid11_dmg2.cpp
+001BEA40 DamageColDef_ReadBEA40           // AD1F8-derived reader (flag 0x100000, enum 0xC03F596F); decompiled: src/obj/mid11_dmg.cpp
+001BED98 DamageColDef_NewBED98            // factory, 416 B via 001BE8CC; decompiled: src/obj/mid11_dmg.cpp
+001C02A8 DamageColDef_ReadC02A8           // AD1F8-derived reader (flag 0x200000); decompiled: src/obj/mid11_dmg.cpp
+001C0658 DamageColDef_NewC0658            // factory, 416 B via 001C011C; decompiled: src/obj/mid11_dmg.cpp
+001C28E8 DamageColDef_NewC28E8            // factory of 001C2058, 448 B via 001C1D4C (two inline vectors); decompiled: src/obj/mid11_dmg3.cpp
+001C5408 DamageColDef_NewC5408            // factory of 001C49E8, 928 B via 001C463C; decompiled: src/obj/mid11_dmg3.cpp
+001C8780 DamageColDef_NewC8780            // factory of 001C8138, 992 B via 001C7F28; decompiled: src/obj/mid11_dmg3.cpp
+001CA7C0 DamageColDef_NewCA7C0            // factory of 001CA080, 496 B via 001C9E34; decompiled: src/obj/mid11_dmg3.cpp
+001CFF58 DamageColDef_ReadCFF58           // AD1F8-derived reader (flag 0x08000000, two hashes); decompiled: src/obj/mid11_dmg.cpp
+001D0208 DamageColDef_NewD0208            // factory, 416 B via 001CFE00; decompiled: src/obj/mid11_dmg.cpp
+001D3B80 DamageColDef_ReadD3B80           // AD1F8-derived reader (flag 0x04000000); decompiled: src/obj/mid11_dmg.cpp
+001D3E58 DamageColDef_NewD3E58            // factory, 416 B via 001D3A24; decompiled: src/obj/mid11_dmg.cpp
+001D71D8 DamageColDef_NewD71D8            // factory of 001D62A8, 496 B via 001D5A40; decompiled: src/obj/mid11_dmg3.cpp
+001DBC28 DamageColDef_ReadDBC28           // 85A8-based reader (enum 0x0027873A); decompiled: src/obj/mid11_dmg2.cpp
+001DE610 DamageColDef_NewDE610            // factory of 001DD3F8, 640 B via 001DC5F8; decompiled: src/obj/mid11_dmg3.cpp
+001E6B18 DamageColDef_NewE6B18            // factory of 001E6300, 480 B via 001E5170; decompiled: src/obj/mid11_dmg3.cpp
+001E9F48 DamageColDef_ReadE9F48           // 85A8-based reader, euler vec3 -> quaternion +256; decompiled: src/obj/mid11_dmg2.cpp
+001EA3B8 DamageColDef_NewEA3B8            // factory, 384 B, vtable 0x00B18230; decompiled: src/obj/mid11_dmg2.cpp
+001EC7F8 DamageColDef_ReadEC7F8           // 85A8-based reader (enum 0x0027873A, vec3s +240..+320); decompiled: src/obj/mid11_dmg2.cpp
+001ECD08 DamageColDef_NewECD08            // factory, 432 B, vtable 0x00B18680; decompiled: src/obj/mid11_dmg2.cpp
+001F5BA8 XmlDef_NewF5BA8                  // factory of XmlDef_Read_001F5938, 368 B, vtable 0x00B188C0; decompiled: src/obj/mid11_dmg2.cpp
+002F8EE0 XmlDef_New2F8EE0                 // factory of 002F8CF0 + 80 B child items (0x002F8AFC), 336 B, vtable 0x00B1D5C8; decompiled: src/obj/mid11_misc.cpp
+00307A78 XmlDef_New307A78                 // factory of 003078D8, 368 B, vtable 0x00B1DA78, then 0x0030743C(p, c); decompiled: src/obj/mid11_misc.cpp
+000C4020 DefLeaf_ReadBase_000C4020        // (a0, c, x, tmpl, o): leaf def base reader (1340 instructions; not decompiled)
+000C30E8 DefLeaf_Construct_000C30E8       // (Def* p, const Record* rec): leaf def base constructor (not decompiled)
+001BE8CC DamageColDef_FromRecBE8CC        // (p, rec) ctor used by DamageColDef_NewBED98 (not decompiled)
+001C011C DamageColDef_FromRecC011C        // (p, rec) ctor used by DamageColDef_NewC0658 (not decompiled)
+001CFE00 DamageColDef_FromRecCFE00        // (p, rec) ctor used by DamageColDef_NewD0208 (not decompiled)
+001D3A24 DamageColDef_FromRecD3A24        // (p, rec) ctor used by DamageColDef_NewD3E58 (not decompiled)
+001AFA78 DamageColDef_ReadAFA78           // (a0, c, x, tmpl, o) reader (421 instructions; not decompiled)
+001AF598 DamageColDef_FromRecAF598        // (p, rec) (not decompiled)
+001C2058 DamageColDef_ReadC2058           // reader (542; not decompiled)
+001C1D4C DamageColDef_FromRecC1D4C        // (p, rec) (not decompiled)
+001C49E8 DamageColDef_ReadC49E8           // reader (642; not decompiled)
+001C463C DamageColDef_FromRecC463C        // (p, rec) (not decompiled)
+001C8138 DamageColDef_ReadC8138           // reader (396; not decompiled, released)
+001C7F28 DamageColDef_FromRecC7F28        // (p, rec) (not decompiled)
+001CA080 DamageColDef_ReadCA080           // reader (459; not decompiled)
+001C9E34 DamageColDef_FromRecC9E34        // (p, rec) (not decompiled)
+001D62A8 DamageColDef_ReadD62A8           // reader (967; not decompiled)
+001D5A40 DamageColDef_FromRecD5A40        // (p, rec) (not decompiled)
+001DD3F8 DamageColDef_ReadDD3F8           // reader (1152; not decompiled)
+001DC5F8 DamageColDef_FromRecDC5F8        // (p, rec) (not decompiled)
+001E6300 DamageColDef_ReadE6300           // reader (513; not decompiled)
+001E5170 DamageColDef_FromRecE5170        // (p, rec) (not decompiled)
+003078D8 XmlDef_Read3078D8                // (a0, c, x, tmpl, o) reader (99; not decompiled)
+0030743C XmlDef_Init30743C                // (Def* p or 0, XmlCursor* c) (reads r3 / r4; not decompiled)
+002F8CF0 XmlDef_Read2F8CF0                // (a0, c, x, tmpl, o) reader (118; not decompiled)
+002F8AFC XmlItem_Read2F8AFC               // (item or 0, XmlCursor* child) (not decompiled)
+000D5330 XmlReg_ReadObjD5330              // (a0, c, Obj** inout) (not decompiled)
+000D4E28 XmlReg_ReadObjD4E28              // (a0, c, Obj** inout) (not decompiled)
