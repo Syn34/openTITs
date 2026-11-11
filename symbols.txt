@@ -13213,7 +13213,6 @@
 0046FBD0 OptionsMenu_HandleInput2_46FBD0  // void (Menu* m, const UiEvent* e): options page 2: sliders +4 / +28 (types 10/11 only), settings word toggles 0x04000000 / 0x02000000 / 0x08000000, AR toggle 0x01000000 (0x000A88C0, AR object m+0x1286A4 made with Ar_Init0A85C0 / released via vfn[1]), language index m+4184 (0x010B8A64 == 1; count 0x00F65DD0, ids 0x00F65D90 -> settings +32, u8 m+4183); decompiled: src/obj/big23_menu.cpp
 0078FA2C AvlF_TakeMax78FA2C               // (AVL*, Node** slot, Node** left, u8* changed): float AVL's two-child delete helper (callee of Avl_RemoveF32_0078FD34) (name?)
 00749FD0 AvlMulti_TakeMax749FD0           // (AVL*, Node** slot, Node** left, u8* changed): the multimap's two-child delete helper (callee of AvlMulti_RemoveF32_74A210) (name?)
-000A88C0 Ar_Probe_000A88C0                // () -> u8: the AR thread's probe (Thread_Run_000ABAD4 stores it to 0x00F558E2; called by OptionsMenu_HandleInput2_46FBD0) (name?)
 
 # Game code sweep part 45
 000DEAE0 Obj_TickParts_000DEAE0           // bool f(T* o, f32 dt): StateMachine_Tick(o, dt) == 0 -> 0. Then every entry e of the array +248 (u16 count +8) with the byte e->+16 set gets e->vt[28](e, dt); wh (name?); decompiled: src/obj/obj45.cpp
@@ -13314,3 +13313,11 @@
 0033CE20 Section_Reset_0033CE20           // (o, 0, 1) from 0x0033D008 (name?)
 00441178 Bank_FillPairs_00441178          // (Array* tmp, T* o): fills the 8-byte (key, object) temp array for 0x0044F0C0 (name?)
 004413A4 Bank_FillPairs_004413A4          // (Array* tmp, T* o): as 0x00441178 for 0x0044F3BC (name?)
+
+# Game code big sweep part 24
+000A88C0 Ar_ProbeSubnet_000A88C0         // u8 (): AR server probe: TCP connect sweep of the console's /24 on port 333 (hosts .3-.254 one by one, then batches of 100 with a 333 ms timebase wait; found = errno 56 on reconnect); result to u8 0x00F558E2 and r3; decompiled: src/obj/big24_net.cpp
+0026DA88 Ground_ProbeNormal_0026DA88      // u32 (Obj* o, Vec3* n; f32 radius): four downward Havok rays around o (phantom o->+48 or the world) -> hit mask; n = averaged hit normals (2 hits), triangle normal (3), (p1-p3)x(p0-p2) (4), else o->+304 / 0x01164B60; decompiled: src/obj/big24_ground.cpp
+00884DC8 HkFilter_TestCollidable_00884DC8 // (hkBool* out, filter (world->+116), u32 info, u32 collidable->+28) (Havok; called by Ground_ProbeNormal) (name?)
+009250F0 HkPhantom_CastRay_009250F0       // (Phantom*, const hkpWorldRayCastInput*, hkpWorldRayCastOutput*) (Havok) (name?)
+001F9078 ColDef_Read_001F9078             // (x, XmlCursor* cur, tmpl, parent, Def* out): Damage_Read0C3910, default record via Rec_Init7576D8 (or parent copy with parent->+20 & 0x20), size/offset vec3s +128/+144, "colObjName" +160, 24 floats +164.., hash +244, 13 bools -> +252 bits 0x8000>>k, "targetingFlags" bytes +248..+253; decompiled: src/obj/big24_coldef.cpp
+003FA110 Prop_SwayTick_003FA110           // (Prop* o; f32 dt): three-phase bob (+144/+148/+152, wrap quirk 3.7) into body pose (Mat34_FromRotPos + vfn[84]); spring tilt +124/+132 toward clamp(+140 * limit) with effects 0x603D2AEE / 0xA7BE93F5 on direction change (+368); lean toward the game's reference object via quaternion -> Quat_ToMatrix / Matrix_MulRot(o+160) -> body vfn[84]; decompiled: src/obj/big24_sway.cpp
