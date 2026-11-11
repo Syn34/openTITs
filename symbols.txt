@@ -10904,12 +10904,7 @@
 00250F40 BoneCtl_Target                   // (Ctl*, Out* m, u32 k, const f32* pos) -> m: base matrix by source, up-vector rebuild, euler (speed-blended) quat x base, random jitter, weight +68, normalised (name?); decompiled: src/obj/big6_ctl.cpp
 003D8C10 Char_SetAnimState                // (Char*, s32 s) -> 0: per-state Anim_Restart2775A8 keys (0..8), random walk variant/speed, +96 = s, +175 = 0 (name?); decompiled: src/obj/big6_anim.cpp
 003D95E0 Char2_SetAnimState               // (Char2*, s32 s) -> 0: sibling of 003D8C10 (idle pick, regress, track time, +72 vfn[200]); +92 = s, +172/+173 = 0 (name?); decompiled: src/obj/big6_anim.cpp
-000D83C4 Obj_UpdateBase0D83C4             // (o, f1 dt): tail of 0x000E4720 (name?)
-000E3534 Obj_AttachMatrix0E3534           // (o, f32 out[4][4], element, const f32 base[4][4]) (name?)
-000E0734 Obj_CanUpdate0E0734              // (o, f1 dt) -> bool (name?)
 009DD41C hkpKeyFrameUtility_applyHardKeyFrame // (const hkVector4* pos, const hkQuaternion* rot, f1 invDt, hkpRigidBody*) (Havok; name from argument pattern)
-00250AF0 BoneCtl_InitSource250AF0         // (ctl, f32 m[4][4], u32 k, 0) (name?)
-00011410 Shape_InitBody11410              // (Shape* out, system, body, 0, u32, u16 mask) (name?)
 
 # Game code medium sweep part 8
 00292210 LegDef_Read292210                // LegDef* LegDef_Read292210(?, XmlCursor* c) (reads r4 only): a 192-byte def (Mem_Alloc(192, 0, 16); when that succeeded: vec3 +128 the vector at 0x01164B70, +144 (name?); decompiled: src/obj/mid8_def.cpp
@@ -11084,3 +11079,19 @@
 000E8678 Obj_ApplyHit_000E8678            // bool f(T* o, Hit* d): when Obj_TestE0BCC(o, d) and the filter OPD o->+416 (when set) passes: with the factor f = o->+216->+276 above *0x000E8674, bit 0x100 of u (name?); decompiled: src/obj/obj31b.cpp
 000FA2E4 Dtor_B139B8_000FA2E4             // T::~T() deleting (size 912): vtable 0x00B139B8, the parts +608 (vt[4]) and +612 (vt[8]) released and cleared, the member vtables +880 0x00B139A8, +784 0x00B1399 (name?); decompiled: src/obj/obj31b.cpp
 000FCAE4 Obj_VPair192_000FCAE4            // void f(T* o, ...): see VPair196_31 (vt[192], the caller's 10th argument) (name?); decompiled: src/obj/obj31b.cpp
+
+# Game code large functions part 7
+000D83C4 Obj_UpdateBase                   // (Obj* o, f1 dt) -> bool: unless u16 +176 & 0x1000, StateMachine_Update then each active part (+248 list, +16 u8) vfunc +24 (dt); decompiled: src/obj/big7_obj.cpp
+000E3534 Obj_AttachMatrix                 // (Obj* o, f32 out[4][4], const Attach* el, const f32 base[4][4]): WorldObj bone matrix x WorldObj matrix / driver (+16, its +80) / base; el +0 offset into translation; decompiled: src/obj/big7_obj.cpp
+000E0734 Obj_TickBase                     // (Obj* o, f1 dt) -> bool: +352 -= dt, effect state change (+376), reset path (queue push, Msg_Post, world query), StateMachine_Tick, parts vfunc +28; decompiled: src/obj/big7_obj.cpp
+00250AF0 BoneCtl_SourceMatrix             // (BoneCtl* ctl, f32 m[4][4], u32 k, Obj* src) -> bool: source matrix/position, velocity lead (block k +116/+120), ground snap ray (+124/+128, flag +144 0x40000000); decompiled: src/obj/big7_bone.cpp
+00011410 Shape_InitBody                   // (Shape* out, System*, hkpRigidBody*, -, u32, u16): body transform (+ transform shapes 10/11/14), local AABB half extents x2, world AABB centre -> Shape_Init110EC; decompiled: src/obj/big7_shape.cpp
+0049FFE0 Obj_AimMatrix                    // (Obj*, f32 out[4][4], AttachMat*, s32 bone, WorldObj*, pos[3], aim[3], quat[4]): identity, else quat@pos x base matrix; aim offset in the look-at-camera frame added; decompiled: src/obj/big7_aim.cpp
+002CE360 Volume_UpdateAabb                // (Volume* v, u8 grounded[4]) -> r3: capsule-like corner points -> hkpAabbPhantom::setAabb; four rays (all-hits collector) -> grounded[i] from entity property 0x418F096F; decompiled: src/obj/big7_aabb.cpp
+001B5EB0 Probe_CastRay                    // (Obj* self, hkpWorld*, dir[3], from[3], f1 len, -, f32* near, f32* far, Obj** obj) -> bool: all-hits ray, two-ended scan of sorted hits, solid kinds 1/3/27/28, object (prop 0x91C7CF5B) vfunc +32 block state; decompiled: src/obj/big7_probe.cpp
+000E0620 Obj_Reinit0E0620                 // (Obj* o): called by Obj_TickBase on a state match / reset (name?)
+0092E2E8 HkWorld_CastRay92E2E8            // (hkpWorld*, const hkpWorldRayCastInput*, hkpWorldRayCastOutput*) (Havok) (name?)
+00925408 HkPhantom_CastRay925408          // (hkpAabbPhantom*, const hkpWorldRayCastInput*, hkpRayHitCollector*) (Havok) (name?)
+00887E28 HkAllHits_Sort887E28             // (hkpAllRayHitCollector*): sort hits by fraction (Havok) (name?)
+007CF51C HkTransform_SetMul7CF51C         // (out, a, b) (Havok) (name?)
+007CF188 HkTransform_SetMulEq7CF188       // (this, a) (Havok) (name?)
