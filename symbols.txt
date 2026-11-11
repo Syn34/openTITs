@@ -12525,7 +12525,7 @@
 001D0F68 Obj_ResetPath1D0F68                // (Obj* o): rest pose o->576.. -> o->640.., clears path state o->832..o->944, drops target o->820, Obj_SelectColor_00289DC4(o->816, 0), spline o->704 point at record o->556[o->968] +8, Obj_ApplyPose_001D0E58, 001D0450(o, 1); decompiled: src/obj/mid18_b.cpp
 0003F260 Obj_StopEffects3F260               // u32 (Obj* o): o->512 vfn[40](1) dropped, list entries o->452[o->460] / o->492[o->500] get Effect_SetHash4CF988(vfn[272](), 0x879F2BDA) and vfn[40](1), counts o->460/480/500 = 0; returns 0; decompiled: src/obj/mid18_b.cpp
 0012919C Obj_GetPathPose12919C              // u32 (Obj* o, f32* t, Mat34* m, u32* mode): by vfn[32](0) / (1): spline record o->20 + o->6 (t +104, Quat_ToMatrix(+16), SplineInstance_GetMode(+96); r3 = +96) or kind 3 (t = w->56, m = o+96, mode = w->84; r3 = w->48); else 0; decompiled: src/obj/mid18_b.cpp
-000EDE30 Obj_SpawnDef0EDE30                 // Obj* (Def* b, Obj* a, const Mat33* rot, const Vec3* dir, -, u32 s, 0, 0, u32 arg9; f1) (reads r3-r6, r8-r10, f1; not r7) (name?)
+000EDE30 Obj_SpawnDef0EDE30                 // Obj* (Def* b, Obj* a, const Mat34* rot, const Vec3* dir, - (r7 unused), u32 s, Obj* owner, const Mat34* frame, u32 flag (9th, low byte); f32 v): spawn query on the stack named "EntityCompWeapon_Proj_%i" (counter *0x00F64738), b->vfn[28](b, q); keeps objects with +192 bit 0x2000 (owner +436 / +620->48 refs, o->440 vfn[88]/[84], frame or vfn[376], +616 = v, +512 = rot pos, vfn[380]); destroys the query; returns the object or 0; decompiled: src/obj/mid19_a.cpp
 00F65844 g_GameCtx_00F65844                 // global object pointer: +80 / +84 start counters, +576 (name?)
 01193088 g_EmitterSel_01193088              // static emitter selector (u16 +4 gates Area_AddEffect222654) (name?)
 
@@ -12624,3 +12624,45 @@
 0024EEDC Tuning_StaticDtor_0024EEDC       // void f() (no direct caller; a static destructor): the tuning variables 0x01056E30 / 0x01056DE4 / 0x01056D00 / 0x01056CB4 / 0x01056C68 / 0x01056C1C (vtable 0x00B (name?); decompiled: src/obj/obj40b.cpp
 002B8798 Obj_Dtor_B1CE78_002B8798         // T::~T(o) (no direct caller): vtable 0x00B1CE78, the vectors o + 44 and o + 24 released (PtrVector_Clear / Nop), vtable 0x00B1BE30, Unlist1056F1C39(o) and List10 (name?); decompiled: src/obj/obj40b.cpp
 002F466C Node_CollectTree_002F466C        // u32 f(T* o, Node* n) (itself, Call_2F466C_12): unless bit 0x8000 of n->+164 and u8 o->+16 are both clear, n goes into the pair buffer (*(*0x00F65CA0 + 0x001285E (name?); decompiled: src/obj/obj40b.cpp
+
+# Game code medium sweep part 19
+003CF648 Obj_StateTick3CF648                // (Obj* o; f32 dt): byte o->124 = 0, FindBone(o->4, 0xB3521F36), state machine o->76 (0 start / 1..8 sub-states, 6 = anim 0xE1C691BF with stop), then the zone flag check (g_GameCtx->581); decompiled: src/obj/mid19_a.cpp
+003D1AD8 Obj_StateTick3D1AD8                // (Obj* o; f32 dt): sibling state machine o->76 (0..8; 6 = anim 0xE1C691BF, o->12 / o->8 bumped, stop sets byte o->94); decompiled: src/obj/mid19_a.cpp
+003CC420 Obj_StateThrow3CC420               // (Obj* o): first tick effects 0xBCA67A7F / 0x25E11BEA + anim 0xE1C691BF, idle switch 0xE1C7FA75, zone bit 0x80 hand-over to partner o->120 (o state 4, partner 1); decompiled: src/obj/mid19_a.cpp
+003CC720 Obj_StateCatch3CC720               // (Obj* o): first tick effects 0x3FE47F12 / 0xACB71673 + anim 0x1E7563B1, idle switch, zone hand-over (o state 1, partner 4), *(o->112) = 0, o->112->108 vfn[88](0,1,1,1); decompiled: src/obj/mid19_a.cpp
+000248D0 Obj_OnMsg248D0                     // u32 (Obj* o, Msg* m) (vtable entry): message hashes set o->416 bits / o->348 mode / face targets (Obj_FaceToward24670), then 0x000133FC(o, m); decompiled: src/obj/mid19_b.cpp
+003CB968 Obj_Tick3CB968                     // (Obj* o; f32 dt): t = dt * o->104, by o->0: 6 -> 003CB260, 5 -> effect hash + 003CB808, 4 / 3 -> 003CB430 / Obj_FallTick3CB618, 1 -> body off + effect 0x03C28089; decompiled: src/obj/mid19_b.cpp
+001D2370 Obj_PathTick1D2370                 // u32 (Obj* o; f32 dt) (vtable entry): path follower: gate o->708, pause o->896, speed o->948/952 * o->944, o->900 clamp [0,1], effects 0x557CF0A5 / 0x557AF4A8, 001D0450 step, spline pose; returns 1 (0 when Obj_Check_001AEA50 fails); decompiled: src/obj/mid19_b.cpp
+0003F4E0 Obj_Reset3F4E0                     // u32 (Obj* o) (vtable entry): releases handles o->544/548, held o->256, fx slots, o->308 entries, layer o->620, player notify; returns 00012928(o); decompiled: src/obj/mid19_b.cpp
+0002E130 Mover_Tick2E130                    // (Mover* o; f32 dt) (vtable entry): o->36 += dt; mode hash o->4 dispatch to Mover_* steps (0x04102685 follow spline, 0xC66F66EF height switch, 0x9B04E5C6 driver heading); decompiled: src/obj/mid19_b.cpp
+003DB140 Obj_GrindTick3DB140                // (Obj* o; f32 dt): message 13 at the tick limit, mirrored frame o->64, spline search / blend + Obj_PlaceOnSpline3DAED0, countdown anims, 003DABB8, message 14 when o->64->348 <= 0; decompiled: src/obj/mid19_b.cpp
+0002C518 Mover_CirclePlayer2C518            // (Mover* o; f32 dt): orbit around the nearest player, heading atan2f to the driver (+484, +548 = 1.0), random offset (3 RNG steps) when o->356 bit 0x20000000; o->328 += dt; decompiled: src/obj/mid19_b.cpp
+00012928 Obj_ResetBase12928                 // u32 (Obj* o): DropHeld, byte o->304 &= ~0x14, nav query finish, 006C0D24(o->212), swap-remove from list *0x00F557F0, 00012544(list, o), Effect_Delete(o->72); returns 0; decompiled: src/obj/mid19_b.cpp
+003DABB8 Obj_GrindCamera3DABB8              // (Obj* o): camera frame for the pair o->64 / o->68 into target o->76 (made on demand: SmallAlloc(112), vtable 0x00B13B38, Camera_PushTarget0FC040); decompiled: src/obj/mid19_b.cpp
+00012B78 Obj_SetControlled12B78             // (Obj* o, u8 on): body physics by byte o->305 bit 0; on -> vfn[224](); off -> driver vfn[128](0x1D6F9964, 0), o->52 = 0, DropHeld, vfn[232](); decompiled: src/obj/mid19_b.cpp
+001EAE88 Obj_ReleaseFx1EAE88                // (Obj* o) (vtable entry): o->448 = 0, pop/release layer o->424, body o->428 vfn[88](1,1,1,1), o->440 vfn[40](0,0), kind-8 parts vfn[52](255, 0); decompiled: src/obj/mid19_b.cpp
+003129E8 AnimTask_Update3129E8              // u32 (Task* o) (vtable entry): state task over controller o->32 (Anim_SetState_0030D2B8, 0030E1E0, vfn[28](0, 1|2)); decompiled: src/obj/mid19_b.cpp
+0036F1FC Obj_Destruct36F1FC                 // (Obj* o): destructor (vtables 0x00B1F800 / 0x00B1F678), RefNode_Release, World_ListRemove_0046B7A4(w, 8, 0x00F379A0, o, 0), part releases; returns VtB21B58_DtorTrivial_004A0F70(o + 48); decompiled: src/obj/mid19_b.cpp
+000B7384 Group_Reset0B7384                  // u32 (Group* o) (vtable entry): member vfn[128](0x879D1B7A, 1)/[40](1), counts cleared, index list o+92 refilled 0..o->80-1, effect o->136 reset; decompiled: src/obj/mid19_b.cpp
+00228C40 Obj_StateTick228C40                // u32 (Obj* o; f32 dt): Obj_UpdateFx_000E0520 gate, vfn[32]/[400]/[28], static 0x01056E7C vfn[12](0), vfn[352] (entry in r4, OPD in r7), cooldown o->380, pending vfn[404]; decompiled: src/obj/mid19_b.cpp
+00408B70 Spawner_Tick408B70                 // (Spawner* o, -, u8 flag; f32 dt): spawn via 004089F0 when due, tick children 00407130, release/remove state 13/14 children; o->212 += dt; decompiled: src/obj/mid19_b.cpp
+004CBEBC EffectRule_Apply4CBEBC             // (Rule* a, Effect* e, Params* p) (vtable entry): threshold (a->44 or component value) vs p->32, value a->32 / random a->12[] into +132 of e or the keyed child; decompiled: src/obj/mid19_b.cpp
+000DA348 Obj_SetTint0DA348                  // (Obj* o, u8 a, u8 b, u8 c, u8 d): part o->160 (kind 8) vfn[52](a or a*part->168/255 when o->176 has 0x20 and !d, c), o->176 |= 0x20; records o->340 vfn[116](a, b, d, 0) when b; children o->248 vfn[56](a, b); decompiled: src/obj/mid19_b.cpp
+00048D30 Obj_OnContact48D30                 // (Obj* o, Contact* c) (vtable entry): picks the other body (root via +12, self = o->60 vfn[144]()), kind 8 -> c->32 = 1 in states 13..14, kinds 1/23 with |normal| < *(f32*)0x00048D28 -> state 13->14 / 3->4 (vfn[220]); decompiled: src/obj/mid19_b.cpp
+0001574C Walker_Step1574C                   // (Walker* o): graph walk of node o->224 (graph *0x00F557F4, 20-byte nodes): key 0x8FA5D8C3 -> 000155E0, 0x152D006A toggles direction bit 0x02 of byte o->304 at the ends; backward Node_FindRoot_000154AC, forward node +10; decompiled: src/obj/mid19_b.cpp
+001CE094 Obj_UpdateContacts1CE094           // (Obj* o): 001CCF40(o, o+853, o+854) unless o->854 and vfn[32](0) in 2..4; edge of +853 -> vfn[420](2|6, 0), vfn[28](1,1), vfn[28](2,0); else edge of +854 (while +853) -> vfn[420](2|6, 0); decompiled: src/obj/mid19_b.cpp
+00F64738 g_ProjNameCounter_00F64738         // u32 running counter for "EntityCompWeapon_Proj_%i" (Obj_SpawnDef0EDE30) (name?)
+00B12CB8 VtSpawnQueryProj_00B12CB8          // vtable of the projectile spawn query (Obj_SpawnDef0EDE30) (name?)
+003CB260 Obj_Tick6_003CB260                 // (Obj*; f32 t): state 6 of Obj_Tick3CB968 (110 insns; not decompiled) (name?)
+003CB430 Obj_Tick4_003CB430                 // (Obj*; f32 t): state 4 of Obj_Tick3CB968 (116 insns; not decompiled) (name?)
+003CB808 Obj_Tick5_003CB808                 // (Obj*; f32 t): state 5 of Obj_Tick3CB968 (87 insns; not decompiled) (name?)
+001D218C Path_SetActive_001D218C            // (Obj*, bool): called on path gate changes by Obj_PathTick1D2370 (117 insns; not decompiled) (name?)
+001D0450 Path_Step_001D0450                 // bool (Obj*, u32): path record advance; non-zero -> pose update (not decompiled) (name?)
+00012544 AvoidList_Remove_00012544          // (List* *0x00F557F0, Obj*) (not decompiled) (name?)
+0030E1E0 Anim_PickState_0030E1E0            // u32 (Ctl*): next state for AnimTask_Update3129E8 (not decompiled) (name?)
+00407130 Spawner_TickChild_00407130         // (Child*; f32 dt) (not decompiled) (name?)
+004089F0 Spawner_Spawn_004089F0             // (Spawner*; f32) (not decompiled) (name?)
+003CF0F8 Obj_State1_003CF0F8                // (Obj*; f32 dt): state 1 of Obj_StateTick3CF648 (VMX; vmx agent) (name?)
+00F557F4 g_NodeGraph_00F557F4               // Graph*: +4 -> u16 +2 node count, +12 20-byte nodes (Walker_Step1574C) (name?)
+00F557F0 g_AvoidList_00F557F0               // List*: +24 count, +3732 entry pointers (Obj_ResetBase12928) (name?)
+001CCF40 Obj_ProbeContacts_001CCF40         // (Obj*, u8* a, u8* b): refreshes the two contact bytes (Obj_UpdateContacts1CE094) (not decompiled) (name?)
