@@ -11535,7 +11535,6 @@
 001F5BA8 XmlDef_NewF5BA8                  // factory of XmlDef_Read_001F5938, 368 B, vtable 0x00B188C0; decompiled: src/obj/mid11_dmg2.cpp
 002F8EE0 XmlDef_New2F8EE0                 // factory of 002F8CF0 + 80 B child items (0x002F8AFC), 336 B, vtable 0x00B1D5C8; decompiled: src/obj/mid11_misc.cpp
 00307A78 XmlDef_New307A78                 // factory of 003078D8, 368 B, vtable 0x00B1DA78, then 0x0030743C(p, c); decompiled: src/obj/mid11_misc.cpp
-001C011C DamageColDef_FromRecC011C        // (p, rec) ctor used by DamageColDef_NewC0658 (not decompiled)
 001D5A40 DamageColDef_FromRecD5A40        // (p, rec) (not decompiled)
 001E5170 DamageColDef_FromRecE5170        // (p, rec) (not decompiled)
 003078D8 XmlDef_Read3078D8                // (a0, c, x, tmpl, o) reader (99; not decompiled)
@@ -12410,7 +12409,6 @@
 003742E0 View_UpdateMarker_003742E0      // (o, u16 idx): called by 0x00374590 (name?)
 00489328 Spawn_FromCmd_00489328          // (world, c + 140, c + 9, c + 74, +160, +164, bool) from 0x004337D0 (name?)
 003535C4 Track_Play_003535C4             // (track, text, bool, -, -, 0; f1, f2): reads r3-r5, r8, f1, f2 (name?)
-0030D2B8 Anim_SetState_0030D2B8          // (anim, 7 / 9) from 0x0031A834 (name?)
 00015C98 Obj_SetPosFromRow_00015C98      // (o, row3) from 0x00015E40 (name?)
 004D3798 Game_ShutdownStep_004D3798      // () from 0x004D39B0 (name?)
 006D6514 Voice_GetItem_006D6514          // (voice, s16 j) from 0x0044C888 (name?)
@@ -12858,7 +12856,6 @@
 00301C48 Dragon_OnMessage_00301C48         // the dragon class's message handler (no direct callers) (name?)
 002FEA20 Dragon_Fn2FEA20                   // (T* o) (reads r3 only) (name?)
 002F63E0 Dragon_Fn2F63E0                   // (T* o, u32 hash, u8; f1) (name?)
-00214FAC SplineCam_Ctor_00214FAC           // (p, Query* q): 480-byte spline camera ctor (name?)
 0044D9E0 Loading_Fn44D9E0                  // T* (T* x) (reads r3 only) (name?)
 0030D434 Climb_Fn30D434                    // (T* t, u32 t->+1060, f32 out[4][4]) (name?)
 00308F5C Climb_Fn308F5C                    // (x, 0) (name?)
@@ -12958,9 +12955,7 @@
 0043807C Cmd_CameraSplit43807C             // (Cmd* c): subject c->28 / id c->24 / world slot, camera Obj_Notify26: 0x0042C328 posts, split styles c->16/20, Coach_SetMode2A8AE0, p->244 bit 0x1000; decompiled: src/obj/mid22_c.cpp
 002D1F0C Track_Follow2D1F0C                // (Track* t): bit 0x8000 of t->28: pose rows t->32+240, reference t->8->vfn[64] distance vs *0x0105B5E8: follower t->36 vfn[84] + World_AddTimedCallback(0x00F35980), else 0x002D0BA0(t, 0); decompiled: src/obj/mid22_c.cpp
 00074E70 Obj_EndScene74E70                 // (Cmd* c, Effect* e): target from component c->12 (kind 5 / 15) or id c->16 -> Obj_SceneEnd(c->20, c->21) (+ vfn[304]), with c->22 also every child of x->340; decompiled: src/obj/mid22_c.cpp
-0026FD90 Targets_Consider_0026FD90         // (o, a1, x, table, u32* count, 1, 0) (callee of Targets_Collect270258) (not decompiled) (name?)
-0026FAD4 Targets_Pick_0026FAD4             // (o, table, count) -> r3 of Targets_Collect270258 (not decompiled) (name?)
-001EFDE8 Part_BuildChain_001EFDE8          // (o, o->804, n, rows, x, 0, def+352, def+368) -> new part chain (callee of Part_BreakAt1F46D4) (not decompiled) (name?)
+0026FD90 Targets_Consider_0026FD90        // (o, a1, x, table, u32* count, 1, 0) (callee of Targets_Collect270258): uses VMX (vmaddfp transform), skipped (not decompiled) (name?)
 01067AF8 g_TargetTable_01067AF8            // 32 {u32 0, f32 FLT_MAX} pairs, init flag u8 0x01067AF0 (Targets_Collect270258) (name?)
 01056EE0 g_SinCache_01056EE0               // f32 sin(K) cache, valid flag u8 0x01056ED8 (Player_RateCheck23B3E8) (name?)
 
@@ -12973,3 +12968,113 @@
 01164B50 g_YawSinAxis                    // f32[3] constant used with Math_Sinf in Obj_UpdateOrient191128 (Constants_Init_0056B93C) (data) (name?)
 01164B70 g_YawCosAxis                    // f32[3] constant used with Math_Cosf in Obj_UpdateOrient191128 (data) (name?)
 01164B60 g_UpAxis                        // f32[3] up axis constant (Obj_UpdateOrient191128, Ledge_Probe2CCFF0) (data) (name?)
+
+# Game code medium sweep part 23
+0026FAD4 Targets_Sync26FAD4               // u32 (Query* o, Pair* table, u32 n): diffs the {Obj*, f32} vector o->16 (old size o->36) against table: dropped non-null x->vfn[312](x, self, o->8), added x->vfn[308](...) (no null check); refills the vector with o->12->0 entries (PtrVector_Reserve 2x when full, high-water +26), o->36 = n; r3 = count (was Targets_Pick_0026FAD4); decompiled: src/obj/mid23_a.cpp
+001EFDE8 Part_CreateChain1EFDE8           // Chain* (Obj* o, Src* src, b, rows[4][4], x, y, v1[3], v2[3]): stack record (vtable 0x00B162B0, base 0x00B12260): name String_Format(0x00AD2050, o->vfn[76]) +252, rows +144, src->136 192-byte records into a lazy vector +128, flags +244 (merged into the stack word); r3 = o->804->vfn[28](o->804, &rec) (was Part_BuildChain_001EFDE8); decompiled: src/obj/mid23_a.cpp
+0017ED58 Spawner17ED58                    // Obj* (Owner* o, Obj* t): Query_Construct17EAD4 query (f1..f7 from 0x0017ED48), t->vfn[8](t, q), SmallAlloc(1728) + 0x0017DD90(p, q), p->vfn[8]; decompiled: src/obj/mid23_a.cpp
+0001C984 Spawner1C984                     // Obj* (Owner* o, Obj* t): QueryEx_Construct(q, 4, 128, .., vt 0x00B0DBAC), q->4 |= 0x18, Mem_Alloc(1360, 0, 16) + Thunk_00121BB8, vtable 0x00B0DE40; decompiled: src/obj/mid23_a.cpp
+0016C9EC Spawner16C9EC                    // Obj* (Owner* o, Obj* t): QueryEx (vt 0x00B145D0), q->4 |= 0x400, SmallAlloc(800) + 0x0016BF00, Obj_PlayCue_002971BC(CallK2_000D94F4(p), 0); decompiled: src/obj/mid23_a.cpp
+00204660 Spawner204660                    // Obj* (Owner* o, Obj* t): QueryEx (4, 32, vt 0x00B19188), default vectors q+208/q+224, q->4 |= 0x1000, SmallAlloc(464) + 0x002040A0; decompiled: src/obj/mid23_a.cpp
+00247EE4 Spawner247EE4                    // Obj* (Owner* o, Obj* t): QueryEx (vt 0x00B1B4F0, o->728 bit 31), q->12 |= 0x2400, world id -> q->200 + 0x00245DD0(o, id), SmallAlloc(1440) + 0x00247AB8; decompiled: src/obj/mid23_a.cpp
+00167D18 Spawner167D18                    // Obj* (Owner* o, Obj* t): QueryEx (vt 0x00AC8C70), q->4 |= 0x80, world id -> q->240, SmallAlloc(480) + 0x001676F8; decompiled: src/obj/mid23_a.cpp
+001909CC Spawner1909CC                    // Obj* (Owner* o, Obj* t): QueryEx (5, 32, vt 0x00AC8C70), q->4 |= 0x200, parameters +240..+292, SmallAlloc(704) + 0x00190158; decompiled: src/obj/mid23_a.cpp
+001FA8C4 Spawner1FA8C4                    // Obj* (Owner* o, Obj* t): QueryEx (vt 0x00AD2B74, o->301 bit 0x80), q->4 |= 0x20, SmallAlloc(448) + PhysObj_Ctor_001FA238, vtables 0x00B18D28 (+8/+416/+456); decompiled: src/obj/mid23_a.cpp
+001FF16C Spawner1FF16C                    // Obj* (Owner* o, Obj* t): as Spawner1FA8C4 + flag o->452 bit 29 into q->252, q->4 |= 0x60, SmallAlloc(608) + PhysObj_Ctor_001FEF38; decompiled: src/obj/mid23_a.cpp
+000C0FE8 SpawnerC0FE8                     // Obj* (Owner* o, Obj* t): QueryEx (vt 0x00B12070, u8 o->260 / 261), q->240..252 = o->244..256, q->4 |= 0x00200000, SmallAlloc(448) + 0x000B2E18; decompiled: src/obj/mid23_a.cpp
+00177AD0 Spawner177AD0                    // Obj* (Owner* o, Obj* t): QueryEx (vt 0x00B14958, o->256 bit 0x04), q->4 |= 0x800, Mem_Alloc(448, 0, 16) + 0x001774D8, CallK2_000D94F4(p)->1240 = p->vfn[100](p); decompiled: src/obj/mid23_a.cpp
+001EC5C8 Spawner1EC5C8                    // Obj* (Owner* o, Obj* t): Record_Init_000E44E0 query, q->12 |= 8, pair 0x01164AFC x2, q->244 = o->420, SmallAlloc(992) + 0x001EBDF0; decompiled: src/obj/mid23_a.cpp
+001BADD8 Spawner1BADD8                    // Obj* (Owner* o, Obj* t): Obj_Init22 query (vt 0x00B13880), q->8 |= 0x1000, q->20 |= 0x80, SmallAlloc(416) + 0x001B9EB8; decompiled: src/obj/mid23_a.cpp
+00224720 Spawner224720                    // Obj* (Owner* o, Obj* t): 0 for a flagged t; Obj_Init22 query (vt 0x00B12000), u8 o->172..175, SmallAlloc(448) + LightObj_Ctor_00224448; decompiled: src/obj/mid23_a.cpp
+001A51E8 Spawner1A51E8                    // Obj* (Owner* o, Obj* t): Obj_Init22 query (vt 0x00B15018), 12-byte vector q+144 filled from o->140 (u16 o->148), SmallAlloc(384) + 0x001A4680; decompiled: src/obj/mid23_a.cpp
+001BEFE8 Spawner1BEFE8                    // Obj* (Owner* o, Obj* t): Record_Init query, f32 o->308+8k x7, SmallAlloc(576) + Owner_Construct1ADD08, vtables 0x00B16670 (+8/+476/+516), p->556..572 from q; decompiled: src/obj/mid23_a.cpp
+000DE208 SpawnerDE208                     // Obj* (Owner* o, Obj* t): Query_Init0CDD28 query (vt 0x00AC6790, o->232 bits 30/29), 76-byte vector q+144, q->164 = o->180, SmallAlloc(384) + 0x000DDCA8; decompiled: src/obj/mid23_a.cpp
+001D1B18 Spawner1D1B18                    // Obj* (Owner* o, Obj* t): Record_Init query, f32 o->308+8k x7, 28-byte vector q+240, q->8 |= 0x08080000, SmallAlloc(976) + 0x001D1170; decompiled: src/obj/mid23_a.cpp
+001BDAE8 Spawner1BDAE8                    // Obj* (Owner* o, Obj* t): Record_Init query, SmallAlloc(464) + Thunk_000E40B4, vtables 0x00B16430 (+8/+436/+476), p->432..458 from q with p->216 +304 / +320 fallbacks; decompiled: src/obj/mid23_a.cpp
+001F5660 Spawner1F5660                    // Obj* (Owner* o, Obj* t): Record_Init query, o->304, vec3 o+320, vec4 o+336, f32 o->352..360 (K 0x001F5658), q->12 |= 0x10, SmallAlloc(576) + 0x001F54E8; decompiled: src/obj/mid23_a.cpp
+0021BD90 Spawner21BD90                    // Obj* (Owner* o, Obj* t): 0 for a flagged t; Obj_Init22 query (vt 0x00B12000), o->172..196, q->4 |= 0x10400000, SmallAlloc(464) + 0x0021BBE4; decompiled: src/obj/mid23_a.cpp
+001CB448 Spawner1CB448                    // Obj* (Owner* o, Obj* t): Record_Init query, f32 o->308+8k x7, o->436..485, q->8 |= 0x02080000, SmallAlloc(864) + 0x001CB000; decompiled: src/obj/mid23_a.cpp
+001C6528 Spawner1C6528                    // Obj* (Owner* o, Obj* t): Record_Init query, f32 o->308+8k x7, o->428..444, six 80-byte entries q+256, SmallAlloc(704) + 0x001C5A80; decompiled: src/obj/mid23_a.cpp
+0021A6E8 Spawner21A6E8                    // Obj* (Owner* o, Obj* t): 0 for a flagged t; Obj_Init22 query (vt 0x00B12000), o->172..211, q->4 |= 0x08400000, SmallAlloc(480) + 0x0021A518; decompiled: src/obj/mid23_a.cpp
+0017DD90 Obj_Ctor_0017DD90                // (p, q): ctor of the 1728-byte object of Spawner17ED58 (not decompiled) (name?)
+0016BF00 Obj_Ctor_0016BF00                // (p, q): ctor of the 800-byte object of Spawner16C9EC (not decompiled) (name?)
+002040A0 Obj_Ctor_002040A0                // (p, q): ctor of the 464-byte object of Spawner204660 (not decompiled) (name?)
+00247AB8 Obj_Ctor_00247AB8                // (p, q): ctor of the 1440-byte object of Spawner247EE4 (not decompiled) (name?)
+00245DD0 Obj_Number_00245DD0              // (o, id): numbering callback of Spawner247EE4 (not decompiled) (name?)
+001676F8 Obj_Ctor_001676F8                // (p, q): ctor of the 480-byte object of Spawner167D18 (not decompiled) (name?)
+00190158 Obj_Ctor_00190158                // (p, q): ctor of the 704-byte object of Spawner1909CC (not decompiled) (name?)
+000B2E18 Obj_Ctor_000B2E18                // (p, q): ctor of the 448-byte object of SpawnerC0FE8 (not decompiled) (name?)
+001774D8 Obj_Ctor_001774D8                // (p, q): ctor of the 448-byte object of Spawner177AD0 (not decompiled) (name?)
+001EBDF0 Obj_Ctor_001EBDF0                // (p, q): ctor of the 992-byte object of Spawner1EC5C8 (not decompiled) (name?)
+001B9EB8 Obj_Ctor_001B9EB8                // (p, q): ctor of the 416-byte object of Spawner1BADD8 (not decompiled) (name?)
+001A4680 Obj_Ctor_001A4680                // (p, q): ctor of the 384-byte object of Spawner1A51E8 (not decompiled) (name?)
+000DDCA8 Obj_Ctor_000DDCA8                // (p, q): ctor of the 384-byte object of SpawnerDE208 (not decompiled) (name?)
+001D1170 Obj_Ctor_001D1170                // (p, q): ctor of the 976-byte object of Spawner1D1B18 (not decompiled) (name?)
+0021BBE4 Obj_Ctor_0021BBE4                // (p, q): ctor of the 464-byte object of Spawner21BD90 (not decompiled) (name?)
+001CB000 Obj_Ctor_001CB000                // (p, q): ctor of the 864-byte object of Spawner1CB448 (not decompiled) (name?)
+001C5A80 Obj_Ctor_001C5A80                // (p, q): ctor of the 704-byte object of Spawner1C6528 (not decompiled) (name?)
+0021A518 Obj_Ctor_0021A518                // (p, q): ctor of the 480-byte object of Spawner21A6E8 (not decompiled) (name?)
+
+# Game code sweep part 43
+00229320 Obj_HitReact_00229320            // void f(T* o, Hit* h): unless the byte 0x010388F0 is set, bits 17/18 of the word o->+188 are set, the owner (Obj_Owner0D93FC) has bit 12 of +40, or o->+380 > *0x (name?); decompiled: src/obj/obj43.cpp
+00264F58 Pick_WeightedRandom_00264F58     // s32 f(T* o): a weighted random pick among the u16 o->+72 entries of o->+64 (48 bytes each, weight +36): r = Rand16 * *0x00264F4C must be <= o->+84 and the weigh (name?); decompiled: src/obj/obj43.cpp
+00280614 Node_NewFromXml_00280614         // T* f(cur, xml, u8 v): with the attribute "%s" 0x00AD4C0C of xml (XmlCursor_FindAttrByName), a new 20-byte node (SmallAlloc): vtable 0x00B0DAAC, +4 = String_Hash (name?); decompiled: src/obj/obj43.cpp
+002869A0 Registered_Dtor_002869A0         // ~T(T* o): vtable 0x00B1C5D0, the o->+28 220-byte records at +24 freed (SmallFree), +28 = 0; with o->+8 and its +164, Obj_FindPair_0034F580(+164, 0x00F352F0, o); (name?); decompiled: src/obj/obj43.cpp
+0028BDB0 Pools_Init_0028BDB0              // builds the two particle pools 0x00F64A50 / 0x00F64A54 (2208 / 5632-byte buffers) after CallbackList_Insert(0x0119582C, 0x00F35360, 0, 0, 0) (name?); decompiled: src/obj/obj43.cpp
+002E1B1C Player_LevelKeyByte_002E1B1C     // u8 f(-, u32 key): for the current player p = (*0x00F64C20)->+36 (none: 1), the level byte L = byte (G + 4056 * byte G+4208 + 4 * p->+822) +498 of G = *0x00F65CA (name?); decompiled: src/obj/obj43.cpp
+002E6E54 Obj_SetBit27Notify_002E6E54      // u32 f(T* o, u8 on): bit 27 of o->+100 = bit 0 of on; r3 = the word. Switching off first walks the u16 +88 entries of the list (G + 4208) +80 (G = *0x00F65CA0):  (name?); decompiled: src/obj/obj43.cpp
+002EF36C Cursor_StepCalls_002EF36C        // u32 f(T* o): unless the byte 0x01068890 is set (r3 = it), steps a cursor (hi 16 = entry, lo 16 = the next one, (entry +12 >> 15) of the 16-byte entries o->+28)  (name?); decompiled: src/obj/obj43.cpp
+003BC538 Obj_PlayerAnimKick_003BC538      // void f(T* o): when the player handle *0x00F64CCC resolves (Handle_ResolveBit1), plays on it (Obj_SetAnim(h, name, 1, -, 0, 0, 0x01164CA4; *0x003BC534)) the anim (name?); decompiled: src/obj/obj43.cpp
+003DE47C Track_SelectKey_003DE47C         // void f(T* o, u32 key; f32 t): looks key up in the AVL tree o->+160->* (+4 key, +12 / +16 the subtrees for a greater / not greater node key), recording the path  (name?); decompiled: src/obj/obj43.cpp
+00419F30 Obj_Deactivate_00419F30          // u32 f(T* o): for an active o (byte +68): World_ListRemove_0046B7A4( *0x00F65CA0, 0, 0x00F387E0, o, 0), Handle_Notify36742C(0x6D7DA1D8, 0, 1, 0), SetSelect_49100 (name?); decompiled: src/obj/obj43.cpp
+00433D98 Obj_StartOrQueue_00433D98        // u32 f(T* o): with a o->+544, bit 7 of the byte o->+556 = !+544->vt[24](). Unless that bit is set: with bit 3 Player_StartAction(G, (G + 4208)-> +8, 0x00AE24E4,  (name?); decompiled: src/obj/obj43.cpp
+0045A09C Obj_CanAct_0045A09C              // bool f(-, T* o): s = o->+656 + 4; a = s->+28, b = s->+8; whether a-> vt[12]() and bit 6 of byte a->+20 hold (h); y = b->vt[12](). True when bit 0 of o->+256 and (name?); decompiled: src/obj/obj43.cpp
+0047BCF4 Player_SetEffectOnOff_0047BCF4   // u32 f(-, u32 i, u8 on): the player p = (G + 0x20C80 * i + 4208)->+8 (G = *0x00F65CA0) with bit 3 of p->+192 first gets: w = Obj_Notify26(p); k = 1 unless p->vt[ (name?); decompiled: src/obj/obj43.cpp
+004BE850 Set_LoadZipChunk_004BE850        // bool f(FileReader* r): reads the chunk (Iff_ChunkSize bytes; 0 -> r3 = 0) into a MemStack_Alloc block of the default stack, opens it as a zip (Archive_OpenZip(b (name?); decompiled: src/obj/obj43.cpp
+004C1E6C Binding_Attach_004C1E6C          // u32 f(Binding* b, T* e): the component b->+12 of e (Effect_FindComponent; missing: Hash_ToString(b->+12)) whose vt[32]() is 5 gets the target t = Effect_Bind4BB (name?); decompiled: src/obj/obj43.cpp
+0075A4FC ShapeObj_Delete_0075A4FC         // vtable 0x00B19950, ShapeObj_RefreshPhantom_002108A8 first. (name?); decompiled: src/obj/obj43.cpp
+0075B074 ShapeObj_Delete_0075B074         // vtable 0x00B19CC8, 0x00213398 first. (name?); decompiled: src/obj/obj43.cpp
+007753E4 Ref_GetVec3_007753E4             // void f(Vec3* out, const Ref* r): with the table T = (*0x00F65038)->+24 (128-byte rows), a = T row s16 r->+4 and b = T row s16 r->+2 (0 for -1): the three bytes  (name?); decompiled: src/obj/obj43.cpp
+00794A7C Node_Dtor_00794A7C               // ~T body: vtable 0x00B22710, children (+152) destroyed via vt[4], unlinked from parent/root list 0x00F66868, cleared from the 4 slots 0x010C2AD8 (name?); decompiled: src/obj/obj43.cpp
+00794BE8 Node_Dtor_00794BE8               // The same as 0x00794A7C. (name?); decompiled: src/obj/obj43.cpp
+00794D54 Node_Dtor_00794D54               // The same as 0x00794A7C. (name?); decompiled: src/obj/obj43.cpp
+000240C0 Ai_Attach_000240C0               // u32 f(T* o, Actor* a): o->+308 = (a->vt[68]())->+28; AiCtrl_Bind(o, a); o->+60 = a when bit 3 of a->+192, else 0; c = o->+48: c->vt[96](c, 1); the u16 +40 of c- (name?); decompiled: src/obj/obj43b.cpp
+00080170 Binding_Resolve_00080170         // u32 f(Binding* b, T* e): the target t = the component b->+12 of e (Effect_FindComponent) whose vt[32]() is 5 -> its +28, when that has the type 0x02235C33 at +2 (name?); decompiled: src/obj/obj43b.cpp
+0008AA78 Ctl_ApplyTarget_0008AA78         // u32 f(Ctl* c, x): t = Obj_ResolveTarget_0009A284(c, c->+12, c->+16, x) with bit 1 of t->+192 (else r3 = 0): with bit 31 of c->+28, t->+348 = max(t->+344, k); el (name?); decompiled: src/obj/obj43b.cpp
+00092EE4 Binding_PokeInRange_00092EE4     // u32 f(Binding* b, T* e): the point p (sp+112) = the global vector 0x01164B40, or the +64 position of the target of the component b->+12 of e (Effect_FindCompone (name?); decompiled: src/obj/obj43b.cpp
+000DE56C Obj_Activate_000DE56C            // u32 f(T* o): StateMachine_Init(o); o->+204 (when 0 / -1: a new World_Counter_004A2560()) goes to o->vt[104](o, id); each entry of the vector o->+248 (u16 count  (name?); decompiled: src/obj/obj43b.cpp
+0016F570 Obj_HitHeading_0016F570          // void f(T* o, Hit* h): with q = o->+216 and its +212 / +220 above k = *0x0016F560 and h->+48 above q->+216: s = min((h+48 - q+216) * q+212, q+220) goes to o->vt[ (name?); decompiled: src/obj/obj43b.cpp
+0017A008 Obj_CanTakeHit_0017A008          // bool f(T* o, src, s32 kind, f32* amt): only with o->+392 = 1 (else 0): kind 0 is refused (0) for bit 31 of o->+216->+256 or src = o->+404, else *amt *= *0x0017A (name?); decompiled: src/obj/obj43b.cpp
+001F0694 Obj_StartEffect_001F0694         // u32 f(T* o): with an o->+856 and no object 0x366FD481 (Obj_FindById), the effect EffectDef_Find(o->+920, 0, 1) is built (SmallAlloc(140), Effect_Construct); its (name?); decompiled: src/obj/obj43b.cpp
+001F54E8 Obj_Construct_001F54E8           // void T(T* o, const Def* d): the base Thunk_000E40B4(o, d); the vtables 0x00B18908 (+380 0x00B18AB4, +384 0x00B18ADC); the four 3-float rows of 0x01164BD0 (16 ap (name?); decompiled: src/obj/obj43b.cpp
+00204B74 Obj_SetRagdoll_00204B74          // u32 f(T* o, u8 on): switching on first drops the two attachments +396 / +392 (vt[40](x, 0), slots cleared), removes the skeleton o->+388's entity +8 (Hk_RemoveE (name?); decompiled: src/obj/obj43b.cpp
+002B88F0 Registered_Delete_002B88F0       // The deleting ~T(): vtable 0x00B1CE78, the PtrVectors +44 / +24 destroyed, vtable 0x00B1BE30, o removed from the registry array 0x01056F1C, List1013B5C_Remove(o) (name?); decompiled: src/obj/obj43b.cpp
+002E5C68 Obj_PlayNamedAnim_002E5C68       // u32 f(T* a, Obj* p): plays a->+60's anim on p with Obj_SetAnim(p, name, 1, -, 0, 0, 0x01164CA4; *0x002E5C60) (none: r3 = a): the name is String_Format("%s" 0x00 (name?); decompiled: src/obj/obj43b.cpp
+002EF648 Cursor_StepCallsArg_002EF648     // u32 f(T* o, Obj* x): for a non-null x (else r3 = o), steps the cursor of 0x002EF36C (o->+16 times from entry o->+8, entries o->+28) calling entry->+8->vt[24](x- (name?); decompiled: src/obj/obj43b.cpp
+0030D2B8 Obj_SwitchSlot_0030D2B8          // u32 f(T* o, u32 k): switches o to the slot k (< 12, set at o->+704 + 4k; 255, the byte 0x01068C98 set or an empty slot leave it): the current slot c = o->vt[32] (name?); decompiled: src/obj/obj43b.cpp
+0034B9A8 Anim_LoadPack_0034B9A8           // The anim pack: globals 0x0106BFA4, Anim_Load34A5E4. (name?); decompiled: src/obj/obj43b.cpp
+0034BC7C Level_LoadPack_0034BC7C          // The level pack: globals 0x0106BFB4, Level_Load34AB90. (name?); decompiled: src/obj/obj43b.cpp
+00369910 Obj_RegisterHashed_00369910      // bool f(T* o, u32 name): for a non-null o not yet in the list 0x0106C280 (a PtrVector of records whose +168 is the owner; found: o->+160-> vt[12](), r3 = its), h (name?); decompiled: src/obj/obj43b.cpp
+0036C400 Obj_Dtor_0036C400                // ~T(T* o) body: vtable 0x00B1F720, the buffer +184 freed (Mem_FreeFrom( p, 0)) and cleared; World_ListRemove_0046B7A4(*0x00F65CA0, 9, 0x00F378B8, o, 0); vtable 0 (name?); decompiled: src/obj/obj43b.cpp
+0036DAFC Obj_SetLit_0036DAFC              // u32 f(T* o, u8 on): o->+24->vt[40](on, 1); Obj_SyncParts_0036D9E4(o); o->+208->vt[40](k, 1) with k = bit 7 of the byte o->+192 when bit 15 of o->+24->+164 is se (name?); decompiled: src/obj/obj43b.cpp
+0038E468 Tables_Construct_0038E468        // void T(T* o): two arrays with the default allocator (Mem_DefaultAllocator): {u16 7, 0, 0, 16 (8-byte elements), data, alloc} at +0 and {38, 0, 0, 16, data, allo (name?); decompiled: src/obj/obj43b.cpp
+003CE128 Trophy_CheckSet_003CE128         // u32 f(T* o): unless *0x01089EE8 > o->+576 (signed): the first of the six ids at 0x00ADF900 equal to *(G + 0x128114) (G = *0x00F65CA0) sets its bit in the u16 ma (name?); decompiled: src/obj/obj43b.cpp
+003ECBB0 Seg_OffScreen_003ECBB0           // u32 f(T* o): byte o->+85 = whether the segment {o+48, o+68} - {o+64, o+52} projects (View_ProjectPoint on (G + 0x128168)'s view, G = *0x00F65CA0) with both scre (name?); decompiled: src/obj/obj43b.cpp
+003F606C Obj_ActivateTriple_003F606C      // u32 f(T* o): the objects 0xB225C998 / 0x928F4335 / 0xBA681640 are activated (Obj_SetActive_001EB814(Obj_FindById(id), 1), when found) for the set bytes o->+81 / (name?); decompiled: src/obj/obj43b.cpp
+004307CC Ctl_ApplyRecord_004307CC         // u32 f(Ctl* c): t = Obj_FindByHandle42C2B0(c->+16, 0) -> c->+12; with bit 3 of t->+192: t->+380 = t->+392; t->vt[376]() (when set) gets vt[44](0); the object q = (name?); decompiled: src/obj/obj43b.cpp
+0005DBA0 Obj_EnterSpline_0005DBA0         // u32 f(T* o): o->+308 = 3; the current player (G + 4208)->+8 (with bit 1 of +192, else a null object) gets vt[64]() and Obj_ResetPos_0026D9D4 of the result; o->+ (name?); decompiled: src/obj/obj43b.cpp
+0009C614 Rec24_FromXml_0009C614           // T* f(-, XmlCursor* x): a new 24-byte record (Mem_Alloc(24, 0, 16); Obj_InitVt_B21C98(p, x); vtable 0x00B11118; +12 = 0; bytes +16 / +17 = 1, +18..+21 = 0) read  (name?); decompiled: src/obj/obj43b.cpp
+0009D310 Rec32_FromXml_0009D310           // T* f(-, XmlCursor* x): a new 32-byte record (Mem_Alloc(32, 0, 16); Obj_InitVt_B21C98(p, x); vtable 0x00B11208; +12 = 0, +16 = +20 = 1.0f, +24 = 1, bytes +28 = 0 (name?); decompiled: src/obj/obj43b.cpp
+0009E528 Rec_FromXml_0009E528             // void T(T* p, XmlCursor* x): Obj_InitVt_B21C98(p, x); vtable 0x00B112D0; +12 = +16 = 0, +20 = 1.0f; f32s 0x8F123DDD -> +12 (default *0x0009E520), 0xB7EA3D94 -> + (name?); decompiled: src/obj/obj43b.cpp
+000A2098 Cmd_PushNew_000A2098             // u32 f(T* o, T* e): a new 560-byte command (SmallAlloc) built by VtB210D0_Ctor_00433B2C(p, o + 12, o->+524, &{o+528, o+532}, &{o+536, o+540}, c, the bytes o->+55 (name?); decompiled: src/obj/obj43b.cpp
+00185B28 Obj_CanTakeHit_00185B28          // vt[380]() 3 or above 10; constants 0x00185B1C. (name?); decompiled: src/obj/obj43b.cpp
+00193270 Obj_CanTakeHit_00193270          // vt[380]() 2 or above 7; constants 0x00193264. (name?); decompiled: src/obj/obj43b.cpp
+001C011C Obj_Construct_001C011C           // void T(T* o, const Def* d): the base Thunk_000E27FC(o, d); vtable 0x00B15970; from d: +368..+376 = +288..+296, +384 / +388 / +392 = +304 / +308 / +312, bit 7 of (name?); decompiled: src/obj/obj43b.cpp
+00214FAC QuerySpawn_Construct_00214FAC    // void T(T* o, const Def* d): QuerySpawn_BaseCtor_0020C868(o, d, 32, 1); vtable 0x00B19E70; +428 / +430 = the u16s d+160 / +162, +432 = the kind d+164, bits 30-31 (name?); decompiled: src/obj/obj43b.cpp
+00272660 Link_FindReachable_00272660      // u32 f(T* a, Obj* o): walks to the first of a's four links {+328 key, s32 +332 index} (8 apart) whose index is valid in o's byte table +656 (bit 7 set, bit 6 cle (name?); decompiled: src/obj/obj43b.cpp
+00284318 Registered_Delete_00284318       // The deleting ~T(): vtable 0x00B1C578, the u16 +96 (15 bits) 192-byte records at +100 freed (SmallFree); World_ListRemove_0046B7A4( *0x00F65CA0, 0, 0x00F352C8, o (name?); decompiled: src/obj/obj43b.cpp
+002A4D08 Obj_ResetEffects_002A4D08        // Mode 2 (key 0x01059854), all three by name. (name?); decompiled: src/obj/obj43b.cpp
+002A4E7C Obj_ResetEffects_002A4E7C        // Mode 4 (key 0x0105978C), +196 bound from o->+160. (name?); decompiled: src/obj/obj43b.cpp
+002AB5F8 Meter_Track_002AB5F8             // u32 f(-; f32 v): v (at least k0 = *0x002AB5E8) -> *0x010592F0 and the running minimum *0x010592EC; when v > k0: a minimum within k1 = *0x002AB5EC of zero spawns (name?); decompiled: src/obj/obj43b.cpp
+0036C898 Obj_PartsOff_0036C898            // u32 f(T* o): with the byte o->+8->+156 set (else r3 = 0), each of the six parts +188 .. +208 gets vt[40](part, 0, 1). r3 as the original leaves it. (name?); decompiled: src/obj/obj43b.cpp
+004051E0 Obj_Reset_004051E0               // u32 f(T* o): byte o->+239 = 0; Handle_Call363A3C(0x63D3E645, 0, 1, -, 0, 0, 0x01164CA4; k = *0x004051DC); o->+92->vt[88](1, 1, 1, 1) and, when it has the child  (name?); decompiled: src/obj/obj43b.cpp
