@@ -791,7 +791,7 @@
 0044C43C Sound_Find               // (u32 hash) -> handle (name?); decompiled: src/world/misc.cpp
 00550EE8 Mem_DefaultAllocator     // Allocator* Mem_DefaultHeap() / Mem_DefaultAllocator() / Mem_Allocator552588():; decompiled: src/obj/obj14_small.cpp
 00558F38 Array_Init               // (Array*): empty in this build; decompiled: src/obj/obj13_misc.cpp
-0054EC94 Array_Destruct           // empty function (blr) (name?); decompiled: src/gfx/gfx7_stubs.cpp
+0054EC94 Array_Destruct                  // (existing) pool array destructor, after alloc->vt[8](alloc, data, size); decompiled: src/gfx/gfx7_stubs.cpp
 005E6944 ThreadAttr_Init          // (attr): copies 32-byte defaults
 005E69A4 ThreadAttr_Destroy       // (name?)
 005E7824 Thread_Create2           // (thread, attr, entry opd, arg) (name?)
@@ -1921,7 +1921,7 @@
 0034CC34 Obj_FindComp34CC34           // (owner, key) -> component or 0; feeds 0x00353CC0 / 0x00353DC8 / 0x00354198 (name?); not decompiled; decompiled: src/world/hevent6_b.cpp
 00353780 Track_Time353780                     // (track) -> f32; decompiled: src/world/hevent6_b.cpp (name?)
 00353748 Track_Length353748                   // (track) -> f32; decompiled: src/world/hevent6_b.cpp (name?)
-004E3168 Obj_Set4E3168                        // (const char* source, u32 key): clears bindings; decompiled: src/world/hevent6_c.cpp (better Binding_Clear) (name?)
+004E3168 Obj_Set4E3168                   // (existing) called with ("Scale", e) by Obj_BaseDtor_0036ABF8; decompiled: src/world/hevent6_c.cpp
 004E2DB0 Obj_Attach4E2DB0                     // (source id, key, u8, u8) -> Binding*; decompiled: src/world/hevent6_c.cpp (better Binding_Create) (name?)
 005612B8 FsOp_Wait5612B8                      // (FsOp*): clears +20, error report compiled out; decompiled: src/world/hevent6_b.cpp (better FsOp_Report?) (name?)
 005627D4 FsOp_Begin5627D4                     // (path, u32, s64 size, 24-byte options in r6-r8) -> FsOp*; decompiled: src/world/hevent6_c.cpp (name?)
@@ -12397,7 +12397,7 @@
 002977B4 Obj_StopEmitters_002977B4        // u32 f(T* o) (no direct caller): the u16 o->+368 handles of o->+360 go back to the pool (Pool_FreeHandle_004B2A04((*0x00F557F8) + 4, h)); then while o->+448 > 0  (name?); decompiled: src/obj/obj39b.cpp
 0043267C Cmd_Init220_0043267C            // (cmd, ..., 18 args incl. f1/f2): set-up of the 220-byte command spawned by 0x000A0B1C (name?)
 007DFEF8 SkelObj_Ctor36_007DFEF8         // (obj36, ref16, s32): builds the 36-byte object of 0x0034640C (name?)
-0036ABF8 Obj_BaseDtor_0036ABF8           // tail of the destructor 0x00381320 (name?)
+0036ABF8 Obj_BaseDtor_0036ABF8           // base dtor part (vt 0x00B1F6B0 -> 0x00B1F678 tail): unlist (8, 0x00F37878), +328 record notify / "Scale" Obj_Set4E3168 / vt[4], frees +328; decompiled: src/obj/mid25_a.cpp
 00440AC4 SpawnRec_Dtor_00440AC4          // (rec, 0): first destructor of the 68-byte spawn record of 0x0042EF6C (name?)
 00440A40 SpawnRec_Dtor2_00440A40         // (rec, 0): second destructor of that record (name?)
 0021F4E8 Area_OnEnter_0021F4E8           // (o, x): the action of 0x0021F9E8 after Area_Enter (name?)
@@ -13185,3 +13185,29 @@
 00040208 Ai_FlushPending_00040208         // u32 f(T* o): moves the u16 +460 pending ids of the array +452 into the 8-byte (id, f32) vector +492 (count +500, capacity +496, high-water +502; PtrVector_Reser (name?); decompiled: src/obj/obj44b.cpp
 0008FCA0 Target_SetFlags_0008FCA0         // u32 f(T* o, Ctx* x): resolves the target t: the +280 object of Effect_Bind4BB7E0(x, +16, 0) when it is of class 0x02235C33, else Obj_FindById(+12) (Hash_ToStrin (name?); decompiled: src/obj/obj44b.cpp
 0009B9FC XmlRec_New_B11028_0009B9FC       // T* f(?, XmlCursor* cur): a new 40-byte record (Mem_Alloc(40, 0, 16), Obj_InitVt_B21C98(p, cur); vtable 0x00B11028, +12..+36 = 0): hashes 0x8A93973F / 0x03D1FCFC (name?); decompiled: src/obj/obj44b.cpp
+
+# Game code medium sweep part 25
+00370220 Obj_Dtor_B1F838_00370220        // T::~T (vt 0x00B1F838; Delete_00370498): unlist (7)/(8), def +148/+152 notify, frees +200, clears vec +164, base tail; decompiled: src/obj/mid25_a.cpp
+00370F70 Obj_Dtor_B1F870_00370F70        // T::~T (vt 0x00B1F870; Delete_00371304): +344 vt[4], unlist (6)/(8)/(0), indexed def list notify, frees +164 words/+164, +172 vt[8]; decompiled: src/obj/mid25_a.cpp
+003747F4 Obj_Dtor_B1F8A8_003747F4        // T::~T (vt 0x00B1F8A8; Delete_00374A8C): frees +220, unlist (4)/(0)/(8), def +196/+200 (28-byte) notify, frees +208; decompiled: src/obj/mid25_a.cpp
+00376F88 Obj_Dtor_B1F8E0_00376F88        // T::~T (vt 0x00B1F8E0; Delete_0037726C): unlist (8)/(3), 0x00376C98(o, 0), frees +232, child vectors +288/+328[6] vt[8], vecs +400/+308/+288; decompiled: src/obj/mid25_a.cpp
+0037EE20 Obj_Dtor_B1F950_0037EE20        // T::~T (vt 0x00B1F950; Delete_0037F150): unlist (8)/(3), def +180/+184 notify, +280[6] vt[40]/vt[8], frees +232, vec +304; decompiled: src/obj/mid25_a.cpp
+0036BCAC Obj_Reset_0036BCAC              // T::Reset (Obj_Reset_00381758 / Thunk_00389C3C): vt[20](o,0), Obj_Place3626E8(default), mode clear (+396), queue in 0x0106C240 map, unpend from 0x0106C2C0; decompiled: src/obj/mid25_b.cpp
+0037965C Obj_Reset_0037965C              // T::Reset: place, mode clear (+252), queue, +260 = def->+152, children +288 (u16 +296) vt[8] cleared; decompiled: src/obj/mid25_b.cpp
+003842D0 Obj_Reset_003842D0              // T::Reset: place, mode clear (+532), queue, vt[40](c,0,1) on child slots +212/+248/+296/+344/+400/+392/+396/+528; decompiled: src/obj/mid25_b.cpp
+00387868 Obj_Reset_00387868              // T::Reset: place, mode clear (+960), queue, Obj_BroadcastChildren385F00(o,0), Emitter_Stop(+956, 1); decompiled: src/obj/mid25_b.cpp
+00062B20 Obj_Dtor_B0EF20_00062B20        // T::~T (vt 0x00B0EF20; Delete_00062DD0): nested vectors of 3 groups at +88, vt 0x00B0DAAC, SortedMap_Remove7330C0(0x01056F04, o+4); decompiled: src/obj/mid25_c.cpp
+00064894 Obj_Dtor_B0EED8_00064894        // T::~T (vt 0x00B0EED8; Delete_00064B8C): nested vectors at +92, vt 0x00B0DDC0, +24 vt[12]/vt[4], Dtor_B1BE30_002505A0; decompiled: src/obj/mid25_c.cpp
+003EE694 Obj_Dtor_B20710_003EE694        // T::~T (vt 0x00B20710; Delete_003EE91C): drains stacks +112/+144/+164, VtB21988_Dtor2; decompiled: src/obj/mid25_c.cpp
+007691D4 Obj_Release_007691D4            // void f(T*) (0x00322D88): frees new[] array +276, 5 vector-of-vectors at +52, +348/+336/+324/+312, vec +92; decompiled: src/obj/mid25_c.cpp
+0043BC58 Spawner_RegisterParams_0043BC58 // spawner Obj_RegisterParam list (0x010AAFF8.., enum "SpawnAtBegining"/"SpawnBaseOnTrigger"/"SpawnBaseOnScript"); decompiled: src/obj/mid25_d.cpp
+0043CA48 LaserAnchor_RegisterParams_0043CA48 // SLaserAnchor_ parameter list + class name; decompiled: src/obj/mid25_d.cpp
+0043CF48 LaserSpline_RegisterParams_0043CF48 // SLaserSpline_ parameter list (two ends) + class name; decompiled: src/obj/mid25_d.cpp
+003DE790 Obj_Activate_003DE790           // once (+117): world event record, Handle_Call363A3C(0x2508CAD1), helpers 0xC0E4A7C9/0xA9A7866C/*0x00F64CBC into vec +120; decompiled: src/obj/mid25_e.cpp
+003E5970 Obj_Activate_003E5970           // as 0x003DE790 (+2325, vec +2340, idx +2368, session flag +2581); decompiled: src/obj/mid25_e.cpp
+003F22F8 Obj_Activate_003F22F8           // once (+181) variant (vec +232), then helper 0xC0E4A7C9 vt[20]; decompiled: src/obj/mid25_e.cpp
+00390928 TrackPools_Shutdown_00390928    // frees the globals *0x00F65798 (TrackPool_Update390724), *0x00F65788, *0x00F65038; decompiled: src/obj/mid25_f.cpp
+004B1114 Clips_Dtor_004B1114             // T::~T (Thunk_004B1308): Clips_Release4B0E70, record array +256, pool arrays +72/+48/+24, PoolBuffer_Free; decompiled: src/obj/mid25_f.cpp
+004F3CB4 Obj_Dtor_B22FC8_004F3CB4        // T::~T (vt 0x00B22FC8; Delete_004F4164): record/object arrays, hash table +112..+132 values vt[4], buffer +4, pool arrays; decompiled: src/obj/mid25_f.cpp
+003C5E38 Obj_RekeyBindings_003C5E38      // Anim_Restart on +1588 source, mode 2: Obj_SyncBindingPoses + binding keys 0x32A3716C/0x5F9B8391/0xB6162705; decompiled: src/obj/mid25_g.cpp
+00376C98 Obj_376C98                      // (o, 0) called by the 0x00376F88 destructor before its frees (name?)
