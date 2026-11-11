@@ -9695,7 +9695,7 @@
 000CDB28 Obj_CopyQuery_000CDB28           // u32 (const Obj* o, Query* d): transform rows / params / flags (+132 bits 31..29 -> d+20 0x2000 / 0x1000 / 0x800, d+24 = +132 >> 21) and the 192-byte records of o->+16 appended to d->+0 (made on first use) (name?); decompiled: src/obj/mid1_query.cpp
 000DFBFC Obj_CopyQueryEx_000DFBFC         // u32 (const Obj* o, QueryEx* d): Obj_CopyQuery_000CDB28, d+184..+196, the 76-byte records o->+180 / o->+200 appended (74 bytes each) to d->+144 / +164 (name?); decompiled: src/obj/mid1_query.cpp
 000DFDF8 QueryEx_Construct_000DFDF8       // u32 (QueryEx* q, 21 Query_Init0CDD28 args; r7 = Def*): Query_Init0CDD28 (f1 = f2 = -1.0), two 76-byte record vectors +144 / +164, +184 = def ? def->+140 : 100.0, +188 / +192 / +196 from def; returns q->+4 (name?); decompiled: src/obj/mid1_query.cpp
-0020E7A4 Area_Enter                       // void (Area* area, Actor* actor): drop the actor's keys (+364 / +388 maps), push onto +344, vfn[24](1), actor +178++, vfn[7](0, vfn[8](0) + 1), world events kind 4 / 31 (0x00482D14), actor vfn[57](area) (name?); decompiled: src/obj/mid1_area.cpp
+0020E7A4 Area_Enter                         // returns bool in r3 (Area_EnterGrid223890 tests it) (already named); decompiled: src/obj/mid1_area.cpp
 0020EBC8 Area_Leave                       // void (Area* area, Actor* actor): drop the actor's keys, swap-remove from +344 with vfn[58](area) / vfn[10](0), vfn[24], vfn[7](0, vfn[8](0) - 1), world event kind 5 (name?); decompiled: src/obj/mid1_area.cpp
 0075EBFC Vector128_Push_0075EBFC          // s32 (Vector* v, const Rec* r): PushBack of a 128-byte record (field-wise; +120 top 11 flag bits one by one) -> index (name?); decompiled: src/obj/mid1_misc.cpp
 0035C100 SlotDef_Read                     // u32 (SlotDef* s, -, XmlCursor* cur): "name" / "prefix", geometry instance (0x2911AA63) with two flag bools, vec3s, hash, priority (<= 4), kind hash -> +84 (name?); decompiled: src/obj/mid1_slot.cpp
@@ -12457,10 +12457,10 @@
 002140C0 Area_TryEnter2140C0                // u32 (Area*, Actor*): o->484 level, join link list (o->613/616/620, l->112, List_PushFront_00441C68), Field96_SetIfMoved_00441D18, PushStack_Push, Area_Enter unless state 0/3; decompiled: src/obj/mid17_e.cpp
 002142E0 Area_TryLeave2142E0                // u32 (Area*, Actor*): counterpart: o->484 = 0, leave link list (List_Unlink_00441CB8), PushStack_Remove, Area_Leave unless state 0/3; decompiled: src/obj/mid17_e.cpp
 00106770 Vec_TurnToward106770               // (Vec3* out, const Vec3* to, const Vec3* from; f1 rate) (name?)
-003CCC68 Obj_SetSplinePos3CCC68             // (Obj*, const Vec3* pos) (name?)
+003CCC68 Obj_SetSplinePos3CCC68             // (Obj* o, const Vec3* p): t = SplineInstance_Nearest(o->108, p), point/tangent, heading blended into body o->4 (+128 row) -> Mat34_FromRotPos553B4C -> body vfn[84]; forward/backward/idle anim (0xA76CE5BD / 0xA76CE5B7 / 0xE1C7FA75) by t vs o->104 +- 0.001; o->104 = t, o->16 = pos; replaces the mid17 "(name?)" Obj_SetSplinePos3CCC68; decompiled: src/obj/mid18_a.cpp
 00058488 Obj_ApplySway58488                 // (Obj*, Mat34* frame; f1) (name?)
 000DCECC Effect_Spawn0DCECC                 // (-, u32 kind, const Mat34* m, 1) -> Effect* (reads r4..r6 only) (name?)
-00222654 Area_AddEffect222654               // (Area*, Effect*) (name?)
+00222654 Area_AddEffect222654               // u32 (Area*, Effect* e): when the u16 at 0x0119308C is set, in-order walk of the tree *(e+8 ->12) (stack e+24.., count s16 e+104, cur e+108); payloads with vfn[32]() == 5 and +28 part kind ((+4>>10)&0x3F) == 10 get EmitterInstance_Set340(part, 0x01193088); returns 0; decompiled: src/obj/mid18_a.cpp
 004286D8 Wave_Centre4286D8                  // (Vec3* out, Wave* o, o->0) (name?)
 004A83D8 Curve_Ease4A83D8                   // f32 (f32 a, f32 b, f32 c, f32 t) (name?)
 00213870 Area_Level213870                   // (Area*, const Vec3*) -> f1 (name?)
@@ -12507,3 +12507,32 @@
 006C1B94 Path_Point6C1B94                   // (Vec3* out, path) (name?)
 00ABDC24 sys_net_initialize_network_ex_import  // import stub (const sys_net_initialize_parameter_t*) (name?)
 00ABDE64 cellNetCtlInit_import              // import stub () (name?)
+
+# Game code medium sweep part 18
+00223640 Area_RemoveEffect223640            // u32 (Area*, Effect* e): the same walk with EmitterInstance_Set340(part, 0); returns 0; decompiled: src/obj/mid18_a.cpp
+00223890 Area_EnterGrid223890               // bool (Area* o, Actor* x): Area_Enter; releases the 3x3x3 grid o+428[27] of the last other active area (+192 bit 0x20000000) in x->252 (created on demand: SmallAlloc(20)), Area_SpawnGrid2228C8(o, x), o->672 = 1; decompiled: src/obj/mid18_a.cpp
+00223A7C Area_LeaveGrid223A7C               // (Area* o, Actor* x): Area_Leave, releases o's grid (Effect_Release(e, 0x10CBB), +136 |= 0x200, Area_RemoveEffect223640), o->672 = 0, Area_SpawnGrid2228C8(last other active area, x); decompiled: src/obj/mid18_a.cpp
+003CCA60 Obj_StateStart3CCA60               // (Obj*): first tick (o->96 == 0) starts anim 0x1E7563B1, *0x00F65844 counters (+80/+84 when o is +112/+256, +576 = 0), Effect_Spawn(0x3CF9D817) unless o->88; stop (o->80 = 1, o->76/96 = 0, *(o->112) = 0) when the anim finishes or o->128 changes; decompiled: src/obj/mid18_a.cpp
+003CFD10 Obj_StateIdle3CFD10                // (Obj*): first tick starts 0xE1C691BF, then the idle switch to 0xE1C7FA75; decompiled: src/obj/mid18_a.cpp
+003CFF28 Obj_StateIdle3CFF28                // (Obj*): first tick starts 0x1E7563B1, then the idle switch to 0xE1C7FA75; decompiled: src/obj/mid18_a.cpp
+003D0158 Obj_StateStart3D0158               // (Obj*): Obj_StateStart3CCA60 variant: first tick decays o->12 / o->8 (floor 0.3), no effect, the stop also clears the byte o->94; decompiled: src/obj/mid18_a.cpp
+0040CFA0 Obj_SlideTo40CFA0                  // (Obj* o; f32 dt): o->88 += dt, u = min(o->88 / o->92, 1), o->96 = o->160 - o->192 * k * (1 - u) -> body matrix; on arrival o->84 = 3, o->320/336 = o->304, body vfn[84](o+208), Anim_Restart2775A8(.., 0x002237D4); decompiled: src/obj/mid18_a.cpp
+0012B908 Obj_StartJump12B908                // (Obj* o, const Vec3* v): body = vfn[64](); Body_SetMode(b, 2); b->672 = v (+ boost from o->380 vfn[12]() when o->188 bit 0), b->416 |= 0x800000, vfn[28](0,1)/(1,1), o->20 flags, Anim_Restart2775A8(vfn[60](), 0x0022EC2E); decompiled: src/obj/mid18_a.cpp
+0016E908 State_EnterHurt16E908              // (State* s, Obj* o) (vtable entry): hurt anim 0x663F99F0 unless already 0x03DE9A54 at rest, s->8 = 1, o->656 |= 0x02000000, effect Effect_New(0x24CC86BD) bound to o->160 into s->4, Effect_SetTime; decompiled: src/obj/mid18_a.cpp
+0016D9E8 State_EnterHurt16D9E8              // (State* s, Obj* o) (vtable entry): hit count o->680 (s->24 = -1 when odd, s->12 scaled), hurt anim, Effect_New(0x480402DD) into s->4, s vfn[16](o), Effect_SetTime; decompiled: src/obj/mid18_a.cpp
+003DAED0 Obj_PlaceOnSpline3DAED0            // (Obj* o): spline o->80 point/tangent at o->104 (reversed) and o->112 -> side/up/forward frames into o->64 / o->68 vfn[84]; decompiled: src/obj/mid18_b.cpp
+0002B618 Race_RankBySpline2B618             // (Obj* o, List* l): one bubble pass ordering active entries (+192 bit 0x200, +348 > 0) by racer (+244) ->332 = SplineInstance_Nearest(o->4, e+144), then racer vfn[300](; f1 = rank); decompiled: src/obj/mid18_b.cpp
+0002D9B8 Mover_FollowSpline2D9B8            // (Mover* o): driver o->48 track ->220 ->80 spline point at u = (o->316+1)/(k+2) (banded offset when s->8), heading d->484 = atan2f, speed scale d->548; else o vfn[220](0x7BF02FB1); decompiled: src/obj/mid18_b.cpp
+00055E10 Cam_FollowSpline55E10              // (CamCtl* o; f32 dt): camera o->6228 along spline o->6236: nearest t to the player (or view point), clamped [o->6248, o->6252], rate-limited into o->6232 (snap when o->6256), frame -> vfn[84]; decompiled: src/obj/mid18_b.cpp
+0029A598 Obj_TrackSpline29A598              // (Obj* o): spline o->2180: nearest t (o->2184) to o->8's position, point/tangent into o->2208/2224 or o->2204 flag 0x40000000 + rate o->2188; o->2200 = 1, o->2196 = T(0x01057A50); decompiled: src/obj/mid18_b.cpp
+00307F70 Obj_SpawnToward307F70              // Obj* (Obj* a, Def* b, const Vec3* from, const Vec3* to): 000EDE30 spawn at from heading to, identity rotation at to (Obj_SetMatrix_000EDD74), +512 = from; decompiled: src/obj/mid18_b.cpp
+002FBCC8 Obj_SpawnAt2FBCC8                  // Obj* (Obj* a, Def* b, const Mat34* m, const Vec3* to; f32 v): 000EDE30 spawn at m's position (direction 0x01164B40), identity rotation at to, +512 = m+48; decompiled: src/obj/mid18_b.cpp
+00024670 Obj_FaceToward24670                // (Obj* o, const Vec3* p): vfn[220](o->8), direction o->192 = p - o->176 (y flattened per o->305 / vfn[132]), frame into o->128.. and o->48 vfn[84], Obj_ResetPos_0026D9D4(o->68), o->112 = p, vfn[248](); decompiled: src/obj/mid18_b.cpp
+000542C0 Obj_CheckPlayerNear542C0           // (Obj* o): lifts a player below y 42 to 42.3; for o->4 in 7..8 / 13..17 and the player within T(0x00F9AFA8) in xz: o->312 counts down, o vfn[220](9); decompiled: src/obj/mid18_b.cpp
+003CB618 Obj_FallTick3CB618                 // (Obj* o; f32 dt): ballistic p (o->32) / v (o->48) step with gravity; landing bounce (v.y *= -0.9, Effect_Spawn(0x1BE27372), o->0 = 4); body o->108 matrix; decompiled: src/obj/mid18_b.cpp
+001D0F68 Obj_ResetPath1D0F68                // (Obj* o): rest pose o->576.. -> o->640.., clears path state o->832..o->944, drops target o->820, Obj_SelectColor_00289DC4(o->816, 0), spline o->704 point at record o->556[o->968] +8, Obj_ApplyPose_001D0E58, 001D0450(o, 1); decompiled: src/obj/mid18_b.cpp
+0003F260 Obj_StopEffects3F260               // u32 (Obj* o): o->512 vfn[40](1) dropped, list entries o->452[o->460] / o->492[o->500] get Effect_SetHash4CF988(vfn[272](), 0x879F2BDA) and vfn[40](1), counts o->460/480/500 = 0; returns 0; decompiled: src/obj/mid18_b.cpp
+0012919C Obj_GetPathPose12919C              // u32 (Obj* o, f32* t, Mat34* m, u32* mode): by vfn[32](0) / (1): spline record o->20 + o->6 (t +104, Quat_ToMatrix(+16), SplineInstance_GetMode(+96); r3 = +96) or kind 3 (t = w->56, m = o+96, mode = w->84; r3 = w->48); else 0; decompiled: src/obj/mid18_b.cpp
+000EDE30 Obj_SpawnDef0EDE30                 // Obj* (Def* b, Obj* a, const Mat33* rot, const Vec3* dir, -, u32 s, 0, 0, u32 arg9; f1) (reads r3-r6, r8-r10, f1; not r7) (name?)
+00F65844 g_GameCtx_00F65844                 // global object pointer: +80 / +84 start counters, +576 (name?)
+01193088 g_EmitterSel_01193088              // static emitter selector (u16 +4 gates Area_AddEffect222654) (name?)
