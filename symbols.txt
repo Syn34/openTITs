@@ -53,7 +53,7 @@
 00724588 vsprintf                 // (name?) decompiled: src/game/load_util.cpp
 00551A58 FreeList_Init            // (list, elem_size, count, heap, bool); decompiled: src/game/load_util.cpp
 0045CC18 World_Construct          // (obj, initial state) object of 0x1286B0 bytes at Game+0
-0071C3F0 memmove
+0071C3F0 memmove                          // (dst, src, n) (already m2fn::memmove)
 00723884 strcmp
 00555D94 String_Compare           // strcmp; decompiled: src/string/string_misc.cpp
 00724620 vprintf_core             // (output opd, arg, fmt, va) (name?)
@@ -10913,7 +10913,7 @@
 001C6838 XmlDef_Read_001C6838             // u32 XmlDef_Read_001C6838(a0, XmlCursor* c, Def* o): the reader of the 001C6D30 def: the base part (XmlDef_ReadBase), f32 +268 / +240..+264, hashes +272 / +276,  (name?); decompiled: src/obj/mid8_def.cpp
 0033322C DefNew_0033322C                  // Def* DefNew_0033322C(?, XmlCursor* c, x) (reads r4 / r5): the fields are read on the stack (hash 0x7A30D7E3, vec3 0x8ACA5893 (zero), bools 0x5D28E3FC / 0x9446A0 (name?); decompiled: src/obj/mid8_def.cpp
 00223D38 XmlDef_Read_00223D38             // u32 XmlDef_Read_00223D38(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8(a0, c, x, tmpl, o)), +32 = 1; with a template lacking  (name?); decompiled: src/obj/mid8_def.cpp
-00219FF8 XmlDef_Read_00219FF8             // u32 XmlDef_Read_00219FF8(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (Def_ReadBase20BFE8), then the defaults (zero, or with a template having b (name?); decompiled: src/obj/mid8_def.cpp
+00219FF8 XmlDef_Read_00219FF8             // (a0, c, x, tmpl, rec) trigger reader of 0021A310 (not decompiled); decompiled: src/obj/mid8_def.cpp
 00481828 Def_ReadKind481828               // u32 Def_ReadKind481828(a0, XmlCursor* c, Def* o): the kind hash 0x0027873A picks +5416 and what is read (absent: return that non-zero ReadHash result): 0x61313E (name?); decompiled: src/obj/mid8_def.cpp
 00335858 SlotObj_New335858                // Obj* SlotObj_New335858(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2632 bytes, vtable 0x00B1EC68, 13 record words: hashes 0xA2A0911A / 0xAE38532C / 0xBB68E5 (name?); decompiled: src/obj/mid8_slot.cpp
 00335350 SlotObj_New335350                // Obj* SlotObj_New335350(?, XmlCursor* c, const Def* d) (reads r4 / r5): 2656 bytes, vtable 0x00B1EBE8, 19 record words: hashes 0xA2A0911A, 0x441D9642..45, 0x5BCA (name?); decompiled: src/obj/mid8_slot.cpp
@@ -11557,25 +11557,17 @@
 001D3A24 DamageColDef_FromRecD3A24        // (p, rec) ctor used by DamageColDef_NewD3E58 (not decompiled)
 001AFA78 DamageColDef_ReadAFA78           // (a0, c, x, tmpl, o) reader (421 instructions; not decompiled)
 001C2058 DamageColDef_ReadC2058           // reader (542; not decompiled)
-001C1D4C DamageColDef_FromRecC1D4C        // (p, rec) (not decompiled)
 001C49E8 DamageColDef_ReadC49E8           // reader (642; not decompiled)
-001C463C DamageColDef_FromRecC463C        // (p, rec) (not decompiled)
-001C8138 DamageColDef_ReadC8138           // reader (396; not decompiled, released)
-001C7F28 DamageColDef_FromRecC7F28        // (p, rec) (not decompiled)
 001CA080 DamageColDef_ReadCA080           // reader (459; not decompiled)
-001C9E34 DamageColDef_FromRecC9E34        // (p, rec) (not decompiled)
 001D62A8 DamageColDef_ReadD62A8           // reader (967; not decompiled)
 001D5A40 DamageColDef_FromRecD5A40        // (p, rec) (not decompiled)
 001DD3F8 DamageColDef_ReadDD3F8           // reader (1152; not decompiled)
-001DC5F8 DamageColDef_FromRecDC5F8        // (p, rec) (not decompiled)
 001E6300 DamageColDef_ReadE6300           // reader (513; not decompiled)
 001E5170 DamageColDef_FromRecE5170        // (p, rec) (not decompiled)
 003078D8 XmlDef_Read3078D8                // (a0, c, x, tmpl, o) reader (99; not decompiled)
-0030743C XmlDef_Init30743C                // (Def* p or 0, XmlCursor* c) (reads r3 / r4; not decompiled)
 002F8CF0 XmlDef_Read2F8CF0                // (a0, c, x, tmpl, o) reader (118; not decompiled)
 002F8AFC XmlItem_Read2F8AFC               // (item or 0, XmlCursor* child) (not decompiled)
 000D5330 XmlReg_ReadObjD5330              // (a0, c, Obj** inout) (not decompiled)
-000D4E28 XmlReg_ReadObjD4E28              // (a0, c, Obj** inout) (not decompiled)
 
 # Game code large functions part 12
 00232B60 Player_TunePart232B60          // (Player*, tier, part) -> u32: tuning +1072.. vectors/floats to part +16..+136, 40-byte link table +140 and per-group counts +152; decompiled: src/obj/big13_player.cpp (name?)
@@ -11720,3 +11712,59 @@
 0075D154 Mat44_MulInPlace75D154         // (Mat44* m, const Mat44* by) (name?)
 0078FD34 Avl_RemoveF32_0078FD34         // (tree, Node** slot, -, u8* changed; f32 key f1): f32-keyed AVL remove (name?)
 00F34C30 LinkCallback_F34C30            // OPD queued by Player_SetRate2371F8 via World_AddTimedCallback(world, 1, opd, p, p) (data; name?)
+
+# Game code medium sweep part 12
+001C7F28 DamageColDef_FromRecC7F28        // (p, rec) ctor for 001C8780: Thunk_000E27FC, 0x80000 group copy, vtable 0x00B16FD0, six 96 B slots memmove'd from rec+320; decompiled: src/obj/mid12_ctor.cpp
+001C9E34 DamageColDef_FromRecC9E34        // (p, rec) ctor for 001CA7C0: vtable 0x00B17228, rec+320..+407 -> +400..+487; decompiled: src/obj/mid12_ctor.cpp
+001C1D4C DamageColDef_FromRecC1D4C        // (p, rec) ctor for 001C28E8: vtable 0x00B16B00, PtrVectors +400/+420 filled from rec arrays; decompiled: src/obj/mid12_ctor.cpp
+001C463C DamageColDef_FromRecC463C        // (p, rec) ctor for 001C5408: vtable 0x00B16D68, flag word +444 from rec bytes, six 80 B slots; decompiled: src/obj/mid12_ctor.cpp
+001DC5F8 DamageColDef_FromRecDC5F8        // (p, rec) ctor for 001DE610: vtable 0x00B17DB0, rec+224..+556 copy, +600 = String_Alloc + String_CopyN; decompiled: src/obj/mid12_ctor.cpp
+001C8138 DamageColDef_ReadC8138           // (a0, c, x, tmpl, o): AD1F8 + six 96 B child slots (tag 0xEB9EE198, euler -> quat); decompiled: src/obj/mid12_dmg.cpp
+0030743C XmlDef_Init30743C                // (Def* p or 0, XmlCursor* c): three item lists +304/+324/+344 (tags 0x6155B001/0x88B4A252/0xD9ABF25D); decompiled: src/obj/mid12_xml.cpp
+000D4E28 XmlReg_ReadObjD4E28              // (a0, c, Obj** inout): euler quat +16, vec3s +32..+96, mode bits of +124 ("FromTarget"); decompiled: src/obj/mid12_xml.cpp
+0030339C XmlCmdList_Read_0030339C         // (Item*, c): megaknight behaviour command objects by tag, vt[2](obj, child), pushed onto +36; decompiled: src/obj/mid12_xml.cpp
+000B9908 XmlDef_ReadList_000B9908         // (c, d, o): 20 B entries (tags 0x51EA2F9B/0x0A7CBA70/0xA14FA55B) + scalars +20..+44; decompiled: src/obj/mid12_xml2.cpp
+000B9C88 XmlDef_Read_000B9C88             // (c, d, o): fields +576..+696, children via 0x00F646C0 -> 000B9908; decompiled: src/obj/mid12_xml2.cpp
+000BA084 XmlDef_Read_000BA084             // (c, d, o): fields +32..+76, hash list +0, +48; decompiled: src/obj/mid12_xml2.cpp
+000BA318 XmlDef_ReadList_000BA318         // (c, unused, Vector*): 20 B entries by table 0x00F646D8 (stale stack words kept); decompiled: src/obj/mid12_xml2.cpp
+000BA618 XmlDef_Read_000BA618             // (c, d, o): +424, hash lists +128/+148, 000BA318 / 000BA084 sub-readers; decompiled: src/obj/mid12_xml2.cpp
+00332898 XmlDef_New_00332898              // (a0, c, x): sorted f32 list (tag 0x49F9F44B), 2608 B object via 0x0033273C; decompiled: src/obj/mid12_xml2.cpp
+004B14F8 Clip_ReadSpec_004B14F8           // (Clip*, c, u32* nameHash): path hash, f32 +0, mode byte +4, StrBuf name +12/+8; decompiled: src/obj/mid12_clip.cpp
+004B3940 Obj_ReadSpec_004B3940            // (Spec*, c, a, b): fields +4..+36 with kind +28, globals+280 callback -> +40; decompiled: src/obj/mid12_clip.cpp
+0021A310 TriggerDef_New21A310             // factory: trigger record (flags 0x08400000) read by 0x00219FF8, 224 B def, vtable 0x00B1A290; decompiled: src/obj/mid12_fac.cpp
+000C1780 XmlDef_NewC1780                  // factory: record vt 0x00B12034 read by 0x000C12A8, 272 B via 0x000C0B80; decompiled: src/obj/mid12_fac.cpp
+0016ADC4 XmlDef_New16ADC4                 // factory: DefHeadInit record (+0 |= 0x400) read by 0x0016A828, 272 B via 0x0016A448; decompiled: src/obj/mid12_fac.cpp
+00203BE4 XmlDef_New203BE4                 // factory: DefHeadInit record (+0 |= 0x1000) read by 0x00203718, 224 B (Mem_Alloc) via 0x00203380; decompiled: src/obj/mid12_fac.cpp
+00167080 XmlDef_New167080                 // factory: DefHeadInit record (+0 |= 0x80) read by 0x001668B4, 288 B via 0x001664C8; decompiled: src/obj/mid12_fac.cpp
+0017D640 XmlDef_New17D640                 // factory: DefHeadInit record (+0 |= 0x100) read by 0x0017CD54, 304 B via 0x0017C918; decompiled: src/obj/mid12_fac.cpp
+001B4394 XmlDef_New1B4394                 // factory: DefHeadInit record (+4 |= 0x20000, vector +124) read by 0x001B3BDC, 256 B via 0x001B37E8; decompiled: src/obj/mid12_fac.cpp
+0022F630 XmlDef_New22F630                 // factory: stack object via 0x0075CBEC read by 0x0022DFD8, 1616 B via 0x0022D44C; decompiled: src/obj/mid12_fac.cpp
+00245A30 XmlDef_New245A30                 // factory: stack object via 0x0075C364 + defaults, read by 0x00244CF8, 1040 B via 0x00244980; decompiled: src/obj/mid12_fac.cpp
+0023FA28 XmlDef_New23FA28                 // factory: as 00245A30 (reader 0x0023E590, ctor 0x00226A28 + inline copy, vtable 0x00B1B9B8); decompiled: src/obj/mid12_fac.cpp
+0020A298 XmlDef_New20A298                 // factory with inlined reader (Rec_CopyFields_000C387C, tmpl flag 0x80 in +28), 192 B via 0x0020A0F0; decompiled: src/obj/mid12_fac.cpp
+0055578C String_Alloc_0055578C            // (n) -> char* (reads r3 only; used before String_CopyN) (name?)
+0030386C XmlItem_Read30386C               // (item, child) for the 0xD9ABF25D list of 0030743C (118; not decompiled)
+000C12A8 XmlDef_ReadC12A8                 // (a0, c, x, tmpl, rec) reader of 000C1780 (310; not decompiled, released)
+000C0B80 XmlDef_FromRecC0B80              // (p, rec) ctor of 000C1780 (not decompiled)
+0016A828 XmlDef_Read16A828                // reader of 0016ADC4 (359; released)
+0016A448 XmlDef_FromRec16A448             // (p, rec) ctor of 0016ADC4
+00203718 XmlDef_Read203718                // reader of 00203BE4 (307; released)
+00203380 XmlDef_FromRec203380             // (p, rec) ctor of 00203BE4
+001668B4 XmlDef_Read1668B4                // reader of 00167080
+001664C8 XmlDef_FromRec1664C8             // (p, rec) ctor of 00167080
+0017CD54 XmlDef_Read17CD54                // reader of 0017D640
+0017C918 XmlDef_FromRec17C918             // (p, rec) ctor of 0017D640
+001B3BDC XmlDef_Read1B3BDC                // reader of 001B4394
+001B37E8 XmlDef_FromRec1B37E8             // (p, rec) ctor of 001B4394
+0075CBEC Obj_Construct75CBEC              // (o, a, b, c, params, A, -, 0; f1..f4; stack args 10..15/18) stack-object ctor (346; reads r3..r8, r10, f1, f2)
+0075C364 Obj_Construct75C364              // (o, a, b, c, params, A, -, 0; f1..f4; stack args) (356)
+002266C0 Obj_Init2266C0                   // (A) (reads r3 only)
+0022DFD8 XmlDef_Read22DFD8                // reader of 0022F630
+0022D44C XmlDef_FromRec22D44C             // (p, B) ctor of 0022F630
+00244CF8 XmlDef_Read244CF8                // reader of 00245A30
+00244980 XmlDef_FromRec244980             // (p, B) ctor of 00245A30
+0023E590 XmlDef_Read23E590                // reader of 0023FA28
+00226A28 XmlDef_FromRec226A28             // (p, B) base ctor used by 0023FA28
+0020A0F0 XmlDef_FromRec20A0F0             // (p, rec) ctor of 0020A298
+0033273C Obj_Construct33273C              // (p, x, const Vector* f32 list) 2608 B object of 00332898
+000C9AB8 XmlTree_ReadC9AB8                // recursive 192 B node reader (324; looked at, released)
