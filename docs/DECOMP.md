@@ -88,6 +88,7 @@ When you decompile a function:
 Known dependencies on still-recompiled functions (whoever decompiles them must keep the register at exit):
 - `0056AEFC` (Debug_Draw): `View_EndDraw_00522140` builds stream record 22 from the r4 it leaves.
 - `0045717C` reads r7 after `FrameBuffer_Reset_00523584` and after `CallbackList_Invoke`; both set or pass it through as the original does.
+- `00282638` reads f6 after its call to `Quat_FromTo_0074D4B8` at 002827F0 and f5 after the one at 00282D58; `Quat_FromTo_0074D4B8` sets both as the original leaves them.
 
 ## Conventions
 

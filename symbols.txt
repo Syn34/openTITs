@@ -11139,8 +11139,6 @@
 001F5938 XmlDef_Read_001F5938             // u32 XmlDef_Read_001F5938(a0, XmlCursor* c, x, const Def* tmpl, Def* o): the base part (DamageColDef_Read_000C85A8(a0, c, x, tmpl, o)), hash +224, vec3 +240, the (name?); decompiled: src/obj/mid9_xdef.cpp
 000E44E0 Record_Init_000E44E0            // (rec, r, owner, 0, &vecA, &vecB, 1, 0): stack record base of the Owner_New family (name?); not decompiled
 003556AC Body_Moved3556AC                // (body): after Hk_SetTransform91EAB8 when the translation changed (reads r3) (name?); not decompiled
-0074FD80 Def_Construct74FD80             // (rec, ..., 13 f32 args + ~30 stack args): stack record builder of the DamageColDef readers (001A9EA8 family) (name?); not decompiled
-0074596C Def_Construct74596C             // the same for the 000C4020 family (000C5B30 / 000C5528 / 000C5FF0) (name?); not decompiled
 
 # Game code large functions part 9
 000E01C0 PhysObjBase_Init                 // (PhysObj* o, const Tmpl* t) -> u32: Obj base init 0x000D3578, vtable 0x00B126B8, +344..+376 from tmpl, EffectDef_Find(t+192), Obj_SetShadow0E0000(o, t+188) (name?); decompiled: src/obj/big9_phys.cpp
@@ -11325,3 +11323,35 @@
 00413BAC CamRig_Mode13Done_413BAC       // (rig target +76) (name?)
 00413970 CamRig_Mode14_413970           // (name?)
 00413804 CamRig_Mode15_413804           // (name?)
+
+# Game code medium sweep part 10
+00433B2C VtB210D0_Ctor_00433B2C           // u32 VtB210D0_Ctor_00433B2C(Cmd* o, const char names[][128], s32 n, const f32 a[2], const f32 b[2], u32 w, u8 on, bool f20, stack: bools s116, s124, s132, s140,  (name?); decompiled: src/obj/mid10_cmd.cpp
+003C6CC0 VtB204E8_Ctor_003C6CC0           // u32 VtB204E8_Ctor_003C6CC0(T* o, a, b, c, d)  (called by 003C6EA8) SubMachine_Construct(o, a, b, c, d) (r4..r7 passed through), vtable 0x00B204E8, the fields as (name?); decompiled: src/obj/mid10_cmd.cpp
+0074FD80 Def_Construct74FD80              // void Def_Construct74FD80(Def* o, a, b, c, r7, r8 (unused), u32 w140, const f32 v[3], f32 f76, f32 f136, f32 f160..f200 (f3..f13), stack: f32 s204, s212, s220, s (name?); decompiled: src/obj/mid10_def.cpp
+0074596C Def_Construct74596C              // void Def_Construct74596C(Def* o, a, b, c, u32 w144, f32 f148..f164 (f1..f5), f32 f76 (f6), f32 f168..f176 (f7..f9), f32 f192..f200 (f10..f12), f32 f224 (f13), s (name?); decompiled: src/obj/mid10_def.cpp
+001A9EA8 DamageColDef_ReadA9EA8           // void DamageColDef_ReadA9EA8(a0, XmlCursor* c, x, const Def* tmpl, Def* o) DamageColDef_Read_000C85A8 with the same arguments, then the defaults: a def record on (name?); decompiled: src/obj/mid10_dmg.cpp
+001AA158 DamageColDef_NewAA158            // Def* DamageColDef_NewAA158(a0, XmlCursor* c, x, const Def* tmpl) (called by 000CA038) The defaults record (pool 0x001AA140, record +12.. +20 = x->12..20) read b (name?); decompiled: src/obj/mid10_dmg.cpp
+001AC540 DamageColDef_ReadAC540           // void DamageColDef_ReadAC540(a0, XmlCursor* c, x, const Def* tmpl, Def* o) DamageColDef_Read_000C85A8 with the same arguments, then the defaults record (pool 0x0 (name?); decompiled: src/obj/mid10_dmg.cpp
+001AC858 DamageColDef_NewAC858            // Def* DamageColDef_NewAC858(a0, XmlCursor* c, x, const Def* tmpl) (called by 000CA038 family) The defaults record (pool 0x001AC840, DmgRecDefaults8000, record +1 (name?); decompiled: src/obj/mid10_dmg.cpp
+001AB190 DamageColDef_ReadAB190           // void DamageColDef_ReadAB190(a0, XmlCursor* c, x, const Def* tmpl, Def* o) DamageColDef_Read_000C85A8 with the same arguments, then the defaults record (pool 0x0 (name?); decompiled: src/obj/mid10_dmg.cpp
+001AB548 DamageColDef_NewAB548            // Def* DamageColDef_NewAB548(a0, XmlCursor* c, x, const Def* tmpl) The defaults record (pool 0x001AB534, DmgRecDefaults4000, record +12..+20 = x->12..20) read by  (name?); decompiled: src/obj/mid10_dmg.cpp
+001B2118 DamageColDef_ReadB2118           // void DamageColDef_ReadB2118(a0, XmlCursor* c, x, const Def* tmpl, Def* o) DamageColDef_Read_000C85A8 with the same arguments, then the defaults record (pool 0x0 (name?); decompiled: src/obj/mid10_dmg.cpp
+001B24D0 DamageColDef_NewB24D0            // Def* DamageColDef_NewB24D0(a0, XmlCursor* c, x, const Def* tmpl) The defaults record (pool 0x001B24B8, DmgRecDefaults10000, record +12.. +20 = x->12..20) read b (name?); decompiled: src/obj/mid10_dmg.cpp
+001AD1F8 DamageColDef_ReadAD1F8           // void DamageColDef_ReadAD1F8(a0, XmlCursor* c, x, const Def* tmpl, Def* o) DamageColDef_Read_000C85A8 with the same arguments, then the defaults record (pool 0x0 (name?); decompiled: src/obj/mid10_dmg.cpp
+001AD7F0 DamageColDef_NewAD7F0            // Def* DamageColDef_NewAD7F0(a0, XmlCursor* c, x, const Def* tmpl) The defaults record (pool 0x001AD7D8, name 0x00AD13B8, DmgRecDefaults80000) read by DamageColDe (name?); decompiled: src/obj/mid10_dmg.cpp
+004A6F40 Poly_IsEar_004A6F40              // bool Poly_IsEar_004A6F40(Poly* p, int i, int j, int k, int n, const s32* idx) The ear test of Poly_Triangulate (004A71D0) on the x / z plane of the 16-byte poin (name?); decompiled: src/obj/mid10_leaf.cpp
+0001DE74 Obj_CopyLinkedXform_0001DE74     // void Obj_CopyLinkedXform_0001DE74(Obj* o)  (called through a pointer) When o's per-slot enable byte (o->308->12)[4 * (*(0x00F94884))->64] is set, asks o->48 (vt (name?); decompiled: src/obj/mid10_leaf.cpp
+0001AC80 Obj_PickNearest_0001AC80         // Obj* Obj_PickNearest_0001AC80(Picker* o, Obj* t) 0 unless o->40 <= 0x0001AC78. With o->20 > 0: the nearest (to t+176) of the o->20 candidates o->3700[] closer t (name?); decompiled: src/obj/mid10_leaf.cpp
+000C21EC Obj_OnPairTouch_000C21EC         // void Obj_OnPairTouch_000C21EC(Obj* o, Pair* p)  (via AdjThunk_000C23D4) Marks p->24 (byte +15 |= 8). When o->432 is one of p->4 / p->8, takes the other one: if  (name?); decompiled: src/obj/mid10_leaf.cpp
+000FD408 Cam_ExportView_000FD408          // void Cam_ExportView_000FD408(CamState* s, r4, View* d)  (called through a pointer) Copies s's view into d: +64 = s->80 when >= 0x000FD3FC, +80 / +76 / +68 = s-> (name?); decompiled: src/obj/mid10_leaf.cpp
+000B6A58 Obj_ApplyTrackKey_000B6A58       // u32 Obj_ApplyTrackKey_000B6A58(Player* o) When vtable slot 32 (o, 0) answers 2: takes key o->576 (20-byte records) of track o->724 (20-byte entries at o->216 +  (name?); decompiled: src/obj/mid10_leaf.cpp
+0038B3A8 Obj_EvalChannels_0038B3A8        // s16 Obj_EvalChannels_0038B3A8(Chan* o, Ctx* c) Evaluates o's channels with the per-type function tables (OPD at +4): u16 +24 = 0x00F6503C[o->18](o->18, c) (28-b (name?); decompiled: src/obj/mid10_leaf.cpp
+002F9AC0 Obj_ShowPart_002F9AC0            // void Obj_ShowPart_002F9AC0(Obj* o, bool on, u32 key) For each of o's three parts whose key o->900[k] is key: the part object o->952[k] gets vtable slot 88 (part (name?); decompiled: src/obj/mid10_leaf.cpp
+0074D4B8 Quat_FromTo_0074D4B8             // void Quat_FromTo_0074D4B8(Quat* q, const Vec3* a, const Vec3* b) The shortest-arc rotation taking a to b (both normalized first): xyz = a' x b', w = (a' + b') . (name?); decompiled: src/obj/mid10_leaf.cpp
+007464A0 AnimRec_CopyCtor_007464A0        // Rec* AnimRec_CopyCtor_007464A0(Rec* d, const Rec* s)  (called by Obj_SetAnimSet0D1B10) The copy constructor: vtable 0x00B12260 (the base), the member-wise copy  (name?); decompiled: src/obj/mid10_leaf.cpp
+007466D8 AnimRec_Assign_007466D8          // Rec& AnimRec_Assign_007466D8(Rec* d, const Rec* s)  (called by Obj_SetAnimSet0D1B10) The assignment: the member-wise copy (AnimRecCopy) without the vtables. (name?); decompiled: src/obj/mid10_leaf.cpp
+003ED8D0 NodeList_Remove_003ED8D0         // void NodeList_Remove_003ED8D0(NodeList* l, Node* key)  (called by 003EFE40 / 003EFFA0) key->220 = 0; finds the record r (l->0[i], u16 count +8) whose +0 is key  (name?); decompiled: src/obj/mid10_leaf.cpp
+000F2D88 Obj_FollowXform_000F2D88         // u32 Obj_FollowXform_000F2D88(Obj* o, Obj* t)  (called through a pointer) o's 4x3 matrix +448: with a target t, t's rotation rows (+96, 16-byte stride) and the p (name?); decompiled: src/obj/mid10_leaf.cpp
+001ADB14 Owner_BindEffectDefs_001ADB14    // u32 Owner_BindEffectDefs_001ADB14(Owner* o) Nothing when o->216 is 0. Else: o->536 = the 0xBBBC16FF component of the effect o->356 when its vtable slot 32 answe (name?); decompiled: src/obj/mid10_owner.cpp
+001ADD08 Owner_Construct1ADD08            // u32 Owner_Construct1ADD08(Owner* o, const OwnerRec* rec) The base constructor of the Owner_New family: Thunk_000E40B4(o, rec), vtables 0x00B159B8 / +380 0x00B15 (name?); decompiled: src/obj/mid10_owner.cpp
+004E7B28 UiElem_Destruct4E7B28            // void UiElem_Destruct4E7B28(UiElem* o)  (called by Delete_004E7D10) The destructor of the class with vtable 0x00B22C40 (nine owned children o->204[] released thr (name?); decompiled: src/obj/mid10_ui.cpp
