@@ -12836,13 +12836,8 @@
 002AEE58 Obj_AddContact2AEE58               // (Obj* o, Pair* pr): up to 16 contacts: other side x (pr->4 / pr->8 vs o->8->vfn[144]) with property 0x91C7CF5B (+12 != 0): counter o->280[i]++ or append to o+240 / o+280 (=1); new and not in o->260 (u16 o->268) -> o->336 |= 0x80; decompiled: src/obj/mid21_c.cpp
 00297BA8 EmitterOwner_Refresh297BA8         // (Owner* o): stack param block (owner o->8 position +144 / +320, flags 0x0A) to 0x00443CE0 for each (handle, x) pair of o+384 (s32 o->448); dead ones stopped and swap-removed; SpawnRec_Dtor_00440AC4 / SpawnRec_Dtor2_00440A40(block, 0); decompiled: src/obj/mid21_c.cpp
 0004F530 Ai_RespawnTick4F530                // u32 (Ai* o) vtable entry: states 20/21 -> 0; pending bit 0x80 of o->305: d->348 raised (rows 0x00F98684 + 76 * (o->1800 + 0x6C271198), +72), state 18 posts Event1_Init + World_Query482D14(*0x00F65CA0, -1, ev) and vfn[220](20 / 16); else o->1764 >= *0x00F98848 -> o->1812 = 1, vfn[220](18); decompiled: src/obj/mid21_c.cpp
-001F46D4 Obj_PathSegHit_001F46D4         // (o, segment index): called by 001F4F38 when the path segment is near (name?)
-00405560 Child_Init_00405560                // (Child* p, Def* d, Spawner* o, 0x802B5FF9, d->8) (callee of Spawner_Spawn_004089F0) (not decompiled) (name?)
-00405C18 Child_State12_00405C18             // (Child*; f32 dt) (callee of Spawner_TickChild_00407130) (not decompiled) (name?)
+00405560 Child_Init_00405560               // not decompiled: reads the uninitialised flags word 372(r1) of its spawn record (name?)
 00405FB8 Child_State11_00405FB8             // (Child*; f32 dt) (not decompiled) (name?)
-00406A40 Child_State10_00406A40             // (Child*; f32 dt) (not decompiled) (name?)
-00406E60 Child_Run_00406E60                 // (Child*; f32 dt): child states 1 / 2 (not decompiled) (name?)
-00443CE0 Handle_Open_00443CE0               // (u32 handle, Params* p) -> 0 when the emitter is gone (callee of Handle_Acquire443EC0 / EmitterOwner_Refresh297BA8) (not decompiled) (name?)
 000B6208 Obj_SlotApply_000B6208             // (x, w0, w1) (callee of Obj_Layer2TickBE7F0) (not decompiled) (name?)
 01056F1C g_VtB1BE30Table_01056F1C           // u16 count +2, 8-byte entries +8 (+4 = object) of the vtable 0x00B1BE30 objects (name?)
 00F98684 g_RespawnRows_00F98684             // 76-byte rows indexed by key + 0x6C271198 (+72 = limit) (Ai_RespawnTick4F530) (name?)
@@ -12943,3 +12938,29 @@
 0091A7D8 Skel_BoneAt_0091A7D8            // (skel, i) -> bone (name?)
 00014004 Obj_ApplyAnimHash_00014004      // (o, hash): second mode name of 0003DED8 (name?)
 00251B10 GroupMember_SetOn_00251B10      // (e, 1): turn-on of Group_SetOn_002B4D14 entries (name?)
+
+# Game code medium sweep part 22
+00443CE0 Emitter_SetParams443CE0           // u32 (u32 handle, Params* p): live record of pool 0x010B0200 (serial bits 15..30 of +256, top bit clear; enabled u8 0x010AEC60) -> emitter e = rec+16: flags p->56 bit 2 -> e->12, position p+0 -> e+176 (e->192 = 1) / direction p+16 -> e+208 (e->224 = 1) when off by *0x00443CDC, target p->48/52 -> e->156/160 when e->172; r3 = 1 (replaces Handle_Open_00443CE0); decompiled: src/obj/mid22_a.cpp
+00270258 Targets_Collect270258             // u32 (Query* o, a1): resets the 32 {0, FLT_MAX} pairs 0x01067AF8 (once, u8 0x01067AF0) / first o->12->0; kind o->8 == 1 and o->12->4 > 0: active slot objects (0x010573A8, u16 0x01057528) except o->4->8 -> 0x0026FD90; r3 = 0x0026FAD4(o, table, count); decompiled: src/obj/mid22_a.cpp
+00406E60 Child_Run_00406E60                // (Child* c; f32 dt): states 1/2: clock, spline pose (WorldObj_SplinePointTangentAt, up 0x01164B60) -> c->4->vfn[84]; at t == 1 state 3, effect component 0x87208BC1 posed, cue 0x002005F4; decompiled: src/obj/mid22_a.cpp
+00405C18 Child_Orbit405C18                 // (Child* c; f32 dt): state 12: blend of 4 spline points (c->12..24, weights c->208..220) -> c+192, quat(axis 0x01164B50, -c->132*0.5) * quat(up, c->140*0.5) * c+160 -> vfn[84]; clock past c->124 -> state 13 (replaces Child_State12_00405C18); decompiled: src/obj/mid22_a.cpp
+00406A40 Child_Arc406A40                   // (Child* c; f32 dt): state 10: arc from c+96 to fx c->28 +64, height c->128; clip 0xB21F21C2 from t >= 0.5; crossing 0.8 poses component 0x87208BC1 + cue 0xE4E5DD5B; t == 1 -> state 14, spawner c->84 count +196, Obj_Set180, u8 0x0106B62C (replaces Child_State10_00406A40); decompiled: src/obj/mid22_a.cpp
+001F46D4 Part_BreakAt1F46D4                // (Obj* o, u32 i): splits part chain o->820 at segment i into o->828 / o->832 (0x001EFDE8), effect 0x88F3C164, releases holder o->816, target drop (replaces Part_OnHit_001F46D4); decompiled: src/obj/mid22_a.cpp
+00334114 Section_ReleaseAll334114          // (Section* o): active (u8 +2680): lists +2632/+2640, +2652/+2660 and +2672 released (Obj_Notify24 -> Records_RemoveKey, vfn[40](0)), Registry_Unlink, +2680 = 0 (was Call_3274D0_334114); decompiled: src/obj/mid22_b.cpp
+003F61DC Obj_ActivateLinks3F61DC           // (Obj* o): flags +81..83 for ids 0xB225C998 / 0x928F4335 / 0xBA681640 (enabled +84..86, def +16) -> Obj_SetActive_001EB814(x, 0); world slot object flush/end effect; decompiled: src/obj/mid22_b.cpp
+0032E560 Mode_Event32E560                  // u32 (Mode* o, a1, Event* ev): mode 4 event 6: cooldown +2572, target 0x0032E038 applied to effect o->2224 components (0xEB336A2D / 0x93116591), cue 0xDC175839; else 0x003252D8; r3 = 5; decompiled: src/obj/mid22_b.cpp
+000BFB78 Obj_Layer2TickBFB78               // (Obj* o) vtable entry: layer-2 state 1 (threshold -> vfn[28](1, 6)) / 0 (body o->640 removed, entity o->644 added to Havok scene, cue 0x7E5B6BC5, slot float from def +360, vfn[28](2, 1)); decompiled: src/obj/mid22_b.cpp
+00334B74 Section_AcquireAll334B74          // (Section* o): inverse of Section_ReleaseAll334114: ids +2592/+2600 and +2612/+2620 resolved, use count +178, pushed to vectors +2632 / +2652; 0x00334954, flag 0x7BADF81E, mode 2, +2680 = 1; decompiled: src/obj/mid22_c.cpp
+003B3298 Obj_RangeCue3B3298                // (Obj* o): body o->104 offset distance vs def o->96 +196 -> clip +212/+208 restart (Anim_TrackSet36 gate) and cue 0x7B2E3209 / 0x002237D4 on the body effect; decompiled: src/obj/mid22_c.cpp
+0023B3E8 Player_RateCheck23B3E8            // (Player* p): rates p->976/984 positive while p->608 < 0 -> sin(K) cache 0x01056ED8/EE0 vs p->116, then the average of p->612 entries: Player_SetRate2(p; 0, K2) + vfn[44]; decompiled: src/obj/mid22_c.cpp
+001AACEC Obj_Construct1AACEC               // (Obj* o, Params* p): Thunk_000E40B4 base, vtable 0x00B15550, p+208.. -> o+424.., flags +468, components 0xBBBC16FF / 0x3F5805D6 -> +444 / +448, +464 from vector o->388, flag 0x5924BAFA, 0x00464D1C(o, 0, 0); decompiled: src/obj/mid22_c.cpp
+0042F620 Cmd_Attach42F620                  // (Cmd* c): object of handle c->12, component 19, key c->20 via vfn[72](key; K x4), target handle c->16 active -> 0x00296810(a, t, c->24), replay with c->28; Flag_Set8_40000000; decompiled: src/obj/mid22_c.cpp
+000BE18C Obj_Layer2TickBE18C               // (Obj* o) vtable entry: layer-2 states 0..3 (cues 0x18FBE4D7 / 0x7B320099 / 0xCF934AEC, 0x000B3A60, count q->8, Obj_ApplyTrackKey); decompiled: src/obj/mid22_c.cpp
+0043807C Cmd_CameraSplit43807C             // (Cmd* c): subject c->28 / id c->24 / world slot, camera Obj_Notify26: 0x0042C328 posts, split styles c->16/20, Coach_SetMode2A8AE0, p->244 bit 0x1000; decompiled: src/obj/mid22_c.cpp
+002D1F0C Track_Follow2D1F0C                // (Track* t): bit 0x8000 of t->28: pose rows t->32+240, reference t->8->vfn[64] distance vs *0x0105B5E8: follower t->36 vfn[84] + World_AddTimedCallback(0x00F35980), else 0x002D0BA0(t, 0); decompiled: src/obj/mid22_c.cpp
+00074E70 Obj_EndScene74E70                 // (Cmd* c, Effect* e): target from component c->12 (kind 5 / 15) or id c->16 -> Obj_SceneEnd(c->20, c->21) (+ vfn[304]), with c->22 also every child of x->340; decompiled: src/obj/mid22_c.cpp
+0026FD90 Targets_Consider_0026FD90         // (o, a1, x, table, u32* count, 1, 0) (callee of Targets_Collect270258) (not decompiled) (name?)
+0026FAD4 Targets_Pick_0026FAD4             // (o, table, count) -> r3 of Targets_Collect270258 (not decompiled) (name?)
+001EFDE8 Part_BuildChain_001EFDE8          // (o, o->804, n, rows, x, 0, def+352, def+368) -> new part chain (callee of Part_BreakAt1F46D4) (not decompiled) (name?)
+01067AF8 g_TargetTable_01067AF8            // 32 {u32 0, f32 FLT_MAX} pairs, init flag u8 0x01067AF0 (Targets_Collect270258) (name?)
+01056EE0 g_SinCache_01056EE0               // f32 sin(K) cache, valid flag u8 0x01056ED8 (Player_RateCheck23B3E8) (name?)
