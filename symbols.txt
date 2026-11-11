@@ -11307,22 +11307,22 @@
 00915E60 HkMotor_Ctor915E60             // (motor 28 bytes; f1, f2, f3 max force) (name?) (Havok)
 0090AA54 HkConstraintInst_Ctor90AA54    // (inst 56 bytes, entityA, entityB, data, priority) (name?) (Havok)
 00933938 HkWorld_AddConstraint933938    // (hkpWorld*, instance) (name?) (Havok)
-0016B5F0 Player_AddScore16B5F0          // (player obj, u32 new total) (name?)
-001753C0 Player_SetCount1753C0          // (player obj, u32 count) (name?)
-00416360 CamRig_Mode2_416360            // (rig; f1 dt) (name?)
-00415F10 CamRig_Mode3_415F10            // (name?)
-00415DA0 CamRig_Mode4_415DA0            // (name?)
-00415830 CamRig_Mode5_415830            // (name?)
-00415680 CamRig_Mode6_415680            // (name?)
-00415088 CamRig_Mode7_415088            // (name?)
-00414CB0 CamRig_Mode8_414CB0            // (name?)
-004149D0 CamRig_Mode9_4149D0            // (name?)
-004142F0 CamRig_Mode10_4142F0           // (name?)
-00414058 CamRig_Mode11_414058           // (name?)
-00413DF8 CamRig_Mode12_413DF8           // (name?)
-00413BAC CamRig_Mode13Done_413BAC       // (rig target +76) (name?)
-00413970 CamRig_Mode14_413970           // (name?)
-00413804 CamRig_Mode15_413804           // (name?)
+0016B5F0 Player_AddScore16B5F0          // (Player*, u32 n): lives count +724 = min(n, 3), icon groups 0x3704E0B1.. / 0x894F7ECF.. show the first n, the other player's +724 copied outside World +29 == 1 (name? Player_SetLives); decompiled: src/obj/big11_player.cpp
+001753C0 Player_SetCount1753C0          // (Player*, u32 n): collected-item counter +660, tier +668 (max 10) every +664, HUD slots attached, Obj_EnableFirstN(+660 or 5); decompiled: src/obj/big11_player.cpp
+00416360 CamRig_Mode2_416360            // (rig; f32 dt): enter mode 3: +112 = -1, timers 0, two (0x0E3F4988, 32/64) key pushes, restart 0x21B0C54E, effects synced 0x76F558B7; decompiled: src/obj/big11_cam.cpp
+00415F10 CamRig_Mode3_415F10            // (rig; f32 dt): pad-driven wait: speaker line, +104 drift/pull-back, both objects placed between their +144 points, mode 4 when +96 > +60; decompiled: src/obj/big11_cam.cpp
+00415DA0 CamRig_Mode4_415DA0            // (rig; f32 dt): step timer -> pop both key vectors, mode 9 / 5 by +120/(+124+1)/+64 <= 1; decompiled: src/obj/big11_cam.cpp
+00415830 CamRig_Mode5_415830            // (rig; f32 dt): clear key vectors, 3 random (key, flag) pushes, mode 6, restart 0xC3B92BAB / 0x2CA2AA7D; decompiled: src/obj/big11_cam.cpp
+00415680 CamRig_Mode6_415680            // (rig; f32 dt): +96 timer -> mode 7, restart 0x3B55C203 / 0xD8E1A885, blend rate 0.9; decompiled: src/obj/big11_cam.cpp
+00415088 CamRig_Mode7_415088            // (rig; f32 dt): +116 drift / pad buttons -> restarts, effect sync, mode 8; decompiled: src/obj/big11_cam.cpp
+00414CB0 CamRig_Mode8_414CB0            // (rig; f32 dt): step timer + track done -> pop keys, mode 6 (or 0 + target finish); decompiled: src/obj/big11_cam.cpp
+004149D0 CamRig_Mode9_4149D0            // (rig; f32 dt): clear keys, push (0x0E4082B6, 128), mode 10, +100 = +72; decompiled: src/obj/big11_cam.cpp
+004142F0 CamRig_Mode10_4142F0           // (rig; f32 dt): speaker line, pad drift + restart 0x05642823, mode 11 when +96 > +100, restarts when the track is done; decompiled: src/obj/big11_cam.cpp
+00414058 CamRig_Mode11_414058           // (rig; f32 dt): step timer -> pop keys, mode 0, restart unless the anim is found, mode 12 on target state 3; decompiled: src/obj/big11_cam.cpp
+00413DF8 CamRig_Mode12_413DF8           // (rig; f32 dt): mode 13, restart 0x71CDB228 / 0x055E16F9, rig object's effect synced 0xC65270FF; decompiled: src/obj/big11_cam.cpp
+00413BAC CamRig_Mode13Done_413BAC       // (Target*) -> 1: the target's finish: +424/+425 flags, record 0x1B2EEF42 count shown on 0x35B15B25, scene 0x6DB32D4F, 0x6D7DA1D8 shown "1"; decompiled: src/obj/big11_cam.cpp
+00413970 CamRig_Mode14_413970           // (rig; f32 dt): mode 15, restart 0x055E16F9 / 0x71CDB228, target object's effect synced 0xC65270FF; decompiled: src/obj/big11_cam.cpp
+00413804 CamRig_Mode15_413804           // (rig; f32 dt): when the target's track is done: busy byte, scene 0xB2A0FD73 once (+424/+426), +96 top bit; decompiled: src/obj/big11_cam.cpp
 
 # Game code medium sweep part 10
 00433B2C VtB210D0_Ctor_00433B2C           // u32 VtB210D0_Ctor_00433B2C(Cmd* o, const char names[][128], s32 n, const f32 a[2], const f32 b[2], u32 w, u8 on, bool f20, stack: bools s116, s124, s132, s140,  (name?); decompiled: src/obj/mid10_cmd.cpp
@@ -11355,3 +11355,18 @@
 001ADB14 Owner_BindEffectDefs_001ADB14    // u32 Owner_BindEffectDefs_001ADB14(Owner* o) Nothing when o->216 is 0. Else: o->536 = the 0xBBBC16FF component of the effect o->356 when its vtable slot 32 answe (name?); decompiled: src/obj/mid10_owner.cpp
 001ADD08 Owner_Construct1ADD08            // u32 Owner_Construct1ADD08(Owner* o, const OwnerRec* rec) The base constructor of the Owner_New family: Thunk_000E40B4(o, rec), vtables 0x00B159B8 / +380 0x00B15 (name?); decompiled: src/obj/mid10_owner.cpp
 004E7B28 UiElem_Destruct4E7B28            // void UiElem_Destruct4E7B28(UiElem* o)  (called by Delete_004E7D10) The destructor of the class with vtable 0x00B22C40 (nine owned children o->204[] released thr (name?); decompiled: src/obj/mid10_ui.cpp
+
+# Game code large functions part 11
+00491000 SetSelect_491000               // (-, u32 hash): selects the global set entry for hash (0x011DE288 / +104); r3 unread (name?)
+0016BA60 Player_SetTierKey16BA60        // (Player*, u32 key from 0x00F6495C[tier]) (name?)
+0036E568 Hud_ShowBanner36E568           // (hud, u32 hash, s32 tier) (name?)
+00016A40 Obj_UpdateMotion16A40          // (Obj*; f32 dt): owner motion matrix (vfunc +208/+276/+272) into frame +128, turn toward +192 by <= +76*dt deg, then velocity to +68 or re-orthonormalise + hand to owner (name?); decompiled: src/obj/big11_obj.cpp
+00016680 Vec_SignedAngle16680           // (const vec3* a, const vec3* b) -> f1 angle (rad) (name?)
+00238270 Player_ResetFromDef238270      // (Player*, PlayerDef*): effect state step, drop/stop/release everything, detach kind 15/2/19/1/24/3 children, rebuild from def ("Player%02d_Controllable" query, children, ref nodes, rates, +1012 = 0x3F2950FF, world user) (name?); decompiled: src/obj/big11_game.cpp
+002349E0 Player_DropLinks2349E0         // (Player*) (name?)
+00231470 Player_Setup231470             // (Player*) (name?)
+00231928 Player_Setup231928             // (Player*) (name?)
+00230CA0 Player_Setup230CA0             // (Player*) (name?)
+00232F00 Player_Setup232F00             // (Player*, +612) (name?)
+002371F8 Player_SetRate2371F8           // (Player*; f32) (name?)
+00236868 Player_SetRate2_236868         // (Player*, def + 1528 (unread); f32, f32) (name?)
