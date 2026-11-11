@@ -9255,7 +9255,7 @@
 0049AED8 Input_KeyFlags_0049AED8          // u32 f(u64 key): 257 sets bit 0x10 of 0x010BB9F8, 305 sets 0x4 and 306 clears it; returns 0x010C0000 (the high half of the address, as left; r4 / r5 left) (name?); decompiled: src/obj/obj24.cpp
 004D22F4 VtB225B0_Dtor                    // T::~T(): vtable 0x00B225B0, Mem_FreeFrom(+304, 0), vtable 0x00B22598, then ApeRoot_Destruct(this) (name?); decompiled: src/obj/obj24.cpp
 004EF8B8 Global_Read4FA564_004EF8B8       // bool f(c): false when *(T**)0x010C2C28 is null; else 0x004FA564(c, 0x00AF0480, that + 872, 64), its u8 +868 = 1, true (name?); decompiled: src/obj/obj24.cpp
-004FA504 XmlCursor_ReadBoolByName         // bool f(c, const char* name, bool* out, u8 dflt) (name?); decompiled: src/obj/obj24.cpp
+004FA504 XmlCursor_ReadBoolByName         // (c, const char* name, u8* out, u8 default) (already named); decompiled: src/obj/obj24.cpp
 004FA564 XmlCursor_ReadS32ByName          //  (name?); decompiled: src/obj/obj24.cpp
 004FA5C4 XmlCursor_ReadF32ByName          // f(c, const char* name, f32* out, f32 dflt) (name?); decompiled: src/obj/obj24.cpp
 004FA624 XmlCursor_ReadVec3ByName         //  (name?); decompiled: src/obj/obj24.cpp
@@ -11735,11 +11735,10 @@
 0020A298 XmlDef_New20A298                 // factory with inlined reader (Rec_CopyFields_000C387C, tmpl flag 0x80 in +28), 192 B via 0x0020A0F0; decompiled: src/obj/mid12_fac.cpp
 0055578C String_Alloc_0055578C            // (n) -> char* (reads r3 only; used before String_CopyN) (name?)
 0030386C XmlItem_Read30386C               // (item, child) for the 0xD9ABF25D list of 0030743C (118; not decompiled)
-000C12A8 XmlDef_ReadC12A8                 // (a0, c, x, tmpl, rec) reader of 000C1780 (310; not decompiled, released)
 000C0B80 XmlDef_FromRecC0B80              // (p, rec) ctor of 000C1780 (not decompiled)
-0016A828 XmlDef_Read16A828                // reader of 0016ADC4 (359; released)
+0016A828 XmlDef_Read16A828                // (a0, c, x, tmpl, o) -> 1: Damage_Read0C3910, empty names -> "", o+124 "colObjName" attr, 14 floats o+128.., hash o+188 (tmpl flag 0x400 / body tmpl+244), byte o+24 = 1; decompiled: src/obj/mid13_rd.cpp
 0016A448 XmlDef_FromRec16A448             // (p, rec) ctor of 0016ADC4
-00203718 XmlDef_Read203718                // reader of 00203BE4 (307; released)
+00203718 XmlDef_Read203718                // (a0, c, x, tmpl, o): Damage_Read0C3910, enum 0x0027873A (6 hashes 0x00AD2C54) o+124, s32 o+128, 8 floats, 2 hashes (tmpl flag 0x1000 / body tmpl+200); decompiled: src/obj/mid13_rd.cpp
 00203380 XmlDef_FromRec203380             // (p, rec) ctor of 00203BE4
 001668B4 XmlDef_Read1668B4                // reader of 00167080
 001664C8 XmlDef_FromRec1664C8             // (p, rec) ctor of 00167080
@@ -11758,7 +11757,6 @@
 00226A28 XmlDef_FromRec226A28             // (p, B) base ctor used by 0023FA28
 0020A0F0 XmlDef_FromRec20A0F0             // (p, rec) ctor of 0020A298
 0033273C Obj_Construct33273C              // (p, x, const Vector* f32 list) 2608 B object of 00332898
-000C9AB8 XmlTree_ReadC9AB8                // recursive 192 B node reader (324; looked at, released)
 
 # Game code large functions part 14
 003BCB20 HideoutMenu_RefreshJobs3BCB20  // u32 f(Menu*, s32 cur, s32 sel, s32 prev, s32 mode): mode 1 opens (back / buy prompts, animator 0x7CDE2234), per-entry state hashes (0xC20B1F0C / 0x9CD94DEF / 0xC181C0F0 / 0xACC3FD87, +104 |= 0x80), at sel the camera target and "$HIDEOUT_JOB_AVAILABLE" select prompt; Effect_SetHash4CF988(m->32, job +240) (name?); decompiled: src/obj/big14_ui.cpp
@@ -11855,3 +11853,40 @@
 001E62E8 k_DmgPoolE62E8                 // .text f32 {100, 0, 0.3, 1, -1} (DamageColDef_ReadE6300)
 00AD16A4 k_DmgKindHashesAD16A4          // u32[2] {0x13234CFF, 0x8FA5D8C3} (DamageColDef_ReadCA080 +396 index)
 00AD1EAC s_hudPromptMsg                 // "hudPromptMsg"
+
+# Game code medium sweep part 13
+000C12A8 XmlDef_ReadC12A8                 // (a0, XmlCursor*, x, tmpl, Def* o): Damage_Read0C3910(.., o ? o+4 : 0), stack defaults record (vt 0x00B12034, tmpl flag 0x00200000 copy), three vec3s +128/+144/+160 (last two deg->rad when found), 4 floats, 3 bools; decompiled: src/obj/mid13_rd.cpp
+0018F8E8 XmlDef_New18F8E8                 // (a0, c, x, tmpl) -> Def*: DefHeadInit stack record read by 0x0018EFB0, 320-byte def (0x0018EA50), 60-byte entries per child 0x523827DF into vector +296; decompiled: src/obj/mid13_fac.cpp
+002183FC AreaDef_New2183FC                // (a0, c, x, tmpl) -> AreaDef*: area defaults record (AreaSettingsA_Construct + tuning values 0x010334D0..), 0x00217470 reader, 208-byte AreaDef_Construct; decompiled: src/obj/mid13_fac.cpp
+000C9AB8 XmlNode_ReadTree                 // (a0, XmlCursor*, PtrVector** slot) -> 0: recursive tree of 192-byte nodes (children 0xCCEB9AF9: name, nameOverride, pos, euler->quat, hashes, flags, +180 children); decompiled: src/obj/mid13_fac.cpp
+004B31D8 AnimClip_ReadBase4B31D8          // (AnimClip* o, XmlNode*, a2, a3): clip name interned (StrBuf_Append), hashes, flag bits of byte +20, floats, play node / transition names, "AnimEvent" children via Xml_AllChildren_004F4494; decompiled: src/obj/mid13_anim.cpp
+004B5918 AnimClip_Read4B5918              // (o, c, pool): AnimClip_ReadBase, "AnimClip" children -> kind-12 76-byte pool records (name, hash, weight), tally +60/+64/+68; decompiled: src/obj/mid13_anim.cpp
+004B46A8 AnimRandom_Read4B46A8            // (o, c, pool): AnimClip_ReadBase, "AnimRandom" children -> kind-6 records ("AnimName", "Map", weight); decompiled: src/obj/mid13_anim.cpp
+004B4EC8 AnimSelection_Read4B4EC8         // (o, c, pool): AnimClip_ReadBase, "AnimSelection" children -> kind-8 records, control value type 0x0027873A -> u16 o+56 (game +264 table); decompiled: src/obj/mid13_anim.cpp
+004B6120 AnimBlend_Read4B6120             // (o, c, pool): AnimClip_ReadBase, "AnimBlend" children -> kind-10 records, control value type, bool o+66; decompiled: src/obj/mid13_anim.cpp
+004B69B8 AnimInst_Init4B69B8              // (o, a1, a2, c) -> o->20: Instance_Base4B71BC, vt 0x00B21CC0, float/bools, in-order tree walk raising f32 o+36 to payload +28; decompiled: src/obj/mid13_anim.cpp
+004CBB40 HashList_Init4CBB40              // (o, c) -> 0: vt 0x00B22498, PtrVector +12 of child 0x04B8CC71 name hashes, hashes/float/bool; decompiled: src/obj/mid13_misc.cpp
+0047F108 ColorSet_Read47F108              // (a0, c, o) -> cursor: 3 hashes, 2 colors, up to 4 16-byte entries from children 0x0353CB09 (String_Dup + 3 hashes); decompiled: src/obj/mid13_misc.cpp
+004C0080 CamParams_Init4C0080             // (o, c): vt 0x00B21F40, f32 +28 from system state 0x011DE094 (built on first use), type hash -> o+24, 8 floats (+64 >= pool min else 1.0); decompiled: src/obj/mid13_misc.cpp
+00229F70 Xform_Read229F70                 // (Xform* o, c) -> pool addr: hash, vec3, floats, bools, euler degrees -> quat o+0, two floats clamped [0, 1]; decompiled: src/obj/mid13_misc.cpp
+0022A310 XformList_Read22A310             // (v, a1, c) -> 0: 6 hashes + float, children 0xEDA93D29 -> 64-byte records via Xform_Read229F70 appended to v; decompiled: src/obj/mid13_misc.cpp
+0047F310 KeyList_Read47F310               // (a0, c, o) -> bool: 8-byte keys (hash 0x00014042, float 0xB7EA3D94) per child into *o; name hash o+4; decompiled: src/obj/mid13_misc.cpp
+0047FCF0 XformKeyList_Read47FCF0          // (a0, c, o) -> bool: 64-byte keys per child 0x040EFE5F read by 0x0047F588 into *o; name hash o+4; decompiled: src/obj/mid13_misc.cpp
+00331A78 SlotObj_New331A78                // (a0, c, a2) -> Obj*: vec3/hash/4 floats/9 bools from XML, 2640-byte object via 0x0033162C (15 args, 7 on the stack); decompiled: src/obj/mid13_misc.cpp
+00215518 QueryDef_Read215518              // (a0, c, o): 4 flag bools byte +184, kind mask u16 +192/+194, floats, hash +196 -> extra vec3/vec2/float/bool or 3 hashes; decompiled: src/obj/mid13_misc.cpp
+0021E978 QueryDef_Read21E978              // (a0, c, o): flag bools byte +184, QueryDef_ReadChild per child 0xC3B709C0, bit bools +208, float pairs +216/+224 clamped; decompiled: src/obj/mid13_misc.cpp
+0049EC08 QueryVar_Read49EC08              // (XmlNode*, QueryVar*) -> bool: name +68, kind byte +72 (0x0049EA74), value 0x04DA9951 read per kind; decompiled: src/obj/mid13_misc.cpp
+004C6FB8 HashMap_Init4C6FB8               // (o, c): vt 0x00B22358, AVL tree o+24 of {name, value} hash pairs from children 0x0486206D, 3 hashes, bool +128; decompiled: src/obj/mid13_misc.cpp
+0022C2B0 ChoiceList_Read22C2B0            // (v, a1, c, f32* total) -> 0: hash/bool, 352-byte entries per child 0x04EBC33B (0x0022AB00 / 0x0075C8F4 / 0x0022AD08), +96 summed; decompiled: src/obj/mid13_misc.cpp
+00017124 GroupTable_Read17124             // (c) -> 0: fills global PtrVectors 0x00F9BC78 / 0x00F9BCC0 / 0x00F9BC90 / 0x00F9BCA8 from children 0xFBA47770 / 0x04B8CC71; decompiled: src/obj/mid13_misc.cpp
+0032D240 SlotObj_New32D240                // (a0, c, d) -> Obj*: 2608-byte object (Obj_Construct_00769BD8, vt 0x00B1E6C0), 24-byte entries per child 0x7A30D7E3 in vector +2588; decompiled: src/obj/mid13_misc.cpp
+0032DD10 SlotObj_New32DD10                // (a0, c, d) -> Obj*: 3376-byte object (vt 0x00B1E738), up to 16 48-byte entries at +2592 counted in +3360; decompiled: src/obj/mid13_misc.cpp
+0018EFB0 XmlDef_Read18EFB0                // (a0, c, x, tmpl, rec): reader of XmlDef_New18F8E8's record (name?); not decompiled
+0018EA50 XmlDef_Construct18EA50           // (Def* p, const Record* rec): 320-byte def ctor (name?); not decompiled
+00217470 AreaDef_Read217470               // (a0, c, x, tmpl, rec): area def reader (name?); not decompiled
+0047F588 XformKey_Read47F588              // (a0, XmlNode*, 64-byte key) -> bool (name?); not decompiled
+0022AB00 ChoiceEntry_Construct22AB00      // (352-byte entry): five PtrVectors at +240..+320 (name?); not decompiled
+0075C8F4 Vector_Push352_75C8F4            // (vector, const entry*) (name?); not decompiled
+0022AD08 ChoiceEntry_Read22AD08           // (entry, a1, XmlNode*) (reads r3 / r5) (name?); not decompiled
+0033162C SlotObj_Construct33162C          // (p, a2, const f32 vec[3], hash, f1..f4, 7 bools on the stack): 2640-byte object ctor (name?); not decompiled
+0049EA74 QueryVar_KindOfTag               // (u32 tag) -> value kind 1..16 or 0 (name?); not decompiled
