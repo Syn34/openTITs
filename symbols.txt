@@ -12108,7 +12108,6 @@
 002202BC Volume_EnsureEffect_002202BC     // u32 f(Volume* o): with the effect key h = o->+440 set and the definition +432 or the effect +428 missing: a set effect gets bit 0x200 of +136 and +428 = 0; +432 (name?); decompiled: src/obj/obj37b.cpp
 0032D8E4 Section_SetMode_0032D8E4         // void f(Section* o, u32 mode, bool force): unless mode is o's u8 +18 already (without force): mode 5 / 4 send vt[28](x, 1, 0 / 7) to the object x of the 0x20C80- (name?); decompiled: src/obj/obj37b.cpp
 00362BEC Map_Register_00362BEC            // void f(T* o): registers o in the sorted map 0x0106C240 (u16 capacity +0, count +2, high-water +4, flags +6, 8-byte entries {key, T*} at +8) under its key (o->+1 (name?); decompiled: src/obj/obj37b.cpp
-003A187C Registry_CreateLink_003A187C    // (reg, u32 hash, obj): creates/returns the link record; its caller 0x003A1A84 sets +64 (name?); not decompiled
 00481A88 World_ParseXmlNode_00481A88     // (XmlDoc*, node): result stored to world +0x128164 by 0x004829F0 (name?); not decompiled
 000E9DD8 Obj_BaseCtor_000E9DD8           // (o, a): base constructor of 0x000F4A08, reads r4 (name?); not decompiled
 0040AD98 Helper_Setup_0040AD98           // (helper, a, owner) (name?); not decompiled
@@ -13087,3 +13086,30 @@
 010C27B8 g_KindRegistryA                  // effect child kind BST (root *(+12), path +16, s16 depth +96, cursor +100); select global 0x011DE490 (data) (name?)
 010C2820 g_KindRegistryB                  // as above, select global 0x011DE4A0 (data) (name?)
 010C28F0 g_KindRegistryC                  // as above, select global 0x011DE2AC (data) (name?)
+
+# Game code medium sweep part 24
+001B5120 Spawner1B5120                    // QueryEx spawner: 8-byte pair vector q+200 from o->192, 608-byte obj 0x001B4A10; decompiled: src/obj/mid24_a.cpp
+0021E620 Spawner21E620                    // Obj_Init22 light-query spawner (K 0x0021E614), 480-byte obj EffectObj_Ctor_0021E3F8 vt 0x00B1A8B0; decompiled: src/obj/mid24_a.cpp
+002219A8 Spawner2219A8                    // as 0021E620 (K 0x002219A0), vt 0x00B1AD20, p->416: +44 = 21, 0x009315F0(h->8, h, 0); decompiled: src/obj/mid24_a.cpp
+000F4B40 Spawner0F4B40                    // Query_Init0CDD28 door query (K 0x000F4B30), q->4 |= 0x22002, 752-byte obj Projectile_Ctor_000F4A08; decompiled: src/obj/mid24_a.cpp
+000F27D0 Spawner0F27D0                    // door query (K 0x000F27C4), q->4 |= 0x6002, 752-byte obj 0x000F2488; decompiled: src/obj/mid24_a.cpp
+000EAC88 Spawner0EAC88                    // door query (K 0x000EAC78), 640-byte obj Obj_BaseCtor_000E9DD8 + vtables 0x00B12EC8/0x00B13068/0x00B13090; decompiled: src/obj/mid24_a.cpp
+000F39D0 Spawner0F39D0                    // door query + q->252..272 (K 0x000F39BC), 688-byte obj Obj_BaseCtor_000E9DD8 + vtables 0x00B13308..; decompiled: src/obj/mid24_a.cpp
+001D5DC8 Spawner1D5DC8                    // Record_Init spawner: vectors o->368/384, o->420.. 17 words, 624-byte obj 0x001D5C14; decompiled: src/obj/mid24_a.cpp
+000D3EF0 PointInst_SpawnFromTarget0D3EF0  // walks ApePointInstance list (alloc *0x00F8F154), "FromTarget" points -> Query_Init0CDD28 + 368-byte obj 0x000D3BB4; decompiled: src/obj/mid24_b.cpp
+001EBA20 TeleportSetting_Spawn1EBA20      // Entity Teleporter Setting: Record_Init query from params 0x010ABDD0.., 512-byte obj 0x001EB478; decompiled: src/obj/mid24_b.cpp
+0021EEA4 Obj_CopyLightQuery_0021EEA4      // inverse of the 0021E620 light query: CDB28 + fields + 76-byte records (74 copied); decompiled: src/obj/mid24_c.cpp
+00768298 VecRec_Construct768298           // vectors, 256-byte buffer, nine Field_SetByte0_4_8f_004A08A4 (K 0x00768288); decompiled: src/obj/mid24_c.cpp
+00304D94 Rec_Construct304D94              // vectors, two PtrVectors, Save_Profile0C9FC8 0xD4A3F67A/0xB267EAFB/0x8F7C1D39; decompiled: src/obj/mid24_c.cpp
+0033DC0C Obj_New33DC0C                    // 2816-byte obj: Obj_Construct_00769BD8, vt 0x00B1EFD0, four PtrVectors; then 0x0033D4E4(p, b); decompiled: src/obj/mid24_c.cpp
+004335C0 Obj_Construct4335C0              // Ctor_Base42C9D0 + vt 0x00B210A0, names +9/+74, 12-byte records (9 copied); 9 args (9th on stack); decompiled: src/obj/mid24_c.cpp
+0040F244 SubMachine_Ctor40F244            // SubMachine_Construct(o, a, c, *b, d) + vt 0x00B20A48 field init; decompiled: src/obj/mid24_c.cpp
+00304834 ScaleSM_Construct304834          // StateMachine_ConstructThunk + vt 0x00B1DF88, SM_SetState(0xC0941292), six name hashes; decompiled: src/obj/mid24_c.cpp
+00064D48 ProxyPoint_Add64D48              // proxy point slot pool (20-byte records, map s+16 keyed by o->204); decompiled: src/obj/mid24_d.cpp
+003A187C LaserGroup_Add3A187C             // laser group slot pool (112-byte records, map s+68), Bounds_Init_00398ED0; decompiled: src/obj/mid24_d.cpp
+00396D80 Result_SetMeleeBone396D80        // "ResultSetMeleeAttackRaidus": bone-name hash into slot, else error + flag 0x8000; decompiled: src/obj/mid24_d.cpp
+002E2B34 Episode_MarkKey2E2B34            // marks a key bit in the episode progress row; Trophy_Award0B27B4(0xC3FB61E2) at exactly one; decompiled: src/obj/mid24_e.cpp
+000DC0F8 Node_ForwardNamed0DC0F8          // vfn[204] forwarder over o->340 records ("%s_"), then vfn[192]/vfn[196] with "%s%s"; decompiled: src/obj/mid24_e.cpp
+003A20F8 LaserField_Add3A20F8             // laser field slot pool (368-byte records s->44), duplicate / full messages; decompiled: src/obj/mid24_f.cpp
+00417EB8 CamDef_Blend417EB8               // camera point/def blend into c->60 (+80, +64..72); decompiled: src/obj/mid24_f.cpp
+00197210 Obj_UpdateFadeVis197210          // Math_Cosf fade test, vfn[88] visibility toggles, u8 +688; decompiled: src/obj/mid24_f.cpp
