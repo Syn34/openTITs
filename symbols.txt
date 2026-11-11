@@ -3660,9 +3660,9 @@
 000DCA20 Obj_CreateEffectDCA20                // (Object*, def, u32 bone hash, u8 start) -> Effect*: bound / tagged / placed components, Obj_BoneMatrixCE688; decompiled: src/world/hevent18_g.cpp (name?)
 00254564 Anim_Stop254564                      // (Animator*, key): layer's tracks via 0x004B3624 up the def chain (pool *0x00F557F8 handles), stoppable -> 0x00254210; decompiled: src/world/hevent18_g.cpp (name?)
 00353CC0 Entry_Stop353CC0                     // (Entry*, u8 release): finds +32 voice in bank +24; release -> 0x00A459B8, else rewind / state 2|3; decompiled: src/world/hevent18_b.cpp (name?)
-0034F690 Speaker_SetLine34F690                // (Speaker*, line, 0) (name?)
+0034F690 Speaker_SetLine34F690            // (Speaker*, Skeleton*, u8 force): rebuild anim skeleton +8 / poses +12 +84 / +88, bone tables +20 (80-byte records) / +24 (objects; Obj_FindDescendant by bone name after ':'), owner->160; decompiled: src/obj/big21_speak.cpp
 0035133C Speaker_First35133C                  // (Speaker*, u32 line) -> Node*: 44-byte node (vtable 0x00B1F558), 0x00350178, pushed to +92 vector; decompiled: src/world/hevent18_c.cpp (name?)
-00350958 Speaker_Say350958                    // (Speaker*, Text*, u8, -, -, -, r9, r10; f1, f2, f3); reads r3-r5, r9, r10, f1-f3 (name?)
+00350958 Speaker_Say350958                // (Node*, Anim*, u8 rev, -, -, -, s32 wsel, u32 line; f1 weight, f2 rate, f3 blend): binds skeleton (map 0x0106BC14) on first use, turns running controls, new 160-byte control (f_00A4C600) into +32 with VMX weight masks, flags +12; r3 = weight == 0; decompiled: src/obj/big21_speak.cpp
 00A4CC64 Item_SetVoiceA4CC64                  // (Item*, voice) (name?)
 00733964 Vector_Add733964                     // (Vector*, const Rec* 192 bytes) -> s32 index: field-wise copy (flags +176 bits 0..7); decompiled: src/world/hevent18_f.cpp (name?)
 004883C0 World_Colour4883C0                   // (u8 out[4], World* unread, u32 name, u32 rgba): 17 named colours (0x010B8EBC..0x010B937C) or rgba; decompiled: src/world/hevent18_h.cpp (name?)
@@ -8109,7 +8109,7 @@
 0047C68C Scene_VisitChildren47C68C            // (a, Node*) -> count: node +256 child hashes looked up in map 0x010C2CB8 (last 0x011DE48C), recursive; decompiled: src/world/hevent22_e.cpp (name?)
 004BC36C Instance_Apply4BC36C                 // (Instance*, Effect*; f32 from, f32 to) -> 1: +20 float AVL events in (from, to] fired via vtable +12, +44 last list (globals 0x011DE498 / 0x011DE49C); decompiled: src/world/hevent23_b.cpp (name?)
 004BB7E0 Effect_Bind4BB7E0                    // (Effect*, u32 hash, u8 world) -> Bindable*: WorldObj_FindByHash / spline map, or component type 5 + map 0x010C2750 (last 0x011DE490), refcount +4; decompiled: src/world/hevent23_a.cpp (name?)
-004B71BC Instance_Base4B71BC                  // (Instance*, 0, 0, 0) base constructor (777 insns); not done, claim released
+004B71BC Instance_Base4B71BC              // (Instance*, a, Effect* b, XmlCursor*) base ctor: vt 0x00B21C68, name hash +8 (0x19D1382A default); XML children by kind registry 0x010C27B8 (map +12) / 0x010C2820 (array +28) / 0x010C28F0 (maps +16 / f32 +20) / 0x04B8CC71 AnimInst (map +24); decompiled: src/obj/big21_inst.cpp
 0078F898 AvlF_Insert78F898                    // (tree, -, value; f32 key): AVL<float, ApeAnimScriptEvent*> insert, count +4, root node from the allocator 0x00F8F0FC or 0x0078F410; decompiled: src/world/hevent23_a.cpp (name?)
 0038B174 Track_SubRelease38B174               // (Sub*, Base*): kinds 5/2/4/1 +8 record type +36 OPD, kind 3 walks records from +18; decompiled: src/world/hevent23_a.cpp (name?)
 0049E628 Item_Owned49E628                     // (s32 kind, s32 key) -> bool: no session -> 1; item table 0x010BE8C0 (152-byte {key, kind}, count 0x010C1A9C), World +4028+i bits 0 and 1; decompiled: src/world/hevent23_a.cpp (name?)
@@ -12834,8 +12834,6 @@
 00297BA8 EmitterOwner_Refresh297BA8         // (Owner* o): stack param block (owner o->8 position +144 / +320, flags 0x0A) to 0x00443CE0 for each (handle, x) pair of o+384 (s32 o->448); dead ones stopped and swap-removed; SpawnRec_Dtor_00440AC4 / SpawnRec_Dtor2_00440A40(block, 0); decompiled: src/obj/mid21_c.cpp
 0004F530 Ai_RespawnTick4F530                // u32 (Ai* o) vtable entry: states 20/21 -> 0; pending bit 0x80 of o->305: d->348 raised (rows 0x00F98684 + 76 * (o->1800 + 0x6C271198), +72), state 18 posts Event1_Init + World_Query482D14(*0x00F65CA0, -1, ev) and vfn[220](20 / 16); else o->1764 >= *0x00F98848 -> o->1812 = 1, vfn[220](18); decompiled: src/obj/mid21_c.cpp
 00405560 Child_Init_00405560               // not decompiled: reads the uninitialised flags word 372(r1) of its spawn record (name?)
-00405FB8 Child_State11_00405FB8             // (Child*; f32 dt) (not decompiled) (name?)
-000B6208 Obj_SlotApply_000B6208             // (x, w0, w1) (callee of Obj_Layer2TickBE7F0) (not decompiled) (name?)
 01056F1C g_VtB1BE30Table_01056F1C           // u16 count +2, 8-byte entries +8 (+4 = object) of the vtable 0x00B1BE30 objects (name?)
 00F98684 g_RespawnRows_00F98684             // 76-byte rows indexed by key + 0x6C271198 (+72 = limit) (Ai_RespawnTick4F530) (name?)
 
@@ -13003,7 +13001,7 @@
 00245DD0 Obj_Number_00245DD0              // (o, id): numbering callback of Spawner247EE4 (not decompiled) (name?)
 001676F8 Obj_Ctor_001676F8                // (p, q): ctor of the 480-byte object of Spawner167D18 (not decompiled) (name?)
 00190158 Obj_Ctor_00190158                // (p, q): ctor of the 704-byte object of Spawner1909CC (not decompiled) (name?)
-000B2E18 Obj_Ctor_000B2E18                // (p, q): ctor of the 448-byte object of SpawnerC0FE8 (not decompiled) (name?)
+000B2E18 Spawned_Construct_000B2E18       // (p 448 bytes, QueryEx*) (name?)
 001774D8 Obj_Ctor_001774D8                // (p, q): ctor of the 448-byte object of Spawner177AD0 (not decompiled) (name?)
 001EBDF0 Obj_Ctor_001EBDF0                // (p, q): ctor of the 992-byte object of Spawner1EC5C8 (not decompiled) (name?)
 001B9EB8 Obj_Ctor_001B9EB8                // (p, q): ctor of the 416-byte object of Spawner1BADD8 (not decompiled) (name?)
@@ -13078,3 +13076,14 @@
 002AB5F8 Meter_Track_002AB5F8             // u32 f(-; f32 v): v (at least k0 = *0x002AB5E8) -> *0x010592F0 and the running minimum *0x010592EC; when v > k0: a minimum within k1 = *0x002AB5EC of zero spawns (name?); decompiled: src/obj/obj43b.cpp
 0036C898 Obj_PartsOff_0036C898            // u32 f(T* o): with the byte o->+8->+156 set (else r3 = 0), each of the six parts +188 .. +208 gets vt[40](part, 0, 1). r3 as the original leaves it. (name?); decompiled: src/obj/obj43b.cpp
 004051E0 Obj_Reset_004051E0               // u32 f(T* o): byte o->+239 = 0; Handle_Call363A3C(0x63D3E645, 0, 1, -, 0, 0, 0x01164CA4; k = *0x004051DC); o->+92->vt[88](1, 1, 1, 1) and, when it has the child  (name?); decompiled: src/obj/obj43b.cpp
+
+# Game code big sweep part 21
+00405FB8 Child_Hop405FB8                  // (Child* c; f32 dt) spawner child state 11: hop arc c+96 -> fx+64 raised by c->128, then state 12 (orbit splines 0xF425FD11..15 by the game RNG, weights c->208..220, speeds c->136/144/180), anim 0xD6A0734F, effect cue 0x80F43146, spawner +204 count / +231 flag; decompiled: src/obj/big21_child.cpp
+000B6208 Obj_SlotApply_000B6208           // u32 (Spawner* x, s32 lo, s32 hi): spawns 1 (fixed x->148) or lo+rand%(hi-lo+1) objects from template x->120 at the farthest free marker (x->92/x->72/u16 x->100), QueryEx + 448-byte 0x000B2E18 objects pushed to x->52 pairs; x->140 = 1, x->144 = x->112->68; decompiled: src/obj/big21_spawn.cpp
+00A4C600 Control_Init_00A4C600            // (control 160 bytes, Anim*, 0, s32 dir +-1) (name?) (Havok-side callee of Speaker_Say350958)
+00A45478 AnimSkel_AddControl_00A45478     // (AnimSkel*, control) (name?)
+0106BC14 g_SkeletonMap                    // SortedMap of skeletons by String_HashNoCase(name) (SortedMap_Find76D894) (data) (name?)
+0106BBCC g_SpeakerLineMap                 // SortedMap read by SortedMap_Find76E0A8 in Speaker_Say350958 (data) (name?)
+010C27B8 g_KindRegistryA                  // effect child kind BST (root *(+12), path +16, s16 depth +96, cursor +100); select global 0x011DE490 (data) (name?)
+010C2820 g_KindRegistryB                  // as above, select global 0x011DE4A0 (data) (name?)
+010C28F0 g_KindRegistryC                  // as above, select global 0x011DE2AC (data) (name?)
