@@ -9074,7 +9074,7 @@
 00352CD8 Obj_SetEntries_00352CD8          // void f(Obj* o, s32 key, u8 v): every 64-byte entry of the array o->+104 (+0 data, +8 u16 count) whose +0 is key gets +48 = v (r5..r10 left) (name?); decompiled: src/obj/obj23.cpp
 0036C014 Obj_Entry_0036C014               // T* f(const Obj* o, u32 i): with i < o->+8->+152: sub_004DC6F4(p) for p = o->+328[i].+12 (16-byte entries) when set; else 0 (r4 / r5 left) (name?); decompiled: src/obj/obj23.cpp
 0042C1D4 List_AnySet_0042C1D4             // bool f(): one of the (u16 at 0x010AA69C) entries of *(T***)0x010AA694 has a nonzero +12 (u16) (r3..r7 as the loop leaves them) (name?); decompiled: src/obj/obj23.cpp
-00922918 Comp_GetF32_922918           // f32 f(T* p): read on o->+N + 224 by 0x001FB178 / 0x00244418 / 0x0024D9C0 (30+ callers) (name?); not decompiled
+00922918 Comp_GetF32_922918             // (body +224) -> f1 (already named)
 005FC90C Fios_GetScheduler5FC90C      // () -> the scheduler passed to fios_Free 0x005FE784 (name?); not decompiled
 
 # World event handler part 26
@@ -9697,7 +9697,7 @@
 004D3378 Owner_AddName                    // bool (Owner* o, const char* name, s32 kind): lists +28 / +32 made on first use (cap 5), 56-byte {name[50], +52 kind} pushed onto +32 (kind 3) or +28, +4++ ; returns 1 (r4 = the new +4) (name?); decompiled: src/obj/mid1_node.cpp
 004D2D90 Owner_Destruct                   // Owner::~Owner() (vtable 0x00B225D0): bindings +8 popped and freed with their name lists (+68) and strings (+80), name lists +28 / +32 emptied and freed (name?); decompiled: src/obj/mid1_node.cpp
 004F7128 Obj_RegisterParam                // void (Obj* o, ParamDesc* d {+4 name, +8 kind 0-9, +12 mode, +16 out, +20 default}): Node_Bind(o->+8, ...) (a zeroed value when mode 2), d->+16 = binding, +76 = default, Set_Insert_0079B55C(out, o + 48, &d) (name?); decompiled: src/obj/mid1_node.cpp
-004CFB24 Effect_New                       // Effect* (u32 key): def lookup in Set_Find(0)'s BST (+16 root, path +20[] / s16 +100, last node +104, def -> 0x011DE288), new 140-byte Effect pushed onto the effect list 0x010C2968 (guard 0x010C2960) (name?); decompiled: src/obj/mid1_effect.cpp
+004CFB24 Effect_New                     // (u32 hash) -> Effect* or 0 (already named); decompiled: src/obj/mid1_effect.cpp
 004D0280 Effect_Delete                    // void (Effect* e): swap-remove e from the effect list 0x010C2968, Effect_Destruct + SmallFree(e, 140) (name?); decompiled: src/obj/mid1_effect.cpp
 003286D8 Obj_BaseDtor_003286D8            // T::~T() (vtable 0x00B1E1F8, under VtB1E3E0 / B1E458 / B1E4D0 / B1E918 / B1E990): world child release (+2572), new[] array +2544, five lists +2232[i], +2524 / +2512 / +2500 / +2488 freed, vector +2272 deleted, base 0x0048F6B0 (name?); decompiled: src/obj/mid1_dtor.cpp
 000CDB28 Obj_CopyQuery_000CDB28           // u32 (const Obj* o, Query* d): transform rows / params / flags (+132 bits 31..29 -> d+20 0x2000 / 0x1000 / 0x800, d+24 = +132 >> 21) and the 192-byte records of o->+16 appended to d->+0 (made on first use) (name?); decompiled: src/obj/mid1_query.cpp
@@ -10752,7 +10752,7 @@
 002B81FC Obj_EffectToggle_002B81FC        // void f(T* o, u8 b): e = Effect_Bind4BB7E0(o->+8->vt[272](), 0x2D3BE751, 0); when both are set, e->vt[40](e, b && !(bit 0x00080000 of o->+124), 1) (name?); decompiled: src/obj/obj30.cpp
 00318674 VtB1DFF0_Dtor_00318674           // T::~T() (vtable 0x00B1DFF0, then base 0x00B1DCA8): the PtrVector +64, the owned effect +40 (Effect_Destruct, SmallFree(p, 140)) cleared, the PtrVector +44, then (name?); decompiled: src/obj/obj30.cpp
 00367900 Map_LookupThen_00367900          // T* f(u32 h, U* k): 0 unless both are set; r = 0x003677C4(e, k) with e the entry for h in the sorted map 0x0106C228 when bit 0 of its +4 is set (else 0); Hash_To (name?); decompiled: src/obj/obj30.cpp
-0036E9BC Obj_EnableFirstN_0036E9BC        // void f(T* o, s32 n): each set child c of the ten o->+212[k] gets c->vt[40](c, k < n, 0) (name?); decompiled: src/obj/obj30.cpp
+0036E9BC Obj_EnableFirstN_0036E9BC      // (hud, s32 n) (already named); decompiled: src/obj/obj30.cpp
 003AB6A0 Obj_BindNamed_003AB6A0           // void f(T* o, u32 i): with s = the string table 0x00ADF254[i] (i > 2 -> 0), 0x003AB0B8(o, HashNoCase(Format(0x00ADF148, o + 28, s)), HashNoCase(Format(0x00ADF158 (name?); decompiled: src/obj/obj30.cpp
 004387DC Cmd_Fire_004387DC                // void f(T* o): 0x0042C328(o->+4, o->+12, o->+16, 0, the eight u8 o->+20.. +27), Flag_Set8_40000000(o), then the child o->+12 (when set) gets vt[40](c, 0) and is  (name?); decompiled: src/obj/obj30.cpp
 00438A3C Cmd_PlayUi_00438A3C              // void f(T* o): o->+12 = 0; with u = Ui_Find(0x00AE2624, 0): Obj_Set4E3168(0x00AE2644, u) and o->+12 = Timeline_Play(top bit of o->+16 ? 0x00AE264C : 0x00AE265C,  (name?); decompiled: src/obj/obj30.cpp
@@ -11356,19 +11356,19 @@
 004E7B28 UiElem_Destruct4E7B28            // void UiElem_Destruct4E7B28(UiElem* o)  (called by Delete_004E7D10) The destructor of the class with vtable 0x00B22C40 (nine owned children o->204[] released thr (name?); decompiled: src/obj/mid10_ui.cpp
 
 # Game code large functions part 11
-00491000 SetSelect_491000               // (-, u32 hash): selects the global set entry for hash (0x011DE288 / +104); r3 unread (name?)
-0016BA60 Player_SetTierKey16BA60        // (Player*, u32 key from 0x00F6495C[tier]) (name?)
-0036E568 Hud_ShowBanner36E568           // (hud, u32 hash, s32 tier) (name?)
+00491000 SetSelect_491000               // (-, u32 hash): selects the global set entry for hash; with a def builds/starts/times an Effect, flag 0x200; decompiled: src/obj/big12_game.cpp
+0016BA60 Player_SetTierKey16BA60        // (Player*): tier effect 0x00F6495C[p->668], HUD vfunc +20 / Obj_EnableFirstN(p->660); decompiled: src/obj/big12_game.cpp (name?)
+0036E568 Hud_ShowBanner36E568           // (hud, u32 hash, s32 tier): set select + Effect with comp 0x044FA364 +20 = tier; decompiled: src/obj/big12_game.cpp (name?)
 00016A40 Obj_UpdateMotion16A40          // (Obj*; f32 dt): owner motion matrix (vfunc +208/+276/+272) into frame +128, turn toward +192 by <= +76*dt deg, then velocity to +68 or re-orthonormalise + hand to owner (name?); decompiled: src/obj/big11_obj.cpp
-00016680 Vec_SignedAngle16680           // (const vec3* a, const vec3* b) -> f1 angle (rad) (name?)
+00016680 Vec_SignedAngle16680           // (const vec3* a, const vec3* b) -> f1: acosf(clamped dot), sign by dot(a, b x up 0x01164B60), single-pi wrap; decompiled: src/obj/big12_game.cpp
 00238270 Player_ResetFromDef238270      // (Player*, PlayerDef*): effect state step, drop/stop/release everything, detach kind 15/2/19/1/24/3 children, rebuild from def ("Player%02d_Controllable" query, children, ref nodes, rates, +1012 = 0x3F2950FF, world user) (name?); decompiled: src/obj/big11_game.cpp
-002349E0 Player_DropLinks2349E0         // (Player*) (name?)
-00231470 Player_Setup231470             // (Player*) (name?)
-00231928 Player_Setup231928             // (Player*) (name?)
-00230CA0 Player_Setup230CA0             // (Player*) (name?)
-00232F00 Player_Setup232F00             // (Player*, +612) (name?)
+002349E0 Player_DropLinks2349E0         // (Player*): releases link entries p->676 (128 bytes) and objects p->696; decompiled: src/obj/big12_player.cpp (name?)
+00231470 Player_Setup231470             // (Player*): builds 128-byte link entries in p->676 from tuning +1072 groups; group instances to p->696; decompiled: src/obj/big12_player.cpp (name?)
+00231928 Player_Setup231928             // (Player*): effects p->748/768/776 and defs p->752/756/760/764 from tuning hashes; decompiled: src/obj/big12_player.cpp (name?)
+00230CA0 Player_Setup230CA0             // (Player*): "vehicle trigger proxy" Havok body at p->672 (radius tune +1564); decompiled: src/obj/big12_player.cpp (name?)
+00232F00 Player_Setup232F00             // (Player*, rig = p->612): tuning p->396 (+1248..+1508) into rig parts, new 28-byte Havok shape at q->64; decompiled: src/obj/big12_player.cpp (name?)
 002371F8 Player_SetRate2371F8           // (Player*; f32) (name?)
-00236868 Player_SetRate2_236868         // (Player*, def + 1528 (unread); f32, f32) (name?)
+00236868 Player_SetRate2_236868         // (Player*, unread; f32 speed, f32 spin): re-orients the rig body and sets its angular velocity; decompiled: src/obj/big12_player.cpp (name?)
 
 # Game code sweep part 33
 0034A108 Scene_LoadSkel_0034A108          // T* f(a, b, src, s32 n, e): an animation stream (Stream_Init7CE648 on a local) and the skeleton h = 0x00804570(src, n, &out, {0, 0, 0} by value); for a skeleton, (name?); decompiled: src/obj/obj33.cpp
@@ -11580,3 +11580,15 @@
 002F8AFC XmlItem_Read2F8AFC               // (item or 0, XmlCursor* child) (not decompiled)
 000D5330 XmlReg_ReadObjD5330              // (a0, c, Obj** inout) (not decompiled)
 000D4E28 XmlReg_ReadObjD4E28              // (a0, c, Obj** inout) (not decompiled)
+
+# Game code large functions part 12
+00232B60 Player_TunePart232B60          // (Player*, world tier +4, rig->28) (name?)
+002329DC Player_TunePart2329DC          // (Player*, rig->28, rig->36) (name?)
+002327A8 Player_TunePart2327A8          // (Player*, rig->28, rig->44) (name?)
+00232650 Player_TunePart232650          // (Player*, rig->28, rig->48) (name?)
+00232360 Player_TunePart232360          // (Player*, rig->28, rig->52) (name?)
+009FE8B0 Hk_ShapeInit9FE8B0             // (shape 28 bytes, rig->28, s32) (name?)
+00231208 Player_InitLinkPart231208      // (Player*, PtrVector* part, const def* src) (name?)
+009334A0 Hk_DetachSkel9334A0            // (u8* scratch, hkWorld*, skel) (name?)
+0089FE70 Hk_SphereShapeCtor89FE70       // (shape 32 bytes; f32 radius) (name?)
+0091D208 Hk_CinfoFromBody91D208         // (body, hkpRigidBodyCinfo*) (name?)
