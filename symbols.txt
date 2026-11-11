@@ -11552,14 +11552,8 @@
 001C011C DamageColDef_FromRecC011C        // (p, rec) ctor used by DamageColDef_NewC0658 (not decompiled)
 001CFE00 DamageColDef_FromRecCFE00        // (p, rec) ctor used by DamageColDef_NewD0208 (not decompiled)
 001D3A24 DamageColDef_FromRecD3A24        // (p, rec) ctor used by DamageColDef_NewD3E58 (not decompiled)
-001AFA78 DamageColDef_ReadAFA78           // (a0, c, x, tmpl, o) reader (421 instructions; not decompiled)
-001C2058 DamageColDef_ReadC2058           // reader (542; not decompiled)
-001C49E8 DamageColDef_ReadC49E8           // reader (642; not decompiled)
-001CA080 DamageColDef_ReadCA080           // reader (459; not decompiled)
-001D62A8 DamageColDef_ReadD62A8           // reader (967; not decompiled)
 001D5A40 DamageColDef_FromRecD5A40        // (p, rec) (not decompiled)
 001DD3F8 DamageColDef_ReadDD3F8           // reader (1152; not decompiled)
-001E6300 DamageColDef_ReadE6300           // reader (513; not decompiled)
 001E5170 DamageColDef_FromRecE5170        // (p, rec) (not decompiled)
 003078D8 XmlDef_Read3078D8                // (a0, c, x, tmpl, o) reader (99; not decompiled)
 002F8CF0 XmlDef_Read2F8CF0                // (a0, c, x, tmpl, o) reader (118; not decompiled)
@@ -11844,3 +11838,20 @@
 000D74C0 Obj_ShutdownBase_000D74C0       // (o, full) base of 0020ABD8 (name?)
 006D612C Voice_SetParams_006D612C        // (voice, const Params220* p) (name?)
 004EAD20 Level_RecordConstruct_004EAD20  // (rec) 1168-byte level record (name?)
+
+# Game code large functions part 15
+001AFA78 DamageColDef_ReadAFA78         // void f(a0, XmlCursor* c, x, Def* tmpl, Rec* o): Read_000C85A8, defaults (0x40000 group: vec3 +224 normalized, f32s +240..+288, s32-1 byte +292, 4 flag bits of +292); decompiled: src/obj/big15_dmg.cpp
+001CA080 DamageColDef_ReadCA080         // void f(a0, c, x, tmpl, o): ReadAD1F8 + 0x80000, 0x02000000 group (hashes +320..+356, f32s +360..+392 clamps / deg->rad, kind index of 0x04F3FC3D in 0x00AD16A4 -> +396, s32 +400, bools +404..+407); decompiled: src/obj/big15_dmg.cpp
+001E6300 DamageColDef_ReadE6300         // void f(a0, c, x, tmpl, o): Read_000C85A8, 0x10000000 group (hashes/f32/vec3 +224..+396; rec+k = tmpl+k+80); decompiled: src/obj/big15_dmg.cpp
+001C2058 DamageColDef_ReadC2058         // void f(a0, c, x, tmpl, o): ReadAD1F8 + 0x80000, 0x01000000 group: u32 PtrVectors +320 (hashes) / +340 (s32 max(v-1,0)), f32 +360, bools +364..+367; decompiled: src/obj/big15_dmg.cpp
+001C49E8 DamageColDef_ReadC49E8         // void f(a0, c, x, tmpl, o): ReadAD1F8 + 0x80000, 0x00400000 group (+320..+374, 11 bools) and six 80-byte slots +384 from children 0xEB9EE198 (euler -> quat); decompiled: src/obj/big15_dmg.cpp
+001D62A8 DamageColDef_ReadD62A8         // void f(a0, c, x, tmpl, o): Read_000C85A8, tmpl+28 bit 1 group (+222 "hudPromptMsg" string, vec3s, f32s, +412 flag bits) and children by tag 0x3257217B / 0x89F23F47 / 0x89F1FF19 (+352 type, +356 kind, +360..+404); decompiled: src/obj/big15_dmg.cpp
+001D6164 DamageColDef_KindFromHashD6164 // u32 f(u32 hash) -> kind (reads r3 only; 75 instructions; not decompiled) (name?)
+001C2044 k_DmgPoolC2044                 // .text f32 {100, 0, 0.3, 1, -1} (DamageColDef_ReadC2058)
+001AFA5C k_DmgPoolAFA5C                 // .text f32 {100, 0, 0.3, 1, -1, 1e-5, pi/180} (DamageColDef_ReadAFA78)
+001CA064 k_DmgPoolCA064                 // .text f32 {100, 0, 0.3, 1, -1, pi/180} (DamageColDef_ReadCA080)
+001C49C8 k_DmgPoolC49C8                 // .text f32 {100, 0, 0.3, 1, -1, pi/180, 0.5} (DamageColDef_ReadC49E8)
+001D6290 k_DmgPoolD6290                 // .text f32 {100, 0, 0.3, 1, -1, pi/180} (DamageColDef_ReadD62A8)
+001E62E8 k_DmgPoolE62E8                 // .text f32 {100, 0, 0.3, 1, -1} (DamageColDef_ReadE6300)
+00AD16A4 k_DmgKindHashesAD16A4          // u32[2] {0x13234CFF, 0x8FA5D8C3} (DamageColDef_ReadCA080 +396 index)
+00AD1EAC s_hudPromptMsg                 // "hudPromptMsg"
