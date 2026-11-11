@@ -13000,7 +13000,7 @@
 00245DD0 Obj_Number_00245DD0              // (o, id): numbering callback of Spawner247EE4 (not decompiled) (name?)
 001676F8 Obj_Ctor_001676F8                // (p, q): ctor of the 480-byte object of Spawner167D18 (not decompiled) (name?)
 00190158 Obj_Ctor_00190158                // (p, q): ctor of the 704-byte object of Spawner1909CC (not decompiled) (name?)
-000B2E18 Spawned_Construct_000B2E18       // (p 448 bytes, QueryEx*) (name?)
+000B2E18 Spawned_Construct_000B2E18       // void (Obj* p 448 bytes, QueryEx* q): base Thunk_000E02D8, vtable 0x00B12080, listener +380 (vt 0x00B12204), box +384/+416 from q+208/+224, anchor +400, Havok body via p->216->240 vfn[8] (+432; name p->160 vfn[3] or "<unknown>", transform from rows +96..+144, properties 0xA734004D/0x91C7CF5B, listener), state (0,0), p->20 = random vector in p->216's box with random signs; decompiled: src/obj/big22_spawn.cpp
 001774D8 Obj_Ctor_001774D8                // (p, q): ctor of the 448-byte object of Spawner177AD0 (not decompiled) (name?)
 001EBDF0 Obj_Ctor_001EBDF0                // (p, q): ctor of the 992-byte object of Spawner1EC5C8 (not decompiled) (name?)
 001B9EB8 Obj_Ctor_001B9EB8                // (p, q): ctor of the 416-byte object of Spawner1BADD8 (not decompiled) (name?)
@@ -13113,3 +13113,11 @@
 003A20F8 LaserField_Add3A20F8             // laser field slot pool (368-byte records s->44), duplicate / full messages; decompiled: src/obj/mid24_f.cpp
 00417EB8 CamDef_Blend417EB8               // camera point/def blend into c->60 (+80, +64..72); decompiled: src/obj/mid24_f.cpp
 00197210 Obj_UpdateFadeVis197210          // Math_Cosf fade test, vfn[88] visibility toggles, u8 +688; decompiled: src/obj/mid24_f.cpp
+
+# Game code big sweep part 22
+00309440 Player_Launch309440              // u32 (Obj* a, -, u32 b, -, -, const Vec3* dir; f32 x, f32 f2, f32 speed): local player gets a 40-byte message (vt 0x00B0DADC) via vfn[86]; its vfn[16] object o is reset, pushed (0x002696E0) and given velocity +672 = dir*speed (kUpVec when dir is zero), mode 2; decompiled: src/obj/big22_launch.cpp
+0041D158 Obj_GesturePick41D158            // u32 (Obj* o; f32 dt): cooldown u8 +484 / f32 +488; else picks mode 0..3 from the local player's record flags (0x010B19E0 + 11968*idx, +184/+188), scans list +104 (u16 +112) with f_0041B200, restarts one of 8 clips via Anim_Restart2775A8, 0.3 cooldown when ready; decompiled: src/obj/big22_gesture.cpp
+00043BC0 Obj_RespawnSlots43BC0            // u32 (Obj* o): re-arms the 112-byte slots (+308, u16 +316), toggles +700/+704 (vfn[76]), hash 0x8C0A3A7E on +624, +648 = 4, spawns world objects + effects (0x4838D5DC) for one random set of the +612 table record +716 group +688, places +656/+660 at +664/+668, then Obj_LaunchSlots43784(o, n); decompiled: src/obj/big22_slots.cpp
+002FBF00 Dragon_AttackSpawn2FBF00         // u32 (Dragon* o, Emitter* s, u32 msg, Def* def): msgs 0x952A45AC/AD/AE and 0x0969AF51 spawn projectiles with Obj_SpawnAt2FBCC8 from s's frame toward o+480 (clamped x/z for AE; 0969AF51 focuses the player and returns the object); decompiled: src/obj/big22_dragon.cpp
+0041B200 Item_Matches41B200               // bool (Item*, u32 mode) (callee of Obj_GesturePick41D158) (name?)
+002696E0 Obj_Push2696E0                   // (Obj*, const Vec3*; f32) (reads r3 r4 f1; callee of Player_Launch309440) (name?)
