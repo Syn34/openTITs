@@ -1,10 +1,8 @@
 // Game code, large-function sweep part 28: a ledge-grab state turning and
 // placing the owner's frame on the ledge found by Ledge_Probe.
-#include "../sly4.h"
 #include "big28.h"
 
-using namespace sly4;
-using namespace sly4::big28;
+namespace sly4::obj {
 
 namespace {
 constexpr f32 kHalf = 0.5f;     // .text pool 0x002CEF1C +0
@@ -13,102 +11,130 @@ constexpr f32 kOne = 1.0f;      // pool +8
 constexpr f32 kGap = 0.1f;      // pool +12
 constexpr u32 Ledge_Probe = 0x002CCFF0;       // bool (Obj*, const f32 pos[3], u8 high, f32 pt[3], f32 n[3], u8* grab, u8* kind)
 constexpr u32 Vec_RotateToward = 0x001007D0;  // (f32 out[3], const f32 from[3], const f32 to[3]; f1 max angle)
-constexpr u32 ZeroVec = 0x01164B40;           // the global zero vector
 constexpr u32 UpVec = 0x01164B60;             // the global up vector
-constexpr u32 AxisZ = 0x01164B70;             // the global vector after UpVec
-constexpr u32 IdentityMat = 0x01164BD0;       // the global identity matrix (4 rows of 16)
-inline void Cp(u32 dst, u32 src) { store<u32>(dst, load<u32>(src)); }  // lfs / stfs pair
+constexpr u32 AxisZ = 0x01164B70;             // the global vector after UpVec ({0, 0, 1})
+constexpr u32 IdentityMat = 0x01164BD0;       // the global identity matrix
+
+// The owner: +96 its matrix (row 3 the position).
+struct LedgeOwner {
+    pad<96> _0;
+    Mtx44 m;  // +96
+};
+// The frame object written: +32 its matrix.
+struct LedgeFrame {
+    pad<32> _0;
+    Mtx44 m;  // +32
+};
+struct LedgeState {
+    pad<8> _0;
+    be_u32 owner;   // +8: LedgeOwner*
+    pad<56> _12;
+    be_f32 height;  // +68
+    be_f32 off;     // +72
+    pad<52> _76;
+    Mtx44 m;        // +128
+    pad<153> _192;
+    u8 grab;        // +345
+    u8 kind;        // +346
+};
+static_assert(offsetof(LedgeState, m) == 128 && offsetof(LedgeState, grab) == 345);
+// The original's locals (sp offsets - 112): the turned direction, -n, the
+// probe point and normal, a copy of o's rows (row 3 replaced by the
+// owner's position), a copy of the owner's matrix (row 3 the probe's
+// position).
+struct LedgeLocals {
+    Vec4 dir;      // sp+112
+    Vec4 negn;     // sp+128
+    Vec4 pt;       // sp+144
+    Vec4 n;        // sp+160
+    Mtx44 rows;    // sp+176 (rows.r[3] = the position, sp+224)
+    Mtx44 wm;      // sp+240 (wm.r[3] = sp+288)
+};
+static_assert(offsetof(LedgeLocals, rows) == 64 && offsetof(LedgeLocals, wm) == 128);
+
+// lfs / stfs copies of the x / y / z words.
+void Cp3(Vec4& d, const Vec4& s) {
+    set_bits(d.x, bits(s.x));
+    set_bits(d.y, bits(s.y));
+    set_bits(d.z, bits(s.z));
+}
+void Cp3(Vec4& d, const Vec3& s) {
+    set_bits(d.x, bits(s.x));
+    set_bits(d.y, bits(s.y));
+    set_bits(d.z, bits(s.z));
+}
+void Cp4x3(Mtx44& d, const Mtx44& s) {
+    for (u32 r = 0; r < 4; ++r) Cp3(d.r[r], s.r[r]);
+}
 }  // namespace
 
 // u32 f(State* o; f32 dt) (called by f_00160A80 .. f_00164808). Needs the
 // owner w = o->+8 with w->vfn[32](w, 0) == 7; m = w->vfn[64]()->vfn[8]()
 // is the frame object written. Ledge_Probe(o, &w's matrix (+96) row 3, 0,
-// &pt (zero vector), &n (AxisZ), o+345, o+346); 0 without a ledge (f1 =
-// pt.y - o->+68 * 0.5). m's rows (+32 / +48 / +64 / +80) start as the
+// &pt (zero vector), &n (AxisZ), o+345, o+346); 0 without a ledge. m's rows (+32 / +48 / +64 / +80) start as the
 // identity; row 2 = Vec_RotateToward(o's row 2 (+160..), -n, dt * pi);
 // row 0 = normalised UpVec x row 2, row 1 = row 2 x row 0; row 3 = w's
 // position (+144..) moved along n to n . (pt - pos) + o->+72 + 0.1 (with
 // pt.y lowered by half o->+68). o's rows +128 / +144 / +160 / +176 = m's.
-// Returns 1 (f1 = m's +88).
-DECOMP(002CEF30, Ledge_AlignToProbe_002CEF30) {
-    const u32 o = arg<u32>(ctx, 0);
-    const f64 dt = ctx.fpr[1];
-    const u32 w = load<u32>(o + 8);
-    if (w == 0) {
-        ret(ctx, 0u);
-        return;
-    }
-    if (static_cast<u32>(VCall(ctx, w, 32, {w, 0})) != 7) {
-        ret(ctx, 0u);
-        return;
-    }
-    const u32 x = static_cast<u32>(VCall(ctx, w, 64, {w}));
-    const u32 m = static_cast<u32>(VCall(ctx, x, 8, {x}));
-    Stack frame(ctx, 368);
-    const u32 sp = frame.addr();
-    const u32 PT = sp + 144, N = sp + 160, POS = sp + 224;
-    const f64 hgt = Lf(o + 68), off = Lf(o + 72);  // f29 / f30
-    for (u32 r = 0; r < 4; ++r)
-        for (u32 k = 0; k < 3; ++k) Cp(sp + 176 + 16 * r + 4 * k, o + 128 + 16 * r + 4 * k);
-    for (u32 k = 0; k < 3; ++k) Cp(POS + 4 * k, w + 144 + 4 * k);
-    for (u32 k = 0; k < 3; ++k) Cp(PT + 4 * k, ZeroVec + 4 * k);
-    for (u32 k = 0; k < 3; ++k) Cp(N + 4 * k, AxisZ + 4 * k);
-    const u32 w2 = load<u32>(o + 8);
-    VCall(ctx, w2, 64, {w2});  // result unused
-    const u32 mat = w2 + 96;
-    for (u32 r = 0; r < 4; ++r)
-        for (u32 k = 0; k < 3; ++k) Cp(sp + 240 + 16 * r + 4 * k, mat + 16 * r + 4 * k);
-    SetF1(ctx, mat + 56);
-    const u32 found = static_cast<u32>(call(ctx, Ledge_Probe, {o, sp + 288, 0, PT, N, o + 345, o + 346}));
-    const f64 py = S(-std::fma(hgt, static_cast<f64>(kHalf), -Lf(PT + 4)));  // fnmsubs
-    ctx.fpr[1] = py;
-    if (found == 0) {
-        ret(ctx, 0u);
-        return;
-    }
-    Sf(PT + 4, py);
-    for (u32 r = 0; r < 4; ++r)
-        for (u32 k = 0; k < 3; ++k) Cp(m + 32 + 16 * r + 4 * k, IdentityMat + 16 * r + 4 * k);
-    const u32 R0 = m + 32, R1 = m + 48, R2 = m + 64, R3 = m + 80;
-    Sf(sp + 128, -Lf(N)), Sf(sp + 132, -Lf(N + 4)), Sf(sp + 136, -Lf(N + 8));
-    callf(ctx, Vec_RotateToward, {sp + 112, sp + 208, sp + 128}, {Muls(dt, kPi)});
+// Returns 1. Callers read r3, not f1 (r3.sh).
+u32 Ledge_AlignToProbe_002CEF30(LedgeState* o, f32 dt) {
+    const u32 w = o->owner;
+    if (w == 0) return 0;
+    if (vcall<u32>(host<u8>(w), 32, 0u) != 7) return 0;
+    const u32 x = vcall<u32>(host<u8>(w), 64);
+    LedgeFrame& fr = gm<LedgeFrame>(vcall<u32>(host<u8>(x), 8));
+    GuestFrame frame(368);
+    LedgeLocals& L = *frame.as<LedgeLocals>(112);
+    const f64 hgt = lf(o->height), off = lf(o->off);  // f29 / f30
+    Cp4x3(L.rows, o->m);
+    Vec4& pos = L.rows.r[3];
+    Cp3(pos, gm<LedgeOwner>(w).m.r[3]);
+    Cp3(L.pt, global<Vec3>(kZeroVec));
+    Cp3(L.n, global<Vec3>(AxisZ));
+    const u32 w2 = o->owner;
+    vcall(host<u8>(w2), 64);  // result unused
+    Cp4x3(L.wm, gm<LedgeOwner>(w2).m);
+    const u32 found = call<u32>(Ledge_Probe, o, &L.wm.r[3], 0u, &L.pt, &L.n, &o->grab, &o->kind);
+    const f64 py = Fnmsubs(hgt, static_cast<f64>(kHalf), lf(L.pt.y));
+    if (found == 0) return 0;
+    L.pt.y = static_cast<f32>(py);
+    Cp4x3(fr.m, global<Mtx44>(IdentityMat));
+    Vec4 &R0 = fr.m.r[0], &R1 = fr.m.r[1], &R2 = fr.m.r[2], &R3 = fr.m.r[3];
+    L.negn.x = static_cast<f32>(-lf(L.n.x)), L.negn.y = static_cast<f32>(-lf(L.n.y)), L.negn.z = static_cast<f32>(-lf(L.n.z));
+    call(Vec_RotateToward, &L.dir, &L.rows.r[2], &L.negn, Muls(dt, kPi));
     // Row 2: the turned direction; row 0: UpVec x row 2, normalised.
-    const f64 d1 = Lf(sp + 116), d2 = Lf(sp + 120);
-    for (u32 k = 0; k < 3; ++k) Cp(R2 + 4 * k, sp + 112 + 4 * k);
+    const Vec3& up = global<Vec3>(UpVec);
+    const f64 d1 = lf(L.dir.y), d2 = lf(L.dir.z);
+    Cp3(R2, L.dir);
     {
-        const f64 a = Fmsubs(Lf(UpVec + 4), d2, Muls(Lf(UpVec + 8), d1));
-        Sf(R0, a);
-        const f64 b = Fmsubs(Lf(UpVec + 8), Lf(R2), Muls(Lf(UpVec), Lf(R2 + 8)));
-        Sf(R0 + 4, b);
-        const f64 c = Fmsubs(Lf(UpVec), Lf(R2 + 4), Muls(Lf(UpVec + 4), Lf(R2)));
+        const f64 a = Fmsubs(lf(up.y), d2, Muls(lf(up.z), d1));
+        const f64 b = Fmsubs(lf(up.z), lf(R2.x), Muls(lf(up.x), lf(R2.z)));
+        const f64 c = Fmsubs(lf(up.x), lf(R2.y), Muls(lf(up.y), lf(R2.x)));
         const f64 s = Divs(kOne, Sqrts(Fmadds(c, c, Fmadds(a, a, Muls(b, b)))));
         const f64 ax = Muls(a, s), ay = Muls(b, s), az = Muls(c, s);
-        Sf(R0, ax), Sf(R0 + 4, ay), Sf(R0 + 8, az);
+        R0.x = static_cast<f32>(ax), R0.y = static_cast<f32>(ay), R0.z = static_cast<f32>(az);
         // Row 1: row 2 x row 0.
-        Sf(R1, Fmsubs(Lf(R2 + 4), az, Muls(Lf(R2 + 8), ay)));
-        Sf(R1 + 4, Fmsubs(Lf(R2 + 8), Lf(R0), Muls(Lf(R2), Lf(R0 + 8))));
-        Sf(R1 + 8, Fmsubs(Lf(R2), Lf(R0 + 4), Muls(Lf(R2 + 4), Lf(R0))));
+        R1.x = static_cast<f32>(Fmsubs(lf(R2.y), az, Muls(lf(R2.z), ay)));
+        R1.y = static_cast<f32>(Fmsubs(lf(R2.z), lf(R0.x), Muls(lf(R2.x), lf(R0.z))));
+        R1.z = static_cast<f32>(Fmsubs(lf(R2.x), lf(R0.y), Muls(lf(R2.y), lf(R0.x))));
     }
     // Row 3: the position moved along n.
     {
-        const f64 ex = Subs(Lf(PT), Lf(POS)), ez = Subs(Lf(PT + 8), Lf(POS + 8)), ey = Subs(Lf(PT + 4), Lf(POS + 4));
-        Cp(R3, POS);
-        f64 t = Fmadds(Lf(N), ex, off);
-        Cp(R3 + 4, POS + 4);
-        Cp(R3 + 8, POS + 8);
-        t = Fmadds(Lf(N + 8), ez, t);
-        t = Fmadds(Lf(N + 4), ey, t);
+        const f64 ex = Subs(lf(L.pt.x), lf(pos.x)), ez = Subs(lf(L.pt.z), lf(pos.z)), ey = Subs(lf(L.pt.y), lf(pos.y));
+        f64 t = Fmadds(lf(L.n.x), ex, off);
+        t = Fmadds(lf(L.n.z), ez, t);
+        t = Fmadds(lf(L.n.y), ey, t);
         t = Adds(t, kGap);
-        const f64 my = Muls(t, Lf(N + 4)), mz = Muls(t, Lf(N + 8)), mx = Muls(t, Lf(N));
-        const f64 qy = Adds(Lf(POS + 4), my), qz = Adds(Lf(POS + 8), mz), qx = Adds(Lf(POS), mx);
-        Sf(sp + 116, my), Sf(sp + 120, mz), Sf(sp + 112, mx);
-        Sf(sp + 132, qy), Sf(sp + 136, qz), Sf(sp + 128, qx);
-        Sf(R3, qx);
-        Cp(R3 + 4, sp + 132);
-        Cp(R3 + 8, sp + 136);
+        const f64 my = Muls(t, lf(L.n.y)), mz = Muls(t, lf(L.n.z)), mx = Muls(t, lf(L.n.x));
+        const f64 qy = Adds(lf(pos.y), my), qz = Adds(lf(pos.z), mz), qx = Adds(lf(pos.x), mx);
+        R3.x = static_cast<f32>(qx);
+        R3.y = static_cast<f32>(qy);
+        R3.z = static_cast<f32>(qz);
     }
-    for (u32 r = 0; r < 4; ++r)
-        for (u32 k = 0; k < 3; ++k) Cp(o + 128 + 16 * r + 4 * k, m + 32 + 16 * r + 4 * k);
-    SetF1(ctx, m + 88);
-    ret(ctx, 1u);
+    Cp4x3(o->m, fr.m);
+    return 1;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(002CEF30, sly4::obj::Ledge_AlignToProbe_002CEF30)

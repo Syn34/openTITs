@@ -1,11 +1,9 @@
 // Game code, large-function sweep part 28: a game object's ring of spline
 // effects (spawned, aged and placed along five splines, faded, triggering a
 // camera event near the camera) and its camera target along spline 2.
-#include "../sly4.h"
 #include "big28.h"
 
-using namespace sly4;
-using namespace sly4::big28;
+namespace sly4::obj {
 
 namespace {
 constexpr u32 kPool548 = 0x00054850;  // .text pool: the f32 / f64 constants below
@@ -41,10 +39,7 @@ constexpr u32 WorldObj_SplinePointTangentAt = 0x005A80D8;  // (o, -, f32 pos[4],
 constexpr u32 Obj_GetPathPose = 0x0012919C;           // (Obj*, f32* t, Mat34*, u32*) -> u32
 constexpr u32 Obj_PopLayer = 0x000FBB88;              // (Object*, Animator*; f1 t)
 constexpr u32 Camera_PushTarget = 0x000FC040;         // (Camera*, Target*, -, u8 priority; f1 blend)
-constexpr u32 SmallAlloc = 0x0055238C;                // (u32 size) -> p or 0
-constexpr u32 Game = 0x00F65CA0;                      // Game*
 constexpr u32 GameLayers = 0x001281E0;                // Game +0x1281E0: the camera layer object
-constexpr u32 Rng = 0x01164888;                       // u64 +0 the last output (16 bits); u32 +8 the state
 constexpr u32 UpVec = 0x01164B60;                     // the global up vector
 constexpr u32 kVtCamTarget = 0x00B13B38;              // 112-byte camera target
 constexpr u32 kVtCamEvent = 0x00B0DADC;               // camera event on the stack
@@ -53,15 +48,100 @@ constexpr u32 kHashSpawn = 0x76F894FCu;               // effect hash: spawned
 constexpr u32 kHashFade = 0x879F2BDAu;                // effect hash: fading
 constexpr u32 kHashNear = 0x00011773u;                // effect hash: passed near the camera
 constexpr u32 kEventNear = 0x2DA0A51Du;               // the event's hash
-inline f64 Tw(u32 base) { return Lf(base + 72); }
+f64 Tw(u32 base) { return lf(global<be_f32>(base + 72)); }
 // fsel / frsp / fsel: x clamped to [kLo, kHi] by 1 - x >= 0 then x >= 0 (NaN: kHi, then kept).
-inline f64 Clamp01(f64 one, f64 x) {
+f64 Clamp01(f64 one, f64 x) {
     const f64 a = S(Subs(one, x) >= 0.0 ? x : kHi);
     return a >= 0.0 ? a : kLo;
 }
+
+// A fade controller (an object's +128 block +56): +0, +32 bits 27..20 the
+// mode, +36 the fade value.
+struct FxCtl {
+    be_u32 w0;     // +0
+    pad<28> _4;
+    be_u32 mode;   // +32
+    be_f32 fade;   // +36
+};
+static_assert(offsetof(FxCtl, fade) == 36);
+// The 112-byte camera target: +4 its layer object, the look frame (+16
+// right, +32 up, +48 direction, +64 eye), +80 the field of view.
+struct CamTarget112 {
+    be_u32 vtable;   // +0
+    be_u32 layer;    // +4
+    u8 b8;           // +8
+    pad<7> _9;
+    Vec4 right;      // +16
+    Vec4 up;         // +32
+    Vec4 dir;        // +48
+    Vec4 eye;        // +64
+    be_u32 fov;      // +80 (raw)
+    be_u32 w84;      // +84
+    be_u32 w88;      // +88: bits 30..23 = 1, bit 31 cleared
+    be_u32 w92;      // +92
+    be_u32 w96;      // +96
+    be_u32 w100;     // +100
+    pad<8> _104;
+};
+static_assert(sizeof(CamTarget112) == 112 && offsetof(CamTarget112, fov) == 80);
+// The camera event posted near the camera (on the stack).
+struct CamEvent {
+    be_u32 vtable;   // +0
+    be_u32 obj;      // +4
+    be_u32 hash;     // +8
+    be_u16 h12;      // +12
+    be_u16 flags;    // +14
+    Vec3 up;         // +16
+    pad<4> _28;
+    be_u32 range;    // +32 (raw)
+    be_u32 w36;      // +36
+    pad<8> _40;
+};
+static_assert(sizeof(CamEvent) == 48);
+struct SplineFxObj {
+    pad<36> _0;
+    be_f32 cur;          // +36
+    pad<20> _40;
+    be_u32 o60;          // +60
+    pad<244> _64;
+    be_s32 mode;         // +308
+    pad<1424> _312;
+    be_f32 timer;        // +1736
+    u8 head;             // +1740
+    u8 tail;             // +1741
+    u8 on;               // +1742
+    pad<9> _1743;
+    be_u32 groups;       // +1752: its +160 -> +208 the group block
+    be_u32 objs[256];    // +1756
+    be_f32 age[256];     // +2780
+    be_u32 idx[256];     // +3804
+    u8 b[256];           // +4828
+    pad<4> _5084;
+    be_u32 life;         // +5088: its +120 the spline length
+    pad<12> _5092;
+    be_u32 splines[5];   // +5104
+    be_u32 target;       // +5124: CamTarget112*
+    be_u32 path;         // +5128
+};
+static_assert(offsetof(SplineFxObj, mode) == 308 && offsetof(SplineFxObj, timer) == 1736 && offsetof(SplineFxObj, objs) == 1756);
+static_assert(offsetof(SplineFxObj, b) == 4828 && offsetof(SplineFxObj, life) == 5088 && offsetof(SplineFxObj, splines) == 5104);
+static_assert(offsetof(SplineFxObj, path) == 5128);
+// The original's locals (sp offsets - 112).
+struct FxLocals {
+    Vec4 campos;     // sp+112
+    Vec4 pt;         // sp+128
+    CamEvent ev;     // sp+144
+    Mtx44 frame;     // sp+192: right, up, tangent, point
+    be_f32 t;        // sp+256
+};
+static_assert(offsetof(FxLocals, frame) == 80 && offsetof(FxLocals, t) == 144);
+
+void Look(Vec4& r, f64 x, f64 y, f64 z) {
+    r.x = static_cast<f32>(x), r.y = static_cast<f32>(y), r.z = static_cast<f32>(z);
+}
 }  // namespace
 
-// u32 f(GameObj* o; f32 dt) (called by f_00056468, f_0005A6A0). Effects
+// void f(GameObj* o; f32 dt) (called by f_00056468, f_0005A6A0). Effects
 // live in a 256-entry ring (u8 head o->+1740, tail +1741): object +1756[i],
 // age +2780[i], spline index 0..4 +3804[i], u8 +4828[i]; splines +5104[0..4].
 // 1. With o->+36 under the fade limit (7.6, 3.0 in mode 8 = o->+308) and
@@ -95,124 +175,122 @@ inline f64 Clamp01(f64 one, f64 x) {
 //    1.5 of the camera position a camera event (kEventNear, o->+60, flags
 //    from the stack's +158 with 0x1000 from o->+60's +184 bit 0) is posted
 //    to the camera (vfn[344], camera with bit 2) and it gets kHashNear.
-// Returns the head (r3) with f1 left as the original leaves it.
-DECOMP(00054880, Obj_UpdateSplineFx_00054880) {
-    const u32 o = arg<u32>(ctx, 0);
-    f64 dt = ctx.fpr[1];  // f18
-    Stack frame(ctx, 512);
-    const u32 sp = frame.addr();
+// No caller reads r3 or f1 (r3.sh).
+void Obj_UpdateSplineFx_00054880(SplineFxObj* o, f32 dt_) {
+    f64 dt = dt_;  // f18
+    GuestFrame frame(512);
+    FxLocals& L = *frame.as<FxLocals>(112);
     const f64 one = kOne;  // f19
     f64 scale = kOne, limit = kLimit0;
     f64 span = Tw(kTwSpan), rate = Tw(kTwRate);  // f15, f31
-    f64 cur = Lf(o + 36);                       // f3
-    if (load<s32>(o + 308) == 8) {
+    f64 cur = lf(o->cur);                       // f3
+    if (o->mode == 8) {
         span = Tw(kTwSpan8);
         rate = Tw(kTwRate8);
         scale = Tw(kTwSpeed8);
         limit = kLimit8;
     }
-    // (a five-iteration empty bdnz loop)
 
     // 1. The controllers.
-    const bool fading = cur < limit && load<u8>(o + 1742) != 0;
+    const bool fading = cur < limit && o->on != 0;
     if (fading) dt = Muls(dt, scale);
     {
-        const u32 grp = load<u32>(load<u32>(o + 1752) + 160);
+        const u32 grp = gm<be_u32>(o->groups + 160);
         for (u32 i = 0;; ++i) {
-            u32 g = load<u32>(grp + 208);
-            if (!(i < load<u8>(g + 112))) break;
+            u32 g = gm<be_u32>(grp + 208);
+            if (!(i < gm<u8>(g + 112))) break;
             for (u32 j = 0;; ++j) {
-                if (!(j < load<u16>(load<u32>(g + 8 * i + 132) + 52))) break;
-                const u32 m = load<u32>(load<u32>(load<u32>(load<u32>(g + 8 * i + 132) + 48) + 8 * j + 4) + 128);
+                if (!(j < gm<be_u16>(gm<be_u32>(g + 8 * i + 132) + 52))) break;
+                const u32 list = gm<be_u32>(gm<be_u32>(g + 8 * i + 132) + 48);
+                const u32 m = gm<be_u32>(gm<be_u32>(list + 8 * j + 4) + 128);
                 if (m == 0 || m + 56 == 0 || !(cur < limit)) continue;
-                const u32 c = m + 56;
-                const u32 w = (load<u32>(c + 32) & ~0x0FF00000u) | (2u << 20);
-                store<u32>(c + 0, 0);
+                FxCtl& c = gm<FxCtl>(m + 56);
+                const u32 w = (c.mode & ~0x0FF00000u) | (2u << 20);
+                c.w0 = 0u;
                 if (fading) {
-                    store<u32>(c + 32, w);
-                    cur = Lf(o + 36);
-                    Sf(c + 36, Muls(Divs(cur, limit), kFade));
+                    c.mode = w;
+                    cur = lf(o->cur);
+                    c.fade = static_cast<f32>(Muls(Divs(cur, limit), kFade));
                 } else {
-                    store<u32>(c + 36, 0xBF000000u);  // -0.5
-                    store<u32>(c + 32, w);
-                    cur = Lf(o + 36);
+                    set_bits(c.fade, 0xBF000000u);  // -0.5
+                    c.mode = w;
+                    cur = lf(o->cur);
                 }
-                g = load<u32>(grp + 208);
+                g = gm<be_u32>(grp + 208);
             }
         }
     }
-    for (u32 k = 0; k < 5; ++k) {
-        const u32 s = load<u32>(o + 5104 + 4 * k);
-        VCall(ctx, s, 40, {s, fading ? 0u : 1u, 0});
-    }
+    for (u32 k = 0; k < 5; ++k) vcall(host<u8>(o->splines[k]), 40, fading ? 0u : 1u, 0u);
 
     // 2. Spawning.
-    call(ctx, Game_BuildEffectSplines, {o});
-    const f64 acc = Adds(Lf(o + 1736), dt);
-    Sf(o + 1736, acc);
+    call(Game_BuildEffectSplines, o);
+    const f64 acc = Adds(lf(o->timer), dt);
+    o->timer = static_cast<f32>(acc);
     if (acc > Divs(kSpawnK, rate)) {
-        const u32 head = load<u8>(o + 1740), tail = load<u8>(o + 1741);
-        store<u32>(o + 1736, 0);
+        const u32 head = o->head, tail = o->tail;
+        o->timer = 0.0f;
         if (((head + 1) & 0xFF) != tail) {
-            call(ctx, Obj_SetEffectHash, {load<u32>(o + 1756 + 4 * head), kHashSpawn});
-            const u32 h1 = load<u8>(o + 1740);
-            const u32 st = load<u32>(Rng + 8);
-            const u32 mix = big27::RngMix27(st);
-            store<u32>(Rng + 8, std::rotl(mix, 16));
-            store<u64>(Rng, mix & 0xFFFFu);
-            store<u32>(o + 2780 + 4 * h1, 0);
-            const u32 h2 = load<u8>(o + 1740);
-            store<u8>(o + 1740, static_cast<u8>(h2 + 1));
-            store<u8>(o + 4828 + h2, 0);
-            store<u32>(o + 3804 + 4 * h2, st % 5);
+            call(Obj_SetEffectHash, o->objs[head].get(), kHashSpawn);
+            const u32 h1 = o->head;
+            be_u32& state = global<be_u32>(kGameRandState);
+            const u32 st = state;
+            const u32 mix = GameRandMix(st);
+            state = std::rotl(mix, 16);
+            global<be_u64>(kGameRandLast) = static_cast<u64>(mix & 0xFFFFu);
+            o->age[h1] = 0.0f;
+            const u32 h2 = o->head;
+            o->head = static_cast<u8>(h2 + 1);
+            o->b[h2] = 0;
+            o->idx[h2] = st % 5;
         }
     }
 
     // 3. The camera and its target.
-    u32 cam = 0;  // r26
-    {
-        const u32 g5 = load<u32>(load<u32>(Game) + 4208 + 8);
-        if (g5 != 0 && (load<u32>(g5 + 192) & 2) != 0 && (load<u32>(g5 + 192) & 8) != 0) cam = g5;
-    }
-    VCall(ctx, cam, 80, {sp + 112, cam});  // the camera position to sp+112 (a null camera reads the vtable at 0)
-    for (u32 k = 0; k < 3; ++k) store<u32>(sp + 208 + 4 * k, load<u32>(UpVec + 4 * k));
-    for (u32 k = 0; k < 5; ++k) call(ctx, SplineInstance_Nearest, {load<u32>(o + 5104 + 4 * k), sp + 112, 0, 0});
-    const u32 lay = load<u32>(load<u32>(Game) + GameLayers);  // r24
-    if (lay != 0 && load<u8>(kTwCamOn + 72) != 0) {
-        bool follow = static_cast<u32>(VCall(ctx, cam, 64, {cam})) == 0;
-        if (!follow) follow = ((load<u32>(static_cast<u32>(VCall(ctx, cam, 64, {cam})) + 416) >> 28) & 7) != 1;
+    const auto camera = [](u32 need) -> u32 {
+        const u32 g5 = gm<be_u32>(global<be_u32>(kWorld) + 4208 + 8);
+        return g5 != 0 && (gm<be_u32>(g5 + 192) & need) == need ? g5 : 0u;
+    };
+    const u32 cam = camera(10u);  // r26: bits 2 and 8
+    call_ptr(vfn(&gm<u8>(cam), 80), &L.campos, cam);  // the camera position (a null camera reads the vtable at 0)
+    const Vec3& upv = global<Vec3>(UpVec);
+    set_bits(L.frame.r[1].x, bits(upv.x)), set_bits(L.frame.r[1].y, bits(upv.y)), set_bits(L.frame.r[1].z, bits(upv.z));
+    for (u32 k = 0; k < 5; ++k) call(SplineInstance_Nearest, o->splines[k].get(), &L.campos, 0u, 0u);
+    const u32 lay = gm<be_u32>(global<be_u32>(kWorld) + GameLayers);  // r24
+    if (lay != 0 && global<u8>(kTwCamOn + 72) != 0) {
+        bool follow = vcall<u32>(&gm<u8>(cam), 64) == 0;
+        if (!follow) follow = ((gm<be_u32>(vcall<u32>(&gm<u8>(cam), 64) + 416) >> 28) & 7) != 1;
         if (!follow) {
-            if (const u32 t = load<u32>(o + 5124); t != 0) {
-                callf(ctx, Obj_PopLayer, {lay, t}, {Tw(kTwBlend)});
-                store<u32>(o + 5124, 0);
-                store<u32>(o + 5128, 0);
+            if (const u32 t = o->target; t != 0) {
+                call(Obj_PopLayer, lay, t, Tw(kTwBlend));
+                o->target = 0u;
+                o->path = 0u;
             }
         } else {
-            const u32 pose = static_cast<u32>(call(ctx, Obj_GetPathPose, {cam, sp + 256, 0, 0}));
-            u32 path = load<u32>(o + 5128);
-            const u32 sp2 = load<u32>(o + 5112);
+            const u32 pose = call<u32>(Obj_GetPathPose, cam, &L.t, 0u, 0u);
+            u32 path = o->path;
+            const u32 sp2 = o->splines[2];
             if (pose != 0) {
                 path = pose;
-                store<u32>(o + 5128, pose);
+                o->path = pose;
             }
             if (path != 0) {
-                store<u32>(o + 5128, sp2);
-                call(ctx, SplineInstance_Nearest, {sp2, cam + 144, 0, 0});
-                const f64 near = ctx.fpr[1];
-                Sf(sp + 256, near);
-                const u32 s = load<u32>(o + 5128);
-                const f64 lead = Divs(Tw(kTwLead), Lf(load<u32>(s + 208) + 120));
-                f64 ex = Lf(cam + 144), ey = Lf(cam + 148), ez = Lf(cam + 152);  // f23 / f24 / f25
+                o->path = sp2;
+                const f64 near = call<f64>(SplineInstance_Nearest, sp2, cam + 144, 0u, 0u);
+                L.t = static_cast<f32>(near);
+                const u32 s = o->path;
+                const f64 lead = Divs(Tw(kTwLead), lf(gm<be_f32>(gm<be_u32>(s + 208) + 120)));
+                const Vec3& cp = gm<Vec3>(cam + 144);
+                f64 ex = lf(cp.x), ey = lf(cp.y), ez = lf(cp.z);  // f23 / f24 / f25
                 const f64 u = S(Clamp01(one, Adds(near, lead)));
-                callf(ctx, WorldObj_SplinePointAt, {s, s, sp + 128, 0}, {u});  // r4 unread (left = r3)
-                const f64 px = Lf(sp + 128), pz = Lf(sp + 136);
-                f64 py = Lf(sp + 132);
-                const u32 tgt = load<u32>(o + 5124);
-                if (load<u8>(kTwCamY + 72) != 0) py = Lf(cam + 148);
+                call(WorldObj_SplinePointAt, s, 0u, &L.pt, 0u, u);
+                const f64 px = lf(L.pt.x), pz = lf(L.pt.z);
+                f64 py = lf(L.pt.y);
+                const u32 tgt = o->target;
+                if (global<u8>(kTwCamY + 72) != 0) py = lf(cp.y);
                 py = Adds(py, Tw(kTwYOff));
                 f64 dx = Subs(px, ex), dz = Subs(pz, ez), dy = Subs(py, ey);
-                Sf(sp + 132, py);
-                const f64 ux = Lf(UpVec), uz = Lf(UpVec + 8), uy = Lf(UpVec + 4);
+                L.pt.y = static_cast<f32>(py);
+                const f64 ux = lf(upv.x), uz = lf(upv.z), uy = lf(upv.y);
                 const f64 back = Tw(kTwBack), up = Tw(kTwUp);
                 const f64 il = Divs(one, Sqrts(Fmadds(dz, dz, Fmadds(dx, dx, Muls(dy, dy)))));
                 dz = Muls(dz, il), dx = Muls(dx, il), dy = Muls(dy, il);
@@ -227,112 +305,107 @@ DECOMP(00054880, Obj_UpdateSplineFx_00054880) {
                 const f64 vz = Fmsubs(dx, ry, Muls(dy, rx));
                 const f64 vx = Fmsubs(dy, rz, Muls(dz, ry));
                 const f64 vy = Fmsubs(dz, rx, Muls(dx, rz));
-                const auto frame12 = [&](u32 p) {
-                    Sf(p + 32, vx), Sf(p + 36, vy), Sf(p + 40, vz);
-                    Sf(p + 48, dx), Sf(p + 52, dy), Sf(p + 56, dz);
-                    Sf(p + 64, ex), Sf(p + 68, ey), Sf(p + 72, ez);
+                const auto frame12 = [&](CamTarget112& p) {
+                    Look(p.up, vx, vy, vz);
+                    Look(p.dir, dx, dy, dz);
+                    Look(p.eye, ex, ey, ez);
                 };
-                ctx.fpr[1] = ir;
                 if (tgt != 0) {
-                    Sf(tgt + 16, rx), Sf(tgt + 20, ry), Sf(tgt + 24, rz);
-                    frame12(tgt);
+                    CamTarget112& p = gm<CamTarget112>(tgt);
+                    Look(p.right, rx, ry, rz);
+                    frame12(p);
                 } else {
-                    const u32 p = static_cast<u32>(call(ctx, SmallAlloc, {112}));
-                    if (p != 0) {
-                        store<u32>(p + 4, lay);
-                        store<u8>(p + 8, 0);
-                        store<u32>(p + 0, kVtCamTarget);
-                        Sf(p + 16, rx), Sf(p + 20, ry), Sf(p + 24, rz);
-                        const u32 w88 = load<u32>(p + 88);
+                    const u32 pa = call<u32>(fn::SmallAlloc, 112u);
+                    if (pa != 0) {
+                        CamTarget112& p = gm<CamTarget112>(pa);
+                        p.layer = lay;
+                        p.b8 = 0;
+                        p.vtable = kVtCamTarget;
+                        Look(p.right, rx, ry, rz);
+                        const u32 w88 = p.w88;
                         frame12(p);
-                        store<u32>(p + 80, 0x425C0000u);  // 55.0
-                        store<u32>(p + 88, ((w88 & 0x7FFFFFFFu) & ~0x7F800000u) | (1u << 23));  // bit 31 cleared, bits 23..30 = 1
-                        store<u32>(p + 92, 0);
-                        store<u32>(p + 96, 0);
-                        store<u32>(p + 100, 0);
-                        store<u32>(p + 84, 0);
+                        p.fov = 0x425C0000u;  // 55.0
+                        p.w88 = ((w88 & 0x7FFFFFFFu) & ~0x7F800000u) | (1u << 23);  // bit 31 cleared, bits 23..30 = 1
+                        p.w92 = 0u;
+                        p.w96 = 0u;
+                        p.w100 = 0u;
+                        p.w84 = 0u;
                     }
-                    store<u32>(o + 5124, p);
-                    callf(ctx, Camera_PushTarget, {lay, p, kTwBlend, 0}, {Tw(kTwBlend)});  // r5 unread (left: the tweak's address)
+                    o->target = pa;
+                    call(Camera_PushTarget, lay, pa, 0u, 0u, Tw(kTwBlend));
                 }
             }
         }
     }
 
     // 4. The ring.
-    const f64 life = Lf(load<u32>(o + 5088) + 120);
+    const f64 life = lf(gm<be_f32>(o->life + 120));
     const f64 fadeAt0 = Divs(Tw(kTwFadeAt), life);
     span = Divs(life, span);
-    u32 i = load<u8>(o + 1741);
-    u32 head = load<u8>(o + 1740);
+    u32 i = o->tail;
+    u32 head = o->head;
     const f64 fa = S(Subs(one, fadeAt0) >= 0.0 ? fadeAt0 : kHi);
     const f64 fadeAt = S(fa >= 0.0 ? fa : kLo);  // f31
-    ctx.fpr[1] = fa;
-    if (i == head) {
-        ret(ctx, head);
-        return;
-    }
+    if (i == head) return;
     const f64 tan2 = Muls(kTanY, kTanY);  // f27
+    Mtx44& fr = L.frame;
     for (;;) {
-        const u32 ageA = o + 2780 + 4 * i, idxA = o + 3804 + 4 * i, objA = o + 1756 + 4 * i;
-        const f64 age = Adds(Lf(ageA), dt);
+        const f64 age = Adds(lf(o->age[i]), dt);
         const f64 q = Divs(age, span);
-        Sf(ageA, age);
-        const u32 si = load<u32>(idxA);
+        o->age[i] = static_cast<f32>(age);
+        const u32 si = o->idx[i];
         const f64 c1 = Clamp01(one, q);
         const f64 t = Subs(one, S(c1));  // f30
         if (t == kTanY) {
-            store<u8>(o + 1741, static_cast<u8>(load<u8>(o + 1741) + 1));
-            ctx.fpr[1] = c1;
+            o->tail = static_cast<u8>(o->tail + 1);
         } else {
-            callf(ctx, WorldObj_SplinePointTangentAt, {load<u32>(o + 5104 + 4 * si), idxA, sp + 240, sp + 224, 0}, {t});  // r4 unread (left: &spline index)
-            const f64 tx = Lf(sp + 224), tz = Lf(sp + 232);
-            const f64 uy = Lf(sp + 212), uz = Lf(sp + 216), ux = Lf(sp + 208);
+            call(WorldObj_SplinePointTangentAt, o->splines[si].get(), 0u, &fr.r[3], &fr.r[2], 0u, t);
+            const f64 tx = lf(fr.r[2].x), tz = lf(fr.r[2].z);
+            const f64 uy = lf(fr.r[1].y), uz = lf(fr.r[1].z), ux = lf(fr.r[1].x);
             const f64 il = Divs(one, Sqrts(Fmadds(tz, tz, Fmadds(tx, tx, tan2))));
             const f64 nx = Muls(tx, il), ny = Muls(kTanY, il), nz = Muls(tz, il);
-            Sf(sp + 224, nx), Sf(sp + 228, ny), Sf(sp + 232, nz);
+            Look(fr.r[2], nx, ny, nz);
             const f64 bz = Fmsubs(ux, ny, Muls(uy, nx));
             const f64 bx = Fmsubs(uy, nz, Muls(uz, ny));
             const f64 by = Fmsubs(uz, nx, Muls(ux, nz));
-            Sf(sp + 200, bz), Sf(sp + 192, bx), Sf(sp + 196, by);
-            const u32 ob = load<u32>(objA);
-            ctx.fpr[1] = by;
-            VCall(ctx, ob, 84, {ob, sp + 192});  // the frame: rows sp+192 / +208 / +224 / +240
+            Look(fr.r[0], bx, by, bz);
+            vcall(host<u8>(o->objs[i]), 84, &fr);  // the frame: rows sp+192 / +208 / +224 / +240
             if (fadeAt > t) {
-                const u32 ob2 = load<u32>(objA);
-                if (static_cast<u32>(VCall(ctx, ob2, 132, {ob2})) != kHashFade) call(ctx, Obj_SetEffectHash, {load<u32>(objA), kHashFade});
+                if (vcall<u32>(host<u8>(o->objs[i]), 132) != kHashFade) call(Obj_SetEffectHash, o->objs[i].get(), kHashFade);
             } else {
-                const f64 dy = Subs(Lf(sp + 116), Lf(sp + 244)), dx = Subs(Lf(sp + 112), Lf(sp + 240)), dz = Subs(Lf(sp + 120), Lf(sp + 248));
+                const f64 dy = Subs(lf(L.campos.y), lf(fr.r[3].y)), dx = Subs(lf(L.campos.x), lf(fr.r[3].x));
+                const f64 dz = Subs(lf(L.campos.z), lf(fr.r[3].z));
                 const f64 d2 = Fmadds(dz, dz, Fmadds(dx, dx, Muls(dy, dy)));
-                ctx.fpr[1] = d2;
                 if (d2 < kNearSq) {
-                    const u32 fl = (load<u16>(sp + 158) & ~0xEF00u) | 0x6000u;
-                    const u32 o60 = load<u32>(o + 60);
-                    store<u32>(sp + 152, kEventNear);
-                    store<u32>(sp + 148, o60);
-                    store<u16>(sp + 156, 0);
+                    CamEvent& ev = L.ev;
+                    const u32 fl = (ev.flags & ~0xEF00u) | 0x6000u;  // over what the stack held
+                    const u32 o60 = o->o60;
+                    ev.hash = kEventNear;
+                    ev.obj = o60;
+                    ev.h12 = 0;
                     u32 bit = 0;
                     if (o60 != 0) {
-                        store<u16>(sp + 158, static_cast<u16>(fl));
-                        if ((load<u64>(o60 + 184) & 1) != 0) bit = 1;
+                        ev.flags = static_cast<u16>(fl);
+                        if ((gm<be_u32>(o60 + 188) & 1) != 0) bit = 1;  // bit 0 of the u64 at +184
                     }
-                    store<u16>(sp + 158, static_cast<u16>((fl & ~0x1000u) | (bit << 12)));
-                    store<u32>(sp + 144, kVtCamEvent);
-                    for (u32 k = 0; k < 3; ++k) store<u32>(sp + 160 + 4 * k, load<u32>(UpVec + 4 * k));
-                    store<u32>(sp + 176, 0x447A0000u);  // 1000.0
-                    store<u32>(sp + 180, 0);
-                    const u32 g5 = load<u32>(load<u32>(Game) + 4208 + 8);
-                    const u32 dst = g5 != 0 && (load<u32>(g5 + 192) & 2) != 0 ? g5 : 0;
-                    SetF1(ctx, UpVec + 8);
-                    VCall(ctx, dst, 344, {dst, sp + 144});
-                    call(ctx, Obj_SetEffectHash, {load<u32>(objA), kHashNear});
-                    store<u32>(sp + 144, kVtCamEventEnd);
+                    ev.flags = static_cast<u16>((fl & ~0x1000u) | (bit << 12));
+                    ev.vtable = kVtCamEvent;
+                    set_bits(ev.up.x, bits(upv.x)), set_bits(ev.up.y, bits(upv.y)), set_bits(ev.up.z, bits(upv.z));
+                    ev.range = 0x447A0000u;  // 1000.0
+                    ev.w36 = 0u;
+                    const u32 dst = camera(2u);
+                    vcall(&gm<u8>(dst), 344, &ev);
+                    call(Obj_SetEffectHash, o->objs[i].get(), kHashNear);
+                    ev.vtable = kVtCamEventEnd;
                 }
             }
         }
         i = (i + 1) & 0xFF;
-        head = load<u8>(o + 1740);
+        head = o->head;
         if (i == head) break;
     }
-    ret(ctx, head);
 }
+
+}  // namespace sly4::obj
+
+NATIVE(00054880, sly4::obj::Obj_UpdateSplineFx_00054880)

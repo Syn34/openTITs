@@ -1,67 +1,75 @@
-// Game code, large-function sweep part 29: helpers shared by big29_*.cpp.
+// Game code, large-function sweep part 29: types shared by big29_*.cpp
+// (the XML def defaults record).
 #pragma once
 
-#include <bit>
-#include <cmath>
+#include "native/objtypes.h"
 
-#include "big28.h"
-
-namespace sly4 {
-namespace big29 {
-
-using namespace opentit;
-using namespace opentit::decomp;
-using big17::SetF1;
-using big19::VCall;
-using big23::Adds;
-using big23::Muls;
-using big23::Subs;
-using big27::Fw27;
-using big28::Fill4D;
-using big28::RowSel4;
-using big5::Lvx;
-using big5::Stvx;
-using big5::V4;
-using big7::Andc;
-using big7::Sel;
-using mid1::LfsBits;
-using mid15::Fb;
-using mid15::Fmadds;
-using mid15::Fmsubs;
-using mid13::LfsF;
-using mid15::Lf;
-using mid15::S;
-using mid16::Divs;
-using mid16::Sqrts;
-using mid15::Sf;
-using vmx2::Fill4;
-using vmx2::LoadMasks3;
-using vmx2::Masks3;
-using vmx2::RowSel;
-using vmx2::RowSelW;
-using vmx2::SplatW;
-using vmx2::Zero4;
+namespace sly4::obj {
 
 namespace b29fn {
 constexpr u32 String_Alloc = 0x0055578C;  // (n) -> char* (reads r3 only)
 constexpr u32 String_CopyN = 0x00553638;  // (dst, src, n)
-constexpr u32 Audio_Start = 0x0044A374;   // (Handle* out, snd, params)
-constexpr u32 Slot_BuildMatrix = 0x000CEA48;  // (Mtx* out, Obj*, s32 bone, Obj* frame, const Quat*, const Vec*)
-constexpr u32 Obj_PlaySound = 0x00298C10;  // (u32* out, Obj*, Sound*, Pos*, u32 tag)
-constexpr u32 PropSet_ReadFlags = 0x004A1440;  // (Owner*, Flags* out)
-constexpr u32 WorldObj_ForEach = 0x0057F5D8;   // (obj, fn opd, arg, bool recurse)
-constexpr u32 Skeleton_FindBone = 0x005A93D8;  // (skeleton, u32 hash) -> s32 index or -1
-constexpr u32 WorldObj_FindByNameCb = 0x00F31D20;  // OPD: ForEach callback, ctx {u32 hash, Obj* found}
-constexpr u32 QuatIdentity = 0x01164C90;  // the global vector Slot_BuildMatrix callers pass with ZeroVec
-constexpr u32 ZeroVec = 0x01164B40;
 }  // namespace b29fn
 
-// f<k> = the f32 at ea, as lfs loads it (NaN payload kept).
-inline void SetFk(PPUContext& ctx, int k, u32 ea) { ctx.fpr[k] = std::bit_cast<f64>(LfsBits(load<u32>(ea))); }
+// The source block DefRec_Construct copies (raw words, with holes) to the
+// record's +176.
+struct DefRecSrc {
+    union {
+        be_u32 w[120];
+        u8 b[480];
+    };
+};
+static_assert(sizeof(DefRecSrc) == 480);
+// The XML def defaults record (684 bytes; DefRec_Construct_0075C364).
+struct DefRec {
+    be_u32 kind;          // +0: 2
+    be_u32 w4;            // +4
+    be_u32 flags;         // +8: |= 0x400 (constructed), 0x800 (full defaults)
+    be_u32 a;             // +12
+    be_u32 b;             // +16
+    be_u32 c;             // +20
+    u8 z24[8];            // +24
+    be_u32 w32;           // +32
+    be_f32 f36;           // +36
+    be_f32 f40;           // +40
+    u8 b44;               // +44
+    pad<3> _45;
+    be_u32 w48[6];        // +48 .. +68
+    be_f32 f72;           // +72
+    be_f32 f76;           // +76
+    be_u32 w80;           // +80
+    be_u32 w84;           // +84
+    be_f32 f88[5];        // +88
+    be_u32 w108;          // +108
+    be_u32 w112;          // +112
+    be_u32 w116;          // +116
+    be_u16 flags_half;    // +120
+    be_u16 h122;          // +122
+    u8 b124[6];           // +124
+    pad<2> _130;
+    Quad params[2];       // +132
+    pad<12> _164;
+    DefRecSrc copy;       // +176
+    be_u32 r10;           // +656
+    be_f32 f660;          // +660
+    be_u32 w664;          // +664: bit 31
+    be_u32 len;           // +668: the name's length
+    be_u32 name;          // +672: char* (String_Alloc)
+    be_u32 a20;           // +676
+    be_u32 w680;          // +680: bit 31
+};
+static_assert(sizeof(DefRec) == 684 && offsetof(DefRec, params) == 132 && offsetof(DefRec, copy) == 176);
+static_assert(offsetof(DefRec, r10) == 656 && offsetof(DefRec, w680) == 680);
+// The full record: the defaults +684..+1540 (three PtrVectors at +760 /
+// +1140 / +1328 among them), as raw words / halves / bytes.
+struct DefRecFull {
+    DefRec base;  // +0
+    union {
+        be_u32 w[215];
+        be_u16 h[430];
+        u8 b[860];
+    } d;          // +684
+};
+static_assert(sizeof(DefRecFull) == 1544);
 
-// Stack argument k (0-based over all arguments, k >= 8) of the function
-// whose entry r1 is sp: the low word of its doubleword at sp + 112 + 8 (k - 8).
-inline u32 StackArg(u32 sp, u32 k) { return load<u32>(sp + 112 + 8 * (k - 8) + 4); }
-
-}  // namespace big29
-}  // namespace sly4
+}  // namespace sly4::obj

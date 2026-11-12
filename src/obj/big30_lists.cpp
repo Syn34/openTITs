@@ -1,34 +1,64 @@
 // Game code, large-function sweep part 30: a section's readiness pass
 // over its five child lists (+2232..+2264) and its entry references
 // (+2272), choosing the mode it reports to its vfn[26].
-#include "../sly4.h"
 #include "big30.h"
 
-using namespace sly4;
-using namespace sly4::big30;
+namespace sly4::obj {
 
 namespace {
-constexpr u32 Obj_CanShow2E2104 = 0x002E2104;  // (ctx, Obj*) -> bool (reads r4 only)
-constexpr u32 Ref_Resolve = 0x00321324;        // (Ref*, u8 warn)
+constexpr u32 Obj_CanShow2E2104 = 0x002E2104;  // (ctx, Obj*) -> u32 (reads r4 only)
 constexpr u32 kShowCtx = 0x00F64C20;
 
-// A list slot {Header** h, u32 status}: the u16 count +8 of *h (0 without
-// one), stored as the u8 +4, then the status word with that count in its top
-// byte and bit 23 = ready (two stores, as the original).
-inline void ListStatus(u32 L, u32 n, bool ready) {
-    store<u8>(L + 4, static_cast<u8>(n));
-    u32 w = (load<u32>(L + 4) & 0x00FFFFFFu) | (n << 24);
+// An element of a child list: +24 cleared, +28 the ready bits.
+struct ReadyElem {
+    pad<24> _0;
+    be_u32 w24;    // +24
+    be_u32 flags;  // +28: bits 30 / 29 ready inputs, 29..26 the status
+};
+static_assert(offsetof(ReadyElem, flags) == 28);
+// A list slot {ListHdr** h, status: u8 count +4 overlapping the word's
+// top byte, bit 23 ready}; *h is a PtrVec of ReadyElem.
+struct ReadyList {
+    gp<gp<PtrVec<ReadyElem>>> h;  // +0
+    WordBytes status;             // +4
+};
+static_assert(sizeof(ReadyList) == 8);
+// The section: +12 the state table (words at +0x20074, indexed by +2452),
+// u8s +16..+18, +20 the request bits, five lists, the entry references.
+struct ReadySection {
+    pad<12> _0;
+    be_u32 states;          // +12
+    u8 b16;                 // +16
+    u8 b17;                 // +17
+    u8 state;               // +18
+    pad<1> _19;
+    be_u32 req;             // +20
+    pad<2208> _24;
+    ReadyList lists[5];     // +2232
+    gp<RefVec> refs;        // +2272
+    pad<176> _2276;
+    be_u32 state_idx;       // +2452
+};
+static_assert(offsetof(ReadySection, lists) == 2232 && offsetof(ReadySection, refs) == 2272);
+static_assert(offsetof(ReadySection, state_idx) == 2452);
+
+// The count stored as the u8 +4, then the status word with that count in
+// its top byte and bit 23 = ready (two stores, as the original).
+void ListStatus(ReadyList& L, u32 n, bool ready) {
+    L.status.b[0] = static_cast<u8>(n);
+    u32 w = (L.status.w & 0x00FFFFFFu) | (n << 24);
     w = ready ? (w | 0x00800000u) : (w & ~0x00800000u);
-    store<u32>(L + 4, w);
+    L.status.w = w;
 }
-inline u32 ListCount(u32 L) {
-    const u32 h = load<u32>(L);
+// The u16 count of the list's vector (0 without one).
+u32 ListCount(const ReadyList& L) {
+    const u32 h = L.h.ea;
     if (h == 0) return 0;
-    const u32 a = load<u32>(h);
-    return a != 0 ? load<u16>(a + 8) : 0;
+    const u32 a = gm<be_u32>(h);
+    return a != 0 ? gm<PtrVec<ReadyElem>>(a).count : 0u;
 }
-// The word of o's +12 table selected by +2452 (its bit 5 / top nibble).
-inline u32 StateWord(u32 o) { return load<u32>(o + 12) + (load<u32>(o + 2452) << 2) + 0x20074; }
+// The word of o's state table selected by +2452 (its top nibble / bit 26).
+be_u32& StateWord(const ReadySection* o) { return gm<be_u32>(o->states + (o->state_idx << 2) + 0x20074u); }
 }  // namespace
 
 // void f(Section* o, u8 on, s32 k) (called by Section_SetChildren_003277E4,
@@ -52,96 +82,98 @@ inline u32 StateWord(u32 o) { return load<u32>(o + 12) + (load<u32>(o + 2452) <<
 //    (u8 +18) the lists +2232, +2248, +2240 (flag set: and the state
 //    word's bit 26 is cleared) or +2256, +2264 (flag clear) are marked ready
 //    with their counts. No caller reads r3 or other leftovers.
-DECOMP(0032549C, Section_Ready_0032549C) {
-    const u32 o = arg<u32>(ctx, 0);
-    u32 flag = static_cast<u8>(ctx.gpr[4]);
-    const s32 k = static_cast<s32>(ctx.gpr[5]);
+void Section_Ready_0032549C(ReadySection* o, u8 on, s32 k) {
+    u32 flag = on;
     for (u32 j = 0; j < 5; ++j) {
-        const u32 L = o + 2232 + 8 * j;
+        ReadyList& L = o->lists[j];
         bool notReady = false;
-        u32 h = load<u32>(L);
-        if (h != 0 && load<u32>(h) != 0 && load<u16>(load<u32>(h) + 8) != 0) {
+        u32 h = L.h.ea;
+        if (h != 0 && gm<be_u32>(h) != 0u && gm<PtrVec<ReadyElem>>(gm<be_u32>(h)).count != 0) {
             for (u32 i = 0, off = 0;; ++i, off += 4) {
-                const u32 a = load<u32>(h);
-                const u32 n = a != 0 ? load<u16>(a + 8) : 0;
+                const u32 a = gm<be_u32>(h);
+                const u32 n = a != 0 ? gm<PtrVec<ReadyElem>>(a).count : 0u;
                 if (i >= n) break;
-                const u32 e = load<u32>(load<u32>(a) + off);
-                u32 w = load<u32>(e + 28);
-                store<u32>(e + 24, 0);
+                ReadyElem& e = gm<ReadyElem>(gm<be_u32>(gm<PtrVec<ReadyElem>>(a).data.ea + off));
+                u32 w = e.flags;
+                e.w24 = 0u;
                 const bool rdy = (w & 0x20000000u) && (w & 0x40000000u);
                 w &= ~0x3C000000u;
                 if (rdy) w |= 0x24000000u;
-                store<u32>(e + 28, w);
+                e.flags = w;
                 if (!rdy) notReady = true;
-                h = load<u32>(L);
+                h = L.h.ea;
             }
         }
         u32 n = 0;
         if (h != 0 && !notReady) {
-            const u32 a = load<u32>(h);
-            if (a != 0) n = load<u16>(a + 8);
+            const u32 a = gm<be_u32>(h);
+            if (a != 0) n = gm<PtrVec<ReadyElem>>(a).count;
         }
         ListStatus(L, n, !notReady);
     }
     bool m5 = false;
     if (flag != 0) {
-        const u32 m = load<u32>(StateWord(o)) >> 28;
-        u32 w = load<u32>(o + 20);
-        if (m > 1) { w &= ~4u; store<u32>(o + 20, w); }
-        if (m > 2) { w &= ~2u; store<u32>(o + 20, w); }
-        if (m > 3) { w &= ~1u; store<u32>(o + 20, w); }
+        const u32 m = StateWord(o) >> 28;
+        u32 w = o->req;
+        if (m > 1) { w &= ~4u; o->req = w; }
+        if (m > 2) { w &= ~2u; o->req = w; }
+        if (m > 3) { w &= ~1u; o->req = w; }
         m5 = m == 5;
     }
     u32 mode = 0;
     if (k == -1) {
         if (m5) {
-            store<u8>(o + 17, load<u8>(o + 16));
+            o->b17 = o->b16;
             mode = 5;
             flag = 1;
         } else {
-            const u32 w = load<u32>(o + 20);
-            store<u8>(o + 17, 0);
+            const u32 w = o->req;
+            o->b17 = 0;
             mode = 4;
             if (w & 1) mode = 3;
             if (w & 2) mode = 2;
             if (w & 4) mode = 1;
         }
     } else {
-        store<u8>(o + 17, k == 5 ? load<u8>(o + 16) : 0);
-        if (k == 5 || !(load<u32>(o + 20) & 0x10) || load<u8>(o + 18) != 5) {
-            store<u8>(o + 17, k == 5 ? load<u8>(o + 16) : 0);  // stored again on this path
+        o->b17 = k == 5 ? o->b16 : 0;
+        if (k == 5 || !(o->req & 0x10) || o->state != 5) {
+            o->b17 = k == 5 ? o->b16 : 0;  // stored again on this path
             mode = static_cast<u32>(k);
             flag = (k == 5 || flag != 0) ? 1 : 0;
         }
     }
-    const u32 arr = load<u32>(o + 2272);
-    if (arr != 0 && load<u16>(arr + 8) != 0) {
-        const u32 show = static_cast<u32>(call(ctx, Obj_CanShow2E2104, {load<u32>(kShowCtx), o}));
+    const u32 arr = o->refs.ea;
+    if (arr != 0 && gm<RefVec>(arr).count != 0) {
+        const u32 show = call<u32>(Obj_CanShow2E2104, global<be_u32>(kShowCtx), o);
         for (u32 i = 0, off = 0;; ++i, off += 20) {
-            const u32 a = load<u32>(o + 2272);
-            const u32 n = a != 0 ? load<u16>(a + 8) : 0;
+            const u32 a = o->refs.ea;
+            const u32 n = a != 0 ? gm<RefVec>(a).count : 0u;
             if (i >= n) break;
-            const u32 e = load<u32>(a) + off;
-            const u32 w = load<u32>(e + 8);
-            store<u32>(e + 8, w & 0x3FFFFFFFu);
-            if (((w & 0xFF) != 0 || mode == 5) && load<u8>(e + 10) != 0) {
-                const u32 top = load<u8>(e + 9) != 0 ? 0x80000000u : 0x40000000u;
-                store<u32>(e + 8, (load<u32>(e + 8) & 0x3FFFFFFFu) | top);
+            Ref& e = gm<Ref>(gm<RefVec>(a).data.ea + off);
+            const u32 w = e.u.w;
+            e.u.w = w & 0x3FFFFFFFu;
+            if (((w & 0xFF) != 0 || mode == 5) && e.u.b[2] != 0) {
+                const u32 top = e.u.b[1] != 0 ? 0x80000000u : 0x40000000u;
+                e.u.w = (e.u.w & 0x3FFFFFFFu) | top;
             }
-            store<u8>(e + 11, 0);
-            store<u8>(e + 12, 0);
-            for (u32 b = 0; b < 4; ++b) store<u8>(e + 16 + b, 0);
-            if (show != 0) call(ctx, Ref_Resolve, {e, 0});
+            e.u.b[3] = 0;
+            e.pending = 0;
+            e.target = 0u;
+            if (show != 0) Ref_Resolve_00321324(&e, 0);
         }
     }
-    if (mode != 0) VCall(ctx, o, 104, {o, mode, flag});
-    if (load<u8>(o + 18) != 5) return;
+    if (mode != 0) vcall(o, 104, mode, flag);
+    if (o->state != 5) return;
     if (flag != 0) {
-        for (u32 off : {2232u, 2248u, 2240u}) ListStatus(o + off, ListCount(o + off), true);
-        const u32 p = StateWord(o);
-        store<u32>(p, load<u32>(p) & ~0x04000000u);
+        for (u32 j : {0u, 2u, 1u}) ListStatus(o->lists[j], ListCount(o->lists[j]), true);  // +2232, +2248, +2240
+        be_u32& p = StateWord(o);
+        p = p & ~0x04000000u;
     } else {
-        ListStatus(o + 2256, ListCount(o + 2256), true);
-        ListStatus(o + 2264, ListCount(o + 2264), true);
+        ListStatus(o->lists[3], ListCount(o->lists[3]), true);
+        ListStatus(o->lists[4], ListCount(o->lists[4]), true);
     }
 }
+
+}  // namespace sly4::obj
+
+NATIVE(0032549C, sly4::obj::Section_Ready_0032549C)

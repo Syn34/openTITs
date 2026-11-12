@@ -1,11 +1,10 @@
 // Game code, large-function sweep part 28: a part's rigid body moved toward a
 // target point (optionally stopped short by a ray cast) and turned to face
 // along its displacement.
-#include "../sly4.h"
 #include "big28.h"
+#include "native/vec.h"
 
-using namespace sly4;
-using namespace sly4::big28;
+namespace sly4::obj {
 
 namespace {
 constexpr u32 kPool103 = 0x00103A70;  // .text pool: masks {y} / {z} / {w}, then the f32 constants below
@@ -16,11 +15,70 @@ constexpr f32 kMinDot = 0.001f;       // pool +56
 constexpr f32 kMinLen = 1e-4f;        // pool +60
 constexpr f32 kMinHitSq = 1e-5f;      // pool +64
 constexpr f32 kMinGap = 0.1f;         // pool +68 (and as a double at +72)
+constexpr u32 AxisZ = 0x01164B70;     // the global vector after UpVec ({0, 0, 1})
+
+// A 48-byte ray hit: the point first.
+struct HitPt48 {
+    Vec3 p;  // +0
+    pad<36> _12;
+};
+static_assert(sizeof(HitPt48) == 48);
+// The ray hit collector the world's vfn[64] fills (eight inline hits).
+struct HitCol48 {
+    be_u32 vtable;     // +0
+    be_u32 early_out;  // +4 (raw)
+    pad<8> _8;
+    be_u32 data;       // +16: HitPt48*
+    be_s32 size;       // +20
+    be_u32 capflags;   // +24: capacity | 0x80000000 (inline storage)
+    pad<4> _28;
+    HitPt48 inline_hits[8];  // +32
+};
+static_assert(sizeof(HitCol48) == 416);
+// The body owner: +288 its position.
+struct PartOwner {
+    pad<288> _0;
+    Vec3 pos;  // +288
+};
+// The rigid body: +8 its world, +224 its motion (vfn[68] / vfn[72] set the
+// linear / angular velocity).
+struct PartBody {
+    pad<8> _0;
+    be_u32 world;  // +8
+    pad<212> _12;
+    pad<4> motion; // +224
+};
+static_assert(offsetof(PartBody, motion) == 224);
+struct PartObj {
+    pad<16> _0;
+    be_u32 w16;          // +16
+    gp<PartOwner> own;   // +20
+    be_u32 body;         // +24: PartBody*
+    pad<12> _28;
+    be_f32 maxd;         // +40
+    pad<228> _44;
+    be_u32 world;        // +272: the collision world (vfn[64] casts)
+    pad<124> _276;
+    Vec3 dir;            // +400: the facing when barely moving
+    pad<288> _412;
+    be_f32 gap;          // +700
+};
+static_assert(offsetof(PartObj, world) == 272 && offsetof(PartObj, dir) == 400 && offsetof(PartObj, gap) == 700);
+// The original's locals (sp offsets - 112).
+struct PartLocals {
+    Vec4 from;     // sp+112
+    Vec4 vec;      // sp+128
+    Vec4 rot;      // sp+144
+    Vec4 to;       // sp+160
+    Vec4 zero;     // sp+176
+    HitCol48 col;  // sp+192
+};
+static_assert(offsetof(PartLocals, col) == 80);
 }  // namespace
 
 // void f(T* o, const f32 target[3], u8 cast) (called by f_00104508,
 // Part_SyncBody_00105360). Needs o->+16, the body owner o->+20 and the body
-// b = o->+24 (returns with r3 = the first null one, o->+20 for b). p is
+// b = o->+24. p is
 // the owner's +288.. position; the target is pulled back to at most o->+40
 // from p. With cast: a ray from p to the target through the world o->+272
 // (vfn[64](world, &from, &to, collector, 0); collector on the stack with
@@ -31,37 +89,23 @@ constexpr f32 kMinGap = 0.1f;         // pool +68 (and as a double at +72)
 // a heap array (flag 0x80000000 clear) is freed through HkHeap->vfn[20].
 // Then d = p - target (o->+400.. when |d| < 0.01) and the rotation taking
 // AxisZ to d (shortest arc; a perpendicular half-turn axis, or identity,
-// when the two are opposite). Without b->+8 returns (r3 = b, f1 = |d|).
+// when the two are opposite). Without b->+8 returns.
 // Else HkBody_SetPosition_0091DFF0(b, {0, 0, |d|, 0}), HkBody_SetPosRot(b,
 // target, rotation) and, for b re-read each time, Hk_Activate(b) and b+224's
-// vfn[68] / vfn[72] with the zero vector (linear / angular velocity).
-DECOMP(00103AC0, Part_MoveBodyToward_00103AC0) {
-    const u32 o = arg<u32>(ctx, 0), tp = arg<u32>(ctx, 1);
-    const bool cast = (arg<u32>(ctx, 2) & 0xFF) != 0;
-    if (load<u32>(o + 16) == 0) {
-        ret(ctx, 0u);
-        return;
-    }
-    const u32 own = load<u32>(o + 20);
-    if (own == 0) {
-        ret(ctx, 0u);
-        return;
-    }
-    if (load<u32>(o + 24) == 0) {
-        ret(ctx, own);
-        return;
-    }
-    Stack frame(ctx, 800);
-    const u32 sp = frame.addr();
-    const u32 VEC = sp + 128, ROT = sp + 144, COL = sp + 192;
+// vfn[68] / vfn[72] with the zero vector (linear / angular velocity). No caller reads r3 or f1 (r3.sh).
+void Part_MoveBodyToward_00103AC0(PartObj* o, const Vec3* tp, u32 cast_) {
+    const bool cast = (cast_ & 0xFF) != 0;
+    if (o->w16 == 0u || o->own.ea == 0u || o->body == 0u) return;
+    GuestFrame frame(800);
+    PartLocals& L = *frame.as<PartLocals>(112);
     const Masks3 mk = LoadMasks3(kPool103);
-    const u32 P = own + 288;
-    const f64 px = Lf(P), py = Lf(P + 4), pz = Lf(P + 8);
-    f64 tx = Lf(tp), ty = Lf(tp + 4), tz = Lf(tp + 8);
+    const Vec3& P = o->own->pos;
+    const f64 px = lf(P.x), py = lf(P.y), pz = lf(P.z);
+    f64 tx = lf(tp->x), ty = lf(tp->y), tz = lf(tp->z);
     {
         const f64 dx = Subs(tx, px), dy = Subs(ty, py), dz = Subs(tz, pz);
         const f64 len = Sqrts(Fmadds(dz, dz, Fmadds(dx, dx, Muls(dy, dy))));
-        const f64 maxd = Lf(o + 40);
+        const f64 maxd = lf(o->maxd);
         if (len > maxd) {
             const f64 s = Divs(kOne, len);
             tx = Fmadds(maxd, Muls(s, dx), px);
@@ -72,24 +116,22 @@ DECOMP(00103AC0, Part_MoveBodyToward_00103AC0) {
 
     // The ray cast.
     if (cast) {
-        const u32 world = load<u32>(o + 272);
-        store<u32>(sp + 176, 0x34000000u);
-        store<u32>(sp + 180, 0x34000000u);
-        store<u32>(COL + 0, b28fn::VtHitCol);
-        store<u32>(COL + 16, sp + 224);  // the inline array
-        store<u32>(COL + 24, 0x80000008u);
-        store<u32>(COL + 20, 0);
-        store<u32>(COL + 4, 0x7F7FFFEEu);
-        Stvx(sp + 176, Zero4());
-        for (u32 k = 0; k < 4; ++k) store<u32>(sp + 608 + 4 * k, Fb(tz));  // the last splat it builds there
-        Stvx(sp + 112, RowSelW(P, P + 4, P + 8, mk));
-        Stvx(sp + 160, RowSel(Fill4D(tx), Fill4D(ty), Fill4D(tz), mk));
-        VCall(ctx, world, 64, {world, sp + 112, sp + 160, COL, 0});
-        if (load<s32>(COL + 20) > 0) {
-            call(ctx, b28fn::HkHits_Sort, {COL});
-            const u32 h = load<u32>(COL + 16);
-            f64 hx = Subs(Lf(h), px), hy = Subs(Lf(h + 4), py), hz = Subs(Lf(h + 8), pz);
-            const f64 gap = Lf(o + 700);
+        const u32 world = o->world;
+        HitCol48& col = L.col;
+        col.vtable = b28fn::VtHitCol;
+        col.data = guest(&col.inline_hits[0]);
+        col.capflags = 0x80000008u;
+        col.size = 0;
+        col.early_out = 0x7F7FFFEEu;
+        Stvx(&L.zero, Zero4());
+        Stvx(&L.from, RowSelW(&P.x, &P.y, &P.z, mk));
+        Stvx(&L.to, RowSel(Fill4(static_cast<f32>(tx)), Fill4(static_cast<f32>(ty)), Fill4(static_cast<f32>(tz)), mk));
+        vcall(host<u8>(world), 64, &L.from, &L.to, &col, 0u);
+        if (col.size > 0) {
+            call(b28fn::HkHits_Sort, &col);
+            const HitPt48& h = gm<HitPt48>(col.data);
+            f64 hx = Subs(lf(h.p.x), px), hy = Subs(lf(h.p.y), py), hz = Subs(lf(h.p.z), pz);
+            const f64 gap = lf(o->gap);
             const f64 sq = Fmadds(hz, hz, Fmadds(hx, hx, Muls(hy, hy)));
             const f64 dist = Sqrts(sq);
             if (sq > kMinHitSq) {
@@ -104,23 +146,24 @@ DECOMP(00103AC0, Part_MoveBodyToward_00103AC0) {
             ty = Fmadds(k, hy, py);
             tz = Fmadds(k, hz, pz);
         }
-        store<u32>(COL + 20, 0);
-        const u32 cap = load<u32>(COL + 24);
+        col.size = 0;
+        const u32 cap = col.capflags;
         if ((cap & 0x80000000u) == 0) {
-            store<u32>(COL + 0, b28fn::VtHitCol);
+            col.vtable = b28fn::VtHitCol;
             const u32 bytes = (cap & 0x3FFFFFFFu) * 48u;
-            VCallEO27(ctx, b28fn::HkHeap, 20, {b28fn::HkHeap, load<u32>(COL + 16), static_cast<u64>(static_cast<s64>(static_cast<s32>(bytes)))});
+            vcall(host<u8>(b28fn::HkHeap), 20, col.data.get(), static_cast<s32>(bytes));
         }
-        store<u32>(COL + 16, 0);
-        store<u32>(COL + 24, 0x80000000u);
-        store<u32>(COL + 0, b28fn::VtHitColEnd);
+        col.data = 0u;
+        col.capflags = 0x80000000u;
+        col.vtable = b28fn::VtHitColEnd;
     }
 
     // The facing rotation.
     f64 dx = Subs(px, tx), dy = Subs(py, ty), dz = Subs(pz, tz);
     const f64 len = Sqrts(Fmadds(dz, dz, Fmadds(dx, dx, Muls(dy, dy))));
-    if (len < kMinMove) dx = Lf(o + 400), dy = Lf(o + 404), dz = Lf(o + 408);
-    const f64 ax0 = Lf(b28fn::AxisZ), ay0 = Lf(b28fn::AxisZ + 4), az0 = Lf(b28fn::AxisZ + 8);
+    if (len < kMinMove) dx = lf(o->dir.x), dy = lf(o->dir.y), dz = lf(o->dir.z);
+    const Vec3& az3 = global<Vec3>(AxisZ);
+    const f64 ax0 = lf(az3.x), ay0 = lf(az3.y), az0 = lf(az3.z);
     const f64 ia = Divs(kOne, Sqrts(Fmadds(az0, az0, Fmadds(ax0, ax0, Muls(ay0, ay0)))));
     const f64 id = Divs(kOne, Sqrts(Fmadds(dz, dz, Fmadds(dx, dx, Muls(dy, dy)))));
     const f64 ay = Muls(ia, ay0), ax = Muls(ia, ax0), az = Muls(ia, az0);
@@ -155,23 +198,23 @@ DECOMP(00103AC0, Part_MoveBodyToward_00103AC0) {
         }
     }
 
-    const u32 b = load<u32>(o + 24);
-    ctx.fpr[1] = len;
-    if (load<u32>(b + 8) == 0) {
-        ret(ctx, b);
-        return;
-    }
-    for (u32 k = 0; k < 4; ++k) store<u32>(sp + 608 + 4 * k, Fb(len));
-    Stvx(VEC, Andc(Sel(Zero4(), Fill4D(len), mk.m[1]), mk.m[2]));
-    call(ctx, b28fn::HkBody_SetPosition_0091DFF0, {b, VEC});
-    for (u32 k = 0; k < 4; ++k) store<u32>(sp + 608 + 4 * k, Fb(qw));
-    Stvx(VEC, RowSel(Fill4D(tx), Fill4D(ty), Fill4D(tz), mk));
-    Stvx(ROT, RowSel4(Fill4D(qx), Fill4D(qy), Fill4D(qz), Fill4D(qw), mk));
-    call(ctx, b28fn::HkBody_SetPosRot, {load<u32>(o + 24), VEC, ROT});
+    const u32 b = o->body;
+    if (gm<PartBody>(b).world == 0u) return;
+    auto F = [](f64 x) { return Fill4(static_cast<f32>(x)); };
+    Stvx(&L.vec, Andc(Sel(Zero4(), F(len), mk.m[1]), mk.m[2]));
+    call(b28fn::HkBody_SetPosition_0091DFF0, b, &L.vec);
+    Stvx(&L.vec, RowSel(F(tx), F(ty), F(tz), mk));
+    Stvx(&L.rot, RowSel4(F(qx), F(qy), F(qz), F(qw), mk));
+    call(b28fn::HkBody_SetPosRot, o->body.get(), &L.vec, &L.rot);
+    const Vec3& zv = global<Vec3>(kZeroVec);
     for (u32 pass = 0; pass < 2; ++pass) {
-        const u32 bb = load<u32>(o + 24);
-        Stvx(VEC, RowSelW(b28fn::ZeroVec, b28fn::ZeroVec + 4, b28fn::ZeroVec + 8, mk));
-        call(ctx, b28fn::Hk_Activate, {bb});
-        VCall(ctx, bb + 224, pass == 0 ? 68 : 72, {bb + 224, VEC});  // linear / angular velocity
+        const u32 bb = o->body;
+        Stvx(&L.vec, RowSelW(&zv.x, &zv.y, &zv.z, mk));
+        call(b28fn::Hk_Activate, bb);
+        vcall(&gm<PartBody>(bb).motion, pass == 0 ? 68 : 72, &L.vec);  // linear / angular velocity
     }
 }
+
+}  // namespace sly4::obj
+
+NATIVE(00103AC0, sly4::obj::Part_MoveBodyToward_00103AC0)

@@ -1,14 +1,9 @@
 // Game code, large-function sweep part 30: pushing a camera object's
 // transform, field of view and lens settings to its render target.
-#include "../sly4.h"
 #include "big30.h"
+#include "native/vec.h"
 
-using namespace sly4;
-using namespace sly4::big30;
-using big5::Lvx;
-using big5::Stvx;
-using big5::V4;
-using mid15::Fb;
+namespace sly4::obj {
 
 namespace {
 constexpr u32 Obj_SetMatrixD87CC = 0x000D87CC;      // (Obj*, Mtx* io)
@@ -16,15 +11,80 @@ constexpr u32 RenderTarget_SetMatrix = 0x005201B0;  // (RenderTarget*, const Mtx
 constexpr u32 View_SetFov = 0x00520368;             // (RenderTarget*, f1 fov)
 constexpr u32 Matrix_Multiply = 0x005541F0;         // (Mtx* io, const Mtx*)
 constexpr u32 kK = 0x000FADD0;  // .rodata: two vperm masks, then 0.01, 0.0, 1.0, 999.0
-constexpr u32 kGame = 0x00F65CA0;
 
-inline f64 LfsD(u32 ea) { return std::bit_cast<f64>(mid1::LfsBits(load<u32>(ea))); }
-inline f32 Madd(f32 a, f32 c, f32 b) { return std::fma(a, c, b); }
-// lfs x; if x < lo: lo, else if x > hi: hi (the stored word, raw).
-inline u32 Clamp(u32 xw, u32 low, u32 hiw) {
-    const f64 x = std::bit_cast<f64>(mid1::LfsBits(xw));
-    if (x < std::bit_cast<f64>(mid1::LfsBits(low))) return low;
-    if (x > std::bit_cast<f64>(mid1::LfsBits(hiw))) return hiw;
+// The render target's lens settings holder: +12 the depth-of-field
+// object, +24 the color filter (both with vfn[2] = enable(x, u8)).
+struct CamLens {
+    pad<12> _0;
+    be_u32 dof;     // +12
+    pad<8> _16;
+    be_u32 filter;  // +24
+};
+struct CamTarget {
+    pad<656> _0;
+    gp<CamLens> lens;  // +656
+};
+// The depth-of-field object: +24 focus, +28 range, +32 blur, u8 +64 the
+// quality (1..4).
+struct CamDof {
+    pad<24> _0;
+    be_f32 focus;   // +24
+    be_u32 range;   // +28 (the clamped word)
+    be_f32 blur;    // +32
+    pad<28> _36;
+    u8 quality;     // +64
+};
+static_assert(offsetof(CamDof, quality) == 64);
+// The color filter: +20 the strength (clamped 0..1), +32..+40 the color.
+struct CamFilter {
+    pad<20> _0;
+    be_u32 strength;  // +20 (the clamped word)
+    pad<8> _24;
+    be_f32 rgb[3];    // +32
+};
+static_assert(offsetof(CamFilter, rgb) == 32);
+struct CamObj {
+    pad<96> _0;
+    Mtx44 m;              // +96
+    pad<12> _160;
+    be_u32 flags;        // +172: bits 6 / 5 skip the matrix update
+    pad<180> _176;
+    be_f32 fov;          // +356
+    be_f32 focus;        // +360
+    gp<CamTarget> rt;    // +364
+    pad<72> _368;
+    u8 dof_on;           // +440
+    pad<3> _441;
+    be_u32 range;        // +444
+    be_f32 blur;         // +448
+    pad<3> _452;
+    u8 quality;          // +455
+    u8 filter_on;        // +456
+    pad<3> _457;
+    be_u32 strength;     // +460
+    u8 rgb[3];           // +464
+    pad<1> _467;
+    be_u32 lens_flags;   // +468: bit 30 lens settings, bit 29 depth of field
+    pad<132> _472;
+    u8 parent_on;        // +604
+    u8 parent_basis;     // +605
+    pad<18> _606;
+    Mtx44 parent;         // +624
+};
+static_assert(offsetof(CamObj, flags) == 172 && offsetof(CamObj, fov) == 356 && offsetof(CamObj, rt) == 364);
+static_assert(offsetof(CamObj, dof_on) == 440 && offsetof(CamObj, quality) == 455 && offsetof(CamObj, rgb) == 464);
+static_assert(offsetof(CamObj, lens_flags) == 468 && offsetof(CamObj, parent_on) == 604 && offsetof(CamObj, parent) == 624);
+
+// A row as four raw words.
+Quad& Q(Vec4& v) { return reinterpret_cast<Quad&>(v); }
+const Quad& Q(const Vec4& v) { return reinterpret_cast<const Quad&>(v); }
+
+// if x < lo: lo, else if x > hi: hi (the stored word, raw).
+u32 Clamp(const be_u32& x, const be_f32& lo, const be_f32& hi) {
+    const u32 xw = x;
+    const f64 v = LfsW(xw);
+    if (v < lf(lo)) return bits(lo);
+    if (v > lf(hi)) return bits(hi);
     return xw;
 }
 }  // namespace
@@ -47,98 +107,92 @@ inline u32 Clamp(u32 xw, u32 low, u32 hiw) {
 // set p->vfn[2](p, it), p->+20 = clamp(o->+460, 0, 1) and p->+32..+40 =
 // the u8s o->+464..466 as floats; always p->vfn[2](p, o->+456). No caller
 // reads r3, f1 or other leftovers.
-DECOMP(000FAE00, CamObj_PushView_000FAE00) {
-    const u32 o = arg<u32>(ctx, 0);
-    const bool force = static_cast<u8>(ctx.gpr[4]) != 0;
-    Stack frame(ctx, 128);
-    const u32 L = frame.addr(), B = L + 64;
-    const u32 m = o + 96;
-    for (u32 j = 0; j < 3; ++j) {
-        store<u32>(L + j * 4, load<u32>(m + j * 4) ^ 0x80000000u);
-        store<u32>(L + 16 + j * 4, load<u32>(m + 16 + j * 4));
-        store<u32>(L + 32 + j * 4, load<u32>(m + 32 + j * 4) ^ 0x80000000u);
-        store<u32>(L + 48 + j * 4, load<u32>(m + 48 + j * 4));
+void CamObj_PushView_000FAE00(CamObj* o, u8 force) {
+    GuestFrame frame(128);
+    Mtx44* L = frame.as<Mtx44>(0);
+    Mtx44* B = frame.as<Mtx44>(64);
+    const Mtx44& m = o->m;
+    for (u32 j = 0; j < 3; ++j) {  // rows -r0, r1, -r2, r3 (sign flips on the raw words)
+        Q(L->r[0]).w[j] = Q(m.r[0]).w[j] ^ 0x80000000u;
+        Q(L->r[1]).w[j] = Q(m.r[1]).w[j].get();
+        Q(L->r[2]).w[j] = Q(m.r[2]).w[j] ^ 0x80000000u;
+        Q(L->r[3]).w[j] = Q(m.r[3]).w[j].get();
     }
-    f64 t0 = LfsD(m + 48), t1 = LfsD(m + 52), t2 = LfsD(m + 56);
-    const u32 f172 = load<u32>(o + 172);
-    if (force || !(f172 & 0x60)) {
-        call(ctx, Obj_SetMatrixD87CC, {o, L});
-        t0 = LfsD(L + 48);
-        t1 = LfsD(L + 52);
-        t2 = LfsD(L + 56);
+    f64 t0 = lf(m.r[3].x), t1 = lf(m.r[3].y), t2 = lf(m.r[3].z);
+    if (force != 0 || !(o->flags & 0x60u)) {
+        call(Obj_SetMatrixD87CC, o, L);
+        t0 = lf(L->r[3].x);
+        t1 = lf(L->r[3].y);
+        t2 = lf(L->r[3].z);
     }
-    if (load<u8>(o + 604) != 0) {
-        if (load<u8>(o + 605) != 0) {
-            store<u32>(L + 56, 0);
-            store<u32>(L + 52, 0);
-            store<u32>(L + 48, 0);
-            const V4 a0 = Lvx(o + 624), a1 = Lvx(o + 640), a2 = Lvx(o + 656), a3 = Lvx(o + 672);
-            const V4 r0 = Lvx(L), r1 = Lvx(L + 16), r2 = Lvx(L + 32);
-            V4 n0, n1, n2, n3;
-            for (u32 k = 0; k < 4; ++k) {
-                const f32 z0 = Madd(a2.e[k], 0.0f, Madd(a1.e[k], 0.0f, Madd(a0.e[k], 0.0f, 0.0f)));
-                n0.e[k] = Madd(a2.e[k], r0.e[2], Madd(a1.e[k], r0.e[1], Madd(a0.e[k], r0.e[0], 0.0f)));
-                n1.e[k] = Madd(a2.e[k], r1.e[2], Madd(a1.e[k], r1.e[1], Madd(a0.e[k], r1.e[0], 0.0f)));
-                n2.e[k] = Madd(a2.e[k], r2.e[2], Madd(a1.e[k], r2.e[1], Madd(a0.e[k], r2.e[0], 0.0f)));
-                n3.e[k] = a3.e[k] + z0;
-            }
-            Stvx(L, n0);
-            Stvx(L + 16, n1);
-            Stvx(L + 32, n2);
-            Stvx(L + 48, n3);
-            const f64 x = LfsD(L + 48), y = LfsD(L + 52), z = LfsD(L + 56);
-            store<u32>(L + 48, Fb(x + t0));
-            store<u32>(L + 52, Fb(y + t1));
-            store<u32>(L + 56, Fb(z + t2));
+    if (o->parent_on != 0) {
+        if (o->parent_basis != 0) {
+            set_bits(L->r[3].z, 0u);
+            set_bits(L->r[3].y, 0u);
+            set_bits(L->r[3].x, 0u);
+            const Mtx44& P = o->parent;
+            const V4 a0 = Lvx(&P.r[0]), a1 = Lvx(&P.r[1]), a2 = Lvx(&P.r[2]), a3 = Lvx(&P.r[3]);
+            const V4 r0 = Lvx(&L->r[0]), r1 = Lvx(&L->r[1]), r2 = Lvx(&L->r[2]);
+            const V4 z0 = Row3(a0, a1, a2, 0.0f, 0.0f, 0.0f);
+            Stvx(&L->r[0], Row3(a0, a1, a2, r0.e[0], r0.e[1], r0.e[2]));
+            Stvx(&L->r[1], Row3(a0, a1, a2, r1.e[0], r1.e[1], r1.e[2]));
+            Stvx(&L->r[2], Row3(a0, a1, a2, r2.e[0], r2.e[1], r2.e[2]));
+            Stvx(&L->r[3], Add4(a3, z0));
+            const f64 x = lf(L->r[3].x), y = lf(L->r[3].y), z = lf(L->r[3].z);
+            L->r[3].x = static_cast<f32>(x + t0);
+            L->r[3].y = static_cast<f32>(y + t1);
+            L->r[3].z = static_cast<f32>(z + t2);
         } else {
-            call(ctx, Matrix_Multiply, {L, o + 624});
+            call(Matrix_Multiply, L, &o->parent);
         }
     }
     {
-        const V4 r0 = Lvx(L), r1 = Lvx(L + 16), r2 = Lvx(L + 32), r3 = Lvx(L + 48);
+        const V4 r0 = Lvx(&L->r[0]), r1 = Lvx(&L->r[1]), r2 = Lvx(&L->r[2]), r3 = Lvx(&L->r[3]);
         const f32 nt0 = 0.0f - r3.e[0], nt1 = 0.0f - r3.e[1], nt2 = 0.0f - r3.e[2];
         const V4 c0{{r0.e[0], r1.e[0], r2.e[0], r1.e[1]}};
         const V4 c1{{r0.e[1], r1.e[1], r2.e[1], r0.e[0]}};
         const V4 c2{{r0.e[2], r1.e[2], r2.e[2], r0.e[2]}};
-        V4 tr;
-        for (u32 k = 0; k < 4; ++k) tr.e[k] = Madd(c2.e[k], nt2, Madd(c1.e[k], nt1, Madd(c0.e[k], nt0, 0.0f)));
-        Stvx(B, c0);
-        Stvx(B + 16, c1);
-        Stvx(B + 32, c2);
-        Stvx(B + 48, tr);
+        Stvx(&B->r[0], c0);
+        Stvx(&B->r[1], c1);
+        Stvx(&B->r[2], c2);
+        Stvx(&B->r[3], Row3(c0, c1, c2, nt0, nt1, nt2));
     }
-    call(ctx, RenderTarget_SetMatrix, {load<u32>(o + 364), B});
-    callf(ctx, View_SetFov, {load<u32>(o + 364)}, {LfsD(o + 356)});
-    const u32 f468 = load<u32>(o + 468);
+    call(RenderTarget_SetMatrix, o->rt.ea, B);
+    call(View_SetFov, o->rt.ea, lf(o->fov));
+    const u32 f468 = o->lens_flags;
     if (!(f468 & 0x40000000u)) return;
     if (f468 & 0x20000000u) {
-        const u32 q = load<u32>(load<u32>(load<u32>(o + 364) + 656) + 12);
+        const u32 q = gm<CamLens>(gm<CamTarget>(o->rt.ea).lens.ea).dof;
         if (q != 0) {
-            const u32 b440 = load<u8>(o + 440);
+            CamDof& d = gm<CamDof>(q);
+            const u32 b440 = o->dof_on;
             if (b440 != 0) {
-                store<u32>(q + 24, load<u32>(o + 360));
-                store<u32>(q + 28, Clamp(load<u32>(o + 444), load<u32>(kK + 32), load<u32>(kK + 44)));
-                store<u32>(q + 32, load<u32>(o + 448));
-                const u32 b = load<u32>(o + 452) & 0xFF;
-                store<u8>(q + 64, static_cast<u8>(b < 1 ? 1 : (b > 4 ? 4 : b)));
+                d.focus = o->focus;
+                d.range = Clamp(o->range, global<be_f32>(kK + 32), global<be_f32>(kK + 44));
+                d.blur = o->blur;
+                const u32 b = o->quality;
+                d.quality = static_cast<u8>(b < 1 ? 1 : (b > 4 ? 4 : b));
             }
-            const u32 g = load<u32>(kGame);
-            const u32 s = load<u32>(g + 0x1281C0);
-            const u32 r7 = s != 0 ? load<u8>(s + 769) : 0;
-            const u32 r8 = (b440 | r7) != 0 ? 1 : 0;
-            const u32 on = (r8 | ((load<u32>(g + 0x128304) >> 29) & 1)) != 0 ? 1 : 0;
-            const u32 opd = load<u32>(load<u32>(q) + 8);
-            // r5 = !on and r6 = the entry, as the original's call sequence leaves them.
-            call_ptr(ctx, opd, {q, on, on ^ 1u, load<u32>(opd), r7, r8});
+            const u32 g = global<be_u32>(kWorld);
+            const u32 s = gm<be_u32>(g + 0x1281C0);
+            const u32 r7 = s != 0 ? gm<u8>(s + 769) : 0u;
+            const u32 r8 = (b440 | r7) != 0 ? 1u : 0u;
+            const u32 on = (r8 | ((gm<be_u32>(g + 0x128304) >> 29) & 1)) != 0 ? 1u : 0u;
+            vcall(host<u8>(q), 8, on);
         }
     }
-    const u32 p = load<u32>(load<u32>(load<u32>(o + 364) + 656) + 24);
+    const u32 p = gm<CamLens>(gm<CamTarget>(o->rt.ea).lens.ea).filter;
     if (p == 0) return;
-    const u32 b456 = load<u8>(o + 456);
+    CamFilter& f = gm<CamFilter>(p);
+    const u32 b456 = o->filter_on;
     if (b456 != 0) {
-        VCall(ctx, p, 8, {p, b456});
-        store<u32>(p + 20, Clamp(load<u32>(o + 460), load<u32>(kK + 36), load<u32>(kK + 40)));
-        for (u32 j = 0; j < 3; ++j) store<u32>(p + 32 + 4 * j, Fb(static_cast<f64>(load<u8>(o + 464 + j))));
+        vcall(host<u8>(p), 8, b456);
+        f.strength = Clamp(o->strength, global<be_f32>(kK + 36), global<be_f32>(kK + 40));
+        for (u32 j = 0; j < 3; ++j) f.rgb[j] = static_cast<f32>(o->rgb[j]);
     }
-    VCall(ctx, p, 8, {p, static_cast<u32>(load<u8>(o + 456))});
+    vcall(host<u8>(p), 8, static_cast<u32>(o->filter_on));
 }
+
+}  // namespace sly4::obj
+
+NATIVE(000FAE00, sly4::obj::CamObj_PushView_000FAE00)

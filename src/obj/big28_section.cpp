@@ -1,30 +1,79 @@
 // Game code, large-function sweep part 28: the section objects' base SetMode
 // (mode bookkeeping, the next user started, the section effect).
-#include "../sly4.h"
 #include "big28.h"
 
-using namespace sly4;
-using namespace sly4::big28;
+namespace sly4::obj {
 
 namespace {
-constexpr u32 kWorld = 0x00F64C20;         // Obj** (the world object)
+constexpr u32 kShowWorld = 0x00F64C20;     // Obj** (the world object)
 constexpr u32 kFxTime = 0x003260E8;        // .text pool: f32 0.0167 (the effect's start time)
 constexpr u32 kFxSetCache = 0x011DE288;    // the effect set's last found record +8
-constexpr u32 kModeTable = 0x00020074;     // +o->12: the u32 mode words (top nibble the mode, 0x04000000 changed)
 constexpr u32 World_Notify = 0x002E5DD8;   // (world, section, s32 group) (f_002E5DD8)
 constexpr u32 EntryList_Flush = 0x00325FCC;  // (section, u8)
 constexpr u32 User_Start = 0x00325B58;     // (UserBlock*, s32 slot)
 constexpr u32 Obj_CanShow = 0x002E2104;    // (-, section) -> bool (reads r4 only)
 constexpr u32 Section_Link = 0x003218B0;   // (const Link20* l, section, u8 on) (f_003218B0)
 constexpr u32 Set_Find = 0x004BCE90;       // (u32 hash) -> Set*
-constexpr u32 SmallAlloc = 0x0055238C;     // (u32 size) -> p or 0
 constexpr u32 Effect_Construct = 0x004C7A68;  // (Effect*, def)
 constexpr u32 Effect_Start = 0x004C753C;   // (Effect*)
 constexpr u32 Effect_SetTime = 0x004CF710; // (Effect*; f1 t)
-constexpr u32 Effect_SetHash = 0x004CF988; // (Effect*, u32 hash)
 constexpr u32 kFxSet = 0x7719A548u;        // the section effects' set
 constexpr u32 kHashOpen = 0xDCCA6EB0u;     // effect hash: mode 4
 constexpr u32 kHashDone = 0x264D6485u;     // effect hash: mode 5
+
+// The section's owner block: +8 an object (s8 +172 its group), +80 the
+// user list (data +0, u16 count +8), +0x20074 the mode words.
+struct SecOwner {
+    pad<8> _0;
+    be_u32 x;               // +8
+    pad<68> _12;
+    PtrVec<u8> users;       // +80
+};
+static_assert(offsetof(SecOwner, users) == 80);
+struct SecSection {
+    pad<12> _0;
+    be_u32 owner;           // +12: SecOwner*
+    pad<1> _16;
+    u8 b17;                 // +17
+    u8 mode;                // +18
+    pad<1> _19;
+    be_u32 flags;           // +20
+    pad<2196> _24;
+    be_u32 fx_key;          // +2220
+    be_u32 fx;              // +2224: Effect*
+    pad<44> _2228;
+    be_u32 links;           // +2272: Link vector (20-byte entries, u16 count +8)
+    pad<176> _2276;
+    be_u32 idx;             // +2452
+    pad<108> _2456;
+    be_u32 user;            // +2564
+};
+static_assert(offsetof(SecSection, flags) == 20 && offsetof(SecSection, fx_key) == 2220 && offsetof(SecSection, links) == 2272);
+static_assert(offsetof(SecSection, idx) == 2452 && offsetof(SecSection, user) == 2564);
+// The effect set: +16 -> its tree's root, +20 the path (s16 depth +100),
+// +104 the node found.
+struct FxSet {
+    pad<16> _0;
+    be_u32 root;     // +16: Node**
+    be_u32 path[20]; // +20
+    be_s16 depth;    // +100
+    pad<2> _102;
+    be_u32 found;    // +104
+};
+static_assert(offsetof(FxSet, depth) == 100 && offsetof(FxSet, found) == 104);
+struct FxNode {
+    pad<4> _0;
+    be_u32 key;    // +4
+    be_u32 value;  // +8
+    be_u32 left;   // +12
+    be_u32 right;  // +16
+};
+struct FxEffect {
+    pad<136> _0;
+    be_u32 flags;  // +136
+};
+
+be_u32& ModeWord(const SecSection* o) { return gm<be_u32>(o->owner + 4 * o->idx + 0x00020074u); }
 }  // namespace
 
 // u32 f(Section* o, s32 mode, u8 force) (the section base SetMode: called by
@@ -43,132 +92,118 @@ constexpr u32 kHashDone = 0x264D6485u;     // effect hash: mode 5
 // can show o, each 20-byte link of o->+2272 (u16 count +8) Section_Link(
 // .., 1). Mode 5: with links and the world showing o they get Section_Link(
 // .., 0); then EntryList_Flush(o, 1) and the effect kHashDone.
-// r3 is left as the original leaves it.
-DECOMP(003260F0, Section_SetModeBase_003260F0) {
-    const u32 o = arg<u32>(ctx, 0);
-    const s32 mode = arg<s32>(ctx, 1);
-    const u32 force = arg<u32>(ctx, 2) & 0xFF;
-    if (const u32 b = load<u32>(o + 20) & 0x80u; b != 0) {
-        ret(ctx, b);
-        return;
-    }
+// The result is the r3 the original leaves: several Section_SetMode_*
+// callers return straight after the call, passing it on to callers that
+// are not all known, so it is kept.
+u32 Section_SetModeBase_003260F0(SecSection* o, s32 mode, u32 force_) {
+    const u32 force = force_ & 0xFF;
+    if (const u32 b = o->flags & 0x80u; b != 0) return b;
     if (mode == 6) {
-        const u32 w = load<u32>(kWorld);
-        const u32 x = load<u32>(load<u32>(o + 12) + 8);
-        const u32 grp = x != 0 ? static_cast<u32>(static_cast<s32>(load<s8>(x + 172))) : 0u;
-        call(ctx, World_Notify, {w, o, grp});
+        const u32 w = global<be_u32>(kShowWorld);
+        const u32 x = gm<SecOwner>(o->owner).x;
+        const s32 grp = x != 0 ? static_cast<s32>(gm<s8>(x + 172)) : 0;
+        call(World_Notify, w, o, grp);
     }
-    u32 r3;
-    r3 = force;
+    u32 r3 = force;
     bool set = force != 0;
     if (!set) {
-        r3 = load<u8>(o + 18);
+        r3 = o->mode;
         set = static_cast<s32>(r3) != mode;
     }
     if (set) {
-        u32 idx = load<u32>(o + 2452), tab = load<u32>(o + 12);
-        store<u8>(o + 18, static_cast<u8>(mode));
-        u32 a = tab + 4 * idx + kModeTable;
-        store<u32>(a, (load<u32>(a) & 0x0FFFFFFFu) | (static_cast<u32>(mode) << 28));
-        idx = load<u32>(o + 2452), tab = load<u32>(o + 12);
-        a = tab + 4 * idx + kModeTable;
-        store<u32>(a, load<u32>(a) | 0x04000000u);
-        r3 = a;
+        be_u32& a = ModeWord(o);
+        o->mode = static_cast<u8>(mode);
+        a = (a & 0x0FFFFFFFu) | (static_cast<u32>(mode) << 28);
+        be_u32& a2 = ModeWord(o);
+        a2 = a2 | 0x04000000u;
+        r3 = guest(&a2);
     }
     // The links of o->+2272 (u16 count +8, 20-byte entries), counted afresh each step.
     const auto links = [&](u32 on) -> u32 {
         for (u32 i = 0;; ++i) {
-            const u32 l = load<u32>(o + 2272);
-            const u32 n = l != 0 ? load<u16>(l + 8) : 0u;
+            const u32 l = o->links;
+            const u32 n = l != 0 ? gm<PtrVec<u8>>(l).count : 0u;
             if (!(i < n)) return n;
-            call(ctx, Section_Link, {load<u32>(l) + 20 * i, o, on});
+            call(Section_Link, gm<be_u32>(l) + 20 * i, o, on);
         }
     };
     if (mode == 4) {
-        store<u8>(o + 17, 0);
+        o->b17 = 0;
         for (u32 i = 0;; ++i) {
-            const u32 lst = load<u32>(o + 12) + 80;
-            const u32 n = load<u16>(lst + 8);
+            const PtrVec<u8>& lst = gm<SecOwner>(o->owner).users;
+            const u32 n = lst.count;
             if (!(i < n)) break;
-            const u32 arr = load<u32>(lst);
-            if (load<u32>(arr + 4 * i) != o || !(i + 1 < n)) continue;
-            const u32 nx = load<u32>(arr + 4 * (i + 1));
-            call(ctx, User_Start, {nx, 0});
-            if (static_cast<u32>(VCall(ctx, nx, 100, {nx})) == 0) {
-                call(ctx, User_Start, {nx, 2});
-                call(ctx, User_Start, {nx, 1});
+            const u32 arr = lst.data.ea;
+            if (gm<be_u32>(arr + 4 * i) != guest(o) || !(i + 1 < n)) continue;
+            const u32 nx = gm<be_u32>(arr + 4 * (i + 1));
+            call(User_Start, nx, 0);
+            if (vcall<u32>(host<u8>(nx), 100) == 0) {
+                call(User_Start, nx, 2);
+                call(User_Start, nx, 1);
             }
             break;
         }
-        if (const u32 u = load<u32>(o + 2564); u != 0) call(ctx, User_Start, {u, 0});
-        call(ctx, User_Start, {o, 2});
-        call(ctx, User_Start, {o, 1});
-        if (const u32 e = load<u32>(o + 2224); e != 0) {
-            call(ctx, Effect_SetHash, {e, kHashOpen});
-        } else if (const u32 s = static_cast<u32>(call(ctx, Set_Find, {kFxSet})); s != 0) {
-            u32 node = load<u32>(load<u32>(s + 16));
-            const u32 key = load<u32>(o + 2220);
+        if (const u32 u = o->user; u != 0) call(User_Start, u, 0);
+        call(User_Start, o, 2);
+        call(User_Start, o, 1);
+        if (const u32 e = o->fx; e != 0) {
+            call(fn::Effect_SetHash, e, kHashOpen);
+        } else if (const u32 sa = call<u32>(Set_Find, kFxSet); sa != 0) {
+            FxSet& st = gm<FxSet>(sa);
+            u32 node = gm<be_u32>(st.root);
+            const u32 key = o->fx_key;
             if (node == 0) {
-                store<u32>(s + 104, 0);
-                store<u32>(kFxSetCache, 0);
+                st.found = 0u;
+                global<be_u32>(kFxSetCache) = 0u;
             } else {
-                store<u16>(s + 100, 0);
+                st.depth = 0;
                 for (;;) {
                     const u32 prev = node;
-                    const u32 k = load<u32>(node + 4);
+                    const u32 k = gm<FxNode>(node).key;
                     if (k == key) {
-                        store<u32>(s + 104, node);
-                        store<u32>(kFxSetCache, load<u32>(node + 8));
-                        const u32 rec = load<u32>(s + 104);
+                        st.found = node;
+                        global<be_u32>(kFxSetCache) = gm<FxNode>(node).value.get();
+                        const u32 rec = st.found;
                         if (rec == 0) break;
-                        const u32 def = load<u32>(rec + 8);
+                        const u32 def = gm<FxNode>(rec).value;
                         if (def == 0) break;
-                        u32 p = static_cast<u32>(call(ctx, SmallAlloc, {140}));
-                        if (p != 0) {
-                            call(ctx, Effect_Construct, {p, def});
-                        }
-                        store<u32>(o + 2224, p);
-                        store<u32>(p + 136, load<u32>(p + 136) & ~0x200u);  // quirk: written at 136 for a failed allocation too
-                        call(ctx, Effect_Start, {load<u32>(o + 2224)});
-                        callf(ctx, Effect_SetTime, {load<u32>(o + 2224)}, {Lf(kFxTime)});
+                        const u32 p = call<u32>(fn::SmallAlloc, 140u);
+                        if (p != 0) call(Effect_Construct, p, def);
+                        o->fx = p;
+                        FxEffect& fx = gm<FxEffect>(p);
+                        fx.flags = fx.flags & ~0x200u;  // quirk: written at 136 for a failed allocation too
+                        call(Effect_Start, o->fx.get());
+                        call(Effect_SetTime, o->fx.get(), lf(global<be_f32>(kFxTime)));
                         break;
                     }
-                    node = load<u32>(node + (k > key ? 12 : 16));
+                    node = k > key ? gm<FxNode>(node).left : gm<FxNode>(node).right;
                     if (node == 0) {
                         // prev is never null here; the original still tests it
-                        if (prev == 0) store<u16>(s + 100, 0);
-                        store<u32>(s + 104, prev);
+                        if (prev == 0) st.depth = 0;
+                        st.found = prev;
                         break;
                     }
-                    const s32 d = load<s16>(s + 100);
-                    store<u16>(s + 100, static_cast<u16>(d + 1));
-                    store<u32>(s + 20 + 4 * static_cast<u32>(d), prev);
+                    const s32 d = st.depth;
+                    st.depth = static_cast<s16>(d + 1);
+                    gm<be_u32>(sa + 20 + 4 * static_cast<u32>(d)) = prev;
                 }
             }
         }
-        const u32 l = load<u32>(o + 2272);
-        if (l == 0 || load<u16>(l + 8) == 0) {
-            ret(ctx, 0u);
-            return;
-        }
-        if (static_cast<u32>(call(ctx, Obj_CanShow, {load<u32>(kWorld), o})) == 0) {
-            ret(ctx, 0u);
-            return;
-        }
-        ret(ctx, links(1));
-        return;
+        const u32 l = o->links;
+        if (l == 0 || gm<PtrVec<u8>>(l).count == 0) return 0;
+        if (call<u32>(Obj_CanShow, global<be_u32>(kShowWorld), o) == 0) return 0;
+        return links(1);
     }
     if (mode == 5) {
-        if (const u32 l = load<u32>(o + 2272); l != 0) {
-            r3 = load<u16>(l + 8);
-            if (r3 != 0) {
-                r3 = static_cast<u32>(call(ctx, Obj_CanShow, {load<u32>(kWorld), o}));
-                if (r3 != 0) links(0);
-            }
-        }
-        call(ctx, EntryList_Flush, {o, 1});
-        if (const u32 e = load<u32>(o + 2224); e != 0) call(ctx, Effect_SetHash, {e, kHashDone});
-        return;
+        if (const u32 l = o->links; l != 0 && gm<PtrVec<u8>>(l).count != 0 && call<u32>(Obj_CanShow, global<be_u32>(kShowWorld), o) != 0)
+            links(0);
+        r3 = call<u32>(EntryList_Flush, o, 1u);
+        if (const u32 e = o->fx; e != 0) r3 = call<u32>(fn::Effect_SetHash, e, kHashDone);
+        return r3;  // the last callee's r3, as the original leaves it
     }
-    ret(ctx, r3);
+    return r3;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(003260F0, sly4::obj::Section_SetModeBase_003260F0)

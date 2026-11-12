@@ -1,6 +1,6 @@
 // Game code, large-function sweep part 30: stopping an object's voice and
 // those of its attached children.
-#include "native/objtypes.h"
+#include "big30.h"
 
 namespace sly4::obj {
 

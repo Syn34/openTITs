@@ -75,6 +75,12 @@ inline V4 Sel(const V4& a, const V4& b, const V4& m) {
     for (u32 k = 0; k < 4; ++k) o.e[k] = std::bit_cast<f32>((LaneW(a, k) & ~LaneW(m, k)) | (LaneW(b, k) & LaneW(m, k)));
     return o;
 }
+// vand a & m.
+inline V4 And4(const V4& a, const V4& m) {
+    V4 o;
+    for (u32 k = 0; k < 4; ++k) o.e[k] = std::bit_cast<f32>(LaneW(a, k) & LaneW(m, k));
+    return o;
+}
 // vandc a & ~m.
 inline V4 Andc(const V4& a, const V4& m) {
     V4 o;
@@ -127,6 +133,34 @@ inline V4 Row3(const V4& c0, const V4& c1, const V4& c2, f32 s0, f32 s1, f32 s2)
     return o;
 }
 
+// vmaddfp a * c + b for one lane with the AltiVec NaN priority: a NaN a,
+// else b, else c comes out quieted (the host fma may pick another operand
+// when two are NaN).
+inline f32 VmaddN(f32 a, f32 c, f32 b) {
+    auto q = [](f32 x) { return std::bit_cast<f32>(std::bit_cast<u32>(x) | 0x00400000u); };
+    if (a != a) return q(a);
+    if (b != b) return q(b);
+    if (c != c) return q(c);
+    return std::fma(a, c, b);
+}
+// Row3 with that NaN priority.
+inline V4 Row3N(const V4& c0, const V4& c1, const V4& c2, f32 s0, f32 s1, f32 s2) {
+    V4 o;
+    for (u32 k = 0; k < 4; ++k) o.e[k] = VmaddN(c2.e[k], s2, VmaddN(c1.e[k], s1, VmaddN(c0.e[k], s0, 0.0f)));
+    return o;
+}
+// vaddfp a + b with a NaN a (else b) quieted.
+inline V4 Add4N(const V4& a, const V4& b) {
+    V4 o;
+    for (u32 k = 0; k < 4; ++k) {
+        const f32 x = a.e[k], y = b.e[k];
+        o.e[k] = x != x ? std::bit_cast<f32>(std::bit_cast<u32>(x) | 0x00400000u)
+                 : y != y ? std::bit_cast<f32>(std::bit_cast<u32>(y) | 0x00400000u)
+                          : x + y;
+    }
+    return o;
+}
+
 // The three lane masks the compiler keeps for building {x, y, z, 0} rows.
 struct Masks3 {
     V4 m[3];
@@ -142,6 +176,11 @@ inline V4 Fill4(f32 x) { return V4{{x, x, x, x}}; }
 // {x, y, z, 0} from three splats and the masks (vsel y, vsel z, vandc).
 inline V4 RowSel(const V4& x, const V4& y, const V4& z, const Masks3& k) {
     return Andc(Sel(Sel(x, y, k.m[0]), z, k.m[1]), k.m[2]);
+}
+
+// {x, y, z, w} from four splats and the masks ({y}, {z}, {w}).
+inline V4 RowSel4(const V4& x, const V4& y, const V4& z, const V4& w, const Masks3& k) {
+    return Sel(Sel(Sel(x, y, k.m[0]), z, k.m[1]), w, k.m[2]);
 }
 
 // The rigid inverse the compiler builds of the 4x4 rows at m: the

@@ -72,6 +72,17 @@ inline f64 Fsel(f64 a, f64 c, f64 b) { return a >= 0.0 ? c : b; }
 inline u64 Fctidz(f64 x) { return rt::fctid(x, true); }
 inline f64 Fcfid(u64 v) { return rt::fcfid(v); }
 
+// ---------------------------------------------------------------- random numbers
+// The game's inlined random generator: the u64 at kGameRandLast holds the last
+// value (the low 16 bits of a mix), the u32 at kGameRandState the state; a
+// step mixes the state (GameRandMix), keeps rotl(mix, 16) as the new state and
+// the low 16 bits as the value. GameRandF is the value as a float (fcfid +
+// frsp).
+constexpr u32 kGameRandLast = 0x01164888;
+constexpr u32 kGameRandState = 0x01164890;
+inline u32 GameRandMix(u32 s) { return (std::rotl(s, 4) + std::rotl(s, 16)) ^ 0x87654321u; }
+inline f64 GameRandF(u64 v) { return S(static_cast<f64>(static_cast<s64>(v))); }
+
 // ---------------------------------------------------------------- common shapes
 struct Vec3 {
     be_f32 x, y, z;  // +0, +4, +8
@@ -81,11 +92,37 @@ struct Vec4 {
     be_f32 x, y, z, w;  // +0 .. +12 (a quadword)
 };
 static_assert(sizeof(Vec4) == 16);
+// A 4x4 matrix of rows (x, y, z, w): rows 0..2 the basis, row 3 the
+// translation.
+struct Mtx44 {
+    Vec4 r[4];  // +0, +16, +32, +48
+};
+static_assert(sizeof(Mtx44) == 64);
+// lfs / stfs copies of the x / y / z words (raw) of two Vec3 / Vec4.
+template <typename D, typename S>
+void CopyXYZ(D& d, const S& s) {
+    set_bits(d.x, bits(s.x));
+    set_bits(d.y, bits(s.y));
+    set_bits(d.z, bits(s.z));
+}
+// The x / y / z words of all four rows.
+inline void CopyMtxXYZ(Mtx44& d, const Mtx44& s) {
+    for (u32 r = 0; r < 4; ++r) CopyXYZ(d.r[r], s.r[r]);
+}
 // A quadword as four raw words (lvx / stvx copies without float conversion).
 struct Quad {
     be_u32 w[4];
 };
 static_assert(sizeof(Quad) == 16);
+
+// A big-endian word also accessed byte by byte (b[0] is its top byte).
+struct WordBytes {
+    union {
+        be_u32 w;
+        u8 b[4];
+    };
+};
+static_assert(sizeof(WordBytes) == 4);
 
 // CellGcmTexture (24 bytes; the same layout as sly4::gfx::GcmTexture).
 struct GcmTexture {
@@ -207,6 +244,46 @@ inline u32 HkPropLo(u32 props, u32 key) {
         if (e.key == key) return e.lo;
     }
     return 0;
+}
+// hkpRigidBodyCinfo (208 bytes; built on the stack): +4 the shape, +16
+// the position, +32 the rotation, +80 the inertia rows, +144 .. +168
+// mass / damping / friction words, u8 +180 / +204 flags.
+struct HkRbCinfo {
+    pad<4> _0;
+    be_u32 shape;       // +4
+    pad<8> _8;
+    Vec4 pos;           // +16
+    Vec4 rot;           // +32
+    pad<32> _48;
+    Vec4 inertia[3];    // +80
+    pad<16> _128;
+    be_u32 w144;        // +144
+    be_u32 w148;        // +148
+    be_u32 w152;        // +152
+    be_u32 w156;        // +156
+    be_u32 w160;        // +160
+    pad<4> _164;
+    be_u32 w168;        // +168
+    pad<8> _172;
+    u8 b180;            // +180
+    pad<23> _181;
+    u8 b204;            // +204
+    pad<3> _205;
+};
+static_assert(sizeof(HkRbCinfo) == 208 && offsetof(HkRbCinfo, inertia) == 80 && offsetof(HkRbCinfo, b204) == 204);
+
+// The index of property `key` in the block at props, -1 when absent
+// (count and table re-read every step), and the u64 value of entry i.
+inline s32 HkPropIdx(u32 props, u32 key) {
+    for (s32 i = 0;; ++i) {
+        const HkProps& p = gm<HkProps>(props);
+        if (i >= p.count) return -1;
+        if (gm<HkPropEntry>(p.table.ea + 16u * static_cast<u32>(i)).key == key) return i;
+    }
+}
+inline u64 HkPropVal64(u32 props, s32 i) {
+    const HkPropEntry& e = gm<HkPropEntry>(gm<HkProps>(props).table.ea + 16u * static_cast<u32>(i));
+    return (static_cast<u64>(e.hi) << 32) | e.lo;
 }
 // A collidable (hkpCdBody / shape holder) as the ray and cast filters read
 // it: +16 the s8 offset to its owner block, +24 the s8 kind (1: an entity
