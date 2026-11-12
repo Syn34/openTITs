@@ -9,6 +9,7 @@
 
 #include "opentit/native.h"
 #include "../sly4.h"
+#include "../container/container.h"
 
 namespace sly4 {
 namespace gameload {
@@ -242,6 +243,13 @@ void RenderTarget_SetByte49(RenderTarget* rt, u8 value);
 void RenderTarget_AddCallback(RenderTarget* rt, u32 list, u32 opd, u32 user, u8 priority);
 void RenderTarget_SetViewport(RenderTarget* rt, const ViewRect* rect);
 
+// Native functions (src/game/load_util.cpp).
+bool Thread_IsMain();
+bool Thread_IsSecond();
+// String_Format (0x005534D0) is variadic and reads its caller's frame: call it with call<>.
+s32 Libc_Vsprintf(char* dst, const char* fmt, u32 va);
+void FreeList_Init(container::FreeList* list, u32 elem_size, u32 count, container::Allocator* heap, u8 flag);
+
 // ApeTFreeList<T> (60 bytes). vtable +12: Alloc() -> T* or 0.
 constexpr u32 kFreeListHeap = 40, kFreeListElemSize = 44, kFreeList48 = 48;
 constexpr u32 kFreeListBlockCount = 52;  // u16
@@ -251,24 +259,15 @@ constexpr u32 kFreeListSize = 60;
 constexpr u32 kFreeListVfnAlloc = 12;
 
 // The constructor of ApeTFreeList<T>, inlined into every GetAllocator().
-// (Defined after lfn so it can call FreeList_Init.)
-inline void FreeList_Construct(PPUContext& ctx, u32 list, u32 vtable, u32 name, u32 elem_size, u32 count) {
-    for (u32 off = 4; off <= 48; off += 4) field<u32>(list, off) = 0;
-    field<u16>(list, 52) = 0;
-    field<u16>(list, kFreeListFlags) &= static_cast<u16>(~0x8000);
-    field<u32>(list, 0) = vtable;
-    field<u32>(list, kFreeListName) = name;
-    call(ctx, lfn::FreeList_Init, {list, elem_size, count, 0, 0});
+inline void FreeList_Construct(container::FreeList* list, u32 vtable, u32 name, u32 elem_size, u32 count) {
+    native::be_u32* w = reinterpret_cast<native::be_u32*>(list);
+    for (u32 off = 4; off <= 48; off += 4) w[off / 4] = 0u;
+    list->items_per_block = 0;
+    list->flags = static_cast<u16>(list->flags & ~0x8000);
+    list->vtable = vtable;
+    list->name = name;
+    FreeList_Init(list, elem_size, count, nullptr, 0);
 }
-
-// call() for a callee returning a 32-bit value; the original only ever
-// looks at the low word of r3 (cmpwi / stw).
-inline u32 call32(PPUContext& ctx, u32 addr, std::initializer_list<u64> args = {}) {
-    return static_cast<u32>(call(ctx, addr, args));
-}
-
-// The OPD in slot `byte_offset / 4` of obj's vtable.
-inline u32 vfunc(u32 obj, u32 byte_offset) { return load<u32>(load<u32>(obj) + byte_offset); }
 
 // PtrVector (kFreeLists): +0 u32* data, +4 u16 capacity, +6 u16 element size,
 // +8 u16 count, +10 u16 high-water mark, +12 u32 (bytes << 3 | flags), +16 u32.
@@ -299,6 +298,72 @@ enum TuningType : s32 {
     kTuningHash = 7,    // set +40 (u32)
 };
 constexpr u32 kVarVfnType = 8;
+
+// ---------------------------------------------------------------- native structures (load.cpp, load_input.cpp)
+// ApeInputDevice (296 bytes in its free list).
+struct InputDevice {
+    be_u32 vtable;       // +0
+    be_u16 flags;        // +4: kDevConnected, kDevFlag4000
+    native::pad<2> _6;
+    be_u32 w8;           // +8
+    u8 port;             // +12
+    native::pad<3> _13;
+    be_u32 w16, w20, w24;  // +16 .. +24
+    native::pad<4> _28;
+    u8 state[96];        // +32
+    be_u32 w128, w132, w136, w140, w144;  // +128 .. +144
+    u8 b148;             // +148
+};
+static_assert(offsetof(InputDevice, port) == kDevPort && offsetof(InputDevice, b148) == 148);
+
+// ApeInputMgr statics at lg::kInputMgr.
+struct InputMgr {
+    native::gp<container::FreeList> devices;  // +0
+    native::pad<76> _4;
+    be_u32 device_count;  // +80: next port number
+};
+
+// A tuning variable (entries of lg::kTuningVars).
+struct TuningVar {
+    be_u32 vtable;      // +0
+    native::pad<64> _4;
+    be_u32 name_hash;   // +68
+    char name[4];       // +72 (String; longer)
+};
+static_assert(offsetof(TuningVar, name_hash) == kVarNameHash && offsetof(TuningVar, name) == kVarName);
+
+struct LoadPlayer {
+    native::pad<4> _0;
+    u8 index;                        // +4
+    native::pad<23> _5;
+    native::gp<InputDevice> pad;     // +28
+    native::pad<kPlayerSize - 32> _32;
+};
+static_assert(sizeof(LoadPlayer) == kPlayerSize);
+
+// The Game object (g::game) as Game_Load sets it up.
+struct LoadGame {
+    be_u32 world;                     // +0 World*
+    be_u32 sys_msg_ui;                // +4
+    native::pad<2> _8;
+    u8 tuning_strings;                // +10
+    native::pad<149> _11;
+    be_u32 frame_arena;               // +160 LinearHeap*
+    be_f32 frame_time;                // +164
+    native::pad<8> _168;
+    LoadPlayer players[2];            // +176
+    native::pad<kGameCursors - kGamePlayers - 2 * kPlayerSize> _5E30;
+    be_u32 cursors[2];                // +0x5E30 Element*
+};
+static_assert(offsetof(LoadGame, frame_arena) == kGameFrameArena && offsetof(LoadGame, players) == kGamePlayers &&
+              offsetof(LoadGame, cursors) == kGameCursors);
+
+// Native functions (load.cpp, load_input.cpp).
+u32 Game_Load(LoadGame* game);
+u32 Tuning_Load(const char* path, u8 keep_strings);
+InputDevice* InputMgr_CreatePad();
+void InputDevice_Construct(InputDevice* dev);
+void PadDevice_Construct(InputDevice* dev);
 
 }  // namespace gameload
 }  // namespace sly4

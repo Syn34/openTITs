@@ -2,6 +2,9 @@
 // built-in iterator. Guest addresses in the BCES01284 v01.02 EBOOT.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -26,6 +29,40 @@ constexpr u32 Xml_FindChild = 0x004F8C30;   // (node, const char* name) -> node 
 constexpr u32 Xml_FindChildren = 0x004F936C;  // (node, const char* name) -> element (name?)
 constexpr u32 String_Append = 0x005566A8;   // strcat (name?)
 }  // namespace lvfn
+
+// ---------------------------------------------------------------- native structures
+using opentit::native::gp;
+using opentit::native::pad;
+
+struct Level {
+    pad<128> _0;
+    char path[428];   // +128 ("Dev/..." levels are skipped)
+    u8 loaded;        // +556
+};
+static_assert(offsetof(Level, loaded) == kLevelLoaded);
+
+struct LevelNode {
+    pad<8> _0;
+    gp<Level> value;      // +8
+    gp<LevelNode> left;   // +12
+    gp<LevelNode> right;  // +16
+};
+static_assert(offsetof(LevelNode, right) == kNodeRight);
+
+struct LevelMap {
+    pad<12> _0;
+    gp<gp<LevelNode>> root;  // +12: points at the root pointer
+    be_u32 path[20];         // +16: iterator stack (LevelNode*)
+    be_u16 depth;            // +96
+    pad<2> _98;
+    gp<LevelNode> current;   // +100
+};
+static_assert(offsetof(LevelMap, depth) == kMapDepth && offsetof(LevelMap, current) == kMapCurrent);
+
+u32 Levels_Count();
+Level* Levels_At(s32 i);
+u32 Levels_Load(const char* xml);
+u8 Level_Register(Level* level);
 
 }  // namespace levels
 }  // namespace sly4

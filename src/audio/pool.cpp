@@ -1,135 +1,142 @@
 // KeyMap_Find and HandlePool_Remove: containers the audio code uses.
 #include "audio.h"
 
-using namespace sly4;
-using namespace sly4::audio;
+namespace sly4::audio {
+using namespace opentit::native;
 
-// s32 KeyMap_Find(Map* map, const u32* key)  (name?)
-//
-// Map: +2 u16 count, +6 u16 flags (bit 0 = needs sorting), +8 entries of
-// 12 bytes (key first), +24 comparator OPD. Sorts first if needed, then
-// binary-searches; returns the index or -1. The default comparator is
-// replaced by an unsigned compare of the keys; any other is called with
-// (entry, {key, 0, 0}).
-DECOMP(00784008, KeyMap_Find) {
-    const u32 map = arg<u32>(ctx, 0), key = arg<u32>(ctx, 1);
-    const u16 flags = load<u16>(map + 6);
+namespace {
+constexpr u32 kKeyEntrySize = 12;
+}  // namespace
+
+// Sorts first if needed, then binary-searches; returns the index or -1.
+// The default comparator is replaced by an unsigned compare of the keys;
+// any other is called with (entry, {key, 0, 0}).  (name?)
+s32 KeyMap_Find(KeyMap* map, const be_u32* key) {
+    const u16 flags = map->flags;
     if (flags & 1) {
-        store<u16>(map + 6, flags & 0xFFFE);
-        const u16 count = load<u16>(map + 2);
-        if (static_cast<s32>(count) > 0)
-            call(ctx, afn::SortCompare, {load<u32>(map + 8), count, 12, load<u32>(map + 24)});
+        map->flags = static_cast<u16>(flags & 0xFFFE);
+        const u16 count = map->count;
+        if (static_cast<s32>(count) > 0) call(afn::SortCompare, map->entries.get(), static_cast<u32>(count), kKeyEntrySize, map->compare.get());
     }
-    s32 hi = static_cast<s32>(load<u16>(map + 2)) - 1;
+    s32 hi = static_cast<s32>(map->count.get()) - 1;
     s32 lo = 0;
-    const u32 entries = load<u32>(map + 8);
-    const u32 compare = load<u32>(map + 24);
+    const u32 entries = map->entries;
+    const u32 compare = map->compare;
     auto mid_of = [&] { return static_cast<s32>(static_cast<u32>(hi) + static_cast<u32>(lo)) >> 1; };
 
     if (compare == kMapDefaultCompare) {
         while (lo <= hi) {
             const s32 mid = mid_of();
-            const u32 e = load<u32>(entries + static_cast<u32>(mid) * 12);
-            const u32 k = load<u32>(key);
+            const u32 e = gref<be_u32>(entries + static_cast<u32>(mid) * kKeyEntrySize);
+            const u32 k = *key;
             if (e > k)
                 hi = mid - 1;
             else if (e < k)
                 lo = mid + 1;
             else
-                return ret(ctx, mid);
+                return mid;
         }
-        return ret(ctx, -1);
+        return -1;
     }
 
-    Stack frame(ctx, 12);
-    const u32 probe = frame.addr();
-    store<u32>(probe + 4, 0);
-    store<u16>(probe + 6, 0);
-    store<u32>(probe + 8, 0);
-    store<u32>(probe, load<u32>(key));
+    struct Probe {
+        be_u32 key;
+        be_u32 w4;
+        be_u32 w8;
+    };
+    GuestFrame frame(sizeof(Probe));
+    Probe* probe = frame.as<Probe>();
+    probe->w4 = 0u;
+    probe->w8 = 0u;
+    probe->key = key->get();
     while (lo <= hi) {
         const s32 mid = mid_of();
-        const s32 r = static_cast<s32>(call_ptr(ctx, compare, {entries + static_cast<u32>(mid) * 12, probe}));
+        const s32 r = call_ptr<s32>(compare, entries + static_cast<u32>(mid) * kKeyEntrySize, probe);
         if (r > 0)
             hi = mid - 1;
         else if (r < 0)
             lo = mid + 1;
         else
-            return ret(ctx, mid);
+            return mid;
     }
-    ret(ctx, -1);
+    return -1;
 }
 
-// void HandlePool_Remove(u32* out, Pool* pool, u32 handle)  (name?)
-//
-// Pool: +0 ?, +4 free list head (-1 = empty), +8 first used, +12 last
-// used, +16 used count, +20 free count, +24 capacity, +28 nodes (272
-// bytes: +0 prev, +4 next, +256 serial word, top bit = free). Unlinks the
-// node of a live handle from the used list, pushes it on the free list
-// and writes the handle of the node that followed it (0xFFFF0000 if it
-// was the last) to *out; *out = 0 for a dead handle.
-DECOMP(0078378C, HandlePool_Remove) {
-    const u32 out = arg<u32>(ctx, 0), pool = arg<u32>(ctx, 1), handle = arg<u32>(ctx, 2);
-    const u32 used = load<u32>(pool + 16);
-    const u32 free_head = load<u32>(pool + 4);
-    const u32 last = load<u32>(pool + 12);
-    auto done = [&](u32 v) { store<u32>(out, v); };
-    if (used == 0) return done(0);
+// Unlinks the node of a live handle from the used list, pushes it on the
+// free list and writes the handle of the node that followed it (0xFFFF0000
+// if it was the last) to *out; *out = 0 for a dead handle.  (name?)
+void HandlePool_Remove(be_u32* out, HandlePool* pool, u32 handle) {
+    const u32 used = pool->used;
+    const u32 free_head = pool->free_head;
+    const u32 last = pool->last;
+    if (used == 0) {
+        *out = 0u;
+        return;
+    }
     const u32 serial = handle & 0xFFFF;
-    if (serial == 0) return done(0);
     const u32 index = handle >> 16;
-    const s32 capacity = load<s32>(pool + 24);
-    if (!(static_cast<s32>(index) < capacity)) return done(0);
-    const u32 nodes = load<u32>(pool + 28);
-    const u32 node = nodes + index * kNodeSize;
-    if (((load<u32>(node + kNodeSerial) >> 15) & 0xFFFF) != serial) return done(0);
-    if (ref<u8>(node + kNodeSerial) & kNodeFree) return done(0);
+    const s32 capacity = pool->capacity;
+    if (serial == 0 || !(static_cast<s32>(index) < capacity)) {
+        *out = 0u;
+        return;
+    }
+    const u32 nodes = pool->nodes;
+    auto node_at = [&](u32 i) -> HandleNode& { return gref<HandleNode>(nodes + i * kNodeSize); };
+    HandleNode& node = node_at(index);
+    if (((node.serial >> 15) & 0xFFFF) != serial || (gref<u8>(guest(&node.serial)) & kNodeFree)) {
+        *out = 0u;
+        return;
+    }
 
-    if (static_cast<s32>(index) == load<s32>(pool + 8))
-        store<u32>(pool + 8, load<u32>(node + 4));
+    if (static_cast<s32>(index) == static_cast<s32>(pool->first.get()))
+        pool->first = node.next.get();
     else
-        store<u32>(nodes + load<u32>(node) * kNodeSize + 4, load<u32>(node + 4));
+        node_at(node.prev).next = node.next.get();
 
     u32 next_handle;
     if (static_cast<s32>(index) == static_cast<s32>(last)) {
-        store<u32>(pool + 12, load<u32>(node));
+        pool->last = node.prev.get();
         next_handle = 0xFFFF0000u;
     } else {
-        const u32 next = load<u32>(node + 4);
-        store<u32>(nodes + next * kNodeSize, load<u32>(node));
-        const u32 n = load<u32>(node + 4);
-        next_handle = (n << 16) | ((load<u32>(nodes + (n & 0xFFFF) * kNodeSize + kNodeSerial) >> 15) & 0xFFFF);
+        node_at(node.next).prev = node.prev.get();
+        const u32 n = node.next;
+        next_handle = (n << 16) | ((node_at(n & 0xFFFF).serial >> 15) & 0xFFFF);
     }
 
     // Mark the node free: top bit set, the serial (bits 15..30) cleared.
     auto mark_free = [&] {
-        const u32 word_ea = node + kNodeSerial;
-        const u8 top = static_cast<u8>(ref<u8>(word_ea) | 0x80);
-        const u32 word = load<u32>(word_ea);
-        ref<u8>(word_ea) = top;
-        store<u32>(word_ea, ((word & 0x00FFFFFFu) | (static_cast<u32>(top) << 24)) & ~0x7FFF8000u);
+        u8& first_byte = gref<u8>(guest(&node.serial));
+        const u8 top = static_cast<u8>(first_byte | 0x80);
+        const u32 word = node.serial;
+        first_byte = top;
+        node.serial = ((word & 0x00FFFFFFu) | (static_cast<u32>(top) << 24)) & ~0x7FFF8000u;
     };
     if (static_cast<s32>(free_head) != -1) {
-        store<u32>(nodes + free_head * kNodeSize + 4, index);
-        store<u32>(node, free_head);
-        store<s32>(node + 4, -1);
+        node_at(free_head).next = index;
+        node.prev = free_head;
+        node.next = 0xFFFFFFFFu;
         mark_free();
-        store<u32>(pool + 4, index);
-        if (capacity == 1) store<u32>(pool + 0, index);
+        pool->free_head = index;
+        if (capacity == 1) pool->w0 = index;
     } else {
-        store<s32>(node, -1);
-        store<s32>(node + 4, -1);
+        node.prev = 0xFFFFFFFFu;
+        node.next = 0xFFFFFFFFu;
         mark_free();
-        store<u32>(pool + 4, index);
-        store<u32>(pool + 0, index);
+        pool->free_head = index;
+        pool->w0 = index;
     }
 
     const u32 left = used - 1;
-    store<u32>(pool + 16, left);
-    store<u32>(pool + 20, load<u32>(pool + 20) + 1);
+    pool->used = left;
+    pool->free_count = pool->free_count + 1;
     if (left == 0) {
-        store<s32>(pool + 12, -1);
-        store<s32>(pool + 8, -1);
+        pool->last = 0xFFFFFFFFu;
+        pool->first = 0xFFFFFFFFu;
     }
-    done(next_handle);
+    *out = next_handle;
 }
+
+}  // namespace sly4::audio
+
+NATIVE(00784008, sly4::audio::KeyMap_Find)
+NATIVE(0078378C, sly4::audio::HandlePool_Remove)

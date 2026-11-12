@@ -9,14 +9,6 @@ using namespace opentit::native;
 constexpr u32 kOverlayValue = 0x00F558D0;  // u32 (name?)
 constexpr u32 kMarkerCommand = 22;         // command id in the top byte
 
-struct SplitFlags {
-    pad<164> _0;
-    be_u32 flags;  // +164: bit 0x8000 = split screen
-};
-struct Camera {
-    pad<48> _0;
-    gp<SplitFlags> split;  // +48
-};
 
 struct MarkerCommand {
     be_u32 head;    // kMarkerCommand << 24 | (value & 0xFF0000)
@@ -24,11 +16,6 @@ struct MarkerCommand {
     be_u32 zero;
 };
 
-struct ViewTarget;
-struct ViewOwner {
-    pad<36> _0;
-    gp<ViewTarget> target;  // +36
-};
 
 // u32 Overlay_GetValue()  (name?)
 u32 Overlay_GetValue() { return global<be_u32>(kOverlayValue); }

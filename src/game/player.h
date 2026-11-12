@@ -5,6 +5,9 @@
 
 #include <cmath>
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -96,6 +99,67 @@ constexpr f64 kMinusOneD = -1.0;
 constexpr f64 kOneD = 1.0;
 constexpr f32 kMaxDirectionAngle = 0.785398185253143310546875f;  // 0x3F490FDB, pi/4
 constexpr f32 kMinusOne = -1.0f;
+
+// ---------------------------------------------------------------- native structures
+using opentit::native::gp;
+using opentit::native::pad;
+
+struct Vec3Raw {
+    be_u32 v[3];  // floats copied as raw words (lfs / stfs pairs)
+    pad<4> _12;
+};
+static_assert(sizeof(Vec3Raw) == kHistoryEntry);
+
+struct Pad {
+    be_u32 vtable;     // +0
+    be_u16 flags;      // +4: kPadConnected
+    pad<2> _6;
+    be_u32 type;       // +8
+    pad<4> _12;
+    be_u32 held;       // +16
+    be_u32 pressed;    // +20
+    be_u32 released;   // +24
+    pad<4> _28;
+    be_f32 stick_x;    // +32
+    be_f32 stick_y;    // +36
+    pad<56> _40;
+    be_f32 pointer_x;  // +96
+    be_f32 pointer_y;  // +100
+    be_u32 motion[3];  // +104
+    pad<12> _116;
+    be_u32 valid;      // +128
+};
+static_assert(offsetof(Pad, stick_x) == kPadStickX && offsetof(Pad, motion) == kPadMotion && offsetof(Pad, valid) == kPadValid);
+
+struct Player {
+    pad<4> _0;
+    be_u32 flags;          // +4
+    be_u32 held;           // +8
+    be_u32 pressed;        // +12
+    be_u32 released;       // +16
+    be_u32 valid;          // +20
+    be_f32 repeat_timer;   // +24
+    gp<Pad> device;        // +28 (0 when no pad is assigned)
+    be_f32 cursor_x;       // +32
+    be_f32 cursor_y;       // +36
+    pad<40> _40;
+    Vec3Raw history_a[kHistoryLen];  // +80
+    Vec3Raw history_b[kHistoryLen];  // +5840
+    be_u32 history_tail;   // +11600
+    be_u32 history_head;   // +11604
+    pad<0x2EC0 - 11608> _11608;
+};
+static_assert(sizeof(Player) == 0x2EC0);  // Game +0xB0 holds two
+static_assert(offsetof(Player, history_b) == kHistoryB && offsetof(Player, history_tail) == kHistoryTail);
+
+// A tuning object: value at +72.
+template <typename T>
+struct Tuning {
+    pad<kTuningValue> _0;
+    T value;  // +72
+};
+
+void Player_Update(Player* p, f32 dt);
 
 }  // namespace player
 }  // namespace sly4

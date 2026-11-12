@@ -3,6 +3,8 @@
 // comment marks a guess from how the code is used.
 #pragma once
 
+#include <cstddef>
+
 #include "../sly4.h"
 
 namespace sly4 {
@@ -59,11 +61,12 @@ constexpr u32 kDebugHookArg = 0x010C2C28;   // u32 passed to DebugHookB
 // with the low 16 bits of the mix kept at kRandomLast. Returns the state as
 // it was before the step.
 inline u32 Random_Step() {
+    using namespace opentit::native;
     const auto rotl = [](u32 v, int n) { return (v << n) | (v >> (32 - n)); };
-    const u32 seed = load<u32>(kRandomState);
+    const u32 seed = global<be_u32>(kRandomState);
     const u32 mixed = (rotl(seed, 4) + rotl(seed, 16)) ^ 0x87654321u;
-    store<u32>(kRandomState, rotl(mixed, 16));
-    store<u64>(kRandomLast, mixed & 0xFFFFu);
+    global<be_u32>(kRandomState) = rotl(mixed, 16);
+    global<be_u64>(kRandomLast) = static_cast<u64>(mixed & 0xFFFFu);
     return seed;
 }
 
@@ -164,6 +167,103 @@ struct UiEvent {
     be_u32 c;
 };
 static_assert(sizeof(UiEvent) == 20);
+
+// ---------------------------------------------------------------- native structures
+using opentit::native::gp;
+using opentit::native::pad;
+
+// Heap pointers FrameArena_Align rounds (SystemState +28).  (names?)
+struct FrameArena {
+    pad<4> _0;
+    be_u32 cur;    // +4
+    be_u32 top;    // +8
+    be_u32 end;    // +12
+    be_u32 limit;  // +16
+};
+static_assert(offsetof(FrameArena, limit) == 16);
+
+// The SystemState object (sly4.h system_state).
+struct SystemState {
+    be_u32 frame_count;   // +0
+    be_f32 frame_time;    // +4
+    pad<4> _8;
+    be_f32 f12;           // +12: copy of config +0x14
+    be_f32 total_time;    // +16
+    pad<8> _20;
+    gp<FrameArena> heap;  // +28
+    u8 flags;             // +32: 0x40 = leave the heap alone (name?)
+};
+static_assert(offsetof(SystemState, heap) == 28 && offsetof(SystemState, flags) == 32);
+
+struct Movie {
+    pad<272> _0;
+    be_u32 bink;  // +272 HBINK
+};
+
+struct TriggerRecord {
+    pad<8> _0;
+    be_u16 count;  // +8
+    pad<10> _10;
+};
+static_assert(sizeof(TriggerRecord) == kTriggerStride);
+
+// A frame buffer slot (16 bytes, from FrameRingBuffer +20).
+struct FrameSlot {
+    be_u32 base;   // +0
+    pad<4> _4;
+    be_u32 flags;  // +8: bits 1-3 state
+    pad<4> _12;
+};
+// The frame buffer FrameBuffer_Begin / _End work on (FrameRing +12).  (names?)
+struct FrameRingBuffer {
+    be_u32 base;       // +0
+    pad<8> _4;
+    be_u32 w12;        // +12
+    be_u32 w16;        // +16
+    FrameSlot slots[2];  // +20 (more up to slot_count)
+    be_u32 capacity;   // +52: records per slot (24 bytes each)
+    u8 slot_count;     // +56
+    u8 slot_index;     // +57
+    u8 slot_index2;    // +58
+    pad<1> _59;
+    be_u32 cursor;     // +60
+    be_u32 end;        // +64
+    be_u32 write;      // +68
+    be_u32 used;       // +72
+    u8 reset;          // +76
+};
+static_assert(offsetof(FrameRingBuffer, capacity) == 52 && offsetof(FrameRingBuffer, reset) == 76);
+
+// The game flow (state machine) FlowState_GetMovieOwner looks at.  (name?)
+struct Flow {
+    be_u32 vtable;     // +0
+    pad<2> _4;
+    be_u16 stack_top;  // +6: byte offset of the top entry
+    pad<12> _8;
+    gp<be_u32> stack;  // +20
+    pad<7> _24;
+    u8 sub_state;      // +31
+    u8 b32;            // +32
+};
+static_assert(offsetof(Flow, stack) == 20 && offsetof(Flow, b32) == 32);
+
+// ---------------------------------------------------------------- native functions (update_misc.cpp)
+void FrameArena_Align(FrameArena* a);
+void Audio_SetPaused(u8 on);  // the byte is stored as given
+u8 Audio_IsPaused();
+void Ui_SetInputHandler(u32 handler_opd, u32 arg);
+void Ui_SetEventHandler(u32 handler_opd, u32 arg);
+u32 Ui_SendEvent(u32 type, u32 a, u32 b, u32 c);
+u32 Movie_SetPaused(Movie* movie, u8 paused);
+u32 Systems_EndFrame();
+void DebugHookA();
+void DebugHookB();
+void Triggers_Clear();
+void FrameBuffer_Begin(FrameRingBuffer* fb);
+void FrameBuffer_End(FrameRingBuffer* fb);
+void Input_UpdateDevices();
+u32 FlowState_GetMovieOwner(Flow* flow);
+u32 Time_BeginFrame();
 
 }  // namespace update
 }  // namespace sly4

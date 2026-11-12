@@ -3,19 +3,13 @@
 // the BCES01284 v01.02 EBOOT; "?" marks a guess.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
 namespace meta {
-
-// Virtual call. The original's call sequence leaves the OPD and its entry
-// in the two registers after the arguments; we do the same.
-inline u64 mcall(PPUContext& ctx, u32 obj, u32 slot, std::initializer_list<u64> args) {
-    const u32 opd = load<u32>(load<u32>(obj) + slot);
-    ctx.gpr[3 + args.size()] = opd;
-    ctx.gpr[4 + args.size()] = load<u32>(opd);
-    return call_ptr(ctx, opd, args);
-}
 
 namespace mfn {
 constexpr u32 Trophy_Construct = 0x004FB0F0;   // decompiled in meta_trophy.cpp
@@ -99,6 +93,86 @@ constexpr u32 kPointsBronze = 15, kPointsSilver = 30, kPointsGold = 90;  // plat
 constexpr u32 kCurrentWorld = 0x00F65CA0;   // u32 World*
 constexpr u32 kWorldSaveData = 80;
 constexpr u32 kXmlDocSize = 2240;
+
+// ---------------------------------------------------------------- native structures
+using opentit::native::gp;
+using opentit::native::pad;
+
+struct Allocator {
+    be_u32 vtable;  // +0: +0 alloc(size, 0, align), +8 free(p, size)
+};
+
+// A sorted array (24 bytes).
+struct SortedArray {
+    be_u16 capacity;          // +0
+    be_u16 count;             // +2
+    be_u16 high;              // +4
+    be_u16 flags;             // +6: (element size << 1) | 1 while unsorted
+    be_u32 data;              // +8
+    gp<Allocator> allocator;  // +12
+    be_u32 w16;               // +16
+    be_u32 compare;           // +20 OPD
+};
+static_assert(sizeof(SortedArray) == 24);
+
+struct Trophy {
+    be_u32 comm_id;     // +0
+    be_u32 signature;   // +4
+    u8 b8, b9, b10;     // +8
+    u8 flag;            // +11
+    u8 b12, b13;        // +12
+    pad<2> _14;
+    be_u64 u16;         // +16
+    u8 lock[36];        // +24 (Lock_Init), given to the thread
+    u8 event60[28];     // +60
+    be_u32 thread;      // +88
+    u8 b92, b93, b94;   // +92
+    pad<1> _95;
+    be_u32 w96, w100;   // +96, +100
+    be_u32 callback;    // +104
+    be_u32 state;       // +108
+    u8 event112[28];    // +112
+    be_u32 w140[4];     // +140
+    be_u32 context;     // +156
+    be_u32 handle;      // +160
+    be_u32 w164;        // +164
+    be_u64 u168[4];     // +168
+    pad<1376 - 200> _200;
+    SortedArray list;   // +1376
+};
+static_assert(offsetof(Trophy, lock) == kTrLock && offsetof(Trophy, thread) == kTrThread &&
+              offsetof(Trophy, context) == kTrContext && offsetof(Trophy, list) == kTrList);
+
+// sys_ppu_thread attributes as ThreadAttr_Init fills them (32 bytes).
+struct ThreadAttr {
+    be_u32 w0;
+    be_u32 stack;  // +4
+    pad<20> _8;
+    be_u32 name;   // +28
+};
+static_assert(sizeof(ThreadAttr) == 32);
+
+struct Upgrade {
+    be_u32 id;           // +0
+    be_u32 ability;      // +4
+    be_u32 type;         // +8
+    be_u32 cost;         // +12
+    char title[64];      // +16
+    char desc[64];       // +80
+    be_u32 job_unlock;   // +144
+    u8 flag;             // +148 (name unknown)
+    pad<3> _149;
+};
+static_assert(sizeof(Upgrade) == kUpgradeSize);
+
+struct AwardEntry {
+    be_u32 name;    // name hash
+    be_u32 value;   // number (index) or points (table)
+};
+
+void Trophy_Construct(Trophy* t, u32 comm_id, u32 sig, u32 callback, u16 capacity, u8 flag);
+u32 Upgrades_Load(const char* path);
+u32 Awards_Load(const char* path);
 
 }  // namespace meta
 }  // namespace sly4

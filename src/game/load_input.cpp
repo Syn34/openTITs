@@ -1,79 +1,81 @@
 // Input devices: the pads Game_Load makes for each player.
 #include "load.h"
 
-using namespace sly4;
-using namespace sly4::gameload;
+#include "../memory/mem.h"
+
+namespace sly4::gameload {
+using namespace opentit::native;
 
 namespace {
 constexpr u32 kDeviceSize = 296;      // ApeInputDevice elements in the free list
 constexpr u32 kDeviceFreeListCount = 4;
-constexpr u32 kInputMgrDeviceCount = 80;  // u32 in lg::kInputMgr: next port number
 constexpr s32 CELL_OK = 0;
 }  // namespace
 
-// ApeInputDevice* InputMgr_CreatePad()
 // Allocates an input device from ApeInputMgr's free list (made on first use:
 // the inlined ApeInputMgr::GetAllocator()) and constructs it as a pad.
-// Game_Load leaves a player pointer in r3; it isn't used.
-DECOMP(0056324C, InputMgr_CreatePad) {
-    u32 list = load<u32>(lg::kInputMgr);
-    if (list == 0) {
-        const u32 mem = call32(ctx, lfn::Mem_New, {kFreeListSize});
-        if (mem != 0) {
-            FreeList_Construct(ctx, mem, lg::kInputDeviceFreeListVtbl, lg::kInputDeviceFreeListName, kDeviceSize,
+InputDevice* InputMgr_CreatePad() {
+    InputMgr& mgr = global<InputMgr>(lg::kInputMgr);
+    container::FreeList* list = mgr.devices;
+    if (!list) {
+        auto* mem = static_cast<container::FreeList*>(memory::Mem_New(kFreeListSize));
+        if (mem) {
+            FreeList_Construct(mem, lg::kInputDeviceFreeListVtbl, lg::kInputDeviceFreeListName, kDeviceSize,
                                kDeviceFreeListCount);
             list = mem;
         }
-        store<u32>(lg::kInputMgr, list);  // a failed allocation crashes below, as in the original
+        mgr.devices = list;  // a failed allocation crashes below, as in the original
     }
-    const u32 dev = static_cast<u32>(call_ptr(ctx, vfunc(list, kFreeListVfnAlloc), {list}));
-    if (dev != 0) call(ctx, lfn::PadDevice_Construct, {dev});
-    ret(ctx, dev);
+    InputDevice* dev = vcall<InputDevice*>(list, kFreeListVfnAlloc);
+    if (dev) PadDevice_Construct(dev);
+    return dev;
 }
 
-// void InputDevice_Construct(InputDevice* dev)
 // Base constructor: clears the state and takes the next port number.
-DECOMP(00562DDC, InputDevice_Construct) {
-    const u32 dev = arg<u32>(ctx, 0);
-    field<u32>(dev, 0) = lg::kInputDeviceVtbl;
-    field<u32>(dev, 16) = 0;
-    field<u32>(dev, 20) = 0;
-    field<u32>(dev, 24) = 0;
-    call(ctx, fn::memset, {dev + 32, 0, 96});
-    field<u32>(dev, 132) = 0;
-    field<u32>(dev, 140) = 0;
-    field<u32>(dev, 136) = 0;
-    field<u32>(dev, 144) = 0;
-    const u16 flags = field<u16>(dev, kDevFlags);
-    field<u32>(dev, 128) = 0;
-    field<u32>(dev, 8) = 0;
-    ref<u8>(dev + 148) = 1;
-    field<u16>(dev, kDevFlags) = static_cast<u16>(flags | kDevFlag4000 | kDevConnected);
-    auto& count = field<u32>(lg::kInputMgr, kInputMgrDeviceCount);
+void InputDevice_Construct(InputDevice* dev) {
+    dev->vtable = lg::kInputDeviceVtbl;
+    dev->w16 = 0u;
+    dev->w20 = 0u;
+    dev->w24 = 0u;
+    call(fn::memset, dev->state, 0u, static_cast<u32>(sizeof(dev->state)));
+    dev->w132 = 0u;
+    dev->w140 = 0u;
+    dev->w136 = 0u;
+    dev->w144 = 0u;
+    const u16 flags = dev->flags;
+    dev->w128 = 0u;
+    dev->w8 = 0u;
+    dev->b148 = 1;
+    dev->flags = static_cast<u16>(flags | kDevFlag4000 | kDevConnected);
+    be_u32& count = global<InputMgr>(lg::kInputMgr).device_count;
     const u32 port = count;
     count = port + 1;
-    ref<u8>(dev + kDevPort) = static_cast<u8>(port);
+    dev->port = static_cast<u8>(port);
 }
 
-// void PadDevice_Construct(InputDevice* dev)
 // Pad constructor: turns on pressure and motion sensors for the device's
 // port and records whether a pad is connected there (flag 0x8000).
-DECOMP(0056FAC8, PadDevice_Construct) {
-    const u32 dev = arg<u32>(ctx, 0);
-    call(ctx, lfn::InputDevice_Construct, {dev});
+void PadDevice_Construct(InputDevice* dev) {
+    InputDevice_Construct(dev);
 
-    const u16 flags = field<u16>(dev, kDevFlags);
-    const u8 port = ref<u8>(dev + kDevPort);
-    field<u32>(dev, 0) = lg::kPadDeviceVtbl;
-    field<u16>(dev, kDevFlags) = static_cast<u16>(flags | kDevConnected);
-    call(ctx, limp::cellPadSetPortSetting, {port, CELL_PAD_SETTING_PRESS_ON | CELL_PAD_SETTING_SENSOR_ON});
-    const s32 rc = static_cast<s32>(call32(ctx, limp::cellPadGetInfo2, {lg::kPadInfo}));
+    const u16 flags = dev->flags;
+    const u8 port = dev->port;
+    dev->vtable = lg::kPadDeviceVtbl;
+    dev->flags = static_cast<u16>(flags | kDevConnected);
+    call(limp::cellPadSetPortSetting, static_cast<u32>(port), CELL_PAD_SETTING_PRESS_ON | CELL_PAD_SETTING_SENSOR_ON);
+    const s32 rc = call<s32>(limp::cellPadGetInfo2, lg::kPadInfo);
 
-    u16 now = field<u16>(dev, kDevFlags);
-    if (rc == CELL_OK &&
-        (load<u32>(lg::kPadInfo + kPadInfoPortStatus + ref<u8>(dev + kDevPort) * 4u) & CELL_PAD_STATUS_CONNECTED) != 0)
+    u16 now = dev->flags;
+    const be_u32* port_status = host<be_u32>(lg::kPadInfo + kPadInfoPortStatus);
+    if (rc == CELL_OK && (port_status[dev->port] & CELL_PAD_STATUS_CONNECTED) != 0)
         now = static_cast<u16>(now | kDevConnected);
     else
         now = static_cast<u16>(now & ~kDevConnected);
-    field<u16>(dev, kDevFlags) = now;
+    dev->flags = now;
 }
+
+}  // namespace sly4::gameload
+
+NATIVE(0056324C, sly4::gameload::InputMgr_CreatePad)
+NATIVE(00562DDC, sly4::gameload::InputDevice_Construct)
+NATIVE(0056FAC8, sly4::gameload::PadDevice_Construct)

@@ -5,7 +5,9 @@
 
 #include <bit>
 #include <cmath>
+#include <cstddef>
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -74,6 +76,50 @@ inline u32 Emitter_FromHandle(u32 handle) {
 
 // Default comparator of a sorted map (OPD); others go through call_ptr.
 constexpr u32 kMapDefaultCompare = 0x00F39AB0;
+
+// ---------------------------------------------------------------- native structures
+// A sorted key map: 12-byte entries, key first.
+struct KeyMap {
+    native::pad<2> _0;
+    native::be_u16 count;      // +2
+    native::pad<2> _4;
+    native::be_u16 flags;      // +6: bit 0 = needs sorting
+    native::be_u32 entries;    // +8
+    native::pad<12> _12;
+    native::be_u32 compare;    // +24 OPD
+};
+static_assert(offsetof(KeyMap, compare) == 24);
+// A handle pool node (272 bytes): +0 prev, +4 next, +256 serial word (top bit = free).
+struct HandleNode {
+    native::be_u32 prev;       // +0
+    native::be_u32 next;       // +4
+    native::pad<248> _8;
+    native::be_u32 serial;     // +256
+    native::pad<12> _260;
+};
+static_assert(sizeof(HandleNode) == kNodeSize);
+struct HandlePool {
+    native::be_u32 w0;          // +0
+    native::be_u32 free_head;   // +4 (-1 = empty)
+    native::be_u32 first;       // +8
+    native::be_u32 last;        // +12
+    native::be_u32 used;        // +16
+    native::be_u32 free_count;  // +20
+    native::be_s32 capacity;    // +24
+    native::be_u32 nodes;       // +28
+};
+
+// ---------------------------------------------------------------- native functions
+// pool.cpp
+s32 KeyMap_Find(KeyMap* map, const native::be_u32* key);
+void HandlePool_Remove(native::be_u32* out, HandlePool* pool, u32 handle);
+// voice.cpp
+u32 Voice_IsPlaying(u32 handle);
+s32 Voice_GetValue(u32 handle);
+u32 Voice_Stop(u32 handle, u32 value);
+// lib_math.cpp
+void Listener_LocalDirection(native::be_f32* out, const native::be_f32* pos, const native::be_f32* listener);
+bool Matrix_NearlyEqual(const native::be_f32* a, const native::be_f32* b, f32 eps);
 
 }  // namespace audio
 }  // namespace sly4

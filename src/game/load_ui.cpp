@@ -118,7 +118,7 @@ RenderTarget* RenderTarget_Create(u32 type, u32 flag) {
             h[kFreeListFlags / 2] = static_cast<u16>(h[kFreeListFlags / 2] & ~0x8000);
             w[0] = lg::kRenderTargetFreeListVtbl;
             w[kFreeListName / 4] = lg::kRenderTargetFreeListName;
-            call(lfn::FreeList_Init, mem, kRtSize, pool[1].get(), 0u, 0u);
+            FreeList_Init(host<container::FreeList>(mem), kRtSize, pool[1], nullptr, 0);
             list = mem;
         }
         pool[0] = list;  // a failed allocation crashes below, as in the original

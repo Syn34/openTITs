@@ -2,7 +2,11 @@
 // BCES01284 v01.02 EBOOT; "?" marks a guess. Decompiled in more_*.cpp.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
+#include "../container/container.h"
 
 namespace sly4 {
 namespace mfn {
@@ -37,3 +41,30 @@ constexpr u32 qsort = 0x0071EC28;              // (base, count, size, cmp)
 constexpr u32 memmove = 0x0071C3F0;
 }  // namespace mfn
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native (more_containers.cpp)
+namespace sly4::audio {
+// An object with a type bit mask at +192 (u32 per 32 types).  (name?)
+struct TypedObj;
+constexpr u32 kObjTypeMask = 192;
+
+// A sorted array (24 bytes): +0 capacity, +6 (element size << 1) | unsorted, +8 data, +12 allocator.
+struct ArrayAllocator {
+    opentit::native::be_u32 vtable;  // +0 alloc(size, 0, align), +8 free(p, size)
+};
+struct Array {
+    opentit::native::be_u16 capacity;  // +0
+    opentit::native::be_u16 count;     // +2
+    opentit::native::be_u16 high;      // +4
+    opentit::native::be_u16 flags;     // +6
+    opentit::native::be_u32 data;      // +8
+    opentit::native::gp<ArrayAllocator> allocator;  // +12
+};
+static_assert(offsetof(Array, allocator) == 12);
+
+void Obj_CollectByType(u32 type, container::PtrVector* out);
+u32 PtrVector_Clear(container::PtrVector* v);
+void Nop();
+void Array_Reserve(Array* a, u16 capacity);
+}  // namespace sly4::audio
+
