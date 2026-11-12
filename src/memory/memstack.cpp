@@ -1,8 +1,11 @@
 // The default memory stack (ApeMemStack) that MemState holds.
 #include "mem.h"
 
-using namespace sly4;
+namespace sly4::memory {
 
-// ApeMemStack* Mem_GetDefaultStack()
 // MemState.heap as it is: 0 until Mem_Alloc / operator new have set it up.
-DECOMP(005525FC, Mem_GetDefaultStack) { ret(ctx, ref<MemState>(kMemState).heap.get()); }
+LinearHeap* Mem_GetDefaultStack() { return mem_state().heap; }
+
+}  // namespace sly4::memory
+
+NATIVE(005525FC, sly4::memory::Mem_GetDefaultStack)

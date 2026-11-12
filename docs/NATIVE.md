@@ -45,6 +45,20 @@ NATIVE(002A6044, sly4::frame::Camera_IsSplit)
   then `f.as<T>(offset)`. Locals only used by native code are ordinary C++
   locals.
 - `host<T>(ea)` and `guest(p)` convert between guest addresses and pointers.
+  `host(0)` is `nullptr`. Where the original reads through a pointer that may
+  be null (it then reads guest address 0 + offset), use `sly4::gref<T>(ea)`
+  and do the arithmetic on the guest address.
+- `be<T>` members can be passed straight to `call`/`call_ptr`/`vcall`; they
+  are passed as their value (a `be_f32` goes in an FPR).
+- System calls: `sly4::lv2::syscall(num, args...)`.
+
+## Pitfalls
+
+- A `bool` parameter or result is the low byte only. Use `u32` where the
+  original tests more bits.
+- A native function calling another native function directly does not go
+  through the bridge, so `--decomp-off` / `--decomp-coverage` don't see the
+  callee for that call. When bisecting an A/B difference, keep that in mind.
 
 ## Behaviour
 

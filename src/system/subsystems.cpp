@@ -3,7 +3,8 @@
 
 #include "../memory/mem.h"
 
-using namespace sly4;
+namespace sly4::system {
+using namespace opentit::native;
 
 namespace {
 
@@ -66,145 +67,147 @@ constexpr u32 kSpursAttributeSize = 512;  // CellSpursAttribute
 
 constexpr u32 CELL_SYSUTIL_SYSTEMPARAM_ID_LANG = 0x0111;
 
-void print(PPUContext& ctx, std::initializer_list<u64> args) { call(ctx, libc::printf, args); }
+template <typename... A>
+void print(A... args) {
+    call(libc::printf, args...);
+}
 
 // cellSysmoduleLoadModule(id), adding the user memory it took to
 // MemStats::module_memory (as Np_Init does).
-void load_module_counted(PPUContext& ctx, u32 id) {
-    Stack frame(ctx, 2 * sizeof(MemoryInfo));
-    const u32 before = frame.addr(), after = frame.addr() + sizeof(MemoryInfo);
-    syscall(ctx, sc::sys_memory_get_user_memory_size, {before});
-    call(ctx, imp::cellSysmoduleLoadModule, {id});
-    syscall(ctx, sc::sys_memory_get_user_memory_size, {after});
-    ref<MemStats>(g::mem_stats).module_memory +=
-        ref<MemoryInfo>(before).available_user_memory - ref<MemoryInfo>(after).available_user_memory;
+void load_module_counted(u32 id) {
+    GuestFrame frame(2 * sizeof(MemoryInfo));
+    MemoryInfo* before = frame.as<MemoryInfo>(0);
+    MemoryInfo* after = before + 1;
+    lv2::syscall(sc::sys_memory_get_user_memory_size, before);
+    call(imp::cellSysmoduleLoadModule, id);
+    lv2::syscall(sc::sys_memory_get_user_memory_size, after);
+    memory::mem_stats().module_memory += before->available_user_memory - after->available_user_memory;
 }
 
 }  // namespace
 
-// bool System_Init()
 // Main_InitSystems' first stage after recording the main thread: prints
 // the memory map, initialises the SPUs, loads the system modules the game
 // needs, starts SPURS and picks the game language. Always succeeds.
-DECOMP(0056D87C, System_Init) {
-    if (load<u32>(kProcessParam) == 0) print(ctx, {kStrProcessParam});
+bool System_Init() {
+    if (global<be_u32>(kProcessParam) == 0) print(kStrProcessParam);
 
-    print(ctx, {kStrNewlines});
-    print(ctx, {kStrRule});
-    print(ctx, {kStrVersions, kSncVersion, kSdkVersion});
+    print(kStrNewlines);
+    print(kStrRule);
+    print(kStrVersions, kSncVersion, kSdkVersion);
     const u32 image_size = kBssEnd - kCodeStart;
     const u32 code_size = kCodeEnd - kCodeStart;
-    print(ctx, {kStrTotal, kCodeStart, kBssEnd, image_size >> 10});
-    print(ctx, {kStrCode, kCodeStart, kCodeEnd, code_size >> 10});
-    print(ctx, {kStrData, kDataStart, kDataEnd, (kDataEnd - kDataStart) >> 10});
-    print(ctx, {kStrBss, kDataEnd, kBssEnd, (kBssEnd - kDataEnd) >> 10});
-    print(ctx, {kStrRule});
+    print(kStrTotal, kCodeStart, kBssEnd, image_size >> 10);
+    print(kStrCode, kCodeStart, kCodeEnd, code_size >> 10);
+    print(kStrData, kDataStart, kDataEnd, (kDataEnd - kDataStart) >> 10);
+    print(kStrBss, kDataEnd, kBssEnd, (kBssEnd - kDataEnd) >> 10);
+    print(kStrRule);
     {
-        Stack frame(ctx, sizeof(MemoryInfo));
-        syscall(ctx, sc::sys_memory_get_user_memory_size, {frame.addr()});
-        const MemoryInfo& info = ref<MemoryInfo>(frame.addr());
-        print(ctx, {kStrTotalMb, info.total_user_memory >> 20});
-        print(ctx, {kStrAvailMb, info.available_user_memory >> 20});
+        GuestFrame frame(sizeof(MemoryInfo));
+        MemoryInfo* info = frame.as<MemoryInfo>();
+        lv2::syscall(sc::sys_memory_get_user_memory_size, info);
+        print(kStrTotalMb, info->total_user_memory >> 20);
+        print(kStrAvailMb, info->available_user_memory >> 20);
     }
-    MemStats& stats = ref<MemStats>(g::mem_stats);
+    MemStats& stats = memory::mem_stats();
     stats.image_size = image_size;
     stats.code_size = code_size;
     stats.data_size = kBssEnd - kDataStart;
 
-    print(ctx, {kStrSpuInit});
-    syscall(ctx, sc::sys_spu_initialize, {kMaxUsableSpu, kMaxRawSpu});
+    print(kStrSpuInit);
+    lv2::syscall(sc::sys_spu_initialize, kMaxUsableSpu, kMaxRawSpu);
 
     for (u32 id : {CELL_SYSMODULE_IO, CELL_SYSMODULE_USBD, CELL_SYSMODULE_GCM_SYS, CELL_SYSMODULE_FS,
                    CELL_SYSMODULE_AVCONF_EXT, CELL_SYSMODULE_RTC, CELL_SYSMODULE_SYSUTIL_GAME})
-        load_module_counted(ctx, id);  // results unchecked
+        load_module_counted(id);  // results unchecked
 
-    call(ctx, fn::Spurs_Init);
-    const u32 language = static_cast<u32>(call(ctx, fn::System_GetLanguage));
-    field<u32>(g::config, kConfigLanguage) = language;
-    ret(ctx, 1u);
+    Spurs_Init();
+    *host<be_u32>(g::config + kConfigLanguage) = System_GetLanguage();
+    return true;
 }
 
-// void Spurs_Init()
 // Starts the SPU printf server and two SPURS instances: "ApeCore" on 5
 // SPUs (with an SPU->PPU event flag) and "ApeSpurs_1SPU" on 1, each with
 // a job chain.
-DECOMP(0056D630, Spurs_Init) {
+void Spurs_Init() {
     // Locals of the original: thread id, CellSpursAttribute, priority and the
     // two job chains' 8 SPU priorities.
-    Stack frame(ctx, 8 + kSpursAttributeSize + 8 + 8 + 8);
-    const u32 thread_id = frame.addr();
-    const u32 attr = thread_id + 8;
-    const u32 priority = attr + kSpursAttributeSize;
-    const u32 core_prios = priority + 8;
-    const u32 one_prios = core_prios + 8;
+    GuestFrame frame(8 + kSpursAttributeSize + 8 + 8 + 8);
+    be_u64* thread_id = frame.as<be_u64>(0);
+    u8* attr = frame.as<u8>(8);
+    be_u32* priority = frame.as<be_u32>(8 + kSpursAttributeSize);
+    u8* core_prios = frame.as<u8>(8 + kSpursAttributeSize + 8);
+    u8* one_prios = core_prios + 8;
 
     // The PPU priority is looked up and decremented but never used.
-    if (static_cast<s32>(call(ctx, imp::sys_ppu_thread_get_id, {thread_id})) == 0 &&
-        static_cast<s32>(syscall(ctx, sc::sys_ppu_thread_get_priority, {load<u64>(thread_id), priority})) == 0)
-        store<u32>(priority, load<u32>(priority) - 1);
+    if (call<s32>(imp::sys_ppu_thread_get_id, thread_id) == 0 &&
+        static_cast<s32>(lv2::syscall(sc::sys_ppu_thread_get_priority, thread_id->get(), priority)) == 0)
+        *priority = *priority - 1;
 
-    call(ctx, fn::spu_printf_initialize, {kSpuPrintfPriority, 0});
+    call(fn::spu_printf_initialize, kSpuPrintfPriority, 0u);
 
-    MemStats& stats = ref<MemStats>(g::mem_stats);
-    stats.spurs_core =
-        static_cast<u32>(call(ctx, fn::Mem_AllocPool, {kSpursAlign, kSpursSize, kSpursPool, 0}));
-    call(ctx, imp::_cellSpursAttributeInitialize, {attr, CELL_SPURS_ATTRIBUTE_REVISION, CELL_SPURS_INTERNAL_VERSION,
-                                                   kCoreSpus, kCorePriority, kCorePriority, 0});
-    call(ctx, imp::cellSpursAttributeSetNamePrefix, {attr, kStrApeCore, kApeCoreLen});
-    call(ctx, imp::cellSpursAttributeEnableSpuPrintfIfAvailable, {attr});
-    call(ctx, imp::cellSpursAttributeSetSpuThreadGroupType, {attr, SYS_SPU_THREAD_GROUP_TYPE_EXCLUSIVE_NON_CONTEXT});
-    call(ctx, imp::cellSpursInitializeWithAttribute, {stats.spurs_core, attr});
+    MemStats& stats = memory::mem_stats();
+    stats.spurs_core = guest(memory::Mem_AllocPool(kSpursAlign, kSpursSize, kSpursPool, 0));
+    call(imp::_cellSpursAttributeInitialize, attr, CELL_SPURS_ATTRIBUTE_REVISION, CELL_SPURS_INTERNAL_VERSION, kCoreSpus,
+         kCorePriority, kCorePriority, 0u);
+    call(imp::cellSpursAttributeSetNamePrefix, attr, kStrApeCore, kApeCoreLen);
+    call(imp::cellSpursAttributeEnableSpuPrintfIfAvailable, attr);
+    call(imp::cellSpursAttributeSetSpuThreadGroupType, attr, SYS_SPU_THREAD_GROUP_TYPE_EXCLUSIVE_NON_CONTEXT);
+    call(imp::cellSpursInitializeWithAttribute, stats.spurs_core.get(), attr);
 
     static constexpr u8 kCorePrios[8] = {8, 8, 8, 8, 8, 0, 0, 0};
-    mem::write_bytes(core_prios, kCorePrios, sizeof(kCorePrios));
-    call(ctx, fn::JobChain_Init, {kCoreJobChain, stats.spurs_core, kCoreSpus, core_prios});
-    call(ctx, imp::_cellSpursEventFlagInitialize, {stats.spurs_core, 0, kCoreEventFlag,
-                                                   CELL_SPURS_EVENT_FLAG_CLEAR_AUTO, CELL_SPURS_EVENT_FLAG_SPU2PPU});
-    call(ctx, imp::cellSpursEventFlagAttachLv2EventQueue, {kCoreEventFlag});
+    for (u32 k = 0; k < 8; ++k) core_prios[k] = kCorePrios[k];
+    call(fn::JobChain_Init, kCoreJobChain, stats.spurs_core.get(), kCoreSpus, core_prios);
+    call(imp::_cellSpursEventFlagInitialize, stats.spurs_core.get(), 0u, kCoreEventFlag, CELL_SPURS_EVENT_FLAG_CLEAR_AUTO,
+         CELL_SPURS_EVENT_FLAG_SPU2PPU);
+    call(imp::cellSpursEventFlagAttachLv2EventQueue, kCoreEventFlag);
 
-    stats.spurs_1spu =
-        static_cast<u32>(call(ctx, fn::Mem_AllocPool, {kSpursAlign, kSpursSize, kSpursPool, 0}));
-    call(ctx, imp::_cellSpursAttributeInitialize, {attr, CELL_SPURS_ATTRIBUTE_REVISION, CELL_SPURS_INTERNAL_VERSION,
-                                                   k1SpuSpus, k1SpuPriority, k1SpuPriority, 0});
-    call(ctx, imp::cellSpursAttributeSetNamePrefix, {attr, kStrApeSpurs1, kApeSpurs1Len});
-    call(ctx, imp::cellSpursInitializeWithAttribute, {stats.spurs_1spu, attr});
+    stats.spurs_1spu = guest(memory::Mem_AllocPool(kSpursAlign, kSpursSize, kSpursPool, 0));
+    call(imp::_cellSpursAttributeInitialize, attr, CELL_SPURS_ATTRIBUTE_REVISION, CELL_SPURS_INTERNAL_VERSION, k1SpuSpus,
+         k1SpuPriority, k1SpuPriority, 0u);
+    call(imp::cellSpursAttributeSetNamePrefix, attr, kStrApeSpurs1, kApeSpurs1Len);
+    call(imp::cellSpursInitializeWithAttribute, stats.spurs_1spu.get(), attr);
 
     static constexpr u8 k1SpuPrios[8] = {8, 0, 0, 0, 0, 0, 0, 0};
-    mem::write_bytes(one_prios, k1SpuPrios, sizeof(k1SpuPrios));
-    ctx.gpr[3] = call(ctx, fn::JobChain_Init, {k1SpuJobChain, stats.spurs_1spu, k1SpuSpus, one_prios});
+    for (u32 k = 0; k < 8; ++k) one_prios[k] = k1SpuPrios[k];
+    call(fn::JobChain_Init, k1SpuJobChain, stats.spurs_1spu.get(), k1SpuSpus, one_prios);
 }
 
-// GameLanguage System_GetLanguage()
 // Maps the console's CELL_SYSUTIL_LANG_* setting to the game's language
 // ids; unsupported languages (Chinese, Turkish, ...) fall back to English.
-DECOMP(0056BE30, System_GetLanguage) {
+u32 System_GetLanguage() {
     s32 lang;
     {
-        Stack frame(ctx, 8);
-        store<s32>(frame.addr(), 1);  // CELL_SYSUTIL_LANG_ENGLISH_US if the call fails
-        call(ctx, imp::cellSysutilGetSystemParamInt, {CELL_SYSUTIL_SYSTEMPARAM_ID_LANG, frame.addr()});
-        lang = load<s32>(frame.addr());
+        GuestFrame frame(8);
+        be_s32* out = frame.as<be_s32>();
+        *out = 1;  // CELL_SYSUTIL_LANG_ENGLISH_US if the call fails
+        call(imp::cellSysutilGetSystemParamInt, CELL_SYSUTIL_SYSTEMPARAM_ID_LANG, out);
+        lang = *out;
     }
-    u32 result;
     switch (lang) {
-    case 0: result = kLangJapanese; break;           // CELL_SYSUTIL_LANG_JAPANESE
-    case 1: result = kLangEnglish; break;            // ENGLISH_US
-    case 2: result = kLangFrench; break;             // FRENCH
-    case 3: result = kLangSpanish; break;            // SPANISH
-    case 4: result = kLangGerman; break;             // GERMAN
-    case 5: result = kLangItalian; break;            // ITALIAN
-    case 6: result = kLangDutch; break;              // DUTCH
-    case 7: result = kLangPortuguese; break;         // PORTUGUESE_PT
-    case 8: result = kLangRussian; break;            // RUSSIAN
-    case 9: result = kLangKorean; break;             // KOREAN
-    case 12: result = kLangFinnish; break;           // FINNISH
-    case 13: result = kLangSwedish; break;           // SWEDISH
-    case 14: result = kLangDanish; break;            // DANISH
-    case 15: result = kLangNorwegian; break;         // NORWEGIAN
-    case 16: result = kLangPolish; break;            // POLISH
-    case 17: result = kLangPortugueseBrazil; break;  // PORTUGUESE_BR
-    case 18: result = kLangEnglishUK; break;         // ENGLISH_GB
-    default: result = kLangEnglish; break;           // 10, 11 (Chinese), 19+ (Turkish, ...), negative
+    case 0: return kLangJapanese;           // CELL_SYSUTIL_LANG_JAPANESE
+    case 1: return kLangEnglish;            // ENGLISH_US
+    case 2: return kLangFrench;             // FRENCH
+    case 3: return kLangSpanish;            // SPANISH
+    case 4: return kLangGerman;             // GERMAN
+    case 5: return kLangItalian;            // ITALIAN
+    case 6: return kLangDutch;              // DUTCH
+    case 7: return kLangPortuguese;         // PORTUGUESE_PT
+    case 8: return kLangRussian;            // RUSSIAN
+    case 9: return kLangKorean;             // KOREAN
+    case 12: return kLangFinnish;           // FINNISH
+    case 13: return kLangSwedish;           // SWEDISH
+    case 14: return kLangDanish;            // DANISH
+    case 15: return kLangNorwegian;         // NORWEGIAN
+    case 16: return kLangPolish;            // POLISH
+    case 17: return kLangPortugueseBrazil;  // PORTUGUESE_BR
+    case 18: return kLangEnglishUK;         // ENGLISH_GB
+    default: return kLangEnglish;           // 10, 11 (Chinese), 19+ (Turkish, ...), negative
     }
-    ret(ctx, result);
 }
+
+}  // namespace sly4::system
+
+NATIVE(0056D87C, sly4::system::System_Init)
+NATIVE(0056D630, sly4::system::Spurs_Init)
+NATIVE(0056BE30, sly4::system::System_GetLanguage)

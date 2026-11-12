@@ -1,6 +1,7 @@
 // Subsystems started by Main_InitSystems (src/system/init.cpp).
 #pragma once
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -55,5 +56,17 @@ enum GameLanguage : u32 {
     kLangKorean = 19,
 };
 constexpr u32 kConfigLanguage = 0x28;  // g::config field written by System_Init
+
+// Native functions (src/system).
+namespace system {
+bool System_Init();
+void Spurs_Init();
+u32 System_GetLanguage();
+bool Main_InitSystems(u32 stages);
+bool Np_Init(u32 pool_size);
+s32 Sysutil_CheckCallback();
+s32 Sysutil_RegisterCallback(s32 slot, u32 func, u32 userdata);
+s32 Game_BootCheck();
+}  // namespace system
 
 }  // namespace sly4

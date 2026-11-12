@@ -1,6 +1,7 @@
 // Engine thread objects: { const char* name; u32; u64 sys_ppu_thread_t id; ... }.
 #pragma once
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4::thread {
@@ -22,5 +23,7 @@ static_assert(sizeof(ThreadParams) == 12);
 
 constexpr s32 kDefaultPriority = 0x600;
 constexpr u32 kStackSize = 0x10000;
+
+void Thread_Create(void* thread, u32 entry, const ThreadParams* params);
 
 }  // namespace sly4::thread

@@ -5,6 +5,8 @@
 // comment marks a guess from how the code is used.
 #pragma once
 
+#include "opentit/native.h"
+#include "../container/container.h"
 #include "../memory/mem.h"
 
 namespace sly4 {
@@ -61,6 +63,16 @@ constexpr u32 kClassList = 8;       // FreeList*: vtable +16 = Free(p)
 constexpr u32 kClassSlack = 12;     // u32 adjusted by limit - size on every free (name?)
 constexpr u32 kSmallSlackTotal = 0x00F67F94;  // u32, the same over every class (name?)
 constexpr u32 kListVfnFree = 16;
+
+// Native functions (src/common).
+using container::FreeList;
+void* FreeList_Alloc(FreeList* list);
+void FreeList_Free(FreeList* list, void* p);
+void FreeList_Destroy(FreeList* list);
+void Mem_FreeFrom(void* p, s32 pool);
+void* SmallAlloc(u32 size);
+void SmallFree(void* p, u32 size);
+char* String_Assign(char* dst, const char* src);
 
 inline u32 vfunc(u32 obj, u32 byte_offset) { return load<u32>(load<u32>(obj) + byte_offset); }
 inline u32 call32(PPUContext& ctx, u32 addr, std::initializer_list<u64> args = {}) {

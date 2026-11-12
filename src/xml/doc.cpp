@@ -1,175 +1,158 @@
-// XmlDoc: construction, loading the binary .xmb file, and destruction.
+// XmlDoc: loading a binary XML ("XMLB") file.
 #include "xml.h"
 
-using namespace sly4;
-using namespace sly4::xml;
+#include "../heap/heap.h"
+#include "../memory/mem.h"
+#include "../string/str.h"
+
+namespace sly4::xml {
+using namespace opentit::native;
 
 namespace {
 
 constexpr u32 kPathBufferSize = 128;
 constexpr u32 kCursorDocType = 0, kCursorElementType = 1;
 
-// The fields every XmlCursor constructor sets (the document's own cursor
-// and the 64 in the pool differ only in type and vtable).
-void XmlCursor_Init(u32 cursor, u32 vtable, u32 type) {
-    field<s32>(cursor, kCur12) = -1;
-    field<s32>(cursor, kCur8) = -1;
-    field<u32>(cursor, kCurDoc) = 0;
-    field<u32>(cursor, kCurType) = type;
-    field<u32>(cursor, kCurHash) = 0;
-    ref<u8>(cursor + kCurFlags) &= static_cast<u8>(~kCurValid);
-    field<u32>(cursor, kCurParent) = 0;
-    ref<u8>(cursor + kCurDepth) = 0;
-    field<u16>(cursor, kCurIndex) = 0;
-    field<u32>(cursor, kCurVtable) = vtable;
+void XmlCursor_Init(XmlCursor* c, u32 vtable, u32 type) {
+    c->u12 = -1;
+    c->u8_ = -1;
+    c->doc = nullptr;
+    c->type = type;
+    c->hash = 0;
+    c->flags &= static_cast<u8>(~kCurValid);
+    c->parent = nullptr;
+    c->depth = 0;
+    c->index = 0;
+    c->vtable = vtable;
 }
 
 }  // namespace
 
-// void XmlDoc_Construct(XmlDoc* doc, const char* path)
-DECOMP(004FA888, XmlDoc_Construct) {
-    const u32 doc = arg<u32>(ctx, 0);
-    const u32 path = arg<u32>(ctx, 1);
-
-    XmlCursor_Init(doc, kDocVtable, kCursorDocType);
-    field<s32>(doc, kDoc40) = -1;
-    field<s32>(doc, kDoc36) = -1;
-    for (u32 k = 0; k < kDocCursorCount; ++k)
-        XmlCursor_Init(doc + kDocCursors + k * kCursorSize, kCursorVtable, kCursorElementType);
-
+// XmlDoc(const char* path): the document cursor, its 64 element cursors and
+// the path (the file is read by XmlDoc_Parse).
+void XmlDoc_Construct(XmlDoc* doc, const char* path) {
+    XmlCursor_Init(&doc->self, kDocVtable, kCursorDocType);
+    doc->u40 = -1;
+    doc->u36 = -1;
+    for (u32 k = 0; k < kDocCursorCount; ++k) XmlCursor_Init(&doc->cursors[k / 4][k % 4], kCursorVtable, kCursorElementType);
     // The status bit-fields are set in two goes around the String_Copy, and
     // +36/+40 go from -1 to 0, as in the original.
-    u32 status = field<u32>(doc, kDocStatus);
-    field<u32>(doc, kDocData) = 0;
+    u32 status = doc->status;
+    doc->data = nullptr;
     status = (status & ~kStatusFieldMask) | ((4u << kStatusFieldShift) & kStatusFieldMask);
     status &= ~kStatus40000000;
-    field<u32>(doc, kDocStatus) = status;
-    call(ctx, fn::String_Copy, {doc + kDocPath, path, kDocPathSize});
-    status = field<u32>(doc, kDocStatus);
-    field<u32>(doc, kDoc40) = 0;
-    field<u32>(doc, kDoc36) = 0;
-    field<u32>(doc, kDocStatus) = status & ~kStatusFailed & ~kStatusErrorMask;
-    for (u32 k = 0; k < kDocDepths; k += 4) field<u32>(doc, kDocRing + k) = 0;
+    doc->status = status;
+    str::String_Copy(doc->path, path, kDocPathSize);
+    status = doc->status;
+    doc->u40 = 0;
+    doc->u36 = 0;
+    doc->status = status & ~kStatusFailed & ~kStatusErrorMask;
+    for (u32 k = 0; k < kDocDepths; ++k) doc->ring[k] = 0;
 }
 
-// void XmlDoc_Destruct(XmlDoc* doc)
-// Frees the XMLB buffer and runs the cursor destructors (last to first).
-DECOMP(004FA9C0, XmlDoc_Destruct) {
-    const u32 doc = arg<u32>(ctx, 0);
-    field<u32>(doc, kCurVtable) = kDocVtable;
-    if (field<u32>(doc, kDocData) != 0) {
-        const u32 stack = call32(ctx, xfn::Mem_GetDefaultStack, {doc});
-        call_ptr(ctx, vfunc(stack, kStackVfnFree), {stack, field<u32>(doc, kDocData)});
+void XmlDoc_Destruct(XmlDoc* doc) {
+    doc->self.vtable = kDocVtable;
+    if (doc->data) {
+        LinearHeap* stack = memory::Mem_GetDefaultStack();
+        vcall(stack, kStackVfnFree, doc->data.get());
     }
-    for (u32 k = kDocCursorCount; k-- > 0;)
-        field<u32>(doc, kDocCursors + k * kCursorSize + kCurVtable) = kCursorBaseVtable;
-    field<u32>(doc, kCurVtable) = kCursorBaseVtable;
+    for (u32 k = kDocCursorCount; k-- > 0;) doc->cursors[k / 4][k % 4].vtable = kCursorBaseVtable;
+    doc->self.vtable = kCursorBaseVtable;
 }
 
-// bool XmlDoc_Parse(XmlDoc* doc, u32 unused)
-// Opens the document's path with its extension replaced by ".xmb" (or
-// ".xmb" appended when it has none) and loads it.
-DECOMP(004FAF10, XmlDoc_Parse) {
-    const u32 doc = arg<u32>(ctx, 0);
-    const u32 unused = arg<u32>(ctx, 1);
-
+// Opens the document's path with the extension swapped for ".xmb" and
+// loads it. Returns whether it loaded.
+u32 XmlDoc_Parse(XmlDoc* doc, u32 unused) {
     // The document's path, through its AsDocument(); a non-document gets 0.
     u32 name = 0;
-    if (field<u32>(doc, kCurType) == kCursorDocType)
-        name = static_cast<u32>(call_ptr(ctx, vfunc(doc, kDocVfnAsDocument), {doc})) + kDocPath;
-
-    const s32 len = static_cast<s32>(call32(ctx, xfn::String_Length, {name}));
+    if (doc->self.type == kCursorDocType) name = vcall<u32>(doc, kDocVfnAsDocument) + kDocPath;
+    const s32 len = str::String_Length(host<char>(name));
     u32 dot = name + static_cast<u32>(len) - 1;  // the last '.', or name - 1 when there is none
-    while (dot >= name && load<u8>(dot) != '.') --dot;
-
-    Stack frame(ctx, kPathBufferSize);
-    const u32 buf = frame.addr();
-    u32 out = buf;
-    for (u32 p = name; p < dot; ++p) store<u8>(out++, load<u8>(p));
-    call(ctx, xfn::String_Printf, {out, kXmbSuffix});
-    call(ctx, fn::String_Copy, {doc + kDocPath, buf, kDocPathSize});
-
-    const u32 file = call32(ctx, fn::File_Open, {buf, kModeRead});
-    if (file == 0) {
+    while (dot >= name && gref<u8>(dot) != '.') --dot;
+    GuestFrame frame(kPathBufferSize);
+    char* buf = frame.as<char>();
+    char* out = buf;
+    for (u32 p = name; p < dot; ++p) *out++ = static_cast<char>(gref<u8>(p));
+    call(xfn::String_Printf, out, kXmbSuffix);  // variadic: through the guest ABI
+    str::String_Copy(doc->path, buf, kDocPathSize);
+    void* file = call<void*>(fn::File_Open, buf, kModeRead);
+    if (!file) {
         XmlDoc_SetError(doc, kErrorRead);
-        return ret(ctx, 0u);
+        return 0;
     }
-    const u64 ok = call(ctx, xfn::XmlDoc_LoadXmlb, {doc, file, unused});
-    call_ptr(ctx, vfunc(file, kFileVfnClose), {file});
-    ret(ctx, ok);
+    const u32 ok = XmlDoc_LoadXmlb(doc, file, unused);
+    vcall(file, kFileVfnClose);
+    return ok;
 }
 
-// bool XmlDoc_LoadXmlb(XmlDoc* doc, File* file, u32 unused)
-// Reads the whole file into a buffer from the default memory stack, checks
-// the "XMLB" magic and turns its offsets into pointers. On a bad magic the
-// buffer is neither kept nor freed, and no error is recorded.
-DECOMP(004FACCC, XmlDoc_LoadXmlb) {
-    const u32 doc = arg<u32>(ctx, 0);
-    const u32 file = arg<u32>(ctx, 1);
-    if (file == 0) {
+// Reads the whole file into a block from the default memory stack, checks
+// the "XMLB" magic and turns every offset in it into a pointer.
+u32 XmlDoc_LoadXmlb(XmlDoc* doc, void* file, u32 /*unused*/) {
+    if (!file) {
         XmlDoc_SetError(doc, kErrorRead);
-        return ret(ctx, 0u);
+        return 0;
     }
-
-    field<s32>(doc, kCur12) = -1;
-    field<s32>(doc, kCur8) = -1;
-    const s32 size = static_cast<s32>(static_cast<u32>(call_ptr(ctx, vfunc(file, kFileVfnSize), {file})));
+    doc->self.u12 = -1;
+    doc->self.u8_ = -1;
+    const s32 size = vcall<s32>(file, kFileVfnSize);
     if (size == 0) {
         XmlDoc_SetError(doc, kErrorEmpty);
-        return ret(ctx, 0u);
+        return 0;
     }
-
-    const u32 stack = call32(ctx, xfn::Mem_GetDefaultStack);
-    const u32 buf = call32(ctx, xfn::MemStack_Alloc, {stack, static_cast<u32>(size) + 1});
-    store<u8>(buf, 0);
-    const u32 got = static_cast<u32>(
-        call_ptr(ctx, vfunc(file, kFileVfnRead), {file, buf, static_cast<u32>(size), 0}));
-    if (static_cast<s32>(got) != size) {
-        const u32 s = call32(ctx, xfn::Mem_GetDefaultStack);
-        call_ptr(ctx, vfunc(s, kStackVfnFree), {s, buf});
+    LinearHeap* stack = memory::Mem_GetDefaultStack();
+    u8* buf = static_cast<u8*>(heap::MemStack_Alloc(stack, static_cast<u32>(size) + 1));
+    gref<u8>(guest(buf)) = 0;
+    const s32 got = vcall<s32>(file, kFileVfnRead, buf, static_cast<u32>(size), 0u);
+    if (got != size) {
+        LinearHeap* s = memory::Mem_GetDefaultStack();
+        vcall(s, kStackVfnFree, buf);
         XmlDoc_SetError(doc, kErrorRead);
-        return ret(ctx, 0u);
+        return 0;
     }
-    store<u8>(buf + static_cast<u32>(size), 0);
-    call(ctx, fn::String_Copy, {doc + kDocPath, file + kFileName, kDocPathSize});
-    if (call32(ctx, xfn::Mem_Compare, {buf, kXmlbMagic, kXmlbMagicSize}) != 0) return ret(ctx, 0u);
-
-    field<u32>(doc, kDocData) = buf;
-    for (u32 k = 0; k < field<u16>(buf, kXmlbTopCount); ++k) {
-        const u32 slot = buf + kXmlbTop + k * 4;
-        const u32 elem = load<u32>(slot) + field<u32>(doc, kDocData);
-        store<u32>(slot, elem);
-        call(ctx, xfn::XmlElement_Relocate, {elem, field<u32>(doc, kDocData)});
+    gref<u8>(guest(buf) + static_cast<u32>(size)) = 0;
+    str::String_Copy(doc->path, host<char>(guest(file) + kFileName), kDocPathSize);
+    if (str::Mem_Compare(buf, host<char>(kXmlbMagic), kXmlbMagicSize) != 0) return 0;
+    doc->data = reinterpret_cast<XmlbFile*>(buf);
+    XmlbFile* data = doc->data;
+    for (u32 k = 0; k < data->top_count; ++k) {
+        be_u32& slot = gref<be_u32>(guest(buf) + kXmlbTop + k * 4);
+        const u32 elem = slot + doc->data.ea;
+        slot = elem;
+        XmlElement_Relocate(host<XmlbElement>(elem), doc->data.ea);
     }
-    ref<u8>(doc + kCurFlags) |= kCurValid;
-    ret(ctx, 1u);
+    doc->self.flags |= kCurValid;
+    return 1;
 }
 
-// void XmlElement_Relocate(XmlbElement* elem, u32 base)
-// Adds `base` to the element's pointers (those that aren't 0), its
-// attribute values and its children, then does the same for each child.
-DECOMP(004FABB4, XmlElement_Relocate) {
-    const u32 elem = arg<u32>(ctx, 0);
-    const u32 base = arg<u32>(ctx, 1);
-
-    const u32 name = field<u32>(elem, kElemName), text = field<u32>(elem, kElemText);
-    const u32 children = field<u32>(elem, kElemChildren);
-    u32 attrs = field<u32>(elem, kElemAttrs);
-    const u32 attr_count = field<u16>(elem, kElemAttrCount);
-    const u32 child_count = field<u16>(elem, kElemChildCount);
-    if (name != 0) field<u32>(elem, kElemName) = name + base;
-    if (text != 0) field<u32>(elem, kElemText) = text + base;
+// Adds `base` to the element's pointers (name, text, attributes and their
+// values, children) and relocates the children.
+void XmlElement_Relocate(XmlbElement* elem, u32 base) {
+    const u32 name = elem->name, text = elem->text;
+    const u32 children = elem->children.ea;
+    u32 attrs = elem->attrs.ea;
+    const u32 attr_count = elem->attr_count;
+    const u32 child_count = elem->child_count;
+    if (name != 0) elem->name = name + base;
+    if (text != 0) elem->text = text + base;
     if (attrs != 0) {
         attrs += base;
-        field<u32>(elem, kElemAttrs) = attrs;
+        elem->attrs.ea = attrs;
     }
     // Attribute values are relocated even when the array pointer was 0.
-    for (u32 k = 0; k < attr_count; ++k) field<u32>(attrs + k * sizeof(XmlbAttr), 4) += base;
-    if (children != 0) field<u32>(elem, kElemChildren) = field<u32>(elem, kElemChildren) + base;
-
+    for (u32 k = 0; k < attr_count; ++k) gref<be_u32>(attrs + k * sizeof(XmlbAttr) + 4) += base;
+    if (children != 0) elem->children.ea = elem->children.ea + base;
     if (child_count == 0) return;
-    for (u32 k = 0; k < field<u16>(elem, kElemChildCount); ++k) {
-        field<u32>(field<u32>(elem, kElemChildren), k * 4) += base;
-        call(ctx, xfn::XmlElement_Relocate, {load<u32>(field<u32>(elem, kElemChildren) + k * 4), base});
+    for (u32 k = 0; k < elem->child_count; ++k) {
+        be_u32& c = gref<be_u32>(elem->children.ea + k * 4);
+        c += base;
+        XmlElement_Relocate(host<XmlbElement>(gref<be_u32>(elem->children.ea + k * 4)), base);
     }
 }
+
+}  // namespace sly4::xml
+
+NATIVE(004FA888, sly4::xml::XmlDoc_Construct)
+NATIVE(004FA9C0, sly4::xml::XmlDoc_Destruct)
+NATIVE(004FAF10, sly4::xml::XmlDoc_Parse)
+NATIVE(004FACCC, sly4::xml::XmlDoc_LoadXmlb)
+NATIVE(004FABB4, sly4::xml::XmlElement_Relocate)

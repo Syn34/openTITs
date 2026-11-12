@@ -8,10 +8,11 @@
 #include <bit>
 #include <cmath>
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
-namespace sly4 {
-namespace math {
+namespace sly4::math {
+using namespace opentit::native;
 
 inline f32 fadds(f64 a, f64 b) { return static_cast<f32>(a + b); }
 inline f32 fsubs(f64 a, f64 b) { return static_cast<f32>(a - b); }
@@ -32,7 +33,7 @@ constexpr u32 Atan2f = 0x005E665C;
 enum FClass : s32 { kFNaN = 2, kFInf = 1, kFZero = 0, kFFinite = -1 };
 
 // Constants in .rodata (TOC 0x00F50800).
-inline f32 rodata(u32 ea) { return load<f32>(ea); }
+inline f32 rodata(u32 ea) { return global<be_f32>(ea); }
 constexpr u32 kZeroF = 0x00F4892C, kSqrtHalf = 0x00F48920, kOneF = 0x00F48924;
 constexpr u32 kNanPtr = 0x00F48928;     // u32 -> f32 NaN (0x7FC00000)
 constexpr u32 kTan15 = 0x00F48950, kSqrt3 = 0x00F48954, kOneK = 0x00F48958;
@@ -41,16 +42,16 @@ constexpr u32 kC2 = 0x00F48960, kC0 = 0x00F48964, kC1 = 0x00F48968;
 constexpr u32 kOffsetsPtr = 0x00F4896C; // u32 -> f32[8] multiples of pi/6
 constexpr u32 kAtan2One = 0x00F48940, kAtan2Zero = 0x00F48944;
 
-// _FDtest on the float at `ea` (reads its two big-endian halves).
-inline s32 FDtest(u32 ea) {
-    const u32 hi = load<u16>(ea);
+// _FDtest on a float's bits (the original reads its two big-endian halves).
+inline s32 FDtestBits(u32 bits) {
+    const u32 hi = bits >> 16, lo = bits & 0xFFFF;
     const u32 exponent = hi & 0x7F80;
     if (exponent == 0x7F80) {
         if ((hi & 0x7F) != 0) return kFNaN;
-        return load<u16>(ea + 2) == 0 ? kFInf : kFNaN;
+        return lo == 0 ? kFInf : kFNaN;
     }
     if ((hi & 0x7FFF) != 0) return kFFinite;
-    return load<u16>(ea + 2) == 0 ? kFZero : kFFinite;
+    return lo == 0 ? kFZero : kFFinite;
 }
 
 // The atanf kernel: x in [0, 1] (reduced by the callers), flags bit 1 =
@@ -65,7 +66,7 @@ inline f32 Atan_Kernel(f32 x, u32 flags) {
         const f32 num = fmsubs(f1, sqrt3, one);
         f1 = fdivs(num, den);
     }
-    const f32 eps = load<f32>(load<u32>(kEpsPtr));
+    const f32 eps = *global<gp<be_f32>>(kEpsPtr);
     const f64 neg_eps = -static_cast<f64>(eps);
     if (neg_eps > f1 || f1 > eps) {
         const f32 x2 = fmuls(f1, f1);
@@ -77,10 +78,15 @@ inline f32 Atan_Kernel(f32 x, u32 flags) {
     }
     if (flags & 2) f1 = -f1;
     const u32 offset = (flags << 2) & 0x1C;
-    f32 r = fadds(f1, load<f32>(load<u32>(kOffsetsPtr) + offset));
+    const be_f32* offsets = global<gp<be_f32>>(kOffsetsPtr);
+    f32 r = fadds(f1, offsets[offset / 4]);
     if (flags & 8) r = -r;
     return r;
 }
 
-}  // namespace math
-}  // namespace sly4
+s32 FDtest(const be_u16* p);
+f32 Sqrtf(f32 x);
+f32 Acosf(f32 x);
+f32 Atan2f(f32 a, f32 b);
+
+}  // namespace sly4::math

@@ -20,5 +20,9 @@ constexpr u32 current_surface = 0x010DDA74;  // u32: object whose +672 is the cu
 constexpr u32 ortho_consts = 0x0056A34C;     // f32 { 2.0, 1.0 }
 }  // namespace v2g
 
+void* View_GetCurrent();
+void Mat4_Ortho(be_f32* out, f64 l, f64 r, f64 b, f64 t, f64 n, f64 f);
+void Matrix_ScaleRows(be_f32* m, const be_f32* scale);
+
 }  // namespace view
 }  // namespace sly4

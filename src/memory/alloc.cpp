@@ -6,7 +6,8 @@
 // Mem_Alloc and operator new make sure the memory manager is set up first.
 #include "mem.h"
 
-using namespace sly4;
+namespace sly4::memory {
+using namespace opentit::native;
 
 namespace {
 
@@ -22,32 +23,30 @@ constexpr u32 kStrTotalMb = 0x00AF3B30;    // "  totalUserMemory:       %3dMb\n"
 constexpr u32 kStrAvailMb = 0x00AF3B50;    // "  available_user_memory: %3dMb\n"
 constexpr u32 kStrLowMemory = 0x00AF3C14;  // "* Low available memory, do you have GCM Debug enabled? \n"
 
-MemStats& stats() { return ref<MemStats>(g::mem_stats); }
-
-// A per-tag counter: base offset into MemStats + 4 * tag, wrapping like the
-// original's address arithmetic (tags are 0 in practice).
-be_u32& tag_counter(u32 offset, s32 tag) {
-    return field<u32>(g::mem_stats, offset + static_cast<u32>(tag) * 4);
+// A per-tag counter: counters[tag], wrapping like the original's address
+// arithmetic (tags are 0 in practice).
+be_u32& tag_counter(be_u32 (&counters)[8], s32 tag) {
+    return *host<be_u32>(guest(counters) + static_cast<u32>(tag) * 4);
 }
-constexpr u32 kTagUsed = 220, kTagSystem = 252, kTagPoolA = 284, kTagPoolB = 316;
+
+MemPool* pool_of(bool a) { return host<MemPool>(a ? kMemPoolA : kMemPoolB); }
 
 // Body of Heap_Construct, also inlined into the lazy set-up. Returns the
 // end pointer (what the original leaves in r3).
-u32 linear_heap_construct(PPUContext& ctx, u32 obj, u64 size, u64 pool, u8 owns) {
-    LinearHeap& h = ref<LinearHeap>(obj);
-    h.size = static_cast<u32>(size);
-    h.base = 0;
-    h.vtable = kLinearHeapVtable;
-    h.end = 0;
-    h.cursor = 0;
-    h.pool = static_cast<s32>(pool);
-    h.min_free = static_cast<u32>(size);
-    h.owns = owns;
-    const u32 base = static_cast<u32>(call(ctx, fn::Mem_Alloc, {size, pool, kHeapAlign}));
-    h.base = base;
-    const u32 end = base != 0 ? base + h.size : 0;
-    h.end = end;
-    h.cursor = base;
+u32 linear_heap_construct(LinearHeap* h, u32 size, s32 pool, u8 owns) {
+    h->size = size;
+    h->base = 0;
+    h->vtable = kLinearHeapVtable;
+    h->end = 0;
+    h->cursor = 0;
+    h->pool = pool;
+    h->min_free = size;
+    h->owns = owns;
+    const u32 base = guest(Mem_Alloc(size, pool, kHeapAlign));
+    h->base = base;
+    const u32 end = base != 0 ? base + h->size : 0;
+    h->end = end;
+    h->cursor = base;
     return end;
 }
 
@@ -55,70 +54,49 @@ u32 linear_heap_construct(PPUContext& ctx, u32 obj, u64 size, u64 pool, u8 owns)
 // create the default 512 KiB linear heap (whose block is the first real
 // allocation; the guard is already set, so the nested calls go straight
 // through).
-void mem_lazy_init(PPUContext& ctx) {
-    MemState& st = ref<MemState>(kMemState);
+void mem_lazy_init() {
+    MemState& st = mem_state();
     st.initialised = 1;
     st.unk8 = 0;
     st.unk9 = 1;
-    call(ctx, fn::Mem_InitSystemStats);
-    const u32 heap = static_cast<u32>(call(ctx, fn::Mem_New, {sizeof(LinearHeap)}));
-    if (heap != 0) linear_heap_construct(ctx, heap, kDefaultLinearHeapSize, kDefaultLinearHeapPool, 1);
+    Mem_InitSystemStats();
+    LinearHeap* heap = static_cast<LinearHeap*>(Mem_New(sizeof(LinearHeap)));
+    if (heap) linear_heap_construct(heap, kDefaultLinearHeapSize, kDefaultLinearHeapPool, 1);
     st.heap = heap;
 }
 
 }  // namespace
 
-// void* Mem_Alloc(u32 size, s32 pool, u32 align)
 // The game's general allocator.
-DECOMP(0054ED38, Mem_Alloc) {
-    const u64 size = arg<u64>(ctx, 0);
-    const u64 pool = arg<u64>(ctx, 1);
-    const u32 align = arg<u32>(ctx, 2);
-    if (ref<MemState>(kMemState).initialised == 0) mem_lazy_init(ctx);
-    ctx.gpr[3] = call(ctx, fn::Mem_AllocPool, {align, size, pool, 0});
+void* Mem_Alloc(u32 size, s32 pool, u32 align) {
+    if (mem_state().initialised == 0) mem_lazy_init();
+    return Mem_AllocPool(align, size, pool, 0);
 }
 
-// void* operator new(u32 size)
-// Mem_Alloc(size, 0, 16). The original inlines its own recursion (and
-// Heap_Construct) five levels deep; with the guard set first, only the
-// outermost level can run, which is what this does.
-DECOMP(007A3DD8, Mem_New) {
-    const u64 size = arg<u64>(ctx, 0);
-    if (ref<MemState>(kMemState).initialised == 0) mem_lazy_init(ctx);
-    ctx.gpr[3] = call(ctx, fn::Mem_AllocPool, {kHeapAlign, size, kPoolSystem, 0});
+// operator new(size): Mem_Alloc(size, 0, 16). The original inlines its own
+// recursion (and Heap_Construct) five levels deep; with the guard set
+// first, only the outermost level can run, which is what this does.
+void* Mem_New(u32 size) {
+    if (mem_state().initialised == 0) mem_lazy_init();
+    return Mem_AllocPool(kHeapAlign, size, kPoolSystem, 0);
 }
 
-// void Mem_Free(void* p)
 // Frees a block from the system pool.
-DECOMP(005611B0, Mem_Free) {
-    ctx.gpr[3] = call(ctx, fn::Mem_FreePool, {ctx.gpr[3], 1, 0});
-}
+void Mem_Free(void* p) { Mem_FreePool(p, 1, 0); }
 
-// LinearHeap* Heap_Construct(LinearHeap* this, u32 size, s32 pool, bool owns)
 // Builds a LinearHeap over a new block of `size` bytes from `pool`.
 // Returns base + size, or 0 if the block couldn't be allocated.
-DECOMP(0054ECA0, Heap_Construct) {
-    const u32 obj = arg<u32>(ctx, 0);
-    const u64 size = arg<u64>(ctx, 1);
-    const u64 pool = arg<u64>(ctx, 2);
-    const u8 owns = arg<u8>(ctx, 3);
-    ret(ctx, linear_heap_construct(ctx, obj, size, pool, owns));
+u32 Heap_Construct(LinearHeap* heap, u32 size, s32 pool, u8 owns) {
+    return linear_heap_construct(heap, size, pool, owns);
 }
 
-// void* Mem_AllocPool(u32 align, u32 size, s32 pool, s32 tag)
-DECOMP(0056C514, Mem_AllocPool) {
-    const u64 align = arg<u64>(ctx, 0);
-    const u64 size = arg<u64>(ctx, 1);
-    const s32 pool = arg<s32>(ctx, 2);
-    const s32 tag = arg<s32>(ctx, 3);
-    MemStats& s = stats();
-
-    u64 result;
+void* Mem_AllocPool(u32 align, u32 size, s32 pool, s32 tag) {
+    MemStats& s = mem_stats();
+    void* p;
     if (pool == kPoolA || pool == kPoolB) {
         const bool a = pool == kPoolA;
-        result = call(ctx, fn::Pool_Alloc, {a ? kMemPoolA : kMemPoolB, align, size});
-        const u32 p = static_cast<u32>(result);
-        if (p != 0) {
+        p = Pool_Alloc(pool_of(a), align, size);
+        if (p) {
             const u32 n = chunk_size(p);
             be_u32& used = a ? s.pool_a_used : s.pool_b_used;
             be_u32& pool_free = a ? s.pool_a_free : s.pool_b_free;
@@ -127,111 +105,108 @@ DECOMP(0056C514, Mem_AllocPool) {
             pool_free -= n;
             const u32 old_min = min_free, now = pool_free;
             min_free = old_min < now ? old_min : now;
-            tag_counter(a ? kTagPoolA : kTagPoolB, tag) += n;
+            tag_counter(a ? s.tag_pool_a : s.tag_pool_b, tag) += n;
         }
     } else {
-        result = call(ctx, libc::memalign, {align, size});
-        const u32 p = static_cast<u32>(result);
-        if (p != 0) {
+        p = call<void*>(libc::memalign, align, size);
+        if (p) {
             const u32 n = chunk_size(p);
             s.system_used += n;
             s.system_free -= n;  // no low-water mark for the system pool
-            tag_counter(kTagSystem, tag) += n;
+            tag_counter(s.tag_system, tag) += n;
         }
     }
-    const u32 p = static_cast<u32>(result);
-    if (p != 0) tag_counter(kTagUsed, tag) += chunk_size(p);
-    ctx.gpr[3] = result;
+    if (p) tag_counter(s.tag_used, tag) += chunk_size(p);
+    return p;
 }
 
-// void Mem_FreePool(void* p, s32 pool, s32 tag)
 // Undoes Mem_AllocPool's accounting and frees `p` in its backend.
 // The original reads each per-tag pool counter before it stores the pool
 // totals; that order only matters for negative tags (whose counters would
 // overlap the totals), and every caller passes tag 0.
-DECOMP(0056C730, Mem_FreePool) {
-    const u32 p = arg<u32>(ctx, 0);
-    const s32 pool = arg<s32>(ctx, 1);
-    const s32 tag = arg<s32>(ctx, 2);
-    if (p == 0) return;  // r3 is still 0
-    MemStats& s = stats();
+void Mem_FreePool(void* p, s32 pool, s32 tag) {
+    if (!p) return;
+    MemStats& s = mem_stats();
     const u32 n = chunk_size(p);
-    tag_counter(kTagUsed, tag) -= n;
+    tag_counter(s.tag_used, tag) -= n;
 
     if (pool == kPoolA || pool == kPoolB) {
         const bool a = pool == kPoolA;
         (a ? s.pool_a_used : s.pool_b_used) -= n;
         (a ? s.pool_a_free : s.pool_b_free) += n;
-        tag_counter(a ? kTagPoolA : kTagPoolB, tag) -= n;
-        ctx.gpr[3] = call(ctx, fn::Pool_Free, {a ? kMemPoolA : kMemPoolB, ctx.gpr[3]});
+        tag_counter(a ? s.tag_pool_a : s.tag_pool_b, tag) -= n;
+        Pool_Free(pool_of(a), p);
     } else {
         s.system_used -= n;
         s.system_free += n;
-        tag_counter(kTagSystem, tag) -= n;
-        ctx.gpr[3] = call(ctx, libc::free, {ctx.gpr[3]});
+        tag_counter(s.tag_system, tag) -= n;
+        call(libc::free, p);
     }
 }
 
-// void* Pool_Alloc(MemPool* pool, u32 align, u32 size)
-DECOMP(00565BD0, Pool_Alloc) {
-    const u32 pool_ea = arg<u32>(ctx, 0);
-    MemPool& pool = ref<MemPool>(pool_ea);
-    const u64 result = call(ctx, fn::Mspace_Memalign, {pool.mspace, ctx.gpr[4], ctx.gpr[5]});
-    const u32 p = static_cast<u32>(result);
-    if (p != 0) {
+void* Pool_Alloc(MemPool* pool, u32 align, u32 size) {
+    void* p = call<void*>(fn::Mspace_Memalign, pool->mspace.get(), align, size);
+    if (p) {
         const u32 n = chunk_size(p);
-        pool.used += n;
-        pool.free -= n;
-        const u32 used = pool.used, peak = pool.peak_used;
-        pool.peak_used = used > peak ? used : peak;
+        pool->used += n;
+        pool->free -= n;
+        const u32 used = pool->used, peak = pool->peak_used;
+        pool->peak_used = used > peak ? used : peak;
     }
-    ctx.gpr[3] = result;
+    return p;
 }
 
-// void Pool_Free(MemPool* pool, void* p)
-DECOMP(00565C50, Pool_Free) {
-    const u32 pool_ea = arg<u32>(ctx, 0);
-    const u32 p = arg<u32>(ctx, 1);
-    if (p == 0) return ret(ctx, ctx.gpr[4]);  // r3 = p (0)
-    MemPool& pool = ref<MemPool>(pool_ea);
+void Pool_Free(MemPool* pool, void* p) {
+    if (!p) return;
     const u32 n = chunk_size(p);
-    pool.used -= n;
-    pool.free += n;
-    ctx.gpr[3] = call(ctx, fn::Mspace_Free, {pool.mspace, ctx.gpr[4]});
+    pool->used -= n;
+    pool->free += n;
+    call(fn::Mspace_Free, pool->mspace.get(), p);
 }
 
-// void Mem_InitSystemStats()
 // Once: records available user memory as the system pool's free bytes,
 // prints the totals (with a warning if under 170 MB are left), then mallocs,
 // zeroes and frees all but 6 MB of it.
-DECOMP(0056C2E4, Mem_InitSystemStats) {
-    const u8 done = ref<u8>(kStatsInitialised);
-    if (done != 0) return ret(ctx, static_cast<u32>(done));
-    ref<u8>(kStatsInitialised) = 1;
-    MemStats& s = stats();
+void Mem_InitSystemStats() {
+    u8& done = global<u8>(kStatsInitialised);
+    if (done != 0) return;
+    done = 1;
+    MemStats& s = mem_stats();
     s.unk60 = 0;
     s.unk64 = 0;
 
     u32 total, avail;
     {
-        Stack frame(ctx, sizeof(MemoryInfo));
-        syscall(ctx, sc::sys_memory_get_user_memory_size, {frame.addr()});
-        const MemoryInfo& info = ref<MemoryInfo>(frame.addr());
-        total = info.total_user_memory;
-        avail = info.available_user_memory;
+        GuestFrame frame(sizeof(MemoryInfo));
+        MemoryInfo* info = frame.as<MemoryInfo>();
+        lv2::syscall(sc::sys_memory_get_user_memory_size, info);
+        total = info->total_user_memory;
+        avail = info->available_user_memory;
     }
     s.system_free = avail;
-    call(ctx, libc::printf, {kStrTotalMb, total >> 20});
-    call(ctx, libc::printf, {kStrAvailMb, avail >> 20});
+    call(libc::printf, kStrTotalMb, total >> 20);
+    call(libc::printf, kStrAvailMb, avail >> 20);
     if ((avail >> 20) < kLowMemoryMb) {
-        call(ctx, libc::printf, {kStrNewlines});
-        call(ctx, libc::printf, {kStrStars});
-        call(ctx, libc::printf, {kStrLowMemory});
-        call(ctx, libc::printf, {kStrStars});
-        call(ctx, libc::printf, {kStrNewlines});
+        call(libc::printf, kStrNewlines);
+        call(libc::printf, kStrStars);
+        call(libc::printf, kStrLowMemory);
+        call(libc::printf, kStrStars);
+        call(libc::printf, kStrNewlines);
     }
     const u32 size = avail - kMemoryKeptBack;
-    const u32 block = static_cast<u32>(call(ctx, libc::malloc, {size}));
-    call(ctx, fn::memset, {block, 0, size});
-    ctx.gpr[3] = call(ctx, libc::free, {block});
+    void* block = call<void*>(libc::malloc, size);
+    call(fn::memset, block, 0, size);
+    call(libc::free, block);
 }
+
+}  // namespace sly4::memory
+
+NATIVE(0054ED38, sly4::memory::Mem_Alloc)
+NATIVE(007A3DD8, sly4::memory::Mem_New)
+NATIVE(005611B0, sly4::memory::Mem_Free)
+NATIVE(0054ECA0, sly4::memory::Heap_Construct)
+NATIVE(0056C514, sly4::memory::Mem_AllocPool)
+NATIVE(0056C730, sly4::memory::Mem_FreePool)
+NATIVE(00565BD0, sly4::memory::Pool_Alloc)
+NATIVE(00565C50, sly4::memory::Pool_Free)
+NATIVE(0056C2E4, sly4::memory::Mem_InitSystemStats)

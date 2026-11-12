@@ -6,6 +6,7 @@
 #include <bit>
 #include <cmath>
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -135,6 +136,30 @@ constexpr u32 kWorldOverlay = 0x1286A4;  // u32 obj
 constexpr u32 kWorld1285E8 = 0x1285E8;   // u32, zeroed
 constexpr u32 kWorldFrameRing = 0x1285E4;
 constexpr u32 kWorldVfnState = 32;       // (u32 depth) -> state
+
+// ---------------------------------------------------------------- native (src/game/frame_misc.cpp)
+using native::pad;
+struct Arena {
+    pad<12> _0;
+    be_u32 top;     // +12
+    pad<12> _10;
+    be_u32 mark;    // +28
+    u8 flags;       // +32: 0x40 / 0x80
+};
+struct ArenaSnapshot {
+    be_u32 base;    // +0
+    be_s32 count;   // +4: (arena top - base) / 8
+    be_u32 mark;    // +8
+};
+
+struct FrameBuffer {
+    be_u32 begin;   // +0
+    be_u32 end;     // +4
+    pad<8> _8;
+    be_u32 cursor;  // +16
+};
+void Arena_Snapshot(Arena* arena, ArenaSnapshot* out);
+void FrameBuffer_PushMarker(FrameBuffer* fb, u32 unused, u32 value);
 
 }  // namespace frame
 }  // namespace sly4

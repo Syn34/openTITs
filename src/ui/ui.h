@@ -5,6 +5,9 @@
 #include <bit>
 #include <cmath>
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -21,7 +24,7 @@ inline f32 fsqrts(f64 a) { return static_cast<f32>(std::sqrt(a)); }
 inline f32 fmadds(f64 a, f64 c, f64 b) { return static_cast<f32>(std::fma(a, c, b)); }  // a * c + b
 inline f64 fsel(f64 a, f64 c, f64 b) { return a >= 0.0 ? c : b; }                        // a >= 0 ? c : b
 
-// The function descriptor in slot `offset` of obj's vtable.
+// The function descriptor in slot `offset` of obj's vtable (register-style code).
 inline u32 vfunc(u32 obj, u32 offset) { return load<u32>(load<u32>(obj) + offset); }
 
 // ---------------------------------------------------------------- functions
@@ -99,7 +102,71 @@ inline u32 Ui_Notify(PPUContext& ctx, u32 type, u32 user, u32 element, u32 other
     return static_cast<u32>(call_ptr(ctx, load<u32>(kUiEventHandler), {frame.addr()}));
 }
 
+// Native form of Ui_Notify.
+inline u32 Ui_Notify(u32 type, u32 user, u32 element, u32 other) {
+    using namespace opentit::native;
+    const u32 handler = global<be_u32>(kUiEventHandler);
+    if (handler == 0) return 0;
+    GuestFrame frame(sizeof(UiEventBlock));
+    UiEventBlock* ev = frame.as<UiEventBlock>();
+    ev->type = type;
+    ev->user = user;
+    ev->handler_arg = global<be_u32>(kUiEventArg).get();
+    ev->element = element;
+    ev->other = other;
+    return call_ptr<u32>(handler, ev);
+}
+
 // ---------------------------------------------------------------- objects
+// A UI element (vtable at +0: +152 update(f32 dt), +156 render(),
+// +160 transform(out a, out b, out f32[16])).
+struct Element {
+    be_u32 vtable;                  // +0
+    native::pad<132> _4;
+    be_u32 flags;                   // +136: kElemActive, kElemFocusable
+    native::pad<12> _140;
+    native::gp<Element> first_child;  // +152
+    native::gp<Element> next;         // +156
+};
+static_assert(offsetof(Element, flags) == 136 && offsetof(Element, next) == 156);
+
+// A timeline's template, keys and tracks (vtables at +0: +4 delete(),
+// +8 run: key (Timeline*, f32 delay) -> Track*, track (f32 dt) -> keep running?).
+struct TlKey {
+    be_u32 vtable;            // +0
+    be_f32 delay;             // +4
+    native::gp<TlKey> next;   // +8
+};
+struct TlTrack {
+    be_u32 vtable;              // +0
+    native::pad<12> _4;
+    native::gp<TlTrack> next;   // +16
+};
+struct TlTemplate {
+    native::pad<44> _0;
+    u8 loops;                       // +44
+    native::pad<3> _45;
+    native::gp<TlKey> first_key;    // +48
+};
+struct Timeline {
+    be_u32 vtable;                    // +0
+    native::gp<TlTemplate> templ;     // +4
+    native::pad<4> _8;
+    u8 auto_delete;                   // +12
+    native::pad<3> _13;
+    native::gp<TlKey> key;            // +16 the next key to fire
+    be_f32 delay;                     // +20 time until it fires
+    native::gp<TlTrack> tracks;       // +24 running tracks
+    native::gp<Timeline> next;        // +28
+};
+static_assert(offsetof(Timeline, tracks) == 24 && offsetof(Timeline, next) == 28);
+
+// Native functions (src/ui).
+u32 Ui_UpdateTimeline(Timeline* tl, f64 dt);
+Element* Ui_FindInDirection(Element* e, u32 user, Element* focus, const be_f32* dir, be_f32* best);
+void Ui_Update(f64 dt);
+void Ui_Render(u8 enabled);
+
 // Element fields.
 constexpr u32 kElemFlags = 136;      // u32: 0x80000000 = active, 0x40000000 = focusable
 constexpr u32 kElemFirstChild = 152; // u32 Element*

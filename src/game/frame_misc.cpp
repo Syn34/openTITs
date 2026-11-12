@@ -1,6 +1,7 @@
 // Small functions World_SubmitFrame calls.
 #include "opentit/native.h"
 #include "../sly4.h"
+#include "frame.h"
 
 namespace sly4::frame {
 using namespace opentit::native;
@@ -17,25 +18,6 @@ struct Camera {
     gp<SplitFlags> split;  // +48
 };
 
-struct Arena {
-    pad<12> _0;
-    be_u32 top;     // +12
-    pad<12> _10;
-    be_u32 mark;    // +28
-    u8 flags;       // +32: 0x40 / 0x80
-};
-struct ArenaSnapshot {
-    be_u32 base;    // +0
-    be_s32 count;   // +4: (arena top - base) / 8
-    be_u32 mark;    // +8
-};
-
-struct FrameBuffer {
-    be_u32 begin;   // +0
-    be_u32 end;     // +4
-    pad<8> _8;
-    be_u32 cursor;  // +16
-};
 struct MarkerCommand {
     be_u32 head;    // kMarkerCommand << 24 | (value & 0xFF0000)
     be_u32 low;     // value & 0xFFFF

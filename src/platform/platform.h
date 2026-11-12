@@ -6,6 +6,7 @@
 // memory/string headers that define some of the same C library entries.
 #pragma once
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4::platform {
@@ -120,5 +121,13 @@ enum IffChunkFlags : u32 {
     kIffQuiet = 0x08,   // don't print "Replacing ..." when re-registering
     kIffFlag10 = 0x10,  // kept in ChunkDesc::flags (meaning unknown)
 };
+
+// Native functions (src/platform).
+bool Platform_Init();
+bool Worker_CreateThreads();
+bool Pad_Init();
+void Input_SetRecordMode(s32 mode);
+bool Fios_Init();
+void Iff_RegisterChunk(u32 code, u32 handler, u32 arg, const char* name, u32 flags);  // src/resource/iff.cpp
 
 }  // namespace sly4::platform

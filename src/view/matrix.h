@@ -1,6 +1,9 @@
 // Scalar matrix helpers and the sorted map the UI keeps resources in.
 #pragma once
 
+#include <cmath>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -26,6 +29,8 @@ inline f64 fdivs(f64 a, f64 b) { return sgl(a / b); }
 inline f64 fmadds(f64 a, f64 c, f64 b) { return sgl(std::fma(a, c, b)); }
 inline f64 fmsubs(f64 a, f64 c, f64 b) { return sgl(std::fma(a, c, -b)); }
 inline f64 fnmsubs(f64 a, f64 c, f64 b) { return sgl(-std::fma(a, c, -b)); }
+
+void Matrix_FromAxisAngle(be_f32* out, const be_f32* axis, f64 angle);
 
 }  // namespace view
 }  // namespace sly4

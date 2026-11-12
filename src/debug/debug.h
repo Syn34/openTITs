@@ -2,6 +2,7 @@
 // (Main_InitSystems stage 8; the retail game still runs it).
 #pragma once
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4::debug {
@@ -17,16 +18,32 @@ constexpr u32 Mesh_CreateSphere = 0x0051BC20;       // (material, rings, segment
 constexpr u32 Mesh_CreateCube = 0x0051C1A8;         // (material, 1) -> mesh "Cube" (name?)
 }  // namespace fn
 
+struct DebugFont;  // 44 bytes
+struct Mesh;
+// Blend state at Material+104.
+struct MaterialBlend {
+    be_u32 w0;         // +0 bit 31 enable, bits 15-30 source factor
+    be_u16 equation;   // +4
+    be_u16 dst;        // +6 destination factor
+    be_u32 w8;         // +8 bit 31 (meaning unknown)
+};
+struct Material {
+    native::pad<104> _0;
+    MaterialBlend blend;  // +104
+};
+
 // The ApeDebug state at 0x01164A88.
 struct DebugState {
-    u8 enabled;        // +0 the word is cleared, then this byte set to 1
+    u8 enabled;                     // +0 the word is cleared, then this byte set to 1
     u8 pad1[3];
-    gptr font;         // +4  DebugFont (44 bytes) or 0
-    gptr material;     // +8  alpha-blended debug material
-    gptr sphere;       // +12 8x8 sphere mesh
-    gptr cube;         // +16 cube mesh
+    native::gp<DebugFont> font;     // +4  DebugFont (44 bytes) or 0
+    native::gp<Material> material;  // +8  alpha-blended debug material
+    native::gp<Mesh> sphere;        // +12 8x8 sphere mesh
+    native::gp<Mesh> cube;          // +16 cube mesh
 };
 static_assert(sizeof(DebugState) == 20);
 constexpr u32 kDebugState = 0x01164A88;
+
+bool Debug_Init();
 
 }  // namespace sly4::debug

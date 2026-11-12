@@ -4,8 +4,8 @@
 
 #include <bit>
 
-using namespace sly4;
-using namespace sly4::view;
+namespace sly4::view {
+using namespace opentit::native;
 
 namespace {
 
@@ -13,12 +13,10 @@ constexpr u32 kOne = 0x00554C20;  // f32 1.0 (the inverse's numerator)
 
 }  // namespace
 
-// f32 Mat4_Determinant(const f32 m[16])
 // Laplace expansion along the last row, as 24 triple products fused into
 // one running sum in the original's order (m(i) = m[i], row-major).
-DECOMP(00554A2C, Mat4_Determinant) {
-    const u32 src = arg<u32>(ctx, 0);
-    const auto m = [&](u32 i) -> f64 { return load<f32>(src + 4 * i); };
+f32 Mat4_Determinant(const be_f32* src) {
+    const auto m = [&](u32 i) -> f64 { return src[i]; };
     const auto q = [&](u32 a, u32 b, u32 c) { return fmuls(fmuls(m(a), m(b)), m(c)); };
     const f64 det =
         fmadds(q(0, 5, 10), m(15), fnmsubs(q(1, 4, 10), m(15), fnmsubs(q(0, 6, 9), m(15), fmadds(q(2, 4, 9), m(15),
@@ -28,7 +26,7 @@ DECOMP(00554A2C, Mat4_Determinant) {
         fmadds(q(2, 7, 8), m(13), fnmsubs(q(3, 6, 8), m(13), fnmsubs(q(1, 6, 11), m(12), fmadds(q(2, 5, 11), m(12),
         fmadds(q(1, 7, 10), m(12), fnmsubs(q(3, 5, 10), m(12), fmsubs(q(3, 6, 9), m(12),
         fmuls(q(2, 7, 9), m(12)))))))))))))))))))))))));
-    ctx.fpr[1] = det;
+    return static_cast<f32>(det);
 }
 
 // void Mat4_Invert(f32 out[16], f32 tmp[16], const f32 in[16])
@@ -37,14 +35,13 @@ DECOMP(00554A2C, Mat4_Determinant) {
 // (Mat4_Copy). A zero determinant gives inf / NaN, unchecked. Each
 // element re-reads `in` after the previous element's store, as the
 // original does, so tmp overlapping in behaves the same.
-// Leaves f1 = out[15].
-DECOMP(00554C28, Mat4_Invert) {
-    const u32 out = arg<u32>(ctx, 0), tmp = arg<u32>(ctx, 1), src = arg<u32>(ctx, 2);
-    const f64 det = callf(ctx, cfn::Mat4_Determinant, {src}, {});
-    const f64 inv = fdivs(load<f32>(kOne), det);
-    const auto s = [&](u32 i) -> f64 { return load<f32>(src + 4 * i); };
+// (The original leaves f1 = out[15]; no caller reads it.)
+void Mat4_Invert(be_f32* out, be_f32* tmp, const be_f32* src) {
+    const f64 det = Mat4_Determinant(src);
+    const f64 inv = fdivs(global<be_f32>(kOne), det);
+    const auto s = [&](u32 i) -> f64 { return src[i]; };
     const auto p = [&](u32 a, u32 b) { return fmuls(s(a), s(b)); };
-    const auto put = [&](u32 off, f64 v) { store<f32>(tmp + off, static_cast<f32>(v)); };
+    const auto put = [&](u32 off, f64 v) { tmp[off / 4] = static_cast<f32>(v); };
     put(0, fmuls(fmadds(p(5, 10), s(15), fnmsubs(p(6, 9), s(15), fnmsubs(p(5, 11), s(14), fmadds(p(7, 9), s(14), fmsubs(p(6, 11), s(13), fmuls(p(7, 10), s(13))))))), inv));
     put(4, fmuls(fnmsubs(p(1, 10), s(15), fmadds(p(2, 9), s(15), fmadds(p(1, 11), s(14), fnmsubs(p(3, 9), s(14), fmsubs(p(3, 10), s(13), fmuls(p(2, 11), s(13))))))), inv));
     put(8, fmuls(fmadds(p(1, 6), s(15), fnmsubs(p(2, 5), s(15), fnmsubs(p(1, 7), s(14), fmadds(p(3, 5), s(14), fmsubs(p(2, 7), s(13), fmuls(p(3, 6), s(13))))))), inv));
@@ -61,29 +58,29 @@ DECOMP(00554C28, Mat4_Invert) {
     put(52, fmuls(fmadds(p(0, 9), s(14), fnmsubs(p(1, 8), s(14), fnmsubs(p(0, 10), s(13), fmadds(p(2, 8), s(13), fmsubs(p(1, 10), s(12), fmuls(p(2, 9), s(12))))))), inv));
     put(56, fmuls(fnmsubs(p(0, 5), s(14), fmadds(p(1, 4), s(14), fmadds(p(0, 6), s(13), fnmsubs(p(2, 4), s(13), fmsubs(p(2, 5), s(12), fmuls(p(1, 6), s(12))))))), inv));
     put(60, fmuls(fmadds(p(0, 5), s(10), fnmsubs(p(1, 4), s(10), fnmsubs(p(0, 6), s(9), fmadds(p(2, 4), s(9), fmsubs(p(1, 6), s(8), fmuls(p(2, 5), s(8))))))), inv));
-    call(ctx, cfn::Mat4_Copy, {out, tmp});
+    Mat4_Copy(out, tmp);
 }
 
-// void Mat4_Copy(f32 dst[16], const f32 src[16])
-// Word by word, in order (lfs / stfs pairs). Leaves f1 = src[15].
-DECOMP(007A430C, Mat4_Copy) {
-    const u32 dst = arg<u32>(ctx, 0), src = arg<u32>(ctx, 1);
-    u32 w = 0;
-    for (u32 i = 0; i < 16; ++i) {
-        w = load<u32>(src + 4 * i);
-        store<u32>(dst + 4 * i, w);
-    }
-    ctx.fpr[1] = std::bit_cast<f32>(w);
+// Word by word, in order (lfs / stfs pairs). (The original leaves f1 = src[15].)
+void Mat4_Copy(be_f32* dst, const be_f32* src) {
+    be_u32* d = reinterpret_cast<be_u32*>(dst);
+    const be_u32* s = reinterpret_cast<const be_u32*>(src);
+    for (u32 i = 0; i < 16; ++i) d[i] = s[i].get();
 }
 
-// void Vec4_Transform(f32 v[4], const Matrix* m)
 // v = v * m through Vec4_TransformByMatrix, with v copied to the stack
 // first (sp+112 of the original's 128-byte frame).
-DECOMP(005539E4, Vec4_Transform) {
-    const u32 v = arg<u32>(ctx, 0), m = arg<u32>(ctx, 1);
-    Stack frame(ctx, 16);
-    const u32 copy = frame.addr();
-    for (u32 i = 0; i < 4; ++i) store<u32>(copy + 4 * i, load<u32>(v + 4 * i));
-    ctx.fpr[1] = load<f32>(v + 12);  // the last lfs, left in f1 (the callee overwrites it)
-    call(ctx, vfn::Vec4_TransformByMatrix, {v, copy, m});
+void Vec4_Transform(be_f32* v, const void* m) {
+    GuestFrame frame(16);
+    be_u32* copy = frame.as<be_u32>();
+    const be_u32* src = reinterpret_cast<const be_u32*>(v);
+    for (u32 i = 0; i < 4; ++i) copy[i] = src[i].get();
+    call(vfn::Vec4_TransformByMatrix, v, copy, m);
 }
+
+}  // namespace sly4::view
+
+NATIVE(00554A2C, sly4::view::Mat4_Determinant)
+NATIVE(00554C28, sly4::view::Mat4_Invert)
+NATIVE(007A430C, sly4::view::Mat4_Copy)
+NATIVE(005539E4, sly4::view::Vec4_Transform)

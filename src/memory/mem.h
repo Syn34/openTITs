@@ -3,6 +3,9 @@
 // g::mem_stats, and the 36-byte linear heap object built by Heap_Construct.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -39,13 +42,13 @@ constexpr u32 kMemPoolB = 0x0116B328;  // MemPool for pool 5
 
 // Allocations carry dlmalloc chunk headers: the size word sits just before
 // the user pointer, with the low 4 bits used as flags.
-inline u32 chunk_size(u32 p) { return load<u32>(p - 4) & ~0xFu; }
+inline u32 chunk_size(const void* p) { return *native::host<be_u32>(native::guest(p) - 4) & ~0xFu; }
 
 // A dlmalloc mspace with byte accounting.
 struct MemPool {
     be_u32 base;     // +0 start of the pool memory
     be_u32 size;     // +4 bytes
-    gptr mspace;      // +8
+    gptr mspace;      // +8 (dlmalloc mspace)
     be_u32 used;      // +12 bytes allocated
     be_u32 free;      // +16 bytes still free (no lower bound check)
     be_u32 peak_used; // +20 high-water mark of `used`
@@ -104,12 +107,29 @@ constexpr u32 kLinearHeapVtable = 0x00B242D0;
 struct MemState {
     u8 initialised;  // +0
     u8 pad1[3];
-    gptr heap;       // +4 LinearHeap of kDefaultLinearHeapSize from pool 3, or 0
+    native::gp<LinearHeap> heap;  // +4 LinearHeap of kDefaultLinearHeapSize from pool 3, or 0
     u8 unk8;         // +8 set to 0
     u8 unk9;         // +9 set to 1
 };
+static_assert(offsetof(MemState, heap) == 4);
 constexpr u32 kMemState = 0x01164898;
 constexpr u32 kDefaultLinearHeapSize = 0x80000;
 constexpr s32 kDefaultLinearHeapPool = 3;
+
+// Native functions (src/memory).
+namespace memory {
+void* Mem_Alloc(u32 size, s32 pool, u32 align);
+void* Mem_New(u32 size);
+void Mem_Free(void* p);
+u32 Heap_Construct(LinearHeap* heap, u32 size, s32 pool, u8 owns);
+void* Mem_AllocPool(u32 align, u32 size, s32 pool, s32 tag);
+void Mem_FreePool(void* p, s32 pool, s32 tag);
+void* Pool_Alloc(MemPool* pool, u32 align, u32 size);
+void Pool_Free(MemPool* pool, void* p);
+void Mem_InitSystemStats();
+LinearHeap* Mem_GetDefaultStack();
+inline MemState& mem_state() { return native::global<MemState>(kMemState); }
+inline MemStats& mem_stats() { return native::global<MemStats>(g::mem_stats); }
+}  // namespace memory
 
 }  // namespace sly4

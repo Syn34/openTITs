@@ -1,11 +1,12 @@
 // ApeDebug start-up.
 #include "debug.h"
 
+#include "../container/container.h"
+#include "../memory/mem.h"
 #include "../platform/platform.h"
 
-using namespace sly4;
-using namespace sly4::debug;
-namespace dbg = sly4::debug;
+namespace sly4::debug {
+using namespace opentit::native;
 namespace pf = sly4::platform;
 
 namespace {
@@ -18,6 +19,10 @@ constexpr u32 kStrMemFont = 0x00AF39B8;   // "MEM:ApeDebugFont"
 constexpr u32 kDebugFontSize = 44;
 
 // ApeTListAllocator<ApeDebug::Prim>: two pools of { FreeList* list; u32 count; }.
+struct PrimPool {
+    gp<container::FreeList> list;  // +0
+    be_u32 count;                  // +4 items per block
+};
 constexpr u32 kPrimPoolCount = 2;
 constexpr u32 kPrimPools = 0x01164E50;       // PrimPool* [2]
 constexpr u32 kPrimPoolCurrent = 0x01164E58; // = kPrimPools[0]
@@ -35,8 +40,6 @@ constexpr u32 kMainThread = 0x011DE290, kMainThreadGuard = 0x011DE2A0;
 constexpr u32 kDebugShaderHash = 0x03DE9E33;
 constexpr u32 kSphereRings = 8, kSphereSegments = 8;
 
-// Blend state at Material+104.
-constexpr u32 kMaterialBlend = 104;
 constexpr u32 kBlendEnable = 0x80000000;
 constexpr u32 kBlendSrcMask = 0x7FFF8000, kBlendSrcShift = 15;  // word +0
 constexpr u16 CELL_GCM_SRC_ALPHA = 0x0302, CELL_GCM_ONE_MINUS_SRC_ALPHA = 0x0303, CELL_GCM_FUNC_ADD = 0x8006;
@@ -48,79 +51,85 @@ constexpr u32 kPrintf = 0x007240F4;
 
 }  // namespace
 
-// bool Debug_Init()
 // Loads the debug font from the embedded BMP, creates the two
 // ApeDebug::Prim pools, an alpha-blended debug material and sphere/cube
 // meshes, and prints "APE_DEBUG enabled in APE_FINAL". Fails only if the
 // font texture can't be created.
-DECOMP(0056A944, Debug_Init) {
-    DebugState& st = ref<DebugState>(dbg::kDebugState);
-    store<u32>(dbg::kDebugState, 0);
-    st.font = 0;
-    st.material = 0;
-    st.sphere = 0;
-    st.cube = 0;
+bool Debug_Init() {
+    DebugState& st = global<DebugState>(kDebugState);
+    global<be_u32>(kDebugState) = 0;
+    st.font = nullptr;
+    st.material = nullptr;
+    st.sphere = nullptr;
+    st.cube = nullptr;
     st.enabled = 1;
 
-    const u32 texture = static_cast<u32>(
-        call(ctx, dbg::fn::Texture_LoadFromMemory, {kFontBmp, load<u32>(kFontBmpSize), kStrBmp, kStrMemFont}));
-    if (texture == 0) return ret(ctx, 0u);
+    const u32 texture = call<u32>(fn::Texture_LoadFromMemory, kFontBmp, global<be_u32>(kFontBmpSize).get(), kStrBmp, kStrMemFont);
+    if (texture == 0) return false;
     // (The original also tests kFontMetrics against 0, which can't fail.)
-    u32 font = static_cast<u32>(call(ctx, sly4::fn::Mem_New, {kDebugFontSize}));
-    if (font != 0) call(ctx, dbg::fn::DebugFont_Construct, {font, kFontMetrics, texture});
+    DebugFont* font = static_cast<DebugFont*>(memory::Mem_New(kDebugFontSize));
+    if (font) call(fn::DebugFont_Construct, font, kFontMetrics, texture);
     st.font = font;
 
+    gp<PrimPool>* pools = host<gp<PrimPool>>(kPrimPools);
     for (u32 i = 0; i < kPrimPoolCount; ++i) {
-        u32 pool = 0;
-        const u32 p = static_cast<u32>(call(ctx, sly4::fn::Mem_New, {8}));
-        if (p != 0) {
-            store<u32>(p, 0);
-            store<u32>(p + 4, kPrimsPerBlock);
+        PrimPool* pool = nullptr;
+        if (PrimPool* p = static_cast<PrimPool*>(memory::Mem_New(sizeof(PrimPool)))) {
+            p->list = nullptr;
+            p->count = kPrimsPerBlock;
             pool = p;
         }
-        store<u32>(kPrimPools + 4 * i, pool);
-        if (load<u32>(pool) == 0) {  // unchecked: reads address 0 if the allocation failed
-            u32 list = 0;
-            const u32 f = static_cast<u32>(call(ctx, sly4::fn::Mem_New, {kFreeListSize}));
-            if (f != 0) {
-                const u32 count = load<u32>(pool + 4);
-                for (u32 off = 4; off <= 48; off += 4) field<u32>(f, off) = 0;
-                field<u16>(f, 52) = 0;
-                field<u16>(f, 54) &= static_cast<u16>(~0x8000);
-                field<u32>(f, 0) = kPrimFreeListVtable;
-                field<u32>(f, 56) = kStrPrimAllocator;
-                call(ctx, pf::fn::FreeList_Init, {f, kPrimSize, count, 0, 0});
+        pools[i] = pool;
+        PrimPool& pr = gref<PrimPool>(guest(pool));  // unchecked: address 0 if the allocation failed
+        if (!pr.list) {
+            container::FreeList* list = nullptr;
+            if (auto* f = static_cast<container::FreeList*>(memory::Mem_New(kFreeListSize))) {
+                const u32 count = pr.count;
+                be_u32* w = reinterpret_cast<be_u32*>(f);
+                for (u32 off = 4; off <= 48; off += 4) w[off / 4] = 0;
+                be_u16* h = reinterpret_cast<be_u16*>(f);
+                h[52 / 2] = 0;
+                h[54 / 2] &= static_cast<u16>(~0x8000);
+                w[0] = kPrimFreeListVtable;
+                w[56 / 4] = kStrPrimAllocator;
+                call(pf::fn::FreeList_Init, f, kPrimSize, count, 0u, 0u);
                 list = f;
             }
-            store<u32>(pool, list);
+            pr.list = list;
         }
-        if (ref<u8>(kMainThreadGuard) == 0) {
-            store<u64>(kMainThread, 0);
-            store<u64>(kMainThread + 8, 0);
-            ref<u8>(kMainThreadGuard) = 1;
+        u8& guard = global<u8>(kMainThreadGuard);
+        if (guard == 0) {
+            be_u64* main_thread = host<be_u64>(kMainThread);
+            main_thread[0] = 0;
+            main_thread[1] = 0;
+            guard = 1;
         }
     }
-    store<u32>(kPrimPoolCurrent, load<u32>(kPrimPools));
-    store<u32>(kPrimPoolUnk, 0);
+    global<gp<PrimPool>>(kPrimPoolCurrent) = pools[0];
+    global<be_u32>(kPrimPoolUnk) = 0;
 
-    const u32 shader = static_cast<u32>(call(ctx, dbg::fn::Shader_Find, {kDebugShaderHash}));
-    st.material = static_cast<u32>(call(ctx, dbg::fn::Material_Create, {shader}));
+    const u32 shader = call<u32>(fn::Shader_Find, kDebugShaderHash);
+    st.material = call<Material*>(fn::Material_Create, shader);
     {
-        const u32 blend = st.material + kMaterialBlend;
-        const u32 w0 = load<u32>(blend) | kBlendEnable;
-        store<u16>(blend + 6, CELL_GCM_ONE_MINUS_SRC_ALPHA);
-        store<u16>(blend + 4, CELL_GCM_FUNC_ADD);
-        store<u32>(blend, (w0 & ~kBlendSrcMask) | ((static_cast<u32>(CELL_GCM_SRC_ALPHA) << kBlendSrcShift) & kBlendSrcMask));
+        MaterialBlend& blend = st.material->blend;
+        const u32 w0 = blend.w0 | kBlendEnable;
+        blend.dst = CELL_GCM_ONE_MINUS_SRC_ALPHA;
+        blend.equation = CELL_GCM_FUNC_ADD;
+        blend.w0 = (w0 & ~kBlendSrcMask) | ((static_cast<u32>(CELL_GCM_SRC_ALPHA) << kBlendSrcShift) & kBlendSrcMask);
     }
     {
-        const u32 blend = st.material + kMaterialBlend;  // re-read, as in the original
-        store<u32>(blend + 8, load<u32>(blend + 8) & ~kBlendWord2Bit31);
+        MaterialBlend& blend = st.material->blend;  // re-read, as in the original
+        blend.w8 = blend.w8 & ~kBlendWord2Bit31;
     }
-    st.sphere = static_cast<u32>(call(ctx, dbg::fn::Mesh_CreateSphere, {st.material, kSphereRings, kSphereSegments}));
-    st.cube = static_cast<u32>(call(ctx, dbg::fn::Mesh_CreateCube, {st.material, 1}));
+    st.sphere = call<Mesh*>(fn::Mesh_CreateSphere, st.material.get(), kSphereRings, kSphereSegments);
+    st.cube = call<Mesh*>(fn::Mesh_CreateCube, st.material.get(), 1u);
 
-    call(ctx, kPrintf, {kStrStars});
-    call(ctx, kPrintf, {kStrApeDebug});
-    call(ctx, kPrintf, {kStrStars});
-    ret(ctx, 1u);
+    call(kPrintf, kStrStars);
+    call(kPrintf, kStrApeDebug);
+    call(kPrintf, kStrStars);
+    return true;
 }
+
+}  // namespace sly4::debug
+
+NATIVE(0056A944, sly4::debug::Debug_Init)

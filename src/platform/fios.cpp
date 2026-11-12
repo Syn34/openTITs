@@ -2,8 +2,11 @@
 // system-cache layer, the .psarc dearchiver and an overlay on top.
 #include "platform.h"
 
-using namespace sly4;
-using namespace sly4::platform;
+#include "../memory/mem.h"
+#include "../system/subsystems.h"
+
+namespace sly4::platform {
+using namespace opentit::native;
 namespace pf = sly4::platform;  // its fn/libc/imp/sc sit beside sly4's
 
 namespace {
@@ -39,95 +42,100 @@ constexpr s32 CELL_SYSCACHE_RET_OK_CLEARED = 0, CELL_SYSCACHE_RET_OK_RELAYED = 1
 // SchedulerCache_Construct's arguments after the media/scheduler/path.
 constexpr u32 kCacheArg5 = 1, kCacheArg6 = 1, kCacheArg7 = 2037, kCacheArg8 = 0x100000;
 
-u32 fios_new(PPUContext& ctx, u32 size) {
-    return static_cast<u32>(call(ctx, pf::fn::Fios_New, {size, kFiosAllocFlags, kFiosAllocArg}));
-}
+struct FiosParams {
+    pad<8> _0;
+    be_u32 allocator;  // +8 allocator object (just a vtable)
+    pad<56> _12;
+};
+static_assert(sizeof(FiosParams) == kFiosParamsSize);
 
-u32 new_media(PPUContext& ctx, u32 root) {
-    const u32 media = fios_new(ctx, kPs3MediaSize);
-    if (media == 0) return 0;
-    call(ctx, pf::fn::Ps3Media_Construct, {media, root});
+void* fios_new(u32 size) { return call<void*>(pf::fn::Fios_New, size, kFiosAllocFlags, kFiosAllocArg); }
+
+void* new_media(char* root) {
+    void* media = fios_new(kPs3MediaSize);
+    if (!media) return nullptr;
+    call(pf::fn::Ps3Media_Construct, media, root);
     return media;
 }
 
 }  // namespace
 
-// bool Fios_Init()
 // Starts FIOS with the game's allocator, checks the boot (once), and builds
 // the media stack: ps3media over the content path, a scheduler cache in the
 // system cache if one could be mounted, a dearchiver for .psarc and
 // .psarc.edat (Edge decompression on the "ApeCore" SPURS), and an overlay.
 // Returns false only if the boot check fails.
-DECOMP(00570E08, Fios_Init) {
-    Stack frame(ctx, 80 + kCacheParamSize + 12 + 16);
-    const u32 params = frame.addr();
-    const u32 cache = params + 80;
-    const u32 decompressors = cache + ((kCacheParamSize + 15) & ~15u);  // u32[1]
-    const u32 extensions = decompressors + 4;                           // const char*[2]
+bool Fios_Init() {
+    GuestFrame frame(80 + kCacheParamSize + 12 + 16);
+    FiosParams* params = frame.as<FiosParams>(0);
+    u8* cache = frame.as<u8>(80);
+    gp<u8>* decompressors = frame.as<gp<u8>>(80 + ((kCacheParamSize + 15) & ~15u));  // [1]
+    be_u32* extensions = reinterpret_cast<be_u32*>(decompressors + 1);                  // const char*[2]
 
-    call(ctx, pf::libc::memmove, {params, kFiosParamsTemplate, kFiosParamsSize});
+    call(pf::libc::memmove, params, kFiosParamsTemplate, kFiosParamsSize);
     u32 allocator = 0;
-    const u32 obj = static_cast<u32>(call(ctx, sly4::fn::Mem_Alloc, {4, 0, 16}));
-    if (obj != 0) {
-        store<u32>(obj, kFiosAllocatorVtable);
-        allocator = obj;
+    if (be_u32* obj = static_cast<be_u32*>(memory::Mem_Alloc(4, 0, 16))) {
+        *obj = kFiosAllocatorVtable;
+        allocator = guest(obj);
     }
-    store<u32>(params + kFiosParamsAllocator, allocator);
-    call(ctx, pf::fn::FIOSInit, {params});  // result unchecked
+    params->allocator = allocator;
+    call(pf::fn::FIOSInit, params);  // result unchecked
 
-    if (ref<u8>(kBootChecked) == 0) {
-        ref<u8>(kBootChecked) = 1;
-        if (static_cast<s32>(call(ctx, pf::fn::Game_BootCheck)) < 0) return ret(ctx, 0u);
+    u8& boot_checked = global<u8>(kBootChecked);
+    if (boot_checked == 0) {
+        boot_checked = 1;
+        if (system::Game_BootCheck() < 0) return false;
     }
     // (The original also tests kContentPath against 0, which can't fail.)
-    u32 media = new_media(ctx, kContentPath);
+    void* media = new_media(host<char>(kContentPath));
 
-    u32 cache_id = field<u32>(g::config, kConfigCacheId);
+    u32 cache_id = *host<be_u32>(g::config + kConfigCacheId);
     if (cache_id == 0) cache_id = kStrDefaultCacheId;
-    call(ctx, pf::libc::strcpy, {cache + kCacheIdOffset, cache_id});
-    store<u32>(cache + kCacheReservedOffset, 0);
-    const s32 rc = static_cast<s32>(call(ctx, pf::imp::cellSysCacheMount, {cache}));
+    call(pf::libc::strcpy, cache + kCacheIdOffset, cache_id);
+    *reinterpret_cast<be_u32*>(cache + kCacheReservedOffset) = 0;
+    const s32 rc = call<s32>(pf::imp::cellSysCacheMount, cache);
     if (rc == CELL_SYSCACHE_RET_OK_CLEARED || rc == CELL_SYSCACHE_RET_OK_RELAYED) {
-        const u32 cache_path = cache + kCachePathOffset;
-        const u32 cache_media = new_media(ctx, cache_path);
-        const u32 cache_scheduler = static_cast<u32>(call(ctx, pf::fn::Scheduler_CreateForMedia, {cache_media, 0}));
-        u64 key = load<u64>(kDefaultCacheKey);
-        if (field<u64>(g::config, kConfigCacheKey) != 0) key = field<u64>(g::config, kConfigCacheKey);
-        u32 layer = 0;
-        const u32 c = fios_new(ctx, kSchedulerCacheSize);
-        if (c != 0) {
-            // The 9th argument goes on the stack (call() handles that).
-            call(ctx, pf::fn::SchedulerCache_Construct,
-                 {c, media, cache_scheduler, cache_path, key, kCacheArg5, kCacheArg6, kCacheArg7, kCacheArg8});
+        char* cache_path = reinterpret_cast<char*>(cache + kCachePathOffset);
+        void* cache_media = new_media(cache_path);
+        const u32 cache_scheduler = call<u32>(pf::fn::Scheduler_CreateForMedia, cache_media, 0u);
+        u64 key = global<be_u64>(kDefaultCacheKey);
+        const be_u64& config_key = *host<be_u64>(g::config + kConfigCacheKey);
+        if (config_key != 0) key = config_key;
+        void* layer = nullptr;
+        if (void* c = fios_new(kSchedulerCacheSize)) {
+            // The 9th argument goes on the stack (call<> handles that).
+            call(pf::fn::SchedulerCache_Construct, c, media, cache_scheduler, cache_path, key, kCacheArg5, kCacheArg6,
+                 kCacheArg7, kCacheArg8);
             layer = c;
         }
         media = layer;
     }
 
-    u32 decompressor = 0;
-    const u32 d = static_cast<u32>(call(ctx, pf::fn::Mem_NewAligned, {kEdgeDecompressorSize, kEdgeDecompressorAlign}));
-    if (d != 0) {
-        call(ctx, pf::fn::EdgeDecompressor_Construct, {d, load<u32>(kSpursCore)});
+    void* decompressor = nullptr;
+    if (void* d = call<void*>(pf::fn::Mem_NewAligned, kEdgeDecompressorSize, kEdgeDecompressorAlign)) {
+        call(pf::fn::EdgeDecompressor_Construct, d, global<be_u32>(kSpursCore).get());
         decompressor = d;
     }
-    store<u32>(decompressors, decompressor);
-    store<u32>(extensions, kStrPsarc);
-    store<u32>(extensions + 4, kStrPsarcEdat);
-    u32 dearchiver = 0;
-    const u32 a = fios_new(ctx, kDearchiverSize);
-    if (a != 0) {
-        call(ctx, pf::fn::Dearchiver_Construct, {a, media, 1, decompressors, 1, 0, 2, extensions});
+    decompressors[0] = static_cast<u8*>(decompressor);
+    extensions[0] = kStrPsarc;
+    extensions[1] = kStrPsarcEdat;
+    void* dearchiver = nullptr;
+    if (void* a = fios_new(kDearchiverSize)) {
+        call(pf::fn::Dearchiver_Construct, a, media, 1u, decompressors, 1u, 0u, 2u, extensions);
         dearchiver = a;
     }
 
-    u32 overlay = 0;
-    const u32 o = fios_new(ctx, kOverlaySize);
-    if (o != 0) {
-        call(ctx, pf::fn::Overlay_Construct, {o, dearchiver});
+    void* overlay = nullptr;
+    if (void* o = fios_new(kOverlaySize)) {
+        call(pf::fn::Overlay_Construct, o, dearchiver);
         overlay = o;
     }
-    store<u32>(kOverlay, overlay);
-    store<u32>(kScheduler, static_cast<u32>(call(ctx, pf::fn::Scheduler_CreateForMedia, {overlay, 0})));
-    call(ctx, pf::fn::Fios_Unknown5FCB1C);
-    ret(ctx, 1u);
+    global<gp<u8>>(kOverlay) = static_cast<u8*>(overlay);
+    global<be_u32>(kScheduler) = call<u32>(pf::fn::Scheduler_CreateForMedia, overlay, 0u);
+    call(pf::fn::Fios_Unknown5FCB1C);
+    return true;
 }
+
+}  // namespace sly4::platform
+
+NATIVE(00570E08, sly4::platform::Fios_Init)

@@ -6,6 +6,9 @@
 // comment marks a guess from how the code is used.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -205,6 +208,100 @@ inline bool XmlCursor_Lookup(u32 cursor, u32 hash, u32& type, u32& value) {
     value = XmlAttr_Value(attr, type);
     return value != 0;
 }
+
+// ---------------------------------------------------------------- native types
+struct XmlbElement;
+struct XmlbFile {
+    char magic[4];                         // +0 "XMLB"
+    native::pad<12> _4;
+    be_u16 top_count;                      // +16
+    native::pad<2> _18;
+    native::gp<XmlbElement> top[1];        // +20 (top_count of them)
+};
+struct XmlbElement {
+    be_u32 hash;                                   // +0
+    be_u32 name;                                   // +4 (0 = none)
+    be_u32 text;                                   // +8 (0 = none)
+    be_u16 child_count;                            // +12
+    be_u16 attr_count;                             // +14
+    native::gp<native::gp<XmlbElement>> children;  // +16
+    native::gp<XmlbAttr> attrs;                    // +20 sorted by hash
+    be_u32 types[1];                               // +24 (the original reads +24 + 4 * (i / 8))
+};
+static_assert(offsetof(XmlbElement, children) == kElemChildren && offsetof(XmlbElement, types) == kElemTypes);
+struct XmlDoc;
+struct XmlCursor {
+    be_u32 vtable;                     // +0
+    be_u32 type;                       // +4: 0 document, 1 element
+    be_s32 u8_;                        // +8
+    be_s32 u12;                        // +12
+    native::gp<XmlDoc> doc;            // +16
+    be_u32 hash;                       // +20
+    u8 flags;                          // +24: kCurValid
+    u8 depth;                          // +25
+    be_u16 index;                      // +26
+    native::gp<XmlbElement> parent;    // +28
+};
+static_assert(sizeof(XmlCursor) == kCursorSize);
+struct XmlDoc {
+    XmlCursor self;                    // +0 (type 0)
+    be_u32 status;                     // +32 XmlStatus
+    be_s32 u36, u40;                   // +36, +40
+    native::gp<XmlbFile> data;         // +44
+    char path[128];                    // +48
+    u8 ring[16];                       // +176
+    XmlCursor cursors[16][4];          // +192
+};
+static_assert(sizeof(XmlDoc) == kDocSize && offsetof(XmlDoc, cursors) == kDocCursors);
+
+// Native forms of the helpers above.
+inline void XmlDoc_SetError(XmlDoc* doc, u32 code) {
+    const u32 s = doc->status;
+    if (s & kStatusFailed) return;
+    doc->status = ((s | kStatusFailed) & ~kStatusErrorMask) | ((code << kStatusErrorShift) & kStatusErrorMask);
+}
+inline XmlbElement* XmlCursor_Element(const XmlCursor* cursor) {
+    const u32 index = cursor->index;
+    if (const u32 parent = cursor->parent.ea) return native::host<XmlbElement>(gref<be_u32>(gref<be_u32>(parent + kElemChildren) + index * 4));
+    const u32 data = gref<be_u32>(cursor->doc.ea + kDocData);
+    return native::host<XmlbElement>(gref<be_u32>(data + index * 4 + kXmlbTop));
+}
+inline bool XmlCursor_Lookup(const XmlCursor* cursor, u32 hash, u32& type, u32& value) {
+    if ((cursor->flags & kCurValid) == 0) return false;
+    const u32 elem = native::guest(XmlCursor_Element(cursor));
+    s32 index = 0;
+    s32 hi = static_cast<s32>(gref<be_u16>(elem + kElemAttrCount).get()) - 1, lo = 0;
+    u32 attr = 0;
+    if (hi >= 0) {
+        do {
+            const s32 mid = (hi + lo) >> 1;
+            const u32 a = gref<be_u32>(elem + kElemAttrs) + static_cast<u32>(mid) * sizeof(XmlbAttr);
+            const u32 h = gref<be_u32>(a);
+            if (h > hash) hi = mid - 1;
+            else if (h < hash) lo = mid + 1;
+            else {
+                index = mid;
+                attr = a;
+                break;
+            }
+        } while (hi >= lo);
+    }
+    if (attr == 0) return false;
+    const u32 i = static_cast<u32>(index);
+    type = (gref<be_u32>(elem + kElemTypes + ((i >> 1) & 0x7FFFFFFC)) >> ((i << 2) & 0x1C)) & 0xF;
+    const u32 v = gref<be_u32>(attr + 4);
+    value = type == kXmlString ? v + 4 : v;
+    return value != 0;
+}
+
+// Native functions (src/xml).
+XmlCursor* XmlCursor_FirstChildRaw(XmlCursor* cursor, u32 hash);
+XmlCursor* XmlCursor_NextSiblingRaw(XmlCursor* cursor, u32 hash);
+XmlCursor* XmlCursor_FirstChild(XmlCursor* cursor, u32 hash);
+XmlCursor* XmlCursor_NextSibling(XmlCursor* cursor, u32 hash);
+const char* XmlCursor_FindAttr(XmlCursor* cursor, u32 hash);
+u32 XmlDoc_LoadXmlb(XmlDoc* doc, void* file, u32 unused);
+void XmlElement_Relocate(XmlbElement* elem, u32 base);
 
 inline u32 vfunc(u32 obj, u32 byte_offset) { return load<u32>(load<u32>(obj) + byte_offset); }
 inline u32 call32(PPUContext& ctx, u32 addr, std::initializer_list<u64> args = {}) {

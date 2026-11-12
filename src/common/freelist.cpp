@@ -2,169 +2,148 @@
 // per-type virtual functions of the two lists Game_Load uses.
 #include "common.h"
 
-using namespace sly4;
-using namespace sly4::common;
+namespace sly4::common {
+using namespace opentit::native;
+using container::FreeBlock;
+using container::FreeItem;
 
 namespace {
 
-// Unlink `item` from the doubly linked list whose head and tail are at
-// list + head / list + tail (items: +0 next, +4 prev).
-void List_Unlink(u32 list, u32 item, u32 head, u32 tail) {
-    const u32 prev = field<u32>(item, 4);
-    if (prev == 0)
-        field<u32>(list, head) = field<u32>(item, 0);
-    else
-        field<u32>(prev, 0) = field<u32>(item, 0);
-    const u32 next = field<u32>(item, 0);
-    if (next == 0)
-        field<u32>(list, tail) = field<u32>(item, 4);
-    else
-        field<u32>(next, 4) = field<u32>(item, 4);
+// Unlink `item` from a doubly linked list with the given head and tail
+// (items: +0 next, +4 prev).
+template <typename T>
+void List_Unlink(gp<T>& head, gp<T>& tail, T* item) {
+    if (T* prev = item->prev) prev->next = item->next.get();
+    else head = item->next.get();
+    if (T* next = item->next) next->prev = item->prev.get();
+    else tail = item->prev.get();
 }
 
 // FreeList_Init's default heap, inlined again here.
-u32 DefaultHeap_Get() {
-    u32 heap = load<u32>(kDefaultHeapPtr);
-    if (heap != 0) return heap;
-    if (ref<u8>(kDefaultHeapGuard) == 0) {
-        store<u32>(kDefaultHeap, kDefaultHeapVtbl);
-        ref<u8>(kDefaultHeapGuard) = 1;
+container::Allocator* DefaultHeap_Get() {
+    gp<container::Allocator>& slot = global<gp<container::Allocator>>(kDefaultHeapPtr);
+    if (slot) return slot;
+    auto* heap = host<container::Allocator>(kDefaultHeap);
+    u8& guard = global<u8>(kDefaultHeapGuard);
+    if (guard == 0) {
+        heap->vtable = kDefaultHeapVtbl;
+        guard = 1;
     }
-    store<u32>(kDefaultHeap, kDefaultHeapVtbl);
-    store<u32>(kDefaultHeapPtr, kDefaultHeap);
-    return kDefaultHeap;
+    heap->vtable = kDefaultHeapVtbl;
+    slot = heap;
+    return heap;
+}
+
+// Walks a list from its head, unlinking every item; the count is stored
+// after each one, as in the original. An item that isn't the head (prev
+// != 0) would be visited again forever; that can't happen walking from the head.
+void List_Clear(gp<FreeItem>& head, gp<FreeItem>& tail, be_u32& count_field, FreeItem* first, u32 count) {
+    for (FreeItem* it = first; it;) {
+        FreeItem* prev = it->prev;
+        FreeItem* next;
+        if (!prev) {
+            next = it->next;
+            head = next;
+        } else {
+            prev->next = it->next.get();
+            next = it->next;
+        }
+        if (!next) tail = it->prev.get();
+        else next->prev = it->prev.get();
+        count_field = --count;
+        if (!prev) it = next;
+    }
 }
 
 }  // namespace
 
-// void* FreeList_Alloc(FreeList* list)
 // Takes the first free item (adding a block when there is none), clears it
 // and puts it at the head of the used list. Returns the item's payload.
-DECOMP(00556C04, FreeList_Alloc) {
-    const u32 list = arg<u32>(ctx, 0);
-    u32 item = field<u32>(list, kFlFreeHead);
-    if (item == 0) {
-        call(ctx, cmfn::FreeList_AddBlock, {list, 0});
-        item = field<u32>(list, kFlFreeHead);
+void* FreeList_Alloc(FreeList* list) {
+    FreeItem* item = list->free_head;
+    if (!item) {
+        container::FreeList_AddBlock(list, 0);
+        item = list->free_head;
     }
-    List_Unlink(list, item, kFlFreeHead, kFlFreeTail);
-    field<u32>(list, kFlFreeCount) = field<u32>(list, kFlFreeCount) - 1;
-    const u32 stride = (field<u32>(list, kFlElemSize) + 15) & ~15u;
-    call(ctx, fn::memset, {item, 0, stride + kItemHeader});
-
-    const u32 old = field<u32>(list, kFlUsedHead);
-    const u32 n = field<u32>(list, kFlUsedCount);
-    field<u32>(item, 0) = old;
-    field<u32>(item, 4) = 0;
-    const u32 tail = field<u32>(list, kFlUsedTail);
-    field<u32>(list, kFlUsedHead) = item;
-    const u32 peak = field<u32>(list, kFlUsedPeak);
-    if (tail == 0) field<u32>(list, kFlUsedTail) = item;
-    if (old != 0) field<u32>(old, 4) = item;
-    field<u32>(list, kFlUsedCount) = n + 1;
-    field<u32>(list, kFlUsedPeak) = peak > n + 1 ? peak : n + 1;
-    ret(ctx, item + kItemHeader);
+    List_Unlink(list->free_head, list->free_tail, item);
+    list->free_count -= 1;
+    const u32 stride = (list->elem_size + 15) & ~15u;
+    call(fn::memset, item, 0u, stride + kItemHeader);
+    FreeItem* old = list->used_head;
+    const u32 n = list->used_count;
+    item->next = old;
+    item->prev = nullptr;
+    FreeItem* tail = list->used_tail;
+    list->used_head = item;
+    const u32 peak = list->used_peak;
+    if (!tail) list->used_tail = item;
+    if (old) old->prev = item;
+    list->used_count = n + 1;
+    list->used_peak = peak > n + 1 ? peak : n + 1;
+    return host<void>(guest(item) + kItemHeader);
 }
 
-// void FreeList_Free(FreeList* list, void* p)
 // Moves the item from the used list to the head of the free list.
-DECOMP(00556D18, FreeList_Free) {
-    const u32 list = arg<u32>(ctx, 0);
-    const u32 item = arg<u32>(ctx, 1) - kItemHeader;
-    const u32 used = field<u32>(list, kFlUsedCount);
-    const u32 free_head = field<u32>(list, kFlFreeHead);
-    List_Unlink(list, item, kFlUsedHead, kFlUsedTail);
-    field<u32>(item, 4) = 0;
-    field<u32>(item, 0) = free_head;
-    field<u32>(list, kFlUsedCount) = used - 1;
-    const u32 free_tail = field<u32>(list, kFlFreeTail);
-    field<u32>(list, kFlFreeHead) = item;
-    const u32 n = field<u32>(list, kFlFreeCount);
-    if (free_tail == 0) field<u32>(list, kFlFreeTail) = item;
-    const u32 next = field<u32>(item, 0);
-    if (next != 0) field<u32>(next, 4) = item;
-    field<u32>(list, kFlFreeCount) = n + 1;
+void FreeList_Free(FreeList* list, void* p) {
+    FreeItem* item = host<FreeItem>(guest(p) - kItemHeader);
+    const u32 used = list->used_count;
+    FreeItem* free_head = list->free_head;
+    List_Unlink(list->used_head, list->used_tail, item);
+    item->prev = nullptr;
+    item->next = free_head;
+    list->used_count = used - 1;
+    FreeItem* free_tail = list->free_tail;
+    list->free_head = item;
+    const u32 n = list->free_count;
+    if (!free_tail) list->free_tail = item;
+    if (FreeItem* next = item->next) next->prev = item;
+    list->free_count = n + 1;
 }
 
-// void FreeList_Destroy(FreeList* list)
 // Empties the used and free lists, gives every block back to the heap and
 // removes the list from the registry (swapping the last entry into its
 // place). Does nothing when the list has no heap.
-DECOMP(005568FC, FreeList_Destroy) {
-    const u32 list = arg<u32>(ctx, 0);
-    if (field<u32>(list, kFlHeap) == 0) return;
-
-    // The used and free lists. Counts are kept in registers and stored after
-    // each item, as in the original. An item that isn't the head (prev != 0)
-    // would be visited again forever; that can't happen when walking from the head.
-    u32 used = field<u32>(list, kFlUsedCount);
-    u32 free_head = field<u32>(list, kFlFreeHead);
-    u32 free_n = field<u32>(list, kFlFreeCount);
-    for (u32 it = field<u32>(list, kFlUsedHead); it != 0;) {
-        const u32 prev = field<u32>(it, 4);
-        u32 next;
-        if (prev == 0) {
-            next = field<u32>(it, 0);
-            field<u32>(list, kFlUsedHead) = next;
-        } else {
-            field<u32>(prev, 0) = field<u32>(it, 0);
-            next = field<u32>(it, 0);
-        }
-        if (next == 0)
-            field<u32>(list, kFlUsedTail) = field<u32>(it, 4);
-        else
-            field<u32>(next, 4) = field<u32>(it, 4);
-        field<u32>(list, kFlUsedCount) = --used;
-        if (prev == 0) it = next;
-    }
-    for (u32 it = free_head; it != 0;) {
-        const u32 prev = field<u32>(it, 4);
-        u32 next;
-        if (prev == 0) {
-            next = field<u32>(it, 0);
-            field<u32>(list, kFlFreeHead) = next;
-        } else {
-            field<u32>(prev, 0) = field<u32>(it, 0);
-            next = field<u32>(it, 0);
-        }
-        if (next == 0)
-            field<u32>(list, kFlFreeTail) = field<u32>(it, 4);
-        else
-            field<u32>(next, 4) = field<u32>(it, 4);
-        field<u32>(list, kFlFreeCount) = --free_n;
-        if (prev == 0) it = next;
-    }
+void FreeList_Destroy(FreeList* list) {
+    if (!list->heap) return;
+    const u32 used = list->used_count;
+    FreeItem* free_head = list->free_head;
+    const u32 free_n = list->free_count;
+    List_Clear(list->used_head, list->used_tail, list->used_count, list->used_head, used);
+    List_Clear(list->free_head, list->free_tail, list->free_count, free_head, free_n);
     // Blocks, oldest first, back to the heap.
-    for (u32 b; (b = field<u32>(list, kFlBlockOldest)) != 0;) {
-        List_Unlink(list, b, kFlBlockOldest, kFlBlockNewest);
-        field<u32>(list, kFlBlockCount) = field<u32>(list, kFlBlockCount) - 1;
-        const u32 heap = field<u32>(list, kFlHeap);
-        call_ptr(ctx, vfunc(heap, kHeapVfnFree), {heap, b, 0});
+    for (FreeBlock* b; (b = list->block_tail) != nullptr;) {
+        // (+0 newer and +4 older play next and prev here: oldest = +28 "head", newest = +32 "tail")
+        if (FreeBlock* prev = b->older) prev->newer = b->newer.get();
+        else list->block_tail = b->newer.get();
+        if (FreeBlock* next = b->newer) next->older = b->older.get();
+        else list->block_head = b->older.get();
+        list->block_count -= 1;
+        vcall(list->heap.get(), kHeapVfnFree, b, 0u);
     }
-    field<u32>(list, kFlHeap) = 0;
-
+    list->heap = nullptr;
     // The registry (made here if no list has been made yet).
-    const u32 reg = kFreeLists;
-    if (ref<u8>(kFreeListsGuard) == 0) {
-        const u32 heap = DefaultHeap_Get();
-        field<u32>(reg, 0) = 0;
-        field<u16>(reg, 4) = 0;
-        field<u16>(reg, 8) = 0;
-        field<u16>(reg, 10) = 0;
-        field<u32>(reg, 16) = 0;
-        field<u16>(reg, 6) = 4;
-        field<u32>(reg, 12) = 0;  // its bit-fields, cleared one by one in the original
-        call(ctx, cmfn::PtrVector_Init, {reg, 64, heap, 0, 4});
-        ref<u8>(kFreeListsGuard) = 1;
+    auto* reg = host<container::PtrVector>(kFreeLists);
+    u8& guard = global<u8>(kFreeListsGuard);
+    if (guard == 0) {
+        container::Allocator* heap = DefaultHeap_Get();
+        reg->data = nullptr;
+        reg->capacity = 0;
+        reg->count = 0;
+        reg->high_water = 0;
+        reg->allocator = nullptr;
+        reg->elem_size = 4;
+        reg->bits = 0;  // its bit-fields, cleared one by one in the original
+        container::PtrVector_Init(reg, 64, heap, 0);  // (the original also passes 4 in r7, unused)
+        guard = 1;
     }
-    const u32 count = field<u16>(reg, 8);
+    const u32 count = reg->count;
     if (count == 0) return;
     for (u32 i = count - 1;; --i) {
-        const u32 data = field<u32>(reg, 0);
-        if (load<u32>(data + i * 4) == list) {
+        be_u32* data = reinterpret_cast<be_u32*>(reg->data.get());
+        if (gref<be_u32>(guest(data) + i * 4) == guest(list)) {
             const u32 last = count - 1;
-            field<u16>(reg, 8) = static_cast<u16>(last);
-            if (i != (last & 0xFFFF)) store<u32>(data + i * 4, load<u32>(data + ((last << 2) & 0x3FFFC)));
+            reg->count = static_cast<u16>(last);
+            if (i != (last & 0xFFFF)) gref<be_u32>(guest(data) + i * 4) = gref<be_u32>(guest(data) + ((last << 2) & 0x3FFFC)).get();
             return;
         }
         if (i == 0) return;
@@ -175,71 +154,70 @@ DECOMP(005568FC, FreeList_Destroy) {
 // ApeTFreeList<AglRenderTarget> (vtable 0x00B23DC0) and
 // ApeTFreeList<ApeInputDevice> (vtable 0x00B243F8):
 //   +0 destructor, +4 deleting destructor, +8 (empty), +12 Alloc, +16 Free, +20 Init(count, heap).
-
-// void RtFreeList_Destruct(FreeList*)
-DECOMP(007A2564, RtFreeList_Destruct) {
-    const u32 list = arg<u32>(ctx, 0);
-    field<u32>(list, 0) = kRtFreeListVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
-    field<u32>(list, 0) = kFreeListBaseVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
+void RtFreeList_Destruct(FreeList* list) {
+    list->vtable = kRtFreeListVtbl;
+    FreeList_Destroy(list);
+    list->vtable = kFreeListBaseVtbl;
+    FreeList_Destroy(list);
 }
 
-// void RtFreeList_Delete(FreeList*)
-DECOMP(007A25B8, RtFreeList_Delete) {
-    const u32 list = arg<u32>(ctx, 0);
-    if (list == 0) return ret(ctx, 0u);
-    field<u32>(list, 0) = kRtFreeListVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
-    field<u32>(list, 0) = kFreeListBaseVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
-    call(ctx, cmfn::Mem_FreeFrom, {list, 0});
+void RtFreeList_Delete(FreeList* list) {
+    if (!list) return;
+    list->vtable = kRtFreeListVtbl;
+    FreeList_Destroy(list);
+    list->vtable = kFreeListBaseVtbl;
+    FreeList_Destroy(list);
+    Mem_FreeFrom(list, 0);
 }
 
-// void RtFreeList_Fn8(FreeList*): empty
-DECOMP(007A2628, RtFreeList_Fn8) {}
+void RtFreeList_Fn8(FreeList*) {}
 
-// AglRenderTarget* RtFreeList_Alloc(FreeList*)
-DECOMP(0079EA84, RtFreeList_Alloc) { ret(ctx, call(ctx, cmfn::FreeList_Alloc, {ctx.gpr[3]})); }
+void* RtFreeList_Alloc(FreeList* list) { return FreeList_Alloc(list); }
 
-// void RtFreeList_Free(FreeList*, AglRenderTarget*)
-DECOMP(0079EAA8, RtFreeList_Free) { ret(ctx, call(ctx, cmfn::FreeList_Free, {ctx.gpr[3], ctx.gpr[4]})); }
+void RtFreeList_Free(FreeList* list, void* p) { FreeList_Free(list, p); }
 
-// void RtFreeList_Init(FreeList*, u32 count, Heap* heap)
-DECOMP(007A1018, RtFreeList_Init) {
-    ret(ctx, call(ctx, cmfn::FreeList_Init, {ctx.gpr[3], kRtSize, ctx.gpr[4], ctx.gpr[5], 0}));
+void RtFreeList_Init(FreeList* list, u32 count, void* heap) { call(cmfn::FreeList_Init, list, kRtSize, count, heap, 0u); }
+
+void InputFreeList_Destruct(FreeList* list) {
+    list->vtable = kInputFreeListVtbl;
+    FreeList_Destroy(list);
+    list->vtable = kFreeListBaseVtbl;
+    FreeList_Destroy(list);
 }
 
-// void InputFreeList_Destruct(FreeList*)
-DECOMP(007A4E80, InputFreeList_Destruct) {
-    const u32 list = arg<u32>(ctx, 0);
-    field<u32>(list, 0) = kInputFreeListVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
-    field<u32>(list, 0) = kFreeListBaseVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
+void InputFreeList_Delete(FreeList* list) {
+    if (!list) return;
+    list->vtable = kInputFreeListVtbl;
+    FreeList_Destroy(list);
+    list->vtable = kFreeListBaseVtbl;
+    FreeList_Destroy(list);
+    memory::Mem_FreePool(list, 0, 0);
 }
 
-// void InputFreeList_Delete(FreeList*)
-DECOMP(007A4ECC, InputFreeList_Delete) {
-    const u32 list = arg<u32>(ctx, 0);
-    if (list == 0) return ret(ctx, 0u);
-    field<u32>(list, 0) = kInputFreeListVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
-    field<u32>(list, 0) = kFreeListBaseVtbl;
-    call(ctx, cmfn::FreeList_Destroy, {list});
-    call(ctx, fn::Mem_FreePool, {list, 0, 0});
+void InputFreeList_Fn8(FreeList*) {}
+
+void* InputFreeList_Alloc(FreeList* list) { return FreeList_Alloc(list); }
+
+void InputFreeList_Free(FreeList* list, void* p) { FreeList_Free(list, p); }
+
+void InputFreeList_Init(FreeList* list, u32 count, void* heap) {
+    call(cmfn::FreeList_Init, list, kInputDeviceSize, count, heap, 0u);
 }
 
-// void InputFreeList_Fn8(FreeList*): empty
-DECOMP(007A4F38, InputFreeList_Fn8) {}
+}  // namespace sly4::common
 
-// ApeInputDevice* InputFreeList_Alloc(FreeList*)
-DECOMP(007A4A90, InputFreeList_Alloc) { ret(ctx, call(ctx, cmfn::FreeList_Alloc, {ctx.gpr[3]})); }
-
-// void InputFreeList_Free(FreeList*, ApeInputDevice*)
-DECOMP(007A4AB0, InputFreeList_Free) { ret(ctx, call(ctx, cmfn::FreeList_Free, {ctx.gpr[3], ctx.gpr[4]})); }
-
-// void InputFreeList_Init(FreeList*, u32 count, Heap* heap)
-DECOMP(007A4D1C, InputFreeList_Init) {
-    ret(ctx, call(ctx, cmfn::FreeList_Init, {ctx.gpr[3], kInputDeviceSize, ctx.gpr[4], ctx.gpr[5], 0}));
-}
+NATIVE(00556C04, sly4::common::FreeList_Alloc)
+NATIVE(00556D18, sly4::common::FreeList_Free)
+NATIVE(005568FC, sly4::common::FreeList_Destroy)
+NATIVE(007A2564, sly4::common::RtFreeList_Destruct)
+NATIVE(007A25B8, sly4::common::RtFreeList_Delete)
+NATIVE(007A2628, sly4::common::RtFreeList_Fn8)
+NATIVE(0079EA84, sly4::common::RtFreeList_Alloc)
+NATIVE(0079EAA8, sly4::common::RtFreeList_Free)
+NATIVE(007A1018, sly4::common::RtFreeList_Init)
+NATIVE(007A4E80, sly4::common::InputFreeList_Destruct)
+NATIVE(007A4ECC, sly4::common::InputFreeList_Delete)
+NATIVE(007A4F38, sly4::common::InputFreeList_Fn8)
+NATIVE(007A4A90, sly4::common::InputFreeList_Alloc)
+NATIVE(007A4AB0, sly4::common::InputFreeList_Free)
+NATIVE(007A4D1C, sly4::common::InputFreeList_Init)

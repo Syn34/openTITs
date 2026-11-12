@@ -57,7 +57,11 @@ struct gp {
     T* get() const { return host<T>(ea.get()); }
     operator T*() const { return get(); }
     T* operator->() const { return get(); }
-    T& operator*() const { return *get(); }
+    template <typename U = T>
+        requires(!std::is_void_v<U>)
+    U& operator*() const {
+        return *get();
+    }
     explicit operator bool() const { return ea.get() != 0; }
     gp& operator=(T* p) {
         ea = guest(p);
@@ -114,9 +118,23 @@ namespace detail {
 template <typename T>
 inline constexpr bool is_fp = std::is_floating_point_v<T>;
 
+// Arguments read straight from guest structures (be<T> members) are passed
+// as their value type, so a be_f32 still goes in an FPR.
+template <typename T>
+struct arg_type {
+    using type = T;
+};
+template <typename T>
+struct arg_type<be<T>> {
+    using type = T;
+};
+template <typename T>
+using arg_t = typename arg_type<std::decay_t<T>>::type;
+
 template <typename T>
 u64 to_gpr(T v) {
     if constexpr (std::is_pointer_v<T>) return guest(v);
+    else if constexpr (std::is_null_pointer_v<T>) return 0u;
     else if constexpr (std::is_same_v<T, bool>) return v ? 1u : 0u;
     else if constexpr (std::is_enum_v<T>) return to_gpr(static_cast<std::underlying_type_t<T>>(v));
     else if constexpr (std::is_signed_v<T>) return static_cast<u64>(static_cast<s64>(v));
@@ -207,17 +225,17 @@ void bridge(PPUContext& c) {
 
 // Call a guest function (recompiled, or decompiled but not native yet).
 template <typename R = void, typename... A>
-R call(u32 addr, A... a) {
-    return detail::call_impl<false, R>(addr, std::index_sequence_for<A...>{}, a...);
+R call(u32 addr, A&&... a) {
+    return detail::call_impl<false, R>(addr, std::index_sequence_for<A...>{}, static_cast<detail::arg_t<A>>(a)...);
 }
 // Call through a function descriptor (a guest function pointer).
 template <typename R = void, typename... A>
-R call_ptr(u32 opd, A... a) {
-    return detail::call_impl<true, R>(opd, std::index_sequence_for<A...>{}, a...);
+R call_ptr(u32 opd, A&&... a) {
+    return detail::call_impl<true, R>(opd, std::index_sequence_for<A...>{}, static_cast<detail::arg_t<A>>(a)...);
 }
 // Virtual call: obj's vtable entry at byte offset `slot` holds a descriptor.
 template <typename R = void, typename O, typename... A>
-R vcall(O* obj, u32 slot, A... a) {
+R vcall(O* obj, u32 slot, A&&... a) {
     const u32 vt = mem::r32(guest(obj));
     return call_ptr<R>(mem::r32(vt + slot), obj, a...);
 }

@@ -32,5 +32,17 @@ constexpr u32 world_frame_ring = 0x1285E4; // World +: FrameRing*, current Frame
 constexpr u32 identity = 0x01164BD0;       // f32[4][4] identity
 }  // namespace cg
 
+f32 Mat4_Determinant(const be_f32* m);
+void Mat4_Invert(be_f32* out, be_f32* tmp, const be_f32* in);
+void Mat4_Copy(be_f32* dst, const be_f32* src);
+void Vec4_Transform(be_f32* v, const void* m);
+void View_DrawBackdrop(void* world, void* view, const u8* top, const u8* bottom);
+void Camera_SetSplitStyle(void* cam, u32 index, u32 key);
+u32 Camera_GetSplitA(void* cam, u32 index);
+u32 Camera_GetSplitB(void* cam, u32 index);
+u32 Camera_GetSplitXform(void* cam, u32 index);
+void Camera_GetSplitColourA(u8* out, void* cam, u32 index);
+void Camera_GetSplitColourB(u8* out, void* cam, u32 index);
+
 }  // namespace view
 }  // namespace sly4

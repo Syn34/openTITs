@@ -2,8 +2,8 @@
 // callback and a render-target parameter block setter.
 #include "common.h"
 
-using namespace sly4;
-using namespace sly4::common;
+namespace sly4::common {
+using namespace opentit::native;
 
 namespace {
 // sceNpManagerRegisterCallback statuses (SceNpManagerStatus).
@@ -11,44 +11,54 @@ constexpr s32 SCE_NP_MANAGER_STATUS_OFFLINE = -1;
 constexpr s32 SCE_NP_MANAGER_STATUS_ONLINE = 3;
 constexpr u32 kNpOfflineFlag = 0x80;          // the g::sysutil_flags bit sly4.h calls kSysutilNpOffline
 constexpr u32 kNpStatusCleared = 0x00F65C94;  // u32, zeroed when going offline (name?)
+
+struct RtParams {
+    be_u32 a;   // +0
+    be_u32 b;   // +4
+    be_f32 x;   // +8
+    be_f32 y;   // +12
+    be_u32 c;   // +16
+};
 }  // namespace
 
-// char* String_Assign(char* dst, const char* src)
 // strcpy (0x007239D8).
-DECOMP(00555F80, String_Assign) { ret(ctx, call(ctx, cmfn::strcpy, {ctx.gpr[3], ctx.gpr[4]})); }
+char* String_Assign(char* dst, const char* src) { return call<char*>(cmfn::strcpy, dst, src); }
 
-// bool Stub_True()  (name?)
-DECOMP(0056DF78, Stub_True) { ret(ctx, 1u); }
+bool Stub_True() { return true; }
 
-// bool Stub_CallTrue()  (name?): calls Stub_True, returns 1 regardless
-DECOMP(0055E284, Stub_CallTrue) {
-    call(ctx, cmfn::Np_Stub1);
-    ret(ctx, 1u);
+// Calls Stub_True, returns 1 regardless.
+bool Stub_CallTrue() {
+    Stub_True();
+    return true;
 }
 
-// void NpManager_OnStatus(s32 status, ...)
 // The sceNpManagerRegisterCallback handler Game_Load installs: going
 // offline raises sysutil flag 0x80 (which pauses the main loop), coming
 // back online clears it.
-DECOMP(0049AF38, NpManager_OnStatus) {
-    const s32 status = arg<s32>(ctx, 0);
-    auto& flags = ref<be_u32>(g::sysutil_flags);
+void NpManager_OnStatus(s32 status) {
+    be_u32& flags = global<be_u32>(g::sysutil_flags);
     if (status == SCE_NP_MANAGER_STATUS_OFFLINE) {
         const u32 f = flags;
-        store<u32>(kNpStatusCleared, 0);
+        global<be_u32>(kNpStatusCleared) = 0;
         flags = f | kNpOfflineFlag;
     } else if (status == SCE_NP_MANAGER_STATUS_ONLINE) {
         flags = flags & ~kNpOfflineFlag;
     }
 }
 
-// void RenderTarget_SetParams(Params* p, u32 a, u32 b, f32 x, f32 y, u32 c at r8)
-// RenderTarget_Create passes 2044, 2046, 16.0, 10.0, 240.
-DECOMP(0053C9F8, RenderTarget_SetParams) {
-    const u32 p = arg<u32>(ctx, 0);
-    field<u32>(p, 0) = arg<u32>(ctx, 1);
-    field<u32>(p, 4) = arg<u32>(ctx, 2);
-    field<f32>(p, 8) = static_cast<f32>(farg(ctx, 0));
-    field<f32>(p, 12) = static_cast<f32>(farg(ctx, 1));
-    field<u32>(p, 16) = arg<u32>(ctx, 5);
+// RenderTarget_Create passes 2044, 2046, 16.0, 10.0, 240 (c in r8).
+void RenderTarget_SetParams(RtParams* p, u32 a, u32 b, f32 x, f32 y, u32 c) {
+    p->a = a;
+    p->b = b;
+    p->x = x;
+    p->y = y;
+    p->c = c;
 }
+
+}  // namespace sly4::common
+
+NATIVE(00555F80, sly4::common::String_Assign)
+NATIVE(0056DF78, sly4::common::Stub_True)
+NATIVE(0055E284, sly4::common::Stub_CallTrue)
+NATIVE(0049AF38, sly4::common::NpManager_OnStatus)
+NATIVE(0053C9F8, sly4::common::RenderTarget_SetParams)

@@ -2,6 +2,7 @@
 // the IFF chunk registry and the tag table; and Iff_InitTags.
 #pragma once
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4::tags {
@@ -35,6 +36,16 @@ constexpr u16 kUnsorted = 1;
 constexpr u32 kEntrySize = 8;
 constexpr u32 kDefaultCompare = 0x00F3C250;  // with this comparator the search compares keys directly (unsigned)
 constexpr u32 kGrowStep = 16;
+struct MapEntry {
+    be_u32 key;    // +0
+    be_u32 value;  // +4
+};
+
+// Native functions (src/resource/tags*.cpp).
+bool Iff_InitTags();
+be_u32* SortedMap_Find(SortedMap* map, const be_u32* key);
+void SortedMap_Erase(SortedMap* map, const be_u32* key);
+void SortedMap_Insert(SortedMap* map, const be_u32* key, u32 value);
 
 // The default heap-backed allocator (a function-local static).
 constexpr u32 kDefaultAllocatorPtr = 0x00F88704;  // u32

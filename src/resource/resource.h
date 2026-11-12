@@ -3,6 +3,7 @@
 // and localisation/lighting (LOCA, LCRH, LCRD).
 #pragma once
 
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4::resource {
@@ -30,5 +31,7 @@ constexpr u32 Res_Init586BF4 = 0x00586BF4;   // () (unknown)
 constexpr u32 Res_Init586B3C = 0x00586B3C;   // () builds something from 0x0050F0F0 / 0x0050956C (unknown)
 constexpr u32 ResPool_Init504 = 0x005868D0;  // config +504 (u32), default 256
 }  // namespace fn
+
+bool Resources_Init();
 
 }  // namespace sly4::resource

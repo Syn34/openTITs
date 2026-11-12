@@ -1,7 +1,12 @@
 // Start-up of the engine's subsystems.
-#include "../sly4.h"
+#include "../debug/debug.h"
+#include "../memory/mem.h"
+#include "../platform/platform.h"
+#include "../resource/resource.h"
+#include "subsystems.h"
 
-using namespace sly4;
+namespace sly4::system {
+using namespace opentit::native;
 
 namespace {
 
@@ -24,54 +29,58 @@ constexpr u32 kRegistryEntry1 = 0x0118E0D0;   // u32 object, zeroed here
 
 }  // namespace
 
-// bool Main_InitSystems(u32 stages)
 // Brings up the subsystems selected by `stages`, stopping at the first that
 // fails. Every call then makes sure the main heap exists.
-DECOMP(005DB1D0, Main_InitSystems) {
-    const u32 stages = arg<u32>(ctx, 0);
-
+bool Main_InitSystems(u32 stages) {
+    be_u64* main_thread = host<be_u64>(kMainThread);
     if (stages & kInitThreads) {
         u64 id;
         {
-            Stack frame(ctx, 8);
-            store<u64>(frame.addr(), 0);
-            call(ctx, imp::sys_ppu_thread_get_id, {frame.addr()});
-            id = load<u64>(frame.addr());
+            GuestFrame frame(8);
+            be_u64* out = frame.as<be_u64>();
+            *out = 0;
+            call(imp::sys_ppu_thread_get_id, out);
+            id = *out;
         }
-        if (ref<u8>(kMainThreadGuard) == 0) {
-            store<u64>(kMainThread, 0);
-            store<u64>(kMainThread + 8, 0);
-            ref<u8>(kMainThreadGuard) = 1;
+        u8& guard = global<u8>(kMainThreadGuard);
+        if (guard == 0) {
+            main_thread[0] = 0;
+            main_thread[1] = 0;
+            guard = 1;
         }
-        store<u64>(kMainThread, id);
-        store<u64>(kMainThread + 8, 0);
-        if (static_cast<u32>(call(ctx, fn::System_Init)) == 0) return ret(ctx, 0u);
-        if (static_cast<u32>(call(ctx, fn::Platform_Init)) == 0) return ret(ctx, 0u);
+        main_thread[0] = id;
+        main_thread[1] = 0;
+        if (!System_Init()) return false;
+        if (!platform::Platform_Init()) return false;
     }
-    if ((stages & kInit4) && static_cast<u32>(call(ctx, fn::Graphics_Init)) == 0) return ret(ctx, 0u);
-    if ((stages & kInit2) && static_cast<u32>(call(ctx, fn::Resources_Init)) == 0) return ret(ctx, 0u);
-    if ((stages & kInit8) && static_cast<u32>(call(ctx, fn::Debug_Init)) == 0) return ret(ctx, 0u);
+    if ((stages & kInit4) && call<u32>(fn::Graphics_Init) == 0) return false;
+    if ((stages & kInit2) && !resource::Resources_Init()) return false;
+    if ((stages & kInit8) && !debug::Debug_Init()) return false;
 
-    store<u32>(kRegistryEntry0, 0);
-    store<u32>(kRegistryEntry1, 0);
-    store<u32>(kRegistry, kRegistryEntry0);
-    store<u32>(kRegistry + 4, kRegistryEntry1);
+    global<be_u32>(kRegistryEntry0) = 0;
+    global<be_u32>(kRegistryEntry1) = 0;
+    be_u32* registry = host<be_u32>(kRegistry);
+    registry[0] = kRegistryEntry0;
+    registry[1] = kRegistryEntry1;
 
-    const f32 scale = field<f32>(g::config, 0x14);
-    const u32 state = system_state::get(ctx);
-    field<f32>(state, 12) = scale;
-    if (ref<u8>(kHeapCreated) != 0) return ret(ctx, 1u);
-    ref<u8>(kHeapCreated) = 1;
+    const be_f32 scale = *host<be_f32>(g::config + 0x14);  // copied as a word (lfs/stfs)
+    *host<be_f32>(system_state::get_native() + 12) = scale;
+    u8& created = global<u8>(kHeapCreated);
+    if (created != 0) return true;
+    created = 1;
 
     // Heap size from config +0x1A4: 0 means the default, negative means 0.
-    const s32 configured = static_cast<s32>(field<u32>(g::config, 0x1A4).get());
+    const s32 configured = *host<be_s32>(g::config + 0x1A4);
     const u32 size = configured == 0 ? kDefaultHeapSize : configured > 0 ? static_cast<u32>(configured) : 0;
-    const u32 mem = static_cast<u32>(call(ctx, fn::Mem_Alloc, {36, 0, 16}));
-    u32 heap = 0;
-    if (mem != 0) {
-        call(ctx, fn::Heap_Construct, {mem, size, 0, 0});
+    LinearHeap* heap = nullptr;
+    if (auto* mem = static_cast<LinearHeap*>(memory::Mem_Alloc(36, 0, 16))) {
+        memory::Heap_Construct(mem, size, 0, 0);
         heap = mem;
     }
-    field<u32>(system_state::get(ctx), 28) = heap;
-    ret(ctx, 1u);
+    *host<be_u32>(system_state::get_native() + 28) = guest(heap);
+    return true;
 }
+
+}  // namespace sly4::system
+
+NATIVE(005DB1D0, sly4::system::Main_InitSystems)

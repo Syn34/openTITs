@@ -1,23 +1,28 @@
 // cellSysutil wrappers. The game guards every callback call with one
 // lightweight mutex so the main loop and other threads don't race.
+#include "opentit/native.h"
 #include "../sly4.h"
 
-using namespace sly4;
+namespace sly4::system {
+using namespace opentit::native;
 
-// int Sysutil_CheckCallback()
 // Polled once per frame by the main loop and by loading screens.
-DECOMP(0056C184, Sysutil_CheckCallback) {
-    call(ctx, imp::sys_lwmutex_lock, {g::sysutil_mutex, kSysutilMutexTimeoutUs});
-    const u64 result = call(ctx, imp::cellSysutilCheckCallback);
-    call(ctx, imp::sys_lwmutex_unlock, {g::sysutil_mutex});
-    ctx.gpr[3] = result;
+s32 Sysutil_CheckCallback() {
+    call(imp::sys_lwmutex_lock, g::sysutil_mutex, kSysutilMutexTimeoutUs);
+    const s32 result = call<s32>(imp::cellSysutilCheckCallback);
+    call(imp::sys_lwmutex_unlock, g::sysutil_mutex);
+    return result;
 }
 
 // int Sysutil_RegisterCallback(int slot, CellSysutilCallback func, void* userdata)
-DECOMP(0056C1E8, Sysutil_RegisterCallback) {
-    const u64 slot = ctx.gpr[3], func = ctx.gpr[4], userdata = ctx.gpr[5];
-    call(ctx, imp::sys_lwmutex_lock, {g::sysutil_mutex, kSysutilMutexTimeoutUs});
-    const u64 result = call(ctx, imp::cellSysutilRegisterCallback, {slot, func, userdata});
-    call(ctx, imp::sys_lwmutex_unlock, {g::sysutil_mutex});
-    ctx.gpr[3] = result;
+s32 Sysutil_RegisterCallback(s32 slot, u32 func, u32 userdata) {
+    call(imp::sys_lwmutex_lock, g::sysutil_mutex, kSysutilMutexTimeoutUs);
+    const s32 result = call<s32>(imp::cellSysutilRegisterCallback, slot, func, userdata);
+    call(imp::sys_lwmutex_unlock, g::sysutil_mutex);
+    return result;
 }
+
+}  // namespace sly4::system
+
+NATIVE(0056C184, sly4::system::Sysutil_CheckCallback)
+NATIVE(0056C1E8, sly4::system::Sysutil_RegisterCallback)

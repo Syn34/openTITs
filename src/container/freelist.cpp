@@ -1,49 +1,44 @@
 // ApeTFreeList<T> block allocation.
 #include "container.h"
 
-using namespace sly4;
-using namespace sly4::container;
+namespace sly4::container {
 
-// void FreeList_AddBlock(FreeList* list, u32 flag)
-// Allocates a block of items-per-block items (16-byte header plus the
-// element size rounded up to 16 each), links it at the head of the list's
-// blocks and pushes every item onto the free list.
-DECOMP(005518FC, FreeList_AddBlock) {
-    const u32 list = arg<u32>(ctx, 0);
-    const u32 flag = arg<u32>(ctx, 1);
-
-    const u32 stride = (field<u32>(list, kFlElemSize) + 15) & ~15u;
-    const u32 n = field<u16>(list, kFlItemsPerBlock);
+// Allocates a block of items-per-block items, links it at the head of the
+// list's blocks and pushes every item onto the free list.
+void FreeList_AddBlock(FreeList* list, u32 flag) {
+    const u32 stride = (list->elem_size + 15) & ~15u;
+    const u32 n = list->items_per_block;
     const u32 bytes = stride * n + (n << 4);
-    const u32 heap = field<u32>(list, kFlHeap);
-    const u32 block = static_cast<u32>(
-        call_ptr(ctx, vfunc(heap, 0), {heap, bytes + kBlockHeader + kItemHeader, 0, 16}));
+    FreeBlock* block = vcall<FreeBlock*>(list->heap.get(), kAllocVfnAlloc, bytes + kBlockHeader + kItemHeader, 0u, 16u);
 
-    field<u32>(block, 8) = bytes + kBlockHeader;
-    field<u32>(block, 12) = flag;
-    field<u32>(block, 0) = 0;
-    field<u32>(block, 4) = field<u32>(list, kFlBlockHead);
-    const u32 tail = field<u32>(list, kFlBlockTail);
-    field<u32>(list, kFlBlockHead) = block;
-    const u32 blocks = field<u32>(list, kFlBlockCount);
-    if (tail == 0) field<u32>(list, kFlBlockTail) = block;
-    const u32 older = field<u32>(block, 4);
-    if (older != 0) field<u32>(older, 0) = block;
-    field<u32>(list, kFlBlockCount) = blocks + 1;
+    block->bytes = bytes + kBlockHeader;
+    block->flag = flag;
+    block->newer = nullptr;
+    block->older = list->block_head;
+    FreeBlock* tail = list->block_tail;
+    list->block_head = block;
+    const u32 blocks = list->block_count;
+    if (!tail) list->block_tail = block;
+    if (FreeBlock* older = block->older) older->newer = block;
+    list->block_count = blocks + 1;
 
-    u32 head = field<u32>(list, kFlFreeHead);
-    u32 item = block + kBlockHeader;
-    for (u32 i = 0; i < field<u16>(list, kFlItemsPerBlock); ++i) {
-        field<u32>(item, 4) = 0;
-        field<u32>(item, 0) = head;
-        const u32 free_tail = field<u32>(list, kFlFreeTail);
-        field<u32>(list, kFlFreeHead) = item;
-        head = item;
-        const u32 free_count = field<u32>(list, kFlFreeCount);
-        if (free_tail == 0) field<u32>(list, kFlFreeTail) = item;
-        const u32 next = field<u32>(item, 0);
-        if (next != 0) field<u32>(next, 4) = item;
-        field<u32>(list, kFlFreeCount) = free_count + 1;
+    FreeItem* head = list->free_head;
+    u32 item = guest(block) + kBlockHeader;
+    for (u32 i = 0; i < list->items_per_block; ++i) {
+        FreeItem* it = host<FreeItem>(item);
+        it->prev = nullptr;
+        it->next = head;
+        FreeItem* free_tail = list->free_tail;
+        list->free_head = it;
+        head = it;
+        const u32 free_count = list->free_count;
+        if (!free_tail) list->free_tail = it;
+        if (FreeItem* next = it->next) next->prev = it;
+        list->free_count = free_count + 1;
         item += stride + kItemHeader;
     }
 }
+
+}  // namespace sly4::container
+
+NATIVE(005518FC, sly4::container::FreeList_AddBlock)

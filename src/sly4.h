@@ -108,6 +108,8 @@ inline u32 get(PPUContext& ctx) {
     }
     return object;
 }
+// Native form of get(ctx): the object's guest address.
+inline u32 get_native();
 }  // namespace system_state
 
 // Bits of g::sysutil_flags.
@@ -136,4 +138,41 @@ static_assert(sizeof(MemoryInfo) == 8);
 
 constexpr u32 kSysutilMutexTimeoutUs = 100000;
 
+}  // namespace sly4
+
+// ---------------------------------------------------------------- native helpers (added for native code)
+#include "opentit/native.h"
+
+namespace sly4::lv2 {
+// LV2 system call `num` (the `sc` instruction) from native code; returns r3.
+// native.h has no wrapper for it yet.
+template <typename... A>
+inline u64 syscall(u32 num, A... args) {
+    return opentit::decomp::syscall(opentit::native::ctx(), num, {opentit::native::detail::to_gpr(args)...});
+}
+}  // namespace sly4::lv2
+
+namespace sly4 {
+// The object at guest address ea, also for ea == 0 (native::host<T> maps 0
+// to nullptr): for the original's unchecked accesses through a pointer that
+// may be null.
+template <typename T>
+inline T& gref(u32 ea) {
+    return *reinterpret_cast<T*>(opentit::mem::ptr(ea));
+}
+
+// system_state::get(ctx) for native code.
+inline u32 system_state::get_native() {
+    using namespace opentit::native;
+    u8& built = global<u8>(guard);
+    if (built == 0) {
+        *host<be_u32>(object + 20) = 0u;
+        *host<be_u32>(object + 24) = 0u;
+        global<u8>(object + 32) &= static_cast<u8>(~0xC0);
+        call(fn::memset, object + 92, 0u, 400u);
+        global<be_u32>(registry_slot) = object;
+        built = 1;
+    }
+    return object;
+}
 }  // namespace sly4

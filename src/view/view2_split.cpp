@@ -5,8 +5,10 @@
 #include <cmath>
 
 #include "../game/frame.h"
+#include "camera.h"
 
-using namespace sly4;
+namespace sly4::view {
+using namespace opentit::native;
 
 namespace {
 
@@ -28,11 +30,8 @@ constexpr u32 View_SetFov = 0x00520368;             // (View*, f32)
 constexpr u32 View_SetF338 = 0x00520338;            // (View*, f32) (name?)
 }  // namespace sfn
 
-f32 lane(u32 v, u32 i) { return load<f32>(v + 4 * i); }
-
 }  // namespace
 
-// void View_SubmitSplit(World* w, View* view, Camera* cam, u32 index, JobSlot* slot)
 // Nothing without a view and a camera. When the camera has a transform
 // for split `index`, the view gets its inverse (VMX: rotation rows
 // transposed, translation -t through them; the w lanes carry r1.y /
@@ -40,58 +39,50 @@ f32 lane(u32 v, u32 i) { return load<f32>(v + 4 * i); }
 // fov and 0.1 (View_SetF338). Then: Job_Begin(slot, view, 255), the
 // split's two colours, its two optional extras, the job markers cleared,
 // a marker pushed on the world's frame ring and the arena snapshot taken
-// into the job.
-// Returns 0x001285E8 in r3, as the original's last address computation
-// leaves it.
-DECOMP(0045A6F8, View_SubmitSplit) {
-    const u32 w = arg<u32>(ctx, 0), view = arg<u32>(ctx, 1), cam = arg<u32>(ctx, 2);
-    const u32 index = arg<u32>(ctx, 3), slot = arg<u32>(ctx, 4);
-    if (view == 0 || cam == 0) return;  // r3 = w
-    Stack frame(ctx, 144);  // mirrors the original's 256-byte frame
-    const u32 sp = frame.addr() - 112;
-
-    if (const u32 xf = static_cast<u32>(call(ctx, sfn::Camera_GetSplitXform, {cam, index})); xf != 0) {
-        const u32 m = xf + 112;
-        const u32 r0 = m, r1 = m + 16, r2 = m + 32, t = m + 48;
-        const f32 nt[3] = {0.0f - lane(t, 0), 0.0f - lane(t, 1), 0.0f - lane(t, 2)};  // vsubfp 0 - t
-        const f32 a[4] = {lane(r0, 0), lane(r1, 0), lane(r2, 0), lane(r1, 1)};  // vmrghw x2
-        const f32 b[4] = {lane(r0, 1), lane(r1, 1), lane(r2, 1), lane(r0, 0)};  // vperm mask 0
-        const f32 c[4] = {lane(r0, 2), lane(r1, 2), lane(r2, 2), lane(r0, 2)};  // vperm mask 1
-        const u32 out = sp + 112;
+// into the job. (The original leaves r3 = 0x001285E8; no caller reads it.)
+void View_SubmitSplit(void* w, void* view, void* cam, u32 index, be_u32* slot) {
+    if (!view || !cam) return;
+    GuestFrame frame(144);  // mirrors the original's 256-byte frame
+    u8* sp = frame.as<u8>(0) - 112;
+    if (const u32 xf = Camera_GetSplitXform(cam, index); xf != 0) {
+        const be_f32* m = &gref<be_f32>(xf + 112);
+        const be_f32 *r0 = m, *r1 = m + 4, *r2 = m + 8, *t = m + 12;
+        const f32 nt[3] = {0.0f - t[0], 0.0f - t[1], 0.0f - t[2]};  // vsubfp 0 - t
+        const f32 a[4] = {r0[0], r1[0], r2[0], r1[1]};  // vmrghw x2
+        const f32 b[4] = {r0[1], r1[1], r2[1], r0[0]};  // vperm mask 0
+        const f32 c[4] = {r0[2], r1[2], r2[2], r0[2]};  // vperm mask 1
+        be_f32* out = reinterpret_cast<be_f32*>(sp + 112);
         for (u32 j = 0; j < 4; ++j) {
             f32 p = std::fma(a[j], nt[0], 0.0f);
             p = std::fma(b[j], nt[1], p);
             p = std::fma(c[j], nt[2], p);
-            store<f32>(out + 4 * j, a[j]);
-            store<f32>(out + 16 + 4 * j, b[j]);
-            store<f32>(out + 32 + 4 * j, c[j]);
-            store<f32>(out + 48 + 4 * j, p);
+            out[j] = a[j];
+            out[4 + j] = b[j];
+            out[8 + j] = c[j];
+            out[12 + j] = p;
         }
-        call(ctx, sfn::View_SetMatrix, {view, out});
-        callf(ctx, sfn::View_SetFov, {view}, {static_cast<f64>(load<f32>(xf + 176))});
-        callf(ctx, sfn::View_SetF338, {view}, {static_cast<f64>(load<f32>(kSplitConsts + 32))});
+        call(sfn::View_SetMatrix, view, out);
+        call(sfn::View_SetFov, view, gref<be_f32>(xf + 176).get());
+        call(sfn::View_SetF338, view, global<be_f32>(kSplitConsts + 32).get());
     }
-
-    call(ctx, sfn::Job_Begin, {slot, view, 255});
-    call(ctx, sfn::Camera_GetSplitColourA, {sp + 184, cam, index});
-    for (u32 i = 0; i < 4; ++i) ref<u8>(sp + 176 + i) = ref<u8>(sp + 184 + i);
-    call(ctx, sfn::Camera_GetSplitColourB, {sp + 188, cam, index});
-    for (u32 i = 0; i < 4; ++i) ref<u8>(sp + 180 + i) = ref<u8>(sp + 188 + i);
-    call(ctx, sfn::World_SetViewColours, {w, view, sp + 176, sp + 180});
-    if (const u32 x = static_cast<u32>(call(ctx, sfn::Camera_GetSplitA, {cam, index})); x != 0)
-        call(ctx, sfn::SplitA_Apply, {x, 1});
-    if (const u32 x = static_cast<u32>(call(ctx, sfn::Camera_GetSplitB, {cam, index})); x != 0)
-        call(ctx, sfn::SplitB_Apply, {x, load<u32>(view + 516), 0});
-
-    store<u32>(wf::kClearedA, 0);
-    store<u32>(wf::kClearedB, 0);
-    const u32 world = load<u32>(wf::kCurrentWorld);
-    // FrameBuffer_PushMarker reads r5 (its value): the original leaves
-    // 0x00120000 there (the high half of the frame-ring offset), and the
-    // current world in r4.
-    call(ctx, wf::wfn::FrameBuffer_PushMarker, {load<u32>(load<u32>(world + wf::kWorldFrameRing) + 12), world, 0x00120000});
-    call(ctx, wf::wfn::Arena_Snapshot,
-         {load<u32>(load<u32>(wf::kFrameArenas) + 8), load<u32>(load<u32>(slot) + 24)});
-    store<u32>(load<u32>(wf::kCurrentWorld) + wf::kWorld1285E8, 0);
-    ctx.gpr[3] = wf::kWorld1285E8;
+    call(sfn::Job_Begin, slot, view, 255u);
+    Camera_GetSplitColourA(sp + 184, cam, index);
+    for (u32 i = 0; i < 4; ++i) sp[176 + i] = sp[184 + i];
+    Camera_GetSplitColourB(sp + 188, cam, index);
+    for (u32 i = 0; i < 4; ++i) sp[180 + i] = sp[188 + i];
+    View_DrawBackdrop(w, view, sp + 176, sp + 180);
+    if (const u32 x = Camera_GetSplitA(cam, index)) call(sfn::SplitA_Apply, x, 1u);
+    if (const u32 x = Camera_GetSplitB(cam, index)) call(sfn::SplitB_Apply, x, gref<be_u32>(guest(view) + 516).get(), 0u);
+    global<be_u32>(wf::kClearedA) = 0;
+    global<be_u32>(wf::kClearedB) = 0;
+    const u32 world = global<be_u32>(wf::kCurrentWorld);
+    wf::FrameBuffer_PushMarker(host<wf::FrameBuffer>(gref<be_u32>(gref<be_u32>(world + wf::kWorldFrameRing) + 12)), world,
+                               0x00120000);  // the value the original leaves in r5
+    wf::Arena_Snapshot(host<wf::Arena>(gref<be_u32>(global<be_u32>(wf::kFrameArenas) + 8)),
+                       host<wf::ArenaSnapshot>(gref<be_u32>(slot->get() + 24)));
+    gref<be_u32>(global<be_u32>(wf::kCurrentWorld) + wf::kWorld1285E8) = 0;
 }
+
+}  // namespace sly4::view
+
+NATIVE(0045A6F8, sly4::view::View_SubmitSplit)
