@@ -1456,7 +1456,7 @@
 000A1CEC AnimCmd_9F8D96A1_Construct           // decompiled: src/world/construct2_animscript.cpp (name?)
 00766C44 Registry_Find                     // (map 0x010686A8, const u32* key) -> value slot or &null; decompiled: src/world/hevent2_a.cpp (name?)
 00799474 Table_Find                        // same code, default comparator 0x00F3B118; decompiled: src/world/hevent2_a.cpp (name?)
-0046B5F8 World_AddTimedCallback          // (world, 12, fn 0x00F32400, o, o) (already named); decompiled: src/world/hevent2_a.cpp
+0046B5F8 World_AddTimedCallback           // reads r3..r7 only (world, kind, fn, data, 0); decompiled: src/world/hevent2_a.cpp
 00509090 Material_CopyFrom                 // (dst, src): slots, scalars, value array, AglMaterialAnim; decompiled: src/world/hevent2_b.cpp (name?)
 004FB56C Trophy_Has                        // (Trophy*, s32 i) -> bool: +8 ready, +168 bitset; decompiled: src/world/hevent2_a.cpp
 000D5F58 Xml_Load0D5F58                    // (XmlDoc*, path, u8) -> u32; mutually recursive with 000D6398 (name?)
@@ -7697,7 +7697,7 @@
 00566318 Buffer_Sync566318                    // (Buffer*, u32 size): realloc with the memory system's lazy init inlined; not done (memory manager internals)
 00368870 Obj_SetMode368870                    // (Object*, -, u8 flag, Node*; f32 t): +532 gated; mode 2/3 -> Speaker_SayId4A5C90 / Effect_SetHash4CF988 bits, 0/4 -> +204 node, 0x00368770; decompiled: src/world/hevent21_a.cpp (name?)
 00108480 Obj_Refresh108480                  // void (Obj*): +360..504 from link->216+1140 (link o->20 flag 0x8 @192) or table 0x010334D0 (stride 76); +12 = -1, +16 |= 0x1F, +208 bit 0x20000000; decompiled: src/obj/mid16_a.cpp
-000FE828 Target_Update0FE828                  // (Target*) (name?)
+000FE828 Target_Update0FE828              // void f(Target*): collision group of +16 pushed to entities +20/+24/+272/+1028; decompiled: src/obj/mid31_c.cpp
 004B20B8 Clip_Load4B20B8                      // (Owner*, XmlDoc*, path) -> 1: "AnimSet" children by "Name" hash into the +72 clip map (48-byte clips, 0x004B1708 init); decompiled: src/world/hevent21_a.cpp (name?)
 00342A30 Obj_Start342A30                      // (Obj*): Havok rigid body (stack cinfo, 944-byte body -> +4, +80..+88 pos), 48-byte box shape, 544-byte shape, Hk_AddEntity92F2A8, references released; decompiled: src/world/hevent22_d.cpp (name?)
 002DDAB0 Session_Stop2DDAB0                   // (Session*): drains user block 0's object queue (+80 / u16 +88): kind 4 handle notify, vt +28 / +4; +100 bit 0x40000000 around it; decompiled: src/world/hevent21_a.cpp (name?)
@@ -8118,7 +8118,7 @@
 0093FAF8 Hk_CinfoSetMass93FAF8                // (RigidBodyCinfo*; f32) (Havok; name?)
 00933DF8 Hk_RigidBodyCtor933DF8               // (RigidBody*, const Cinfo*, 0x0132DBDC) (Havok; name?)
 00899720 Hk_BoxShapeCtor899720                // (BoxShape*, const Vector4* halfExtents; f32 radius) (Havok; name?)
-0091FB50 Hk_ShapeCinfoCtor91FB50              // (ShapeCinfo*) (Havok; name?)
+0091FB50 Hk_RigidBodyCinfoCtor91FB50      // (cinfo*): used as the rigid-body cinfo constructor before Hk_CinfoFromBody91D208 (symbols.txt calls it Hk_ShapeCinfoCtor91FB50)
 0091E100 Hk_RigidBodyCtor_0091E100        // (hkpRigidBody*, const hkpRigidBodyCinfo*) (currently Hk_ShapeCtor91E100; 544-byte object) (name?)
 008807E8 Hk_BodyAttach8807E8                  // (body +120 object) (Havok; name?)
 0094059C Hk_WorldLock94059C                   // (*0x00F64C94) (Havok; name?)
@@ -11062,7 +11062,7 @@
 00250AF0 BoneCtl_SourceMatrix             // (BoneCtl* ctl, f32 m[4][4], u32 k, Obj* src) -> bool: source matrix/position, velocity lead (block k +116/+120), ground snap ray (+124/+128, flag +144 0x40000000); decompiled: src/obj/big7_bone.cpp
 00011410 Shape_InitBody                   // (Shape* out, System*, hkpRigidBody*, -, u32, u16): body transform (+ transform shapes 10/11/14), local AABB half extents x2, world AABB centre -> Shape_Init110EC; decompiled: src/obj/big7_shape.cpp
 0049FFE0 Obj_AimMatrix                    // (Obj*, f32 out[4][4], AttachMat*, s32 bone, WorldObj*, pos[3], aim[3], quat[4]): identity, else quat@pos x base matrix; aim offset in the look-at-camera frame added; decompiled: src/obj/big7_aim.cpp
-002CE360 Volume_UpdateAabb                // (Volume* v, u8 grounded[4]) -> r3: capsule-like corner points -> hkpAabbPhantom::setAabb; four rays (all-hits collector) -> grounded[i] from entity property 0x418F096F; decompiled: src/obj/big7_aabb.cpp
+002CE360 Comp_StatusBytes_002CE360        // void f(comp, u8 out[4]) (callee, not decompiled); decompiled: src/obj/big7_aabb.cpp
 001B5EB0 Probe_CastRay                    // (Obj* self, hkpWorld*, dir[3], from[3], f1 len, -, f32* near, f32* far, Obj** obj) -> bool: all-hits ray, two-ended scan of sorted hits, solid kinds 1/3/27/28, object (prop 0x91C7CF5B) vfunc +32 block state; decompiled: src/obj/big7_probe.cpp
 0092E2E8 HkWorld_CastRay92E2E8            // (hkpWorld*, const hkpWorldRayCastInput*, hkpWorldRayCastOutput*) (Havok) (name?)
 00925408 HkPhantom_CastRay925408          // (hkpAabbPhantom*, const hkpWorldRayCastInput*, hkpRayHitCollector*) (Havok) (name?)
@@ -11123,7 +11123,7 @@
 000E01C0 PhysObjBase_Init                 // (PhysObj* o, const Tmpl* t) -> u32: Obj base init 0x000D3578, vtable 0x00B126B8, +344..+376 from tmpl, EffectDef_Find(t+192), Obj_SetShadow0E0000(o, t+188) (name?); decompiled: src/obj/big9_phys.cpp
 000E2FF0 PhysObj_SetMode                  // (PhysObj* o, s32 mode) -> u32: mode 3/4 remove bodies from hkpWorld + Volume_Notify; 1/7 add bodies (group +412), attach hook, box volumes; vfunc +88; +392 = bit0 | mode<<1 (name?); decompiled: src/obj/big9_phys.cpp
 002CDA40 Mover_NearestDir                 // (Mover*, const f32 v[2]) -> s32: index 0..7 of the nearest of 8 static directions (lazy statics 0x01068130/0x01068150), -1 below *0x0105AD48 (name?); decompiled: src/obj/big9_mover.cpp
-002CDD68 Mover_ProbeDir                   // (Mover*, u8 axis, -, -, f32 out[3]|0, a; f1 min, f2 max) -> bool: ray along an owner axis shortens max, then Obj_Transform2CCFF0 steps of 0.5, 3 hits -> true (name?); decompiled: src/obj/big9_mover.cpp
+002CDD68 Comp_TryReact_002CDD68           // bool f(comp, kind, -, -, 0, 0; f1, f2) (reads r3,r4,r7,r8,f1,f2; not r5/r6) (callee, not decompiled); decompiled: src/obj/big9_mover.cpp
 002CEB80 Mover_RayHit                     // (Mover*; f1 dist) -> bool: one all-hits ray from pos+0.5*up along 0x01164B90 * dist hits an entity (name?); decompiled: src/obj/big9_mover.cpp
 00053A80 Game_SetPhase                    // (GameObj* o, s32 phase) -> r3: +308 phase, per-phase vfunc +220 state, effects +1744/+1748, items +5084.., camera target +6216, +60->+348 clamp, "MsDecibel", coach reset (name?); decompiled: src/obj/big9_game.cpp
 0040DBA0 Flyer_Respawn                    // (Flyer* o, const SpawnDef* d, Cfg* cfg) -> r3: random spline of 3 (RNG 0x01164888), spawn params vt 0x00B12260 "Pterodactyl", profile vfunc +28 spawn at +76 (name?); decompiled: src/obj/big9_spawn.cpp
@@ -11708,14 +11708,10 @@
 0055578C String_Alloc_0055578C            // (n) -> char* (reads r3 only; used before String_CopyN) (name?)
 0030386C XmlItem_Read30386C               // (item, child) for the 0xD9ABF25D list of 0030743C (118; not decompiled)
 0016A828 XmlDef_Read16A828                // (a0, c, x, tmpl, o) -> 1: Damage_Read0C3910, empty names -> "", o+124 "colObjName" attr, 14 floats o+128.., hash o+188 (tmpl flag 0x400 / body tmpl+244), byte o+24 = 1; decompiled: src/obj/mid13_rd.cpp
-0016A448 XmlDef_FromRec16A448             // (p, rec) ctor of 0016ADC4
 00203718 XmlDef_Read203718                // (a0, c, x, tmpl, o): Damage_Read0C3910, enum 0x0027873A (6 hashes 0x00AD2C54) o+124, s32 o+128, 8 floats, 2 hashes (tmpl flag 0x1000 / body tmpl+200); decompiled: src/obj/mid13_rd.cpp
 001668B4 XmlDef_Read1668B4                // reader of 00167080
-001664C8 XmlDef_FromRec1664C8             // (p, rec) ctor of 00167080
 0017CD54 XmlDef_Read17CD54                // reader of 0017D640
-0017C918 XmlDef_FromRec17C918             // (p, rec) ctor of 0017D640
 001B3BDC XmlDef_Read1B3BDC                // reader of 001B4394
-001B37E8 XmlDef_FromRec1B37E8             // (p, rec) ctor of 001B4394
 002266C0 Obj_Init2266C0                   // (A) (reads r3 only)
 0022DFD8 XmlDef_Read22DFD8                // reader of 0022F630
 0022D44C XmlDef_FromRec22D44C             // (p, B) ctor of 0022F630
@@ -12645,7 +12641,6 @@
 003CC068 Carry_Update_003CC068          // void (Carry*): carried item on the carrier's bone 0x7E95647C, or put down (mode +88); decompiled: src/obj/vmx5_obj.cpp
 00436A90 Sweep_HitObjects_00436A90      // u32 (Sweep*): phantom +28 vt[64] cast s+96 -> s+112, unlisted game objects get vt[352](g, 0, 0; g->+344); decompiled: src/obj/vmx5_hk.cpp
 00899B24 HkCapsuleShape_Ctor            // (hkpCapsuleShape*, const hkVector4* a, const hkVector4* b; f1 radius) (name?)
-002BB168 Hud_Track_002BB168             // (T*, const f32 d[3]) (name?)
 002BAC40 Hud_Track_002BAC40             // (T*, const f32 d[3]; f1 scale) (name?)
 00F1DE58 VtRayHitCollector                // ray hit collector vtable (48-byte hits, inline 8) (00103AC0; also HkArray48_Dtor)
 
@@ -13346,7 +13341,6 @@
 000F7E74 Reward_SpawnAt_000F7E74         // (const SpawnFrame* f, const RewardInfo* info, u32 kind, PtrVector* out) (name?); called by 00268300
 0026621C Stage_Complete_0026621C         // (Stage*, Obj* owner, x) (reads r5) (name?); called by 00268300
 003055E8 Obj_AttachCam_003055E8          // (x, u8, -, u8; f32) (reads r3 r4 r6 f1) (name?); called by 0030FD68
-00304298 Mega_PostReset_00304298         // (Obj*) (name?); called by 0030FD68
 0040E220 Sumo_RoundEnd_0040E220          // (Game*) (name?); called by 0040EA08
 0040E400 Sumo_SpawnerState3_0040E400     // (Spawner*; f1) (name?); called by 0040EA08
 0040E6E0 Sumo_SpawnerState1_0040E6E0     // (Spawner*; f1) (name?); called by 0040EA08
@@ -13576,7 +13570,7 @@
 011DE288 g_FxSetCacheVal                  // u32: the section effect set's last found record +8 (003260F0)
 0020DFD8 Obj_UpdateTeamBase_0020DFD8      // u32 (T* o; f32 dt): prune members +372/+366 and pending +396/+390 (object +172 bit 0x40000), body add + bounds centre to +144, sync members +344/+352 with the body's overlap query (vfn[288] leave / vfn[284] enter), then Obj_UpdateBase; decompiled: src/obj/big28_team.cpp
 0020DC6C Team_Refresh_0020DC6C            // (T*) (name?)
-002CEF30 Ledge_AlignToProbe_002CEF30      // u32 (State* o; f32 dt): owner o->8 (vfn[32] == 7) frame object vfn[64]()->vfn[8](): Ledge_Probe from the owner's row 3, rows = identity, row 2 turned toward -normal by dt*pi, row 0/1 from UpVec, row 3 = pos moved along normal; copied to o+128..; 1 / 0; decompiled: src/obj/big28_ledge.cpp
+002CEF30 Comp_HitTimer_002CEF30           // bool f(comp; f1 t): hit timer update used by the kind-2 hit handlers (callee, not decompiled); decompiled: src/obj/big28_ledge.cpp
 00F1DE30 VtOverlapCollector               // overlap result collector vtable (16-byte entries, inline 16) (0020DFD8)
 00B13B38 VtCamTarget112                   // 112-byte camera target (00054880)
 00B0DADC VtCamEventNear                   // stack camera event posted via camera vfn[344] (00054880); 00B0DABC stored after
@@ -13728,3 +13722,29 @@
 000E5EF0 Obj_SyncBodies_000E5EF0          // void f(Obj* o, const Mtx* m): m's x/y/z rows to o+96; per 48-byte slot of o->+388 with a body (+28, its +8 set): Obj_AttachMatrix, and Hk_SetTransform + Hk_Activate when the body's +240 transform differs; decompiled: src/obj/big30_bodysync.cpp
 00333BC8 Section_SetLinkMode_00333BC8     // void f(Section* o, s32 mode, u8 force): adds / removes the keys of lists +2652 / +2632 and the single key +2672 in the holder's 128-byte records (modes 0..3); +2676 = mode; decompiled: src/obj/big30_links.cpp
 00390DC8 KListLib_Add_00390DC8            // KList* f(KListLib* lib, XmlNode* x, u32* handle): rejects a duplicate "Name" hash, takes a handle-pool entry (inlined insert), Knowledge_Load(k, x), appends {key, k} to the name map +36 when flagged; decompiled: src/obj/big30_klist.cpp
+
+# Game code medium sweep part 31
+001C78C8 SplineNode_Attach_001C78C8       // bool f(o; f1 dt): Obj_Check_001AEA50 gate, resolves node +564 (component / kind-13 node / spline map), object +556, slot matrices to vslot 84; decompiled: src/obj/mid31_a.cpp
+001EE0CC Obj_Teardown_001EE0CC            // u32 f(o, u8 on): with on releases children/effects/skeleton/list +640, tail Obj_SetRagdoll_000E4544(o, on); decompiled: src/obj/mid31_a.cpp
+000E6D18 Volume_Reshape_000E6D18          // void f(o): box volumes of list +388 re-shaped (Volume_Notify112D8 first); decompiled: src/obj/mid31_a.cpp
+000E7180 Volume_Rebuild_000E7180          // void f(o): the same without the notify; decompiled: src/obj/mid31_a.cpp
+000D8954 Obj_AnimMatrixV_000D8954         // bool f(o): vslot 208 matrix times +96 to vslot 84 + Obj_SetMatrixD87CC, anim-done test; decompiled: src/obj/mid31_a.cpp
+000E7810 Obj_AnimMatrix_000E7810          // bool f(o): the same writing the product into +96; decompiled: src/obj/mid31_a.cpp
+001664C8 PhysDefA_Construct_001664C8      // void f(o, def): rigid-body object ctor (vt 0x00B14360, entity +268); decompiled: src/obj/mid31_a.cpp
+0017C918 PhysDefB_Construct_0017C918      // void f(o, def): rigid-body object ctor (vt 0x00B14B50, entity +288); decompiled: src/obj/mid31_a.cpp
+001B37E8 SplineBody_Construct_001B37E8    // void f(o, def): keyframed spline body ctor (vt 0x00B16058, point vector +192, entity +228); decompiled: src/obj/mid31_a.cpp
+0016A448 DynBody_Construct_0016A448       // void f(o, def): dynamic body ctor (vt 0x00B14590), new 544-byte hkpRigidBody from the named entity's cinfo into +244; decompiled: src/obj/mid31_a.cpp
+00164210 HitMsg_Grab_00164210             // bool f(o, msg): kind-2 hit handler (grab state bits on the owner record); decompiled: src/obj/mid31_b.cpp
+001644C8 HitMsg_Flash_001644C8            // bool f(o, msg): kind-2 hit handler (owner reset, colour flash via vslot 120); decompiled: src/obj/mid31_b.cpp
+00160A80 HitMsg_React_00160A80            // bool f(o, msg): kind-2 hit handler (reaction anim 0xB8E15655 / 0xB8E1565B / 0xC0424C88); decompiled: src/obj/mid31_b.cpp
+001857A0 Obj_TakeHit_001857A0             // bool f(o, -, src, x; f1 dmg): damage with player health sharing (+344 / +348); decompiled: src/obj/mid31_b.cpp
+00192F00 Obj_TakeHitShielded_00192F00     // bool f(o, -, src, x; f1 dmg): damage unless a part shield is up; death drops the body +388; decompiled: src/obj/mid31_b.cpp
+00229738 Obj_TakeHitTimed_00229738        // bool f(o, -, src, x; f1 dmg): damage with cooldown +380, kill path, World_Query482D14 event; decompiled: src/obj/mid31_b.cpp
+0023CC2C Player_ResetAction_0023CC2C      // void f(o): grab/partner/emitter reset, tail Obj_RestartAnim_00229B30; decompiled: src/obj/mid31_c.cpp
+002BB168 HudMarker_Update_002BB168        // void f(hud, const f32 pos[3]): marker show/hide by Obj_OffScreen_000DADA8, position + RGBA; decompiled: src/obj/mid31_c.cpp
+0020EF60 Area_Remove_0020EF60             // void f(area, obj): obj leaves maps +364/+388 and member vector +344; decompiled: src/obj/mid31_c.cpp
+002CFF18 Contact_MarkListed_002CFF18      // void f(o, contact): sets contact +32 when the other side's owner (prop 0x91C7CF5B) is in o's list +352; decompiled: src/obj/mid31_c.cpp
+002FE230 EffectSlot_Bind_002FE230         // bool f(bind, slot): binds effect +44 to a named owner slot (+540/+612) once; decompiled: src/obj/mid31_d.cpp
+00304298 Obj_FlushPending_00304298        // void f(o): controllers +752/+764 vslot 28, pending +896 pushed, vector +900 popped (vslot 40); decompiled: src/obj/mid31_d.cpp
+002428E0 PowerMeter_Tick_002428E0         // void f(o; f1 dt): energy meter state (+556/+560/+564, player energy +108); decompiled: src/obj/mid31_d.cpp
+0091D694 Hk_SetF1Field_0091D694           // (entity; f1) reads f1 (called with 255 by 001B37E8) (callee, not decompiled)
