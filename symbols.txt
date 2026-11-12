@@ -11488,7 +11488,7 @@
 00930B70 Hk_UpdateEntityGroup             // (world list, e, 0, 1) (name?); called by 0x000E9728
 004A9270 Hk_ShapeInit                     // (p, a, b, c, -, -, -, -, stack 9th; f1..f4) (name?); called by 0x004AC718
 00371BA8 Obj_TalkBegin                    // (o, 0) (name?); called by 0x003735C8
-00371360 Obj_TalkResume                   // (o) (name?); called by 0x003735C8
+00371360 Obj_TalkResume                   // void (T* o): ends the current talk line (o +356 of script o->+8): +160 state 16/18, stops +344 and plays "Default_Shutdown" on +340, partner handles script +156 / +160 (names o +362 / +490 or Obj_NotifyA362F1C), closing text (0x8DD33161 or tables 0x00ADC668/80/98) via Speaker_Say3514AC + o->+360 bit 0x04000000, o->+24 vt +40 (1, 1), line sub-entries vt +88, +168 = 0; behaves like a shutdown (name kept from symbols.txt; Obj_TalkShutdown?); decompiled: src/obj/big31_talk.cpp
 000E02F8 Obj_SetRagdollBase             // (o, u8 full): full: o's hit-queue records (0x01022100) swap-removed (lvx/stvx), effect +356 ended (0x879D1B7A / component 0x0027469E), +364 = 0; then Obj_ShutdownBase_000D74C0; decompiled: src/obj/vmx1_hit.cpp
 000F6A68 Obj_ApplyKindEntry               // (a, entry, b, d, e, f) (name?); called by 0x000F8058
 
@@ -13470,7 +13470,6 @@
 0030A900 Obj_DropMarker_0030A900          // u32 (T* o, const Src*, const f32 pos[3], u8 separate, u8 alt): 144-byte ground marker (separation, ray cast, SmallAlloc) pushed on o+52; decompiled: src/obj/big27_marker.cpp
 009265D4 Hk_ColliderCtor_009265D4         // (body, hkpShape*, const hkTransform* rows, u32 filter) (name?)
 003087C0 Marker_Init_003087C0             // (Marker*, const f32 pos[3]) (name?)
-003081C8 Marker_SetState_003081C8         // (Marker*, u32 state) (name?)
 0106A3FC g_MarkerId                       // u32 running marker id (0030A900)
 0105B8C0 g_ColliderFlags                  // +72: bit 1 colliders on, bits 2 / 4 filter options (00278830)
 011DF31C g_HkHeap                         // Havok heap allocator object; vfn[20](p, bytes) frees (00278000)
@@ -13557,7 +13556,6 @@
 00170418 Obj_TakeDamage_00170418             // damage callback: health share with player, Obj_ApplyDamage; decompiled: src/obj/mid29_d.cpp
 0014CB70 Obj_OwnerMsg_0014CB70               // message 2 handler: owner flags, def direction, o->432 = 2; decompiled: src/obj/mid29_d.cpp
 0005FE40 Obj_PushCamTarget_0005FE40          // camera target push (vtable 0x00B13B38, camera +816 matrix); decompiled: src/obj/mid29_d.cpp
-000F0298 Obj_AngleTo_000F0298                // (o, f32* out (preset 360), f32 p[3], f32 base[3]) -> angle; guess from use
 0039D32C Volume_Activate39D32C           // (Volume*, u8 on, u8 force, u8 quiet): bit 0x40000000 of +356, effect hashes, Probe_SetOn39D1D4 / Probe_Prepare39D054; decompiled: src/obj/mid30_a.cpp
 
 # Game code big sweep part 28
@@ -13748,3 +13746,11 @@
 00304298 Obj_FlushPending_00304298        // void f(o): controllers +752/+764 vslot 28, pending +896 pushed, vector +900 popped (vslot 40); decompiled: src/obj/mid31_d.cpp
 002428E0 PowerMeter_Tick_002428E0         // void f(o; f1 dt): energy meter state (+556/+560/+564, player energy +108); decompiled: src/obj/mid31_d.cpp
 0091D694 Hk_SetF1Field_0091D694           // (entity; f1) reads f1 (called with 255 by 001B37E8) (callee, not decompiled)
+
+# Game code big sweep part 31
+000F0298 Obj_GroundSlope_000F0298         // void (-, f32* out, const f32 p[3], const f32 up[3]): five Havok rays (p + 2 * offset_k along 0x01164B90 * 5), first accepted hit points; with all five, *out = acosf(min dot(tri normal, up)) * 57.29578 (degrees); was Obj_AngleTo_000F0298; decompiled: src/obj/big31_slope.cpp
+002947F8 BoneCtl_RayTarget_002947F8       // bool (Ctl* c, f32 out[16]): BoneCtl_Target matrix, ray from row 3 along row 2 * 40, out = identity rotation at the hit (r3 1) or the ray end (r3 0); hits owned by others than c->+8 skipped; decompiled: src/obj/big31_bonray.cpp
+00235130 Ray_ClearBetween_00235130        // bool (const f32 a[3], const f32 b[3], Obj* x, Obj* y): Havok ray a -> b (unsorted hits), 1 unless a hit not owned by x / y (types 5, 6, >= 16 ignored); decompiled: src/obj/big31_clear.cpp
+001E1090 Obj_CastFindTarget_001E1090      // Obj* (Obj* o, Caster* c, const Mtx* m, -, -, u8 strict; f32 t0, f32 t1): c->vt[64] linear cast along m row 2 (48-byte hit collector 0x00F1DE58), first owner x != o with +192 bit 2 (strict: not 0x2000), vt +100 differing, vt +320 == 0, vt +328 != 0; decompiled: src/obj/big31_shcast.cpp
+003081C8 Marker_ChangeState_003081C8      // void (Marker* m, u32 state): +88 = state; 1 / 3 swap the shown object (Obj_SpawnToward307F70), 2 hide, 4 ground-snap ray + spawn 0x5F9739CF debris (0x00307CC8) into owner +876 then hide (symbols.txt has Marker_SetState_003081C8); decompiled: src/obj/big31_marker.cpp
+00307CC8 Obj_SpawnHashMtx307CC8           // Obj* (Owner*, u32 hash, const Mat34*) (name?, from Marker_ChangeState_003081C8)
