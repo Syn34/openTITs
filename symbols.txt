@@ -5476,8 +5476,6 @@
 00A56E68 Pose_SetReferenceA56E68              // (Pose* or 0) (name?)
 007606C0 Set_FindLayer7606C0                  // (Set*, u32 key, Set** out) -> Layer*: +8 map (SortedMap_Find75E570), else parent +0 (recursive); decompiled: src/world/hevent19_g.cpp (name?)
 004B6760 Layer_Query4B6760                    // (Set*, Layer*, Desc*, Info*, s32): type table 0x00F65F88 query OPD, or parent (-1) then +4 -> desc +32 / +72; decompiled: src/world/hevent19_g.cpp (name?)
-00276EC0 Track_Start276EC0                    // (Animator*, ...; f32 x4; stack args 9 / 11) -> Track* (name?)
-00277210 Track_Blend277210                    // (Animator*, ...; f32 x5) (name?)
 00276BA4 Track_Sync276BA4                     // (Animator*, u32 key): stop done tracks (state 2, tag = slot +20, +12 <= 0) of the slot's def; decompiled: src/world/hevent19_i.cpp (name?)
 00A571A8 SkelInst_TransformA571A8             // (SkelInst*, s32 bone) -> 48-byte transform (name?)
 007D1758 Quat_RotateVec7D1758                 // (f32 out[4], const f32 quat[4], const f32 v[4]) (name?)
@@ -13808,9 +13806,27 @@
 003EE968 SplineObj_Setup_003EE968          // (n, cfg): sets up the 192-byte object made by 0x003F3F50 (name?)
 0020A688 Obj20A688_Ctor                    // (m, q): ctor of the 448-byte object of 0x0020A9C8 (name?)
 002300D0 Obj_ResetSoundsTail_002300D0      // (o): called after the emitter reset of 0x002307C8 (name?)
-002EA92C Table_Prepare_002EA92C            // (o) -> bool: before the byte-swap in 0x002EB070 (name?)
-002EA728 Table_Finish_002EA728             // (o, bytes, u64 base) -> bool (name?)
 00343CF4 SkelSet_AddResource_00343CF4      // (set, cur, res, size, 0) -> bool (name?)
 00268CC8 Group_SetFlag_00268CC8            // (g, bool) (name?)
 006320AC NavQuery_FindPath_006320AC        // (query, worldQuery, req*) (name?)
 00ABDE44 cellNetCtlGetInfo                 // import stub (as obj33 uses it)
+
+# Game code medium sweep part 32
+002EA728 FtdReader_StartRead_002EA728     // bool f(Reader* o, u32 size, u64 pos): grow buffer +40/+44, +100 = Fs_ReadAsync(+96, buf, size, pos, 1, 0, 0); error "Creation of async read op of FTD header failed" (state 8); decompiled: src/obj/mid32_a.cpp
+002EA92C FtdReader_FinishRead_002EA92C    // bool f(Reader* o): FsOp_Sync(+100); error / short-read messages (state 8) or FsOp destroyed+freed, +100 = 0, r3 = 1; decompiled: src/obj/mid32_a.cpp
+002EAC2C FtdReader_NextRecord_002EAC2C    // void f(Reader* o) (state 5): children with the record id get Begin (vslot 12) / vslot 8(c, 0); next record read or +104 = -1, state 6, load finished; decompiled: src/obj/mid32_a.cpp
+002EAE24 FtdReader_LoadIndex_002EAE24     // void f(Reader* o) (state 4): byte-swapped sizes into records +76, qsort(+76, u16 +84, 16, 0x00F360B8), buffer resized to the largest, records read from 0 (state 5); decompiled: src/obj/mid32_a.cpp
+002EB234 FtdReader_ReadHeader_002EB234    // void f(Reader* o) (state 2): 6 header words byte-swapped; version 1: +72/+56/+64 and the record table read (state 3), else "%s contains an unknown version"; decompiled: src/obj/mid32_a.cpp
+002EB4EC FtdReader_OnOpen_002EB4EC        // void f(Reader* o) (state 1): open FsOp checked, +96 = handle, FsOp + path +36 freed, 24-byte header read (state 2); decompiled: src/obj/mid32_a.cpp
+002EB7BC FtdReader_Update_002EB7BC        // void f(Reader* o; f32 dt, u8 block) (vslot 8): load state machine (states 1-6 -> 7), blocking loops until 0/7/8; decompiled: src/obj/mid32_a.cpp
+002EBAF8 FtdReader_Open_002EBAF8          // void f(Reader* o, u8 block): state 0: Fios_OpenAsync(path, "rb", 1, 0, 0), state 1, flags +28, child +20 Begin, Update (vslot 8, f1 = 0); decompiled: src/obj/mid32_a.cpp
+002704C0 Targets_CollectHits_002704C0     // u32 f(Query* o, Eye* a1, Vec* hits): table 0x01067C00; hit collidables resolved to owners (prop 0x91C7CF5B), considered (0, 1) or cleared; kind 1 adds slot objects; r3 = Targets_Sync26FAD4; decompiled: src/obj/mid32_b.cpp
+002708E8 Targets_CollectTagged_002708E8   // u32 f(Query* o, Eye* a1, Vec* list): table 0x01067D08; first 80-byte entry with (+68)->+28 & 0x1F < 16, root prop 0xA734004D == 0x7A30D7E3 -> owner considered (0, 0); decompiled: src/obj/mid32_b.cpp
+00270D78 Targets_CollectPlayers_00270D78  // u32 f(Query* o, Eye* a1): table 0x01067E10; active world players (+4216 + 0x20C80 i) considered (0, 0), kind 1 adds slot objects; decompiled: src/obj/mid32_b.cpp
+002E6320 Mask_Recount_002E6320            // u32 f(Session* o, Player* local): progress-bit popcounts vs owned counts, bit 0x40 of rec+496[4*slot], trophy 0xA2474384, tail Players_CountTrophy_002E619C; decompiled: src/obj/mid32_c.cpp
+002E66F4 Treasure_Register_002E66F4       // void f(Session* o, Spawner* sp, Obj* by): treasure sp->+220 bit into rec+80+124[slot] (owned table 0x01068184), recount, vslot 28(t, 0); decompiled: src/obj/mid32_c.cpp
+002E58C8 Mask_Collect_002E58C8            // void f(Session* o, Spawner* sp): mask bit into rec+80+100[slot] (map 0x0106819C), o->+60 = sum of Player_Count2DAC24, trophies 0xA35F4F24 / 0x5CDF8715, first-mask notice; decompiled: src/obj/mid32_c.cpp
+00276EC0 Actor_Say_00276EC0               // bool f(Actor* o, text, key, u8 rev, -, -, -, wsel, line(stk), -, voice(stk); f1..f4): stop voices of key, Speaker_Say350958 / Speaker_Say3514AC, sign = (len - blend) / dur; decompiled: src/obj/mid32_c.cpp
+00277210 Actor_SayPair_00277210           // bool f(Actor* o, text1, text2, -, -, -, key1, key2, u8 rev, -, -, wsel, voice1, voice2 (stk); f1..f5): two synced lines, node2 sign = len2 / (weight * len1); decompiled: src/obj/mid32_c.cpp
+00F360B8 FtdRecord_CompareOpd             // OPD of the 16-byte FTD record compare used with qsort by 002EAE24 (data)
+0105AE90 g_SpeechFixedRate                // u8: when set, Actor_Say uses the fixed rate constants 0x00276EB8 / 0x00277208 (data, name?)
