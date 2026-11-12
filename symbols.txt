@@ -13481,7 +13481,6 @@
 003A9EF8 Obj_LaunchHeld_003A9EF8          // u32 (T* o): detach o->+368 from o->+372, aim it, linear + random angular velocity, push {body, piece}; decompiled: src/obj/big27_launch.cpp
 0030A900 Obj_DropMarker_0030A900          // u32 (T* o, const Src*, const f32 pos[3], u8 separate, u8 alt): 144-byte ground marker (separation, ray cast, SmallAlloc) pushed on o+52; decompiled: src/obj/big27_marker.cpp
 009265D4 Hk_ColliderCtor_009265D4         // (body, hkpShape*, const hkTransform* rows, u32 filter) (name?)
-0030BE48 AnimCtl_Play_0030BE48            // (player, anim, -, -, const f32* params, const Mat44* at, u8; f1, f2): reads r3 r4 r7 r8 r9 f1 f2 (name?)
 003087C0 Marker_Init_003087C0             // (Marker*, const f32 pos[3]) (name?)
 003081C8 Marker_SetState_003081C8         // (Marker*, u32 state) (name?)
 0106A3FC g_MarkerId                       // u32 running marker id (0030A900)
@@ -13572,7 +13571,6 @@
 0005FE40 Obj_PushCamTarget_0005FE40          // camera target push (vtable 0x00B13B38, camera +816 matrix); decompiled: src/obj/mid29_d.cpp
 000F0298 Obj_AngleTo_000F0298                // (o, f32* out (preset 360), f32 p[3], f32 base[3]) -> angle; guess from use
 0039D32C Volume_Activate39D32C               // (item, u8 arg, 1, u8) third volume kind's refresh; guess from use
-00454E88 List_FlushPendingAll_00454E88       // sibling of List_FlushPending_00454DBC (u8 c->+20 clear); guess
 
 # Game code big sweep part 28
 00103AC0 Part_MoveBodyToward_00103AC0     // void (T* o, const f32 target[3], u8 cast): body o->+24 moved toward target (clamped to o->+40, optional ray cast through world o->+272 stopping o->+700 short), turned AxisZ -> p - target, velocities zeroed; decompiled: src/obj/big28_partbody.cpp
@@ -13589,3 +13587,60 @@
 00B13B38 VtCamTarget112                   // 112-byte camera target (00054880)
 00B0DADC VtCamEventNear                   // stack camera event posted via camera vfn[344] (00054880); 00B0DABC stored after
 00F9A4F8 g_TwSplineFxCamOn                // tweak object, u8 value +72: spline-fx camera target enabled (00054880); the f32 tweaks 00F9A544..00F9A888 (+72) feed the same function
+
+# Game code sweep part 49
+0009F1B4 XmlCmd_Create_0009F1B4           // Obj* f(?, XmlCursor* x): the 44-byte XML command object with vtable 0x00B11398: +12..+40 zeroed, then hashes +12 (default 0) and +16, floats +20..+32, hash +36  (name?); decompiled: src/obj/obj49.cpp
+00091D70 XmlCmd_Init_00091D70             // u32 f(Obj* o, XmlCursor* x): constructor of the object with vtable 0x00B109B8 (Obj_InitVt_B21C98 base). +12 = 0, the u16 +16 = 0xFFFF, bit 0x8000 of the u16 +18 (name?); decompiled: src/obj/obj49.cpp
+001002C4 PhysObj_Destruct_001002C4        // u32 f(Obj* o): the base destructor of a physics-backed object. Vtables 0x00B13B90 / 0x00B13BE4 (+0 / +12); o->+16 (if any) gets vt[40](p, 0) and is cleared; the (name?); decompiled: src/obj/obj49.cpp
+0019521C Node_FarthestPoint_0019521C      // u32 f(f32 out[3], Node* n, const f32 p[3], const f32 best[3]): the point farthest from p among best, n's centre (+144) and, recursively, the results for n's chi (name?); decompiled: src/obj/obj49.cpp
+00197430 Obj_CheckPartner_00197430        // u32 f(Obj* a, Obj* b): 1 when b is not (or no longer) a fit partner for a, 0 when it is. The kind is b->+216 ? (b->+216)->+52 : 0. Kind 0x961B6157: 1 when a's p (name?); decompiled: src/obj/obj49.cpp
+001D5C14 Spawnee_Construct_001D5C14       // u32 f(Obj* o, const Desc* s): constructor (base Thunk_000E40B4(o, s)) of the object with vtables 0x00B17990 (+0), 0x00B17B3C (+380), 0x00B17B64 (+384). Copies s (name?); decompiled: src/obj/obj49.cpp
+0023BFB8 Obj_UpdateLoopSound_0023BFB8     // u32 f(Obj* o, f32 dt): advances the timer +880 by dt, clamped to [0.0 (the constant at 0x0023BFB0), limit] (limit = the f32 at (o->+396)->+804). Until it reache (name?); decompiled: src/obj/obj49.cpp
+002D33F8 Effect_ApplyListEntry_002D33F8   // u32 f(Obj* o, bool b, u32 i): Effect_ApplyListEntry49 with the hashes 0x0026D2FD (b) / 0x0021D542. (name?); decompiled: src/obj/obj49.cpp
+002D35A8 Effect_ApplyListEntry_002D35A8   // u32 f(Obj* o, bool b, u32 i): the same with 0x7A281983 (b) / 0x8E69AEC8. (name?); decompiled: src/obj/obj49.cpp
+0040D230 Obj_RestartMotion_0040D230       // u32 f(Obj* o): restarts o's motion. Animator p = o->+4: vt[88](p, 1, 1, 1, 1); o->+96..104 = +160..168 - 10.0 * +192..200 (fnmsubs); then vt[84](p, &rec) with t (name?); decompiled: src/obj/obj49.cpp
+000E4314 PhysObj_CreateFromQuery_000E4314 // Obj* f(Src* s, Sink* k): builds a query record on the stack (sp+144, QueryEx_Construct_000E40E0(&rec, s->vt[32](s), s, 0, 0x01164BD0, 0x01164B30, 1, 0, 0, 0, 0, (name?); decompiled: src/obj/obj49.cpp
+004300D8 Link_Resolve_004300D8            // u32 f(Link* o): resolves the two ends of a link. The point map (*0x00F8F154)->+16 (PointMap_Find) gives the point for the hash +32 (to +28), else Obj_FindByHand (name?); decompiled: src/obj/obj49.cpp
+0043554C Obj_Construct_0043554C           // u32 f(Obj* o, u32 a, u32 b, f32 f1..f4, -, -, -, -, const Vec16* src): constructor of the object with vtable 0x00B21160 (Obj_InitVt_B20CC8(o, 1) base): +12 = a, (name?); decompiled: src/obj/obj49.cpp
+0043C1B0 Spawner_RegisterParams_0043C1B0  // u32 f(Obj* o): registers o's five parameters (0x010AB388 + 24k, Obj_RegisterParam), reserves two bindings on the last one's list (+16) and adds the names 0x00AE (name?); decompiled: src/obj/obj49.cpp
+004A06E8 Obj_GetAttachMatrix_004A06E8     // u32 f(Obj* o, Mtx* out, u32 key, u32 a, u32 b, u32 c): out = identity (0x01164BD0); for a live o with bit 0x40000 of +172, the key is looked up as a record of ( (name?); decompiled: src/obj/obj49.cpp
+00039470 Actor_TryFaceOff_00039470        // u32 f(Actor* o, u32 c): starts a mutual face-off between o and its partner q = o->+52 when q->vt[120](q) agrees, o->+56 is below the square of the range entry ( (name?); decompiled: src/obj/obj49.cpp
+0003DC98 Obj_UpdateRiderTilt_0003DC98     // u32 f(Obj* o, f32 dt): Obj_UpdateMotion16A40(o; dt); then, when the per-level flag byte (load(o->+308)->+12)[(0x00F95498)->+64] is set, the rider o->+68 is live (name?); decompiled: src/obj/obj49.cpp
+0006C1B8 XmlCmd_Create_0006C1B8           // Obj* f(?, XmlCursor* x): the 40-byte XML command object with vtable 0x00B0F0E0: +12..+28 = 0, +32 = 1.0f, +36 = 0; hashes +12 and +16 (default 0). When either i (name?); decompiled: src/obj/obj49.cpp
+00099100 XmlCmd_Create_00099100           // Obj* f(?, XmlCursor* x): the 48-byte XML command object with vtable 0x00B10DA0: vec3 +16 (default the vec3 0x01164B70 copied in, read with a zero default), floa (name?); decompiled: src/obj/obj49.cpp
+000D9F1C Obj_ForwardEnable_000D9F1C       // u32 f(Obj* o, u8 a, u8 b, u8 c, u8 d): forwards an enable state. o->+160 (if any) gets vt[40](p, a, b); bit 0x100 of o->+172 = a's bit 0; with c, every live par (name?); decompiled: src/obj/obj49.cpp
+001829B0 Seg2_IntersectXZ_001829B0        // bool f(const f32 a[3], const f32 b[3], const f32 c[3], const f32 d[3], f32 out[3]): the XZ-plane intersection of the lines ab and cd; 1 with out = {x, a.y, z} w (name?); decompiled: src/obj/obj49.cpp
+002102BC XmlDef_New192_002102BC           // T* f(a, XmlCursor* x, Src* s, c) (XmlDef_NewFromNodeCA038): the 84-byte definition on the stack (+0 = 0x01400000, +12 = s->+12, +16 / +20 = 0x00AD366C, -1.0 at  (name?); decompiled: src/obj/obj49.cpp
+002FCA64 Fx_Detach_002FCA64               // u32 f(Fx* o): pushes o's value +12 into the owner's component 0xE9BEF0B6 (+20, when its vt[32] state is 1; owner = (o->+8)->+52); then detaches the handle +16 f (name?); decompiled: src/obj/obj49.cpp
+003030E8 ShapeDef_ReadXml_003030E8        // u32 f(Shape* o, XmlCursor* x): hash +4, floats +8 / +12, bool +100, the first child (if any) into +80 (Shape_ReadXml_00302DA8), then floats +48..+68. r3 = the l (name?); decompiled: src/obj/obj49.cpp
+0033876C Obj_ShutdownAttachments_0033876C // u32 f(Obj* o, u8 a): shuts o's attachments down. The holder +2660 (if any): when its vt[64]() gives a body, Obj_SetPhysicsActive(body, 1); then vt[40](h, 0) and (name?); decompiled: src/obj/obj49.cpp
+003965A0 Cell_ApplyTable_003965A0         // u32 f(const Cell* c, Obj* o): when o's model (+12) has bit 8 of +192, copies the cell's table values into the model: the f32 +528 and the bytes +532 / +533. Row (name?); decompiled: src/obj/obj49.cpp
+003D4C70 Obj_PlayStateAnim_003D4C70       // u32 f(Obj* o, s32 k): plays the animation and effect of o's state +432 (0..2) for the variant k. The effect hash: state 0: 0x31A1BDCE (0x35367A84 for k == 2); 1 (name?); decompiled: src/obj/obj49.cpp
+0041A958 Obj_StartCutscene_0041A958       // u32 f(Obj* o): starts o's cutscene once. With the byte +53 set, only +482 = +480 = 1. Otherwise, unless bit 31 of +96 is set, the target +44 is missing or in mo (name?); decompiled: src/obj/obj49.cpp
+00434AF8 Trigger_Update_00434AF8          // bool f(Trigger* o, f32 dt): the timer +32 fires once it reaches the delay +28 (> 0.0, the constant at 0x00434AF0): with a message +24 it is posted (Msg_Post(0,  (name?); decompiled: src/obj/obj49.cpp
+00436374 Obj_Destruct_00436374            // u32 f(Obj* o): destructor. Vtables 0x00B21178 (+0) / 0x00B21194 (+12); the registry link +12 is unlinked (Registry_Unlink_0048F298(.., 0)); the body +28 is remo (name?); decompiled: src/obj/obj49.cpp
+00446198 Spawn_Acquire_00446198           // Spawn* f(Mgr* m, u32 a, Src* s, const Params* p, u8 b): takes a record off m's free list (+8192, linked by +120; r3 = 0 when empty or s / p is null), clears it  (name?); decompiled: src/obj/obj49.cpp
+00454E88 CmdList_RunPending_00454E88      // u32 f(CmdList* o): runs the pending commands. For each of the u16 +6 8-byte entries of +12 whose command (+4) has bit 0x80 of byte +88 and either answers vt[20] (name?); decompiled: src/obj/obj49.cpp
+0007CA20 XmlCmd_Create_0007CA20           // Obj* f(?, XmlCursor* x): the 64-byte XML command object with vtable 0x00B0FAB8: +12..+32 = 0, vec3 +48 = 0x01164B40. Hashes +16 and +12 (default 0); unless both (name?); decompiled: src/obj/obj49.cpp
+0009EEBC XmlCmd_Create_0009EEBC           // Obj* f(?, XmlCursor* x): the 36-byte XML command object with vtable 0x00B11370: hashes +12 (default 0), +16, +20, floats +24 (0) and +28 (1.0), bools +32 (1), + (name?); decompiled: src/obj/obj49.cpp
+000A5D54 CmdDef_Issue_000A5D54            // u32 f(Def* o, Obj* x): issues o's command. The target hash is +52, or, when x has the component +56 in state 2 (vt[32]), that component's vt[24](). With a comma (name?); decompiled: src/obj/obj49.cpp
+000C19C8 Obj_SetRagdoll_000C19C8          // u32 f(Obj* o, u8 on): with on and a skeleton +432: removes it from its Havok world (+8; Hk_RemoveEntity92FFC8, result byte sp+128), releases each bone (Skel_Bon (name?); decompiled: src/obj/obj49.cpp
+0016D160 Actor_ResetScale_0016D160        // u32 f(Out* o, Actor* a): o->+8 = a->+684, which is scaled by 1.25 (the constants at 0x0016D14C); unless a->+348 is at most 0.0 with the anim +692 already 0x03DE (name?); decompiled: src/obj/obj49.cpp
+001A5AD8 XmlDef_New224_001A5AD8           // T* f(a, b, Src* s, c): the 148-byte definition on the stack (sp+112: +12.. +20 = s->+12..+20, -1.0 at +36 / +40 / +72, a 16-byte-element PtrVector at +76 (u16 + (name?); decompiled: src/obj/obj49.cpp
+0020F240 Obj_Unlink_0020F240              // u32 f(Obj* o, Obj* x): unlinks x from o. With the debug byte 0x01056A08 set both get vt[76](). x's key +168 is looked up in o's maps +364 (count u16 +366) and + (name?); decompiled: src/obj/obj49.cpp
+002CAA90 Obj_UpdateTimers_002CAA90        // u32 f(Obj* o, f32 dt): o's per-frame update unless bit 0x40 or 0x20 of (o->+276)->+172 is set (r3 = that word / 1): byte +337 = 0; the member +24's vt[16], 0x00 (name?); decompiled: src/obj/obj49.cpp
+0030BE48 Track_PushRecord_0030BE48        // u32 f(List* l, u32 a, f32 s0, f32 s1, -, -, u32 b, const Mtx* m, u8 c): pushes a new 112-byte record (SmallAlloc; null when that fails) onto l's vector +72: {l, (name?); decompiled: src/obj/obj49b.cpp
+003198FC Mode_ResetMega_003198FC          // u32 f(Mode* o): resets o's mega object (+32). The group +68 is released (Group_ReleaseById_0042C00C) and replaced by the scene hash 0xEFA2D5A9 (0x9D32BD2E when  (name?); decompiled: src/obj/obj49b.cpp
+00395EB4 Cell_ApplyEntry_00395EB4         // u32 f(const Cell* c): the cell's table entries (as in Cell_ApplyTable_ 003965A0: rows s16 c->+4, columns s16 c->+2 of the 128-byte records of (*0x00F65038)->+24 (name?); decompiled: src/obj/obj49b.cpp
+003A5108 Obj_SyncBody_003A5108            // u32 f(Obj* o, Obj* b): with b, its Havok body b->vt[144]() (when the world root+0x1281D4 and its +4 exist) takes o's motion (HkBody_SetMotion 91A228(body, o + 5 (name?); decompiled: src/obj/obj49b.cpp
+003D03A0 Obj_NudgeAlongSpline_003D03A0    // u32 f(Obj* o): nudges o along its spline. The step is |+48 - +16| (nothing below 0.05, at most 1.0; constants 0x003D038C); the spline tangent at +104 (SplineIns (name?); decompiled: src/obj/obj49b.cpp
+00480574 Def_ReadSlots_00480574           // u32 f(?, XmlCursor* x, Def* d): hashes d->+0..+12 (default 0), then for up to four children 0x2D8478AB of x (d advancing 80 bytes each), the hash 0xB2E59948 of  (name?); decompiled: src/obj/obj49b.cpp
+004C0E00 RandRange_Construct_004C0E00     // u32 f(Range* o, XmlCursor* x): constructor of the random-range object (vtables 0x00B21FD8 then 0x00B22000; u16 +4 = 1; the PtrVector +8 with u16 +14 = 4, PtrVec (name?); decompiled: src/obj/obj49b.cpp
+0002B870 Pool_FindNear_0002B870           // u32 f(Finder* o, Obj* a): o->+4 = the first entry of the shared pool (*0x00F8F158; a 60-byte FreeList of 288-byte entries made on first use: vtable 0x00B0EFE8,  (name?); decompiled: src/obj/obj49b.cpp
+00095F78 XmlCmd_Create_00095F78           // Obj* f(?, XmlCursor* x): the 164-byte XML command object with vtable 0x00B10B48: the name attribute 0x00AC5668 (when present and non-empty) copied to +12 (128 b (name?); decompiled: src/obj/obj49b.cpp
+00124A04 Obj_SetBodyGroup_00124A04        // u32 f(Obj* o, u32 g): moves o's body to collision group g. With a live Havok world (root+0x1281D4)->+4 and a body (Obj_GetBody_00252940 of o->vt[64]() - re-fetc (name?); decompiled: src/obj/obj49b.cpp
+00445A40 PrioList_Update445A40            // (mgr; f32 f1) called after PrioList_Insert445F08 by Spawn_Acquire_00446198 (name?)
+001A54A8 XmlDef_ReadBase224_001A54A8      // (a, b, s, c, def*) fills the 148-byte stack definition of XmlDef_New224_001A5AD8 (name?)
+0091AE28 HkBody_SetMotion2_91AE28         // (body, const vec*) used with HkBody_SetMotion91A228 (o + 56 / o + 60) (name?)
+002CA150 Obj_UpdateStep2_002CA150         // (o; dt) part of Obj_UpdateTimers_002CAA90 (name?)
+002C3CD0 Obj_UpdateStep3_002C3CD0         // (o; dt) part of Obj_UpdateTimers_002CAA90 (name?)
