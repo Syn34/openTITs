@@ -1,38 +1,42 @@
 // The monochrome screen effect: a tinted grey-scale (or inverted) copy
 // of the screen, or a flat fill, blended in one of four ways.
-#include "fx.h"
+#include "rsx.h"
 
-using namespace sly4;
+namespace sly4::gfx {
 
 namespace {
 
-namespace dfn = sly4::draw::fn;
-namespace ffn = sly4::fx::fn;
-namespace fg = sly4::fx::g;
-using namespace sly4::fx;  // helpers and method names (fx::g / fx::fn are spelt out)
-
-constexpr u32 kStats = sly4::g::mem_stats;
-constexpr u32 kConfig = sly4::g::config;
-constexpr u32 vp_mono = 0x01164138, fp_mono = 0x0116413C;      // PostProc_Monochrome
-constexpr u32 vp_inv = 0x01164140, fp_inv = 0x01164144;        // PostProc_InvMonochrome
-constexpr u32 vp_fill = 0x01164088, fp_fill = 0x0116408C;      // PostProc_Fill
-constexpr u32 kUsed = 0x00F679FD;      // u8 set once the effect has drawn (name?)
-constexpr u32 kBadKind = 0x011647F2;   // u8 set when e +48 is out of range (name?)
+constexpr u32 vp_mono = 0x01164138, fp_mono = 0x0116413C;  // PostProc_Monochrome
+constexpr u32 vp_inv = 0x01164140, fp_inv = 0x01164144;    // PostProc_InvMonochrome
+constexpr u32 vp_fill = 0x01164088, fp_fill = 0x0116408C;  // PostProc_Fill
+constexpr u32 kUsed = 0x00F679FD;     // u8 set once the effect has drawn (name?)
+constexpr u32 kBadKind = 0x011647F2;  // u8 set when e +48 is out of range (name?)
 constexpr u32 kSrcAlpha = 770, kOneMinusSrcAlpha = 771, kOne = 1, kZero = 0;
 constexpr u32 kFuncAdd = 0x8006, kFuncReverseSubtract = 0x800B;
+
+struct Monochrome {
+    pad<20> _0;
+    be_u32 amount;     // +20: f32
+    pad<8> _24;
+    be_f32 tint[3];    // +32: 0..255
+    pad<4> _44;
+    be_s32 kind;       // +48: 0 grey, 1 inverted, 2 fill
+    be_s32 blend;      // +52
+};
+static_assert(offsetof(Monochrome, kind) == 48);
 
 u32 pair(u32 v) { return v | (v << 16); }
 
 // Vertex constant 1: the tint e +32..+40 / 255 and the amount e +20.
-void tint(PPUContext& ctx, u32 e) {
-    const f32 k = load_f32(0x0053F048);  // 255.0
-    Stack frame(ctx, 16);
-    const u32 v = frame.addr();
-    store<u32>(v, bits(load_f32(e + 32) / k));
-    store<u32>(v + 4, bits(load_f32(e + 36) / k));
-    store<u32>(v + 8, bits(load_f32(e + 40) / k));
-    store<u32>(v + 12, load<u32>(e + 20));
-    call(ctx, ffn::cellGcmSetVertexProgramConstants, {load<u32>(fg::state), 1, 4, v});
+void tint(Monochrome* e) {
+    const f32 k = global<be_f32>(0x0053F048);  // 255.0
+    GuestFrame f(16);
+    be_u32* v = f.as<be_u32>();
+    v[0] = bits(e->tint[0] / k);
+    v[1] = bits(e->tint[1] / k);
+    v[2] = bits(e->tint[2] / k);
+    v[3] = e->amount.get();
+    call(fn::cellGcmSetVertexProgramConstants, gcm(), 1u, 4u, v);
 }
 
 }  // namespace
@@ -43,15 +47,12 @@ void tint(PPUContext& ctx, u32 e) {
 // colour target 0 (the scene texture), 2 PostProc_Fill; others only set
 // a flag. e +52 picks the blend: 2 alpha, 3 additive, 4 reverse
 // subtract, anything else off.
-DECOMP(0053F050, Monochrome_Draw) {
-    const u32 e = arg<u32>(ctx, 0);
-    if (static_cast<u32>(vcall(ctx, e, 12, {e})) == 0) {
-        ctx.gpr[3] = 0;
-        return;
-    }
-    if (ref<u8>(kUsed) == 0) ref<u8>(kUsed) = 1;
+void Monochrome_Draw(Monochrome* e) {
+    if (vcall<u32>(e, 12) == 0) return;
+    u8& used = global<u8>(kUsed);
+    if (used == 0) used = 1;
 
-    const s32 mode = load<s32>(e + 52);
+    const s32 mode = e->blend;
     bool blend = true;
     u32 sfactor = kSrcAlpha, dfactor = kOneMinusSrcAlpha, equation = kFuncAdd;
     if (mode == 3) {
@@ -74,37 +75,37 @@ DECOMP(0053F050, Monochrome_Draw) {
         }
     };
 
-    const s32 kind = load<s32>(e + 48);
+    const s32 kind = e->kind;
     if (kind < 0 || kind > 2) {
-        if (ref<u8>(kBadKind) != 0) {
-            ctx.gpr[3] = ref<u8>(kBadKind);
-            return;
-        }
-        ref<u8>(kBadKind) = 1;
-        ctx.gpr[3] = 0x01160000;  // what the original leaves in r3
+        u8& bad = global<u8>(kBadKind);
+        if (bad == 0) bad = 1;
         return;
     }
     if (kind == 2) {
         blend_state();
-        bind_vertex(ctx, vp_fill);
-        bind_fragment(fp_fill);
-        tint(ctx, e);
-        call(ctx, dfn::Draw_ResetState, {0, 0});
-        ctx.gpr[3] = draw_quad(ctx);
+        bind_vertex(vprog(vp_fill));
+        bind_fragment(fprog(fp_fill));
+        tint(e);
+        Draw_ResetState(false, 0);
+        draw_quad();
         return;
     }
-    const u32 tex = load<u32>(kStats + (field<u8>(kConfig, 34) != 0 ? 100 : 84));
-    copy_colour_to(ctx, tex);
+    Texture* tex = stats_texture(config_u8(34) != 0 ? 100 : 84);
+    copy_colour_to(tex);
     if (kind == 0) {
-        bind_vertex(ctx, vp_mono);
-        bind_fragment(fp_mono);
+        bind_vertex(vprog(vp_mono));
+        bind_fragment(fprog(fp_mono));
     } else {
-        bind_vertex(ctx, vp_inv);
-        bind_fragment(fp_inv);
+        bind_vertex(vprog(vp_inv));
+        bind_fragment(fprog(fp_inv));
     }
-    tint(ctx, e);
+    tint(e);
     blend_state();
-    call(ctx, dfn::Draw_ResetState, {0, 0});
-    call(ctx, dfn::Draw_SetTexture0, {tex, 0, 1});
-    ctx.gpr[3] = draw_quad(ctx);
+    Draw_ResetState(false, 0);
+    Draw_SetTexture0(tex, 0, 1);
+    draw_quad();
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(0053F050, sly4::gfx::Monochrome_Draw)

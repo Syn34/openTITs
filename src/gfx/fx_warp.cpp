@@ -1,37 +1,38 @@
 // The screen warp: copies the colour target into the scene texture and
 // draws the effect's mesh over it with PostProc_Warp.
-#include "fx.h"
+#include "rsx.h"
 
-using namespace sly4;
+namespace sly4::gfx {
 
 namespace {
 
-namespace dfn = sly4::draw::fn;
-namespace ffn = sly4::fx::fn;
-namespace fg = sly4::fx::g;
-using namespace sly4::fx;  // helpers and method names (fx::g / fx::fn are spelt out)
-
-constexpr u32 kStats = sly4::g::mem_stats;
-constexpr u32 kConfig = sly4::g::config;
 constexpr u32 vp_warp = 0x01151A04, fp_warp = 0x01151A08;  // PostProc_Warp
-
-namespace wfn {
-// Still recompiled.
-constexpr u32 View_GetCurrent = 0x004FDBA8;      // () -> view; +60 f32 near, +64 far, +96 u16 x, y, w, h (name?)
-constexpr u32 Mat4_Ortho = 0x0056A358;           // (f32[16]*, left, right, bottom, top, near, far) (name?)
-constexpr u32 VertexFormat_Get = 0x00515750;     // (u32 kind) -> vertex format like draw::g::quad (name?)
-constexpr u32 cellGcmSetDrawIndexArray = 0x005E4F64;  // (context, mode, count, type, location, offset) (name?)
-}  // namespace wfn
-
+constexpr u32 Mat4_Ortho = 0x0056A358;                     // (f32[16]*, left, right, bottom, top, near, far) (name?)
+constexpr u32 cellGcmSetDrawIndexArray = 0x005E4F64;       // (context, mode, count, type, location, offset) (name?)
 constexpr u32 kVertexFormat0 = 0x00041740, kVertexOffset0 = 0x00041680;
 constexpr u32 kTriangleStrip = 6;
+
+struct GpuBuffer {
+    be_u32 address;     // +0
+    be_u32 offset_loc;  // +4: RSX offset << 1 | location
+    pad<8> _8;
+    be_u32 type;        // +16: index type (index buffer)
+};
+
+struct Warp {
+    pad<5780> _0;
+    be_u32 current;          // +5780: current vertex buffer
+    pad<4> _5784;
+    be_u32 index_count;      // +5788
+    pad<4> _5792;
+    u8 vertex_buffers[32];   // +5796: 16-byte records (+4 offset << 1 | location), indexed by current
+    GpuBuffer index_buffer;  // +5828
+};
+static_assert(offsetof(Warp, current) == 5780 && offsetof(Warp, vertex_buffers) == 5796 && offsetof(Warp, index_buffer) == 5828);
 
 }  // namespace
 
 // void Warp_Draw(Warp* e)
-// e: +5780 u32 current buffer, +5788 u32 index count, +5796 + 16 * i the
-// vertex buffers (+4 RSX offset << 1 | location), +5828 index buffer
-// (+4 offset << 1 | location, +16 index type).
 // Binds PostProc_Warp with an orthographic projection of the current
 // view (transposed into vertex constants 0..3), turns blending, depth,
 // alpha test and culling off, copies colour target 0 into the scene
@@ -39,25 +40,21 @@ constexpr u32 kTriangleStrip = 6;
 // then sets the vertex attributes of the current buffer (as
 // Draw_PrepareQuad does for the quad), uploads the fragment program if
 // needed and draws the indexed triangle strip.
-DECOMP(0054522C, Warp_Draw) {
-    const u32 e = arg<u32>(ctx, 0);
-    const u32 st = fg::state;
-    bind_vertex(ctx, vp_warp);
-    bind_fragment(fp_warp);
+void Warp_Draw(Warp* e) {
+    RenderState& st = rs();
+    bind_vertex(vprog(vp_warp));
+    bind_fragment(fprog(fp_warp));
 
-    const u32 view = static_cast<u32>(call(ctx, wfn::View_GetCurrent));
-    const u32 rect = view + 96;
-    auto fl = [](u32 v) { return static_cast<f32>(static_cast<f64>(static_cast<s64>(v))); };
-    const f32 x = fl(load<u16>(rect)), y = fl(load<u16>(rect + 2));
-    const f32 w = fl(load<u16>(rect + 4)), h = fl(load<u16>(rect + 6));
-    Stack frame(ctx, 128);  // +0 the matrix, +64 its transpose
-    const u32 m = frame.addr(), mt = frame.addr() + 64;
-    callf(ctx, wfn::Mat4_Ortho, {m},
-          {static_cast<f64>(x), static_cast<f64>(w + x), static_cast<f64>(h + y), static_cast<f64>(y),
-           static_cast<f64>(load_f32(view + 60)), static_cast<f64>(load_f32(view + 64))});
+    View* view = or_zero_page(call<View*>(fn::View_GetCurrent));
+    const f32 x = int_to_f32(view->rect[0]), y = int_to_f32(view->rect[1]);
+    const f32 w = int_to_f32(view->rect[2]), h = int_to_f32(view->rect[3]);
+    GuestFrame f(128);  // +0 the matrix, +64 its transpose
+    be_u32* m = f.as<be_u32>(0);
+    be_u32* mt = f.as<be_u32>(64);
+    call(Mat4_Ortho, m, x, w + x, h + y, y, view->near_z.get(), view->far_z.get());
     for (u32 i = 0; i < 4; ++i)
-        for (u32 j = 0; j < 4; ++j) store<u32>(mt + 16 * i + 4 * j, load<u32>(m + 16 * j + 4 * i));
-    call(ctx, ffn::cellGcmSetVertexProgramConstants, {load<u32>(st), 0, 16, mt});
+        for (u32 j = 0; j < 4; ++j) mt[4 * i + j] = m[4 * j + i].get();
+    call(fn::cellGcmSetVertexProgramConstants, gcm(), 0u, 16u, mt);
 
     emit({kBlendEnable, 0});
     emit({kDepthTestEnable, 0});
@@ -67,74 +64,76 @@ DECOMP(0054522C, Warp_Draw) {
 
     // Copy colour target 0 into the scene texture and bind it (inlined
     // Draw_SetTexture0(tex, 0, 1)).
-    const u32 tex = load<u32>(kStats + (field<u8>(kConfig, 34) != 0 ? 100 : 84));
-    copy_colour_to(ctx, tex);
-    bind_texture(ctx, 0, tex, 0x00030303 /* clamp */, 1);
+    Texture* tex = stats_texture(config_u8(34) != 0 ? 100 : 84);
+    copy_colour_to(tex);
+    bind_texture(0, tex, 0x00030303 /* clamp */, 1);
 
     // Vertex attributes of the current buffer.
-    const u32 buffer = e + 5796 + (load<u32>(e + 5780) << 4);
-    const u32 fmt = static_cast<u32>(call(ctx, wfn::VertexFormat_Get, {1}));
-    u32 cached = load<u32>(st + 8);
-    const u32 vp = load<u32>(st + 20);
-    const u32 count = load<u16>(fmt + 120);
-    if (load<u32>(st + 16) != fmt) {
+    const GpuBuffer* buffer = at<GpuBuffer>(e, 5796 + (e->current << 4));
+    const VertexFormat* fmt = VertexFormat_Get(true);
+    u32 cached = static_cast<u32>(st.vbase_cache.get());
+    const VProgram* vp = st.vprogram;
+    const u32 count = fmt->count;
+    if (st.vformat.get() != fmt) {
         cached = 0xFFFFFFFFu;
-        store<u32>(st + 8, cached);
+        st.vbase_cache = static_cast<s32>(cached);
     }
-    store<u32>(st + 16, fmt);
-    const u32 raw = load<u32>(buffer + 4);
+    st.vformat = const_cast<VertexFormat*>(fmt);
+    const u32 raw = buffer->offset_loc;
     const u32 base = raw >> 1;
     if (cached != base) {
-        store<u32>(st + 8, base);
-        const u32 want = load<u16>(fmt + 126) & load<u16>(vp + 10);
-        if (load<u32>(fmt + 4) != 0) {
+        st.vbase_cache = static_cast<s32>(base);
+        const u32 want = fmt->mask & or_zero_page(vp)->attr_mask;
+        if (fmt->attrs[0].format != 0) {
             const u32 count_bits = (count << 8) & 0xFF00;
             const u32 location = (raw & 1) << 31;
-            u32 a = fmt;
+            const VertexAttr* a = fmt->attrs;
             do {
-                const u32 index = load<u32>(a) + ref<u8>(a + 9);
+                const u32 index = a->index + a->index_add;
                 const u32 shift = index & 63;  // slw
                 const u32 bit = shift < 32 ? 1u << shift : 0;
-                if (ref<u8>(a + 10) == 0 && (bit & want) != 0) {
-                    const u32 format = load<u32>(a + 4);
+                if (a->disabled == 0 && (bit & want) != 0) {
+                    const u32 format = a->format;
                     const u32 reg = (index << 2) & 0x3FC;
                     emit({kVertexFormat0 + reg,
                           ((static_cast<u32>(static_cast<s32>(format) >> 8) << 4) & 0xFF0) | count_bits | (format & 0xFF),
-                          kVertexOffset0 + reg, (ref<u8>(a + 8) + base) | location});
+                          kVertexOffset0 + reg, (a->offset + base) | location});
                 }
-                a += 12;
-            } while (load<u32>(a + 4) != 0);
+                ++a;
+            } while (a->format != 0);
         }
-        u32 stale = (load<u16>(st + 32) | want) ^ want;
+        u32 stale = (st.attr_mask | want) ^ want;
         if (stale != 0) {
             for (s32 i = 15; i >= 0; --i) {
                 const u32 bit = (1u << i) & 0xFFFF;
                 if ((stale & bit) != 0) {
-                    const u16 enabled = load<u16>(st + 32);
+                    const u16 enabled = st.attr_mask;
                     stale = (stale & ~bit) & 0xFFFF;
-                    store<u16>(st + 32, static_cast<u16>(enabled & ~bit));
+                    st.attr_mask = static_cast<u16>(enabled & ~bit);
                     emit({kVertexFormat0 + ((static_cast<u32>(i) << 2) & 0x3FC), 2});  // attribute off
                 }
                 if (stale == 0) break;
             }
         }
-        store<u16>(st + 32, static_cast<u16>(want));
+        st.attr_mask = static_cast<u16>(want);
     }
 
-    const u32 ib = e + 5828;
-    store<u32>(st + 4, ib);
-    const u32 indices = load<u32>(e + 5788);
-    const u32 dirty = load<u32>(st + 92);
+    st.index_buffer = guest(&e->index_buffer);
+    const u32 indices = e->index_count;
+    const u32 dirty = st.dirty;
     if ((dirty & 0x80000000u) != 0) {
-        store<u32>(st + 92, dirty & 0x7FFFFFFF);
-        call(ctx, dfn::cellGcmSetFragmentProgram, {load<u32>(st), load<u32>(st + 28) + 1136, 1});
-        call(ctx, ffn::FProgram_Upload, {st + 28});
+        st.dirty = dirty & 0x7FFFFFFF;
+        call(fn::cellGcmSetFragmentProgram, gcm(), &or_zero_page(st.fprogram.get())->program, 1u);
+        FProgram_Upload(&st.fprogram);
     } else {
-        const u32 fp = load<u32>(st + 28);
-        if (fp != 0 && load<u64>(fp + 16) != 0) call(ctx, ffn::FProgram_Upload, {st + 28});
+        FProgram* fp = st.fprogram;
+        if (fp && fp->dirty != 0) FProgram_Upload(&st.fprogram);
     }
-    const u32 ibo = load<u32>(st + 4);
-    const u32 w4 = load<u32>(ibo + 4);
-    ctx.gpr[3] = call(ctx, wfn::cellGcmSetDrawIndexArray,
-                      {load<u32>(st), kTriangleStrip, indices, load<u32>(ibo + 16) & 0xFF, w4 & 1, w4 >> 1});
+    const GpuBuffer* ibo = host<GpuBuffer>(st.index_buffer);
+    const u32 w4 = ibo->offset_loc;
+    call(cellGcmSetDrawIndexArray, gcm(), kTriangleStrip, indices, ibo->type & 0xFF, w4 & 1, w4 >> 1);
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(0054522C, sly4::gfx::Warp_Draw)
