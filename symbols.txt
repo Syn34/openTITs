@@ -9966,7 +9966,6 @@
 000A48F0 ReaderB11850_Read_000A48F0       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B11850): the base init Obj_InitVt_B21C98(o) (r4 = c), +12..+28 = 0, the bytes +32..+40 = 0; then the hashes +12 (def (name?); decompiled: src/obj/mid3_xml.cpp
 004C1FE4 ReaderB220B0_Read_004C1FE4       // u32 T::Read(T* o, XmlCursor* c) (vtable 0x00B220B0): +4 = 1, +12..+36 = 0, the flags word +40: bits 31..27 cleared, bits 26..25 = 2; then +12 / +16 / +20 / +28  (name?); decompiled: src/obj/mid3_xml.cpp
 0022083C Reader_Read_0022083C             // u32 f(?, XmlCursor* c, T* o): the bits 0x20 / 0x10 / 0x08 / 0x02 of the u8 +184 (through a stack byte, zeroed first; defaults: the bits), the hashes +188 / +192 (name?); decompiled: src/obj/mid3_xml.cpp
-003260F0 Section_SetModeBase_003260F0    // (Section* o, s32 mode, u8 flag): the section base SetMode, called last by Section_SetMode_0032AC78 (name?); not decompiled
 
 # Renderer sweep part 17
 0052D0F0 ViewCrop_Fit_0052D0F0    // void f(View* v, const f32 corners[8][4], const Matrix* m) [through a pointer]: projects the corners through m x view +48, fits an oriented 2D rectangle, prepends the crop to [-1, 1] to +48 and rebuilds the frustum +112 (name?); decompiled: src/gfx/gfx23.cpp
@@ -11486,7 +11485,6 @@
 0039129C World_LoadZipXml                 // (*0x00F6578C, zip, 0) (name?); called by 0x00391598
 004ECF08 Settings_SetNameTable            // (obj, u32 key, const u8 table[64]) (name?); called by the name-table readers 0x004BE75C / 0x00391498 / 0x0048C194 / 0x0048C3C0
 000E1738 Obj_ApplyDamage                  // (o, e, e, x; f1 scaled damage) (name?); called by 0x000E8768
-0020DFD8 Obj_UpdateTeamBase               // (o; f1 dt) (name?); tail of 0x0021C774 / 0x0021DD08
 00930B70 Hk_UpdateEntityGroup             // (world list, e, 0, 1) (name?); called by 0x000E9728
 004A9270 Hk_ShapeInit                     // (p, a, b, c, -, -, -, -, stack 9th; f1..f4) (name?); called by 0x004AC718
 00371BA8 Obj_TalkBegin                    // (o, 0) (name?); called by 0x003735C8
@@ -12296,7 +12294,6 @@
 0028A300 Cam_ObjInView_0028A300             // (Cam*, Obj*) -> bool: capsule as two Cam_SphereInView28A0E8 spheres; decompiled: src/obj/vmx2_cam.cpp (name?)
 001FBC80 Obj_OnHitPush_001FBC80             // (Obj*, HitEvent*) -> u32: body push impulse at the hit point, damage vfn[88] (0x045D9554), Trophy_OnMsg; decompiled: src/obj/vmx2_hit.cpp (name?)
 0091E8C8 HkBody_SetPosition91E8C8           // (body, const Vec4*) (name?)
-00103AC0 Part_Update103AC0                  // (T* o, a, u8 flag) (name?)
 0091A228 HkBody_SetMotion91A228             // (hkpEntity*, const T* motion) (name?)
 0091ECA8 HkBody_SetPosRot91ECA8             // (hkpRigidBody*, const Vec4* pos, const Vec4* rot) (name?)
 0089ECA8 HkShape_Radius89ECA8               // f1 (const Shape*) (name?)
@@ -12655,7 +12652,7 @@
 00899B24 HkCapsuleShape_Ctor            // (hkpCapsuleShape*, const hkVector4* a, const hkVector4* b; f1 radius) (name?)
 002BB168 Hud_Track_002BB168             // (T*, const f32 d[3]) (name?)
 002BAC40 Hud_Track_002BAC40             // (T*, const f32 d[3]; f1 scale) (name?)
-00F1DE58 Vt_RayAllHitsCollector48       // vtable of the 8-inline 48-byte-hit all-hits collector (data, name?)
+00F1DE58 VtRayHitCollector                // ray hit collector vtable (48-byte hits, inline 8) (00103AC0; also HkArray48_Dtor)
 
 # Game code medium sweep part 20
 000133FC Obj_OnMsgBase133FC                 // u32 (Obj* o, Msg* m): base message handler (Obj_OnMsg248D0 and 9 others end in it): 0x7B5D8742 / 0xFB303547 set / clear byte o->304 bit 0x20; 0x76502F44 / 0x55BE125F byte o->305 bit 0x01 + Obj_SetPhysicsActive(o->68, 1/0); 0x9087CCEB / 0x9AB924F0 o->48 vfn[68]() -> vfn[44](1/0); 0x9A986484 -> 0x002E2E78(*0x00F64C20); r3 = o or the last call; decompiled: src/obj/mid20_a.cpp
@@ -13576,3 +13573,19 @@
 000F0298 Obj_AngleTo_000F0298                // (o, f32* out (preset 360), f32 p[3], f32 base[3]) -> angle; guess from use
 0039D32C Volume_Activate39D32C               // (item, u8 arg, 1, u8) third volume kind's refresh; guess from use
 00454E88 List_FlushPendingAll_00454E88       // sibling of List_FlushPending_00454DBC (u8 c->+20 clear); guess
+
+# Game code big sweep part 28
+00103AC0 Part_MoveBodyToward_00103AC0     // void (T* o, const f32 target[3], u8 cast): body o->+24 moved toward target (clamped to o->+40, optional ray cast through world o->+272 stopping o->+700 short), turned AxisZ -> p - target, velocities zeroed; decompiled: src/obj/big28_partbody.cpp
+0091DFF0 HkBody_SetPosition_0091DFF0      // (hkpRigidBody*, const Vec4*) via its motion (+224) vfn[48] (name?)
+00054880 Obj_UpdateSplineFx_00054880      // u32 (GameObj* o; f32 dt): ring of 256 spline effects (+1740 head / +1741 tail; obj +1756, age +2780, spline +3804) spawned, aged and placed along 5 splines (+5104), faded / near-camera event; camera target +5124 along spline 2; decompiled: src/obj/big28_splinefx.cpp
+003260F0 Section_SetModeBase_003260F0     // u32 (Section* o, s32 mode, u8 force): mode word in (o->12)+0x20074 table, mode 4 starts the next user / o / effect (kFxSet tree lookup, 140-byte Effect), links Section_Link(..,1); mode 5 links off, EntryList_Flush, effect hash; decompiled: src/obj/big28_section.cpp
+002E5DD8 World_NotifySection_002E5DD8     // (world, Section*, s32 group) (mode 6 notification from 003260F0) (name?)
+003218B0 Section_Link_003218B0            // (const Link20*, Section*, u8 on) (name?)
+011DE288 g_FxSetCacheVal                  // u32: the section effect set's last found record +8 (003260F0)
+0020DFD8 Obj_UpdateTeamBase_0020DFD8      // u32 (T* o; f32 dt): prune members +372/+366 and pending +396/+390 (object +172 bit 0x40000), body add + bounds centre to +144, sync members +344/+352 with the body's overlap query (vfn[288] leave / vfn[284] enter), then Obj_UpdateBase; decompiled: src/obj/big28_team.cpp
+0020DC6C Team_Refresh_0020DC6C            // (T*) (name?)
+002CEF30 Ledge_AlignToProbe_002CEF30      // u32 (State* o; f32 dt): owner o->8 (vfn[32] == 7) frame object vfn[64]()->vfn[8](): Ledge_Probe from the owner's row 3, rows = identity, row 2 turned toward -normal by dt*pi, row 0/1 from UpVec, row 3 = pos moved along normal; copied to o+128..; 1 / 0; decompiled: src/obj/big28_ledge.cpp
+00F1DE30 VtOverlapCollector               // overlap result collector vtable (16-byte entries, inline 16) (0020DFD8)
+00B13B38 VtCamTarget112                   // 112-byte camera target (00054880)
+00B0DADC VtCamEventNear                   // stack camera event posted via camera vfn[344] (00054880); 00B0DABC stored after
+00F9A4F8 g_TwSplineFxCamOn                // tweak object, u8 value +72: spline-fx camera target enabled (00054880); the f32 tweaks 00F9A544..00F9A888 (+72) feed the same function
