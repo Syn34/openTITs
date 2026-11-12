@@ -1,8 +1,10 @@
 // Audio_UpdateMix: the music/ambience mix state, once a frame from Audio_Update.
 #include "audio.h"
+#include "snd.h"
+#include "../common/common.h"
 
-using namespace sly4;
-using namespace sly4::audio;
+namespace sly4::audio {
+using namespace opentit::native;
 
 namespace {
 
@@ -14,7 +16,6 @@ constexpr u32 kMixCurrent = 0x010AF09C;  // f32[3] voice parameter values
 constexpr u32 kMixTarget = 0x010AF0A8;   // f32[3]
 constexpr u32 kMixRate = 0x010AF0B4;     // f32[3] per second
 constexpr u32 kMixTransitions = 0x010AF0C0;  // [from 3][to 3] of 28 bytes: { s32 target, f32 time }[3], pad
-constexpr u32 kTransitionSize = 28, kTransitionRow = 84;
 
 // Tuning objects (value at +72).
 constexpr u32 kTuneUp1 = 0x010AEE2C, kTuneUp2 = 0x010AEF5C;
@@ -44,29 +45,45 @@ constexpr f32 kHundred = std::bit_cast<f32>(kHundredBits);
 constexpr f32 kEpsilon = std::bit_cast<f32>(0x3727C5ACu);  // 1e-5
 constexpr u32 kFocusRetryBits = 0x3DCCCCCDu;               // 0.1f
 
+struct FocusObj {
+    be_u32 desc;   // +0
+    be_u32 next;   // +4
+    be_u32 prev;   // +8
+    pad<8> _12;
+    be_s32 count;  // +20
+};
+struct Pair {
+    be_s32 target;
+    be_f32 time;
+};
+
+f32 tune(u32 obj) { return gref<be_f32>(obj + kTuningValue); }
+be_f32* Current() { return host<be_f32>(kMixCurrent); }
+be_f32* Target() { return host<be_f32>(kMixTarget); }
+be_f32* Rate() { return host<be_f32>(kMixRate); }
+
 // Starts a mode change: copies each target of the transition and sets the
 // rate that reaches it in its time (or jumps there for a time near zero
 // or not positive).
 void Mix_StartTransition(s32 from, s32 to) {
-    const u32 entry = kMixTransitions + static_cast<u32>(to) * kTransitionSize + static_cast<u32>(from) * kTransitionRow;
+    const Pair* entry = host<Pair>(kMixTransitions + static_cast<u32>(to) * 28 + static_cast<u32>(from) * 84);
     for (u32 j = 0; j < 3; ++j) {
-        const u32 pair = entry + j * 8;
-        const f32 target = static_cast<f32>(static_cast<f64>(load<s32>(pair)));  // fcfid + frsp
-        const f32 time = load<f32>(pair + 4);
-        store<f32>(kMixTarget + j * 4, target);
+        const f32 target = static_cast<f32>(static_cast<f64>(entry[j].target.get()));  // fcfid + frsp
+        const f32 time = entry[j].time;
+        Target()[j] = target;
         if (std::fabs(time) < kEpsilon || !(time > kZero)) {
-            store<f32>(kMixCurrent + j * 4, target);
-            store<u32>(kMixRate + j * 4, 0);
+            Current()[j] = target;
+            Rate()[j] = 0.0f;
         } else {
-            store<f32>(kMixRate + j * 4, fdivs(fsubs(target, load<f32>(kMixCurrent + j * 4)), time));
+            Rate()[j] = fdivs(fsubs(target, Current()[j]), time);
         }
     }
 }
 
 // Picks the mode from the two levels, with hysteresis.
 s32 Mix_PickMode(s32 cur) {
-    const f32 level1 = load<f32>(kMixLevels + 4), level2 = load<f32>(kMixLevels + 8);
-    auto tune = [](u32 obj) { return field<f32>(obj, kTuningValue).get(); };
+    const be_f32* levels = host<be_f32>(kMixLevels);
+    const f32 level1 = levels[1], level2 = levels[2];
     s32 mode = cur;
     if (cur == 2) {
         if (!(level2 <= tune(kTuneLeave2))) return 2;
@@ -81,41 +98,50 @@ s32 Mix_PickMode(s32 cur) {
 }
 
 // Releases the pending focus object (count at +20, list links +4/+8).
-void Mix_ReleasePending(PPUContext& ctx, u32 obj) {
-    const s32 count = load<s32>(obj + 20);
+void Mix_ReleasePending(FocusObj& obj) {
+    const s32 count = obj.count;
     if (count > 0) {
-        store<s32>(obj + 20, count - 1);
+        obj.count = count - 1;
         if (count - 1 == 0) {
-            if (const u32 prev = load<u32>(obj + 8))
-                store<u32>(prev + 4, load<u32>(obj + 4));
+            if (const u32 prev = obj.prev)
+                gref<FocusObj>(prev).next = obj.next.get();
             else
-                store<u32>(kFocusList, load<u32>(obj + 4));
-            if (const u32 next = load<u32>(obj + 4)) store<u32>(next + 8, load<u32>(obj + 8));
-            call(ctx, afn::Pool_Free, {obj, 24});
+                global<be_u32>(kFocusList) = obj.next.get();
+            if (const u32 next = obj.next) gref<FocusObj>(next).prev = obj.prev.get();
+            common::SmallFree(&obj, 24u);
         }
     }
-    store<u32>(kFocusPending, 0);
+    global<be_u32>(kFocusPending) = 0u;
 }
 
 // Counts the focused voice's sub-voices; more than 4 sets kFocusBusy.
-void Mix_CountFocus(PPUContext& ctx) {
-    const u32 emitter = Emitter_FromHandle(load<u32>(kFocusHandle));
-    if (emitter == 0) return;
-    const u32 voice = load<u32>(emitter);
-    const s32 n = static_cast<s32>(call(ctx, afn::Voice_GetValue, {voice}));
+void Mix_CountFocus() {
+    const Emitter* e = Emitter_Of(global<be_u32>(kFocusHandle));
+    if (!e) return;
+    const u32 voice = e->voice;
+    const s32 n = Voice_GetValue(voice);
     if (n <= 0) return;
     s32 total = 0;
     for (s32 i = 0; i < n; ++i) {
-        const u32 sub = static_cast<u32>(call(ctx, afn::Voice_GetSub, {voice, static_cast<u64>(static_cast<s64>(static_cast<s16>(i)))}));
+        const u32 sub = call<u32>(afn::Voice_GetSub, voice, static_cast<s16>(i));
         if (sub == 0) continue;
-        Stack frame(ctx, 8);
-        call(ctx, afn::Sub_GetInfo, {sub, frame.addr(), frame.addr() + 4, 0, 0});
-        total += load<s32>(frame.addr());
+        GuestFrame frame(8);
+        be_s32* info = frame.as<be_s32>();
+        call(afn::Sub_GetInfo, sub, info, info + 1, 0u, 0u);
+        total += info[0];
         if (total > 4) {
-            ref<u8>(kFocusBusy) = 1;
+            global<u8>(kFocusBusy) = 1;
             return;
         }
     }
+}
+
+// Parameter `which` of the focused voice, if its emitter is live and playing.
+bool Mix_SetFocusParam(u32 which, s32 value) {
+    const Emitter* e = Emitter_Of(global<be_u32>(kFocusHandle));
+    if (!e) return false;
+    if (Voice_IsPlaying(e->voice) != 0) snd::Voice_SetParam(e->voice, which, static_cast<u8>(value));
+    return true;
 }
 
 }  // namespace
@@ -126,91 +152,83 @@ void Mix_CountFocus(PPUContext& ctx) {
 // (starting a transition), eases the three mix values to their targets and
 // hands them to the focused voice as parameters 1-3; then handles the
 // pending focus object and the focused voice's busy state.
-DECOMP(0044A970, Audio_UpdateMix) {
-    const f64 dt = farg(ctx, 0);
-    const s32 cur = load<s32>(kMixMode);
+void Audio_UpdateMix(f64 dt) {
+    const s32 cur = global<be_s32>(kMixMode);
 
-    if (ref<u8>(kMixEnabled) != 0) {
+    if (global<u8>(kMixEnabled) != 0) {
         bool rising[3] = {true, false, false};
-        const u32 obj = load<u32>(load<u32>(kCurrentWorld) + 4208 + 8);
-        rising[1] = obj != 0 && (load<u32>(obj + 188) & 0x8) != 0;
-        const u32 src = load<u32>(kLevel2Source);
-        rising[2] = src != 0 && ref<u8>(src + 28) != 0;
-        const f32 up[3] = {0.0f, field<f32>(kTuneUp1, kTuningValue), field<f32>(kTuneUp2, kTuningValue)};
-        const f32 down[3] = {0.0f, field<f32>(kTuneDown1, kTuningValue), field<f32>(kTuneDown2, kTuningValue)};
+        const u32 obj = gref<be_u32>(global<be_u32>(kCurrentWorld) + 4208 + 8);
+        rising[1] = obj != 0 && (gref<be_u32>(obj + 188) & 0x8) != 0;
+        const u32 src = global<be_u32>(kLevel2Source);
+        rising[2] = src != 0 && gref<u8>(src + 28) != 0;
+        const f32 up[3] = {0.0f, tune(kTuneUp1), tune(kTuneUp2)};
+        const f32 down[3] = {0.0f, tune(kTuneDown1), tune(kTuneDown2)};
+        be_f32* levels = host<be_f32>(kMixLevels);
         for (u32 i = 1; i < 3; ++i) {
-            const u32 level = kMixLevels + i * 4;
             if (rising[i]) {
-                const f32 v = fmadds(up[i], dt, load<f32>(level));
-                store<f32>(level, v);
-                if (v > kHundred) store<u32>(level, kHundredBits);
+                const f32 v = fmadds(up[i], dt, levels[i]);
+                levels[i] = v;
+                if (v > kHundred) levels[i] = kHundred;
             } else {
-                const f32 v = fnmsubs(down[i], dt, load<f32>(level));
-                store<f32>(level, v);
-                if (v < kZero) store<u32>(level, 0);
+                const f32 v = fnmsubs(down[i], dt, levels[i]);
+                levels[i] = v;
+                if (v < kZero) levels[i] = 0.0f;
             }
         }
         const s32 mode = Mix_PickMode(cur);
         if (mode != cur) {
             Mix_StartTransition(cur, mode);
-            store<s32>(kMixMode, mode);
+            global<be_s32>(kMixMode) = mode;
         }
     }
 
     for (u32 i = 0; i < 3; ++i) {
-        const u32 cur_ea = kMixCurrent + i * 4;
-        f32 v = load<f32>(cur_ea);
-        const f32 target = load<f32>(kMixTarget + i * 4);
+        f32 v = Current()[i];
+        const f32 target = Target()[i];
         if (std::fabs(fsubs(v, target)) < kEpsilon) continue;
         const bool below = v < target;
-        v = fmadds(load<f32>(kMixRate + i * 4), dt, v);
-        store<f32>(cur_ea, v);
-        if (below ? v >= target : v <= target) store<f32>(cur_ea, target);
+        v = fmadds(Rate()[i], dt, v);
+        Current()[i] = v;
+        if (below ? v >= target : v <= target) Current()[i] = target;
     }
 
     // Parameters 1-3 of the focused voice. An invalid handle in the first
     // check skips all three; in the second only the second.
-    const s32 p0 = fctiwz_s8(load<f32>(kMixCurrent));
-    if (const u32 e = Emitter_FromHandle(load<u32>(kFocusHandle))) {
-        if (static_cast<u32>(call(ctx, afn::Voice_IsPlaying, {load<u32>(e)})) != 0)
-            call(ctx, afn::Voice_SetParam, {load<u32>(e), 1, static_cast<u64>(static_cast<s64>(p0))});
-        const s32 p1 = fctiwz_s8(load<f32>(kMixCurrent + 4));
-        if (const u32 e1 = Emitter_FromHandle(load<u32>(kFocusHandle))) {
-            if (static_cast<u32>(call(ctx, afn::Voice_IsPlaying, {load<u32>(e1)})) != 0)
-                call(ctx, afn::Voice_SetParam, {load<u32>(e1), 2, static_cast<u64>(static_cast<s64>(p1))});
-        }
-        const s32 p2 = fctiwz_s8(load<f32>(kMixCurrent + 8));
-        if (const u32 e2 = Emitter_FromHandle(load<u32>(kFocusHandle))) {
-            if (static_cast<u32>(call(ctx, afn::Voice_IsPlaying, {load<u32>(e2)})) != 0)
-                call(ctx, afn::Voice_SetParam, {load<u32>(e2), 3, static_cast<u64>(static_cast<s64>(p2))});
-        }
+    const s32 p0 = fctiwz_s8(Current()[0]);
+    if (Mix_SetFocusParam(1, p0)) {
+        Mix_SetFocusParam(2, fctiwz_s8(Current()[1]));
+        Mix_SetFocusParam(3, fctiwz_s8(Current()[2]));
     }
 
-    const u32 pending = load<u32>(kFocusPending);
+    const u32 pending = global<be_u32>(kFocusPending);
     if (pending == 0) return;
-    const f32 timer = load<f32>(kFocusTimer);
+    be_f32& timer = global<be_f32>(kFocusTimer);
     if (timer > kZero) {
         const f32 left = fsubs(timer, dt);
-        store<f32>(kFocusTimer, left);
+        timer = left;
         if (left <= kZero) {
-            call(ctx, afn::Audio_FocusPlay);
-            store<u32>(kFocusTimer, 0);
+            Audio_FocusPlay();
+            timer = 0.0f;
         }
         return;
     }
-    if (ref<u8>(kFocusBusy) != 0) {
-        if (Emitter_FromHandle(load<u32>(kFocusHandle)) == 0) {
-            store<u32>(kFocusTimer, kFocusRetryBits);
-            ref<u8>(kFocusBusy) = 0;
+    if (global<u8>(kFocusBusy) != 0) {
+        if (!Emitter_Of(global<be_u32>(kFocusHandle))) {
+            timer = std::bit_cast<f32>(kFocusRetryBits);
+            global<u8>(kFocusBusy) = 0;
         }
         return;
     }
-    if (ref<u8>(kFocusHold) == 0) {
-        const u32 focus = load<u32>(kFocusObj);
-        const u32 a = focus != 0 ? load<u32>(focus) : 0;
-        if (a == load<u32>(pending)) return Mix_ReleasePending(ctx, pending);
+    if (global<u8>(kFocusHold) == 0) {
+        const u32 focus = global<be_u32>(kFocusObj);
+        const u32 a = focus != 0 ? gref<FocusObj>(focus).desc.get() : 0;
+        if (a == gref<FocusObj>(pending).desc) return Mix_ReleasePending(gref<FocusObj>(pending));
     }
-    Mix_CountFocus(ctx);
-    call(ctx, afn::Emitter_Stop, {load<u32>(kFocusHandle), ref<u8>(kFocusArg)});
-    if (ref<u8>(kFocusBusy) == 0) call(ctx, afn::Audio_FocusPlay);
+    Mix_CountFocus();
+    Emitter_Stop(global<be_u32>(kFocusHandle), global<u8>(kFocusArg));
+    if (global<u8>(kFocusBusy) == 0) Audio_FocusPlay();
 }
+
+}  // namespace sly4::audio
+
+NATIVE(0044A970, sly4::audio::Audio_UpdateMix)

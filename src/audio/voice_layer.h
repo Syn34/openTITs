@@ -49,38 +49,10 @@ constexpr u32 kFileApi = 0x00AFDC88;           // "src/common/api.cpp"
 constexpr u32 kFmtSizeMember = 0x00AFE030;     // "%s(%d) : update to set size member.\n"
 constexpr u32 kFmtBankFormat = 0x00AFE058;     // "%s(%d) : Unsupported bank format.\n"
 constexpr u32 kFileSndhand = 0x00AFFA30;       // "src/common/sndhand.cpp"
+constexpr u32 kFmtInvalidSndhand = 0x00AFFA10; // "%s(%d) : Invalid parameter.\n" (sndhand.cpp's copy)
 constexpr u32 kFmtInactive = 0x00AFFC18;       // "%s(%d) : Attempt to stop an inactive handler.\n"
 constexpr u32 kFmtChildren = 0x00AFFC48;       // "%s(%d) : Children stopped the parent. ..."
 
-inline void Snd_Log(PPUContext& ctx, u32 fmt, u32 file, u32 line) { call(ctx, sfn::Snd_Log, {fmt, file, line}); }
-
-// Logs an invalid-parameter assertion. Returns true when the caller should
-// give up; otherwise traps (twi) if traps are enabled and the caller goes on.
-inline bool Snd_AssertFailed(PPUContext& ctx, u32 fmt, u32 file, u32 line, u32 trap_pc) {
-    Snd_Log(ctx, fmt, file, line);
-    if (ref<u8>(kSndAssertReturns) != 0) return true;
-    if (ref<u8>(kSndAssertTraps) != 0) trap(ctx, trap_pc);
-    return false;
-}
-
-// The handle -> handler lookup the library inlines (caller holds the lock).
-// Handle: bit 31 live, bits 24..28 type, bits 16..23 index.
-inline u32 Snd_Find(u32 handle) {
-    const s32 index = static_cast<s32>((handle >> 16) & 0xFF);
-    const u32 type = (handle >> 24) & 0x1F;
-    u32 p;
-    if (type == kHandlerTypeVoice) {
-        if (!(index < 256)) return 0;
-        p = kVoiceHandlers + static_cast<u32>(index) * kVoiceHandlerSize;
-    } else {
-        const u32 info = load<u32>(kHandlerTypes + type * 4);
-        if (info == 0) return 0;
-        if (!(index < load<s32>(info + 8))) return 0;
-        p = load<u32>(info + 16) + load<u32>(info + 12) * static_cast<u32>(index);
-    }
-    if (p != 0 && load<u32>(p) != handle) p = 0;
-    return p;
-}
-
 }  // namespace snd
 }  // namespace sly4
+

@@ -2,14 +2,13 @@
 // parameters, starting, family release and the error event.
 #include "snd.h"
 
-using namespace sly4;
-using namespace sly4::snd;
+namespace sly4::snd {
+using namespace opentit::native;
 
 namespace {
 
 constexpr u32 kLastActive = 0x00F8E564;
-constexpr u32 kPlayingCounts = 0x011E8754;   // s32[] by group
-constexpr u32 kChannelCount = 0x011E86A4;
+constexpr u32 kPlayingCounts = 0x011D8754;   // s32[] by group
 constexpr u32 kEventCallback = 0x00F8E538;   // u32 OPD: (cause, a, b, c, d)
 constexpr u32 kFmtScreamError = 0x00AFF9E4;  // "SCREAM Error: cause %d -> %u, %u, %u, %u\n"
 constexpr u32 kFmtBadArray = 0x00AFFA48;     // "... Invalid handler array.\n"
@@ -17,208 +16,235 @@ constexpr u32 kFmtInactiveEffects = 0x00AFFA70;  // "... Inactive handler with e
 constexpr u32 kFmtAlreadyOnList = 0x00AFFA9C;    // "... Handler %x already on list.\n"
 constexpr u32 kFmtCorruptList = 0x00AFFAC4;      // "... Corrupt handler list.\n"
 constexpr u32 kParamOne = 0x006E4908;            // f32 1.0
-constexpr u32 kEffectsInit = 0x006F2644, kEffectsSet = 0x006F2814;  // (h+360[, params+40]) (name?)
-constexpr u32 kNextSerial = 0x006D4F74;          // () -> u32 (name?)
+constexpr u32 kEffectsInit = 0x006F2644;         // (h+360) (name?)
 constexpr u32 kOneBits = 0x3F800000u;
 
-s32 words_for(s32 n) { return (n + 31) / 32; }
+// The parameter block Handler_SetParams reads (p->mask at +4).
+struct Params {
+    native::be_u32 size;     // +0
+    native::be_u32 mask;     // +4
+    native::be_u32 opts;     // +8
+    native::be_u32 user;     // +12 (mask 0x40)
+    native::be_f32 gain;     // +16 (mask 4)
+    native::be_u32 angle;    // +20 (mask 8)
+    native::be_s32 s24;      // +24 (mask 0x10)
+    native::be_s32 pitch;    // +28 (mask 1)
+    native::be_f32 f32_;     // +32 (mask 2)
+    u8 params[4];            // +36 (mask 0x10000 << i)
+    native::pad<4> effects;  // +40 (mask 0x20): Effects
+};
+
 f32 via_fpr(f32 v) { return static_cast<f32>(static_cast<f64>(v)); }
+be_u32& PlayingCount(const Handler& h) {
+    return gref<be_u32>(kPlayingCounts + static_cast<u32>(static_cast<s32>(static_cast<s8>(h.group))) * 4);
+}
 
 }  // namespace
 
 // void Snd_SendEvent(u32 cause, u32 a, u32 b, u32 c, u32 d)
 // To the event callback if there is one, else logged (unless logging is off).
-DECOMP(006E4780, Snd_SendEvent) {
-    const u64 cause = ctx.gpr[3], a = ctx.gpr[4], b = ctx.gpr[5], c = ctx.gpr[6], d = ctx.gpr[7];
-    if (const u32 cb = load<u32>(kEventCallback)) return void(call_ptr(ctx, cb, {cause, a, b, c, d}));
-    if (load<u32>(kLogDisabled) != 0) return;
-    call(ctx, sfn::Snd_Log, {kFmtScreamError, cause, a, b, c, d});
+void Snd_SendEvent(u64 cause, u64 a, u64 b, u64 c, u64 d) {
+    if (const u32 cb = global<be_u32>(kEventCallback)) return call_ptr(cb, cause, a, b, c, d);
+    if (global<be_u32>(kLogDisabled) != 0) return;
+    Snd_Log(kFmtScreamError, cause, a, b, c, d, 0, 0);
 }
 
 // void Family_Release(Family* f): releases the chain at +12 first, then clears +0.
-DECOMP(006E5434, Family_Release) {
-    const u32 f = arg<u32>(ctx, 0);
-    if (f == 0 && Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 2078, 0x006E54B0)) return;
-    if (const u32 next = load<u32>(f + 12)) call(ctx, 0x006E5434, {next});
-    store<u32>(f, 0);
+void Family_Release(u32 f) {
+    if (f == 0 && Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 2078, 0x006E54B0)) return;
+    if (const u32 next = gref<be_u32>(f + 12)) Family_Release(next);
+    gref<be_u32>(f) = 0u;
 }
 
 // Handler* Handler_Alloc(Handler* table, s32 count, u32 type, s32 size, void* owner,
 //                        -, u32 user, s8 group, u32 flags (9th arg); f32 volume)
 // Takes the first free (+84 == 0) handler of the array and initialises it.
-DECOMP(006E4DC8, Handler_Alloc) {
-    u32 p = arg<u32>(ctx, 0);
-    const s32 count = arg<s32>(ctx, 1);
-    const u32 type = arg<u32>(ctx, 2);
-    const s32 size = arg<s32>(ctx, 3);
-    const u32 owner = arg<u32>(ctx, 4);
-    const u32 user = arg<u32>(ctx, 6);
-    const s32 group = static_cast<s8>(arg<u32>(ctx, 7) & 0xFF);
-    const u32 flags = load<u32>(static_cast<u32>(ctx.gpr[1]) + 116);  // 9th argument
-    const f64 volume = farg(ctx, 0);
-    if ((p == 0 || type > 31 || count < 0 || count > 256 || size < 564) &&
-        Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 376, 0x006E51D8))
-        return ret(ctx, 0u);
+Handler* Handler_Alloc(u32 table, s32 count, u32 type, s32 size, u32 owner, u32, u32 user, s8 group, u32 flags,
+                       f32 volume) {
+    if ((table == 0 || type > 31 || count < 0 || count > 256 || size < 564) &&
+        Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 376, 0x006E51D8))
+        return nullptr;
 
-    call(ctx, sfn::Snd_Lock);
+    Snd_Lock();
+    u32 p = table;
     s32 i = 0;
     for (;;) {
         if (!(count > i)) {
-            call(ctx, sfn::Snd_Unlock);
-            return ret(ctx, 0u);
+            Snd_Unlock();
+            return nullptr;
         }
-        if (((load<u32>(p) >> 24) & 0x1F) != type) {
-            Snd_Log(ctx, kFmtBadArray, kFileSndhand, 391);
-            if (Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 392, 0x006E4F10)) return ret(ctx, 0u);
+        if (gref<Handler>(p).type() != type) {
+            Snd_LogAt(kFmtBadArray, kFileSndhand, 391);
+            if (Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 392, 0x006E4F10)) return nullptr;
         }
-        if (load<u32>(p + 84) == 0) break;
+        if (gref<Handler>(p).owner == 0) break;
         ++i;
         p += static_cast<u32>(size);
     }
 
-    if (load<u32>(p + 88) != 0) {
-        Snd_Log(ctx, kFmtInactiveEffects, kFileSndhand, 402);
-        store<u32>(p + 88, 0);
+    Handler& h = gref<Handler>(p);
+    if (h.family != 0) {
+        Snd_LogAt(kFmtInactiveEffects, kFileSndhand, 402);
+        h.family = 0u;
     }
-    const u32 word = load<u32>(p);
-    store<u32>(p + 84, owner);
-    store<u32>(p + kHNextActive, 0);
+    const u32 word = h.handle;
+    h.owner = owner;
+    h.next_active = nullptr;
     const u32 base = flags & 0x10000;
-    store<u32>(p + kHFlags, base);
-    store<u32>(p, (word & 0xFFFF0000u) | ((word + 1) & 0xFFFF));
-    store<u32>(p + 544, 0);
-    store<u32>(p + kHParent, 0);
-    store<u32>(p + kHFirstChild, 0);
-    const u32 gflags = load<u32>(kGroupFlags + static_cast<u32>(group) * 4);
-    store<u32>(p + kHNextSibling, 0);
-    store<u32>(p + kHFlags, base | ((gflags & 2) ? 4u : 0u));
-    for (s32 w = 0; w < words_for(load<s32>(kChannelCount)); ++w) store<u32>(p + 20 + static_cast<u32>(w) * 4, 0);
+    h.flags = base;
+    h.handle = (word & 0xFFFF0000u) | ((word + 1) & 0xFFFF);
+    h.prev_active = nullptr;
+    h.parent = nullptr;
+    h.first_child = nullptr;
+    const u32 gflags = gref<be_u32>(kGroupFlags + static_cast<u32>(static_cast<s32>(group)) * 4);
+    h.next_sibling = nullptr;
+    h.flags = base | ((gflags & 2) ? 4u : 0u);
+    for (s32 w = 0; w < Snd_ChannelWords(Snd_ChannelCount()); ++w) h.channel_word(w) = 0u;
 
-    store<u32>(p + 8, 0);
-    ref<u8>(p + kHGroup) = static_cast<u8>(group);
-    store<f32>(p + 284, static_cast<f32>(volume));
-    store<u32>(p + 288, kOneBits);
-    store<u32>(p + 292, kOneBits);
-    store<u32>(p + 296, kOneBits);
-    store<u32>(p + 304, user);
-    for (const u32 off : {300u, 308u, 312u, 320u, 316u, 344u, 340u, 348u, 352u, 328u, 324u, 332u, 336u})
-        store<u32>(p + off, 0);
-    for (u32 k = 0; k < 4; ++k) ref<u8>(p + 356 + k) = 0;
-    call(ctx, sfn::Handler_Finish, {p});  // Handler_UnlinkTracks
+    h.user = 0u;
+    h.group = static_cast<u8>(group);
+    h.volume = volume;
+    h.gain = std::bit_cast<f32>(kOneBits);
+    h.f292 = std::bit_cast<f32>(kOneBits);
+    h.f296 = std::bit_cast<f32>(kOneBits);
+    h.user304 = user;
+    h.angle = 0u;
+    h.w308 = 0u;
+    h.w312 = 0u;
+    h.w320 = 0u;
+    h.s316 = 0;
+    h.w344 = 0u;
+    h.f340 = 0.0f;
+    h.w348 = 0u;
+    h.w352 = 0u;
+    h.w328 = 0u;
+    h.pitch = 0;
+    h.w332 = 0u;
+    h.w336 = 0u;
+    for (u32 k = 0; k < 4; ++k) h.params[k] = 0;
+    Handler_UnlinkTracks(&h);
     for (u32 k = 0; k < kTrackCountPerHandler; ++k) {
-        const u32 t = p + kTrackBase + k * kTrackSize;
-        store<u16>(t, 0);
-        store<u32>(t + 12, 0);
-        ref<u8>(t + 2) = 0;
-        ref<u8>(t + 4) = 0;
-        ref<u8>(t + 5) = 0;
-        store<u32>(t + 40, p);
+        Track& t = h.tracks[k];
+        t.w0 = 0;
+        t.w12 = 0u;
+        t.b2 = 0;
+        t.b4 = 0;
+        t.flags5 = 0;
+        t.owner = &h;
     }
-    call(ctx, kEffectsInit, {p + 360});
-    store<u32>(p + 12, static_cast<u32>(call(ctx, kNextSerial)));
-    call(ctx, sfn::Snd_Unlock);
-    ret(ctx, p);
+    call(kEffectsInit, p + 360);
+    h.tick = Snd_GetTick();
+    Snd_Unlock();
+    return &h;
 }
 
 // void Handler_SetParams(Handler* h, const Params* p)
 // Applies the fields selected by p->mask (+4) to h and all its children.
-DECOMP(006E4910, Handler_SetParams) {
-    const u32 h = arg<u32>(ctx, 0), p = arg<u32>(ctx, 1);
-    if ((h == 0 || p == 0) && Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 152, 0x006E4C50)) return;
-    for (u32 c = load<u32>(h + kHFirstChild); c != 0; c = load<u32>(c + kHNextSibling))
-        call(ctx, 0x006E4910, {c, p});
+void Handler_SetParams(Handler* hp, const u8* pp) {
+    if ((!hp || !pp) && Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 152, 0x006E4C50)) return;
+    Handler& h = gref(hp);
+    const Params& p = gref<Params>(guest(pp));
+    for (Handler* c = h.first_child; c; c = c->next_sibling) Handler_SetParams(c, pp);
 
-    const u32 m = load<u32>(p + 4);
+    const u32 m = p.mask;
     if (m & 0x00100000) {
         if ((m & 0x80000000u) == 0) {
-            const u32 bit = (load<u32>(p + 8) & 1) ? 0x20000u : 0u;
-            store<u32>(h + kHFlags, load<u32>(h + kHFlags) | bit);
+            const u32 bit = (p.opts & 1) ? 0x20000u : 0u;
+            h.flags = h.flags | bit;
         }
-        const u32 opts = load<u32>(p + 8);
-        const u32 f = load<u32>(h + kHFlags);
-        store<u32>(h + kHFlags, f | ((opts & 2) ? 0x200000u : 0u) | ((opts & 4) ? 0x400000u : 0u));
+        const u32 opts = p.opts;
+        const u32 f = h.flags;
+        h.flags = f | ((opts & 2) ? 0x200000u : 0u) | ((opts & 4) ? 0x400000u : 0u);
     }
-    store<u32>(h + 8, (m & 0x40) ? load<u32>(p + 12) : load<u32>(h + 8));
+    h.user = (m & 0x40) ? p.user.get() : h.user.get();
     if (m & 0x000F0000)
         for (u32 k = 0; k < 4; ++k)
-            if (m & (0x10000u << k)) ref<u8>(h + k + 356) = ref<u8>(p + 36 + k);
+            if (m & (0x10000u << k)) h.params[k] = p.params[k];
     if (m & 4) {
-        const f32 v = load<f32>(p + 16);
-        store<f32>(h + 288, via_fpr(v));
+        const f32 v = p.gain;
+        h.gain = via_fpr(v);
         if (static_cast<s32>(static_cast<u32>(rt::fctiw(v, true))) < 0)
-            store<u32>(h + 288, 0);
-        else if (v > load<f32>(kParamOne))
-            store<u32>(h + 288, kOneBits);
+            h.gain = 0.0f;
+        else if (v > global<be_f32>(kParamOne))
+            h.gain = std::bit_cast<f32>(kOneBits);
     }
     {
-        const u32 v = (m & 8) ? load<u32>(p + 20) : load<u32>(h + 300);
-        store<u32>(h + 300, v);
-        if ((v & 0x80000000u) == 0 && v > 359) store<u32>(h + 300, 359);
+        const u32 v = (m & 8) ? p.angle.get() : h.angle.get();
+        h.angle = v;
+        if ((v & 0x80000000u) == 0 && v > 359) h.angle = 359u;
     }
     {
-        const s32 v = (m & 0x10) ? load<s32>(p + 24) : load<s32>(h + 316);
-        store<s32>(h + 316, v);
+        const s32 v = (m & 0x10) ? p.s24.get() : h.s316.get();
+        h.s316 = v;
         if (v < 0)
-            store<u32>(h + 316, 0);
+            h.s316 = 0;
         else if (static_cast<u32>(v) > 360)
-            store<u32>(h + 316, 360);
+            h.s316 = 360;
     }
     {
-        const s32 v = (m & 1) ? load<s32>(p + 28) : load<s32>(h + 324);
-        store<s32>(h + 324, v < -7680 ? -7680 : (v > 7680 ? 7680 : v));
+        const s32 v = (m & 1) ? p.pitch.get() : h.pitch.get();
+        h.pitch = v < -7680 ? -7680 : (v > 7680 ? 7680 : v);
     }
     {
-        const f32 v = (m & 2) ? load<f32>(p + 32) : load<f32>(h + 340);
-        store<f32>(h + 340, via_fpr(v));
+        const f32 v = (m & 2) ? p.f32_.get() : h.f340.get();
+        h.f340 = via_fpr(v);
         if (static_cast<s32>(static_cast<u32>(rt::fctiw(v, true))) < -1)
-            store<u32>(h + 340, 0xBF800000u);
-        else if (v > load<f32>(kParamOne))
-            store<u32>(h + 340, kOneBits);
+            h.f340 = std::bit_cast<f32>(0xBF800000u);
+        else if (v > global<be_f32>(kParamOne))
+            h.f340 = std::bit_cast<f32>(kOneBits);
     }
-    if (m & 0x20) call(ctx, kEffectsSet, {h + 360, p + 40});
+    if (m & 0x20) Effects_Set(guest(hp) + 360, guest(pp) + 40);
 }
 
 // void Handler_Start(Handler* h)
 // Marks the handler live and links it into the active list (at the head
 // with flag 0x40000, else at the tail), counting it in its group.
-DECOMP(006E51E0, Handler_Start) {
-    const u32 h = arg<u32>(ctx, 0);
-    if ((h == 0 || (load<u32>(h) & 0x80000000u) != 0) &&
-        Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 518, 0x006E542C))
-        return;
-    call(ctx, sfn::Snd_Lock);
-    for (u32 q = load<u32>(kFirstActive); q != 0; q = load<u32>(q + kHNextActive))
-        if (q == h) call(ctx, sfn::Snd_Log, {kFmtAlreadyOnList, kFileSndhand, 532, load<u32>(h)});
-    store<u32>(h + 544, 0);
-    store<u32>(h + kHNextActive, 0);
-    const u32 word = load<u32>(h) | 0x80000000u;
-    u32 last = load<u32>(kLastActive);
-    u32 first = load<u32>(kFirstActive);
-    store<u32>(h, word);
-    if ((last == 0) != (first == 0)) {
-        Snd_Log(ctx, kFmtCorruptList, kFileSndhand, 560);
-        if (Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 561, 0x006E53E0)) return;
-        first = load<u32>(kFirstActive);
-        last = load<u32>(kLastActive);
+void Handler_Start(Handler* hp) {
+    if ((!hp || hp->live()) && Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 518, 0x006E542C)) return;
+    Handler& h = gref(hp);
+    gp<Handler>& first_g = global<gp<Handler>>(kFirstActive);
+    gp<Handler>& last_g = global<gp<Handler>>(kLastActive);
+    Snd_Lock();
+    for (Handler* q = first_g; q; q = q->next_active)
+        if (q == &h) Snd_Log(kFmtAlreadyOnList, kFileSndhand, 532, h.handle, 0, 0, 0, 0);
+    h.prev_active = nullptr;
+    h.next_active = nullptr;
+    const u32 word = h.handle | 0x80000000u;
+    Handler* last = last_g;
+    Handler* first = first_g;
+    h.handle = word;
+    if (!last != !first) {
+        Snd_LogAt(kFmtCorruptList, kFileSndhand, 560);
+        if (Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 561, 0x006E53E0)) return;
+        first = first_g;
+        last = last_g;
     }
-    if (first == 0) {
-        store<u32>(kLastActive, h);
-        store<u32>(kFirstActive, h);
-    } else if (last == h) {
-        Snd_Log(ctx, kFmtCorruptList, kFileSndhand, 589);
-    } else if (load<u32>(h + kHFlags) & 0x40000) {
-        store<u32>(h + 544, 0);
-        const u32 head = load<u32>(kFirstActive);
-        store<u32>(h + kHNextActive, head);
-        store<u32>(head + 544, h);
-        store<u32>(kFirstActive, h);
+    if (!first) {
+        last_g = &h;
+        first_g = &h;
+    } else if (guest(last) == guest(&h)) {  // (guest addresses: h may be 0)
+        Snd_LogAt(kFmtCorruptList, kFileSndhand, 589);
+    } else if (h.flags & 0x40000) {
+        h.prev_active = nullptr;
+        Handler* head = first_g;
+        h.next_active = head;
+        gref(head).prev_active = &h;
+        first_g = &h;
     } else {
-        store<u32>(last + kHNextActive, h);
-        const u32 old = load<u32>(kLastActive);
-        store<u32>(kLastActive, h);
-        store<u32>(h + 544, old);
+        gref(last).next_active = &h;
+        Handler* old = last_g;
+        last_g = &h;
+        h.prev_active = old;
     }
-    const u32 slot = kPlayingCounts + static_cast<u32>(static_cast<s32>(static_cast<s8>(ref<u8>(h + kHGroup)))) * 4;
-    store<u32>(slot, load<u32>(slot) + 1);
-    call(ctx, sfn::Snd_Unlock);
+    be_u32& slot = PlayingCount(h);
+    slot = slot + 1;
+    Snd_Unlock();
 }
+
+}  // namespace sly4::snd
+
+NATIVE(006E4780, sly4::snd::Snd_SendEvent)
+NATIVE(006E5434, sly4::snd::Family_Release)
+NATIVE(006E4DC8, sly4::snd::Handler_Alloc)
+NATIVE(006E4910, sly4::snd::Handler_SetParams)
+NATIVE(006E51E0, sly4::snd::Handler_Start)

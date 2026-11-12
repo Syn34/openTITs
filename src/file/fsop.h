@@ -72,3 +72,32 @@ constexpr u32 kStrUnknownError = 0x00AF47D4;  // "Unknown:0x%x"
 constexpr u32 kScheduler = 0x00F88770;  // u32: FIOS scheduler (Fios_Init)
 
 }  // namespace sly4::fsop
+
+// ---------------------------------------------------------------- native (fsop.cpp)
+#include "opentit/native.h"
+
+namespace sly4::fsop {
+void FsOp_Init(FsOp* op, u32 target, u32 kind, u64 opt0, u64 opt1);
+s32 FsOp_Wait(FsOp* op);
+u32 FsOp_Cancel(FsOp* op);
+s32 FsOp_GetError(FsOp* op);
+u32 FsOp_ErrorName(FsOp* op);
+u32 FsOp_GetResult(FsOp* op);
+u32 FsOp_GetPath(FsOp* op);
+u32 FsOp_Destruct(FsOp* op);
+void FsOp_Sync(FsOp* op);
+void FsOp_Release(FsOp* op);
+void FsHandle_Construct(be_u32* h);
+void FsHandle_Destruct(be_u32* h);
+bool String_HasChar(u32 s, s8 c);
+}  // namespace sly4::fsop
+namespace sly4::fsop {
+// fioswrap.cpp
+bool Fios_OpenFile(FsOp* op, be_u32* handle, u32 path, u32 mode, u64 o0, u64 o1, u64 o2);
+bool Fios_CloseFile(be_u32* handle, FsOp* op, u64 o0, u64 o1, u64 o2);
+bool Fios_ReadFile(be_u32* handle, FsOp* op, u32 buf, u64 size, u64 pos, u64 o0, u64 o1, u64 o2);
+bool Fios_WriteFile(be_u32* handle, FsOp* op, u32 data, u64 size, u64 pos, u64 o0, u64 o1, u64 o2);
+bool Fios_GetFileSize(be_u32* handle, FsOp* op, u32 out, u64 o0, u64 o1, u64 o2);
+u64 Fs_Read(be_u32* handle, u64 buf, u64 size, u64 pos, u64 o0, u64 o1, u64 o2);
+FsOp* Fs_ReadAsync(be_u32* handle, u64 buf, u64 size, u64 pos, u64 o0, u64 o1, u64 o2);
+}  // namespace sly4::fsop

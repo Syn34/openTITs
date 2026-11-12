@@ -167,6 +167,14 @@ inline T& gref(const opentit::native::gp<T>& p) {
     return gref<T>(p.ea.get());
 }
 
+// The object a host pointer into guest memory points at, also for nullptr
+// (then guest address 0): for unchecked accesses through a pointer
+// parameter that may be null.
+template <typename T>
+inline T& gref(T* p) {
+    return gref<T>(opentit::native::guest(p));
+}
+
 // system_state::get(ctx) for native code.
 inline u32 system_state::get_native() {
     using namespace opentit::native;

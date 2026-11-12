@@ -1,47 +1,55 @@
 // Sound library: logging, the active list, pausing groups and handlers.
 #include "snd.h"
 
-using namespace sly4;
-using namespace sly4::snd;
+namespace sly4::snd {
+using namespace opentit::native;
+
+namespace {
+be_u32& GroupFlags(u32 k) { return host<be_u32>(kGroupFlags)[k]; }
+}  // namespace
 
 // void Snd_Log(const char* fmt, ...)
 // Formats into a 512-byte buffer and hands it to the log callback, unless
-// logging is disabled. Like the original, the variadic registers are spilled
-// into the caller's parameter save area (r1 + 52..104) and passed as the va_list.
-DECOMP(006E45F8, Snd_Log) {
-    const u32 sp = static_cast<u32>(ctx.gpr[1]);
-    const u32 fmt = arg<u32>(ctx, 0);
-    store<u32>(sp + 52, fmt);
-    for (u32 k = 1; k < 8; ++k) store<u64>(sp + 48 + 8 * k, ctx.gpr[3 + k]);
-    if (load<u32>(kLogDisabled) != 0) return;
-    call(ctx, sfn2::Vsnprintf, {kLogBuffer, 512, fmt, sp + 56});
-    call_ptr(ctx, load<u32>(kLogCallback), {kLogBuffer});
+// logging is disabled. The variadic registers are spilled as the original
+// does at r1 + 52..104 and passed as the va_list; the original uses its
+// caller's parameter save area, here it is a frame of our own (native
+// callers keep their locals right above r1).
+void Snd_Log(u32 fmt, u64 a1, u64 a2, u64 a3, u64 a4, u64 a5, u64 a6, u64 a7) {
+    GuestFrame frame(112);
+    const u32 sp = frame.addr();
+    *host<be_u32>(sp + 52) = fmt;
+    const u64 rest[7] = {a1, a2, a3, a4, a5, a6, a7};
+    for (u32 k = 0; k < 7; ++k) *host<be_u64>(sp + 56 + 8 * k) = rest[k];
+    if (global<be_u32>(kLogDisabled) != 0) return;
+    call(sfn2::Vsnprintf, kLogBuffer, 512u, fmt, sp + 56);
+    call_ptr(global<be_u32>(kLogCallback), kLogBuffer);
 }
 
 // Handler* Handler_First()
-DECOMP(006E6AA0, Handler_First) { ret(ctx, load<u32>(kFirstActive)); }
+Handler* Handler_First() { return global<gp<Handler>>(kFirstActive); }
 
 // void Handler_UnlinkTracks(Handler* h)  (name?)
 // Clears bit 0 of byte +5 of each of the handler's four 48-byte records
 // and takes those that are on the track list off it.
-DECOMP(006E322C, Handler_UnlinkTracks) {
-    const u32 h = arg<u32>(ctx, 0);
+void Handler_UnlinkTracks(Handler* h) {
+    gp<Track>& list = global<gp<Track>>(kTrackList);
+    be_u32& count = global<be_u32>(kTrackCount);
     for (u32 k = 0; k < kTrackCountPerHandler; ++k) {
-        const u32 t = h + k * kTrackSize + kTrackBase;
-        ref<u8>(t + 5) = static_cast<u8>(ref<u8>(t + 5) & 0xFE);
-        u32 node = load<u32>(kTrackList);
-        if (node == t) {
-            const u32 count = load<u32>(kTrackCount);
-            store<u32>(kTrackList, load<u32>(t + kTrackNext));
-            store<u32>(kTrackCount, count - 1);
+        Track& t = gref(h).tracks[k];
+        t.flags5 = static_cast<u8>(t.flags5 & 0xFE);
+        Track* node = list;
+        if (node == &t) {
+            const u32 n = count;
+            list = t.next.get();
+            count = n - 1;
             continue;
         }
-        while (node != 0) {
-            const u32 next = load<u32>(node + kTrackNext);
-            if (next == t) {
-                const u32 count = load<u32>(kTrackCount);
-                store<u32>(node + kTrackNext, load<u32>(t + kTrackNext));
-                store<u32>(kTrackCount, count - 1);
+        while (node) {
+            Track* next = node->next;
+            if (next == &t) {
+                const u32 n = count;
+                node->next = t.next.get();
+                count = n - 1;
                 break;
             }
             node = next;
@@ -51,66 +59,66 @@ DECOMP(006E322C, Handler_UnlinkTracks) {
 
 // void Groups_Pause(u32 bits) / Groups_Resume(u32 bits)
 // Sets / clears bit 1 of the group flags for every bit in `bits`.
-DECOMP(006EA9E0, Groups_Pause) {
-    const u32 bits = arg<u32>(ctx, 0);
-    if (bits == 0 && Snd_AssertFailed(ctx, kFmtInvalidValloc, kFileValloc, 1710, 0x006EAA98)) return;
-    call(ctx, sfn::Snd_Lock);
+void Groups_Pause(u32 bits) {
+    if (bits == 0 && Snd_AssertFailed(kFmtInvalidValloc, kFileValloc, 1710, 0x006EAA98)) return;
+    Snd_Lock();
     for (u32 k = 0; k < 32; ++k)
-        if (bits & (1u << k)) store<u32>(kGroupFlags + k * 4, load<u32>(kGroupFlags + k * 4) | 2);
-    call(ctx, sfn::Snd_Unlock);
+        if (bits & (1u << k)) GroupFlags(k) = GroupFlags(k) | 2;
+    Snd_Unlock();
 }
-DECOMP(006EAAA0, Groups_Resume) {
-    const u32 bits = arg<u32>(ctx, 0);
-    if (bits == 0 && Snd_AssertFailed(ctx, kFmtInvalidValloc, kFileValloc, 1736, 0x006EAB5C)) return;
-    call(ctx, sfn::Snd_Lock);
+void Groups_Resume(u32 bits) {
+    if (bits == 0 && Snd_AssertFailed(kFmtInvalidValloc, kFileValloc, 1736, 0x006EAB5C)) return;
+    Snd_Lock();
     for (u32 k = 0; k < 32; ++k)
-        if (bits & (1u << k)) store<u32>(kGroupFlags + k * 4, load<u32>(kGroupFlags + k * 4) & ~2u);
-    call(ctx, sfn::Snd_Unlock);
+        if (bits & (1u << k)) GroupFlags(k) = GroupFlags(k) & ~2u;
+    Snd_Unlock();
 }
 
 namespace {
 // The type's pause hook (types 0-7 only).
-void Handler_TypePause(PPUContext& ctx, u32 h, u32 type_word, u32 pause) {
+void Handler_TypePause(Handler* h, u32 type_word, u32 pause) {
     const u32 type = (type_word >> 24) & 0x1F;
     if (!(static_cast<s32>(type) < static_cast<s32>(kTypeCountPausable))) return;
-    const u32 info = load<u32>(kHandlerTypes + type * 4);
-    if (info == 0) return;
-    if (const u32 fn = load<u32>(info + kHTypeInfoPause)) call_ptr(ctx, fn, {h, pause, fn});
+    const HandlerType* info = global<gp<HandlerType>>(kHandlerTypes + type * 4);
+    if (!info) return;
+    if (const u32 fn = info->pause) call_ptr(fn, h, pause, fn);
 }
 }  // namespace
 
 // void Handler_Pause(Handler* h, bool recurse, u32 reason)
 // Adds `reason` (bits 1-3) to the handler's pause flags, pausing children first.
-DECOMP(006E5F4C, Handler_Pause) {
-    const u32 h = arg<u32>(ctx, 0), recurse = arg<u32>(ctx, 1);
-    const u64 reason = ctx.gpr[5];
-    if ((h == 0 || (load<u32>(h) & 0x80000000u) == 0) &&
-        Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 951, 0x006E609C))
-        return;
+void Handler_Pause(Handler* hp, u32 recurse, u64 reason) {
+    if ((!hp || !hp->live()) && Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 951, 0x006E609C)) return;
+    Handler& h = gref(hp);
     if (recurse != 0)
-        for (u32 c = load<u32>(h + kHFirstChild); c != 0; c = load<u32>(c + kHNextSibling))
-            call(ctx, sfn::Handler_Pause, {c, 1, reason});
-    call(ctx, sfn2::Handler_OnPause, {h});
-    const u32 flags = load<u32>(h + kHFlags) | static_cast<u32>(reason);
-    const u32 word = load<u32>(h);
-    store<u32>(h + kHFlags, flags);
-    Handler_TypePause(ctx, h, word, 1);
+        for (Handler* c = h.first_child; c; c = c->next_sibling) Handler_Pause(c, 1, reason);
+    Handler_OnPause(hp);
+    const u32 flags = h.flags | static_cast<u32>(reason);
+    const u32 word = h.handle;
+    h.flags = flags;
+    Handler_TypePause(hp, word, 1);
 }
 
 // void Handler_Resume(Handler* h, bool recurse, u32 reason)
 // Removes `reason`; once no pause bits (1-3) are left the handler resumes.
-DECOMP(006E60A4, Handler_Resume) {
-    const u32 h = arg<u32>(ctx, 0), recurse = arg<u32>(ctx, 1);
-    const u64 reason = ctx.gpr[5];
-    if ((h == 0 || (load<u32>(h) & 0x80000000u) == 0) &&
-        Snd_AssertFailed(ctx, kFmtInvalid, kFileSndhand, 1018, 0x006E6204))
-        return;
+void Handler_Resume(Handler* hp, u32 recurse, u64 reason) {
+    if ((!hp || !hp->live()) && Snd_AssertFailed(kFmtInvalidSndhand, kFileSndhand, 1018, 0x006E6204)) return;
+    Handler& h = gref(hp);
     if (recurse != 0)
-        for (u32 c = load<u32>(h + kHFirstChild); c != 0; c = load<u32>(c + kHNextSibling))
-            call(ctx, sfn::Handler_Resume, {c, 1, reason});
-    const u32 flags = load<u32>(h + kHFlags) & ~static_cast<u32>(reason);
-    store<u32>(h + kHFlags, flags);
+        for (Handler* c = h.first_child; c; c = c->next_sibling) Handler_Resume(c, 1, reason);
+    const u32 flags = h.flags & ~static_cast<u32>(reason);
+    h.flags = flags;
     if (flags & 0xE) return;
-    call(ctx, sfn2::Handler_OnResume, {h});
-    Handler_TypePause(ctx, h, load<u32>(h), 0);
+    Handler_OnResume(hp);
+    Handler_TypePause(hp, h.handle, 0);
 }
+
+}  // namespace sly4::snd
+
+NATIVE(006E45F8, sly4::snd::Snd_Log)
+NATIVE(006E6AA0, sly4::snd::Handler_First)
+NATIVE(006E322C, sly4::snd::Handler_UnlinkTracks)
+NATIVE(006EA9E0, sly4::snd::Groups_Pause)
+NATIVE(006EAAA0, sly4::snd::Groups_Resume)
+NATIVE(006E5F4C, sly4::snd::Handler_Pause)
+NATIVE(006E60A4, sly4::snd::Handler_Resume)

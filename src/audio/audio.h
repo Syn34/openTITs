@@ -123,3 +123,182 @@ bool Matrix_NearlyEqual(const native::be_f32* a, const native::be_f32* b, f32 ep
 
 }  // namespace audio
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native emitter structures
+namespace sly4::audio {
+
+// The 57-byte "3D block" of an emitter (two copies, +16 and +76) and of a
+// sound being started: volumes, pitches and pan computed by Emitter_Spatialise.
+struct Block {
+    native::be_f32 volume;        // +0 final volume
+    native::be_f32 gain;          // +4
+    native::be_f32 scale;         // +8 (zone gain)
+    native::be_f32 fade;          // +12
+    native::be_f32 vol1;          // +16 distance falloff
+    native::be_f32 vol2;          // +20 second falloff
+    native::be_f32 pitch;         // +24 min(cap, target)
+    native::be_f32 pitch_target;  // +28
+    native::be_f32 pitch_cap;     // +32
+    native::be_u32 pitch_code;    // +36 Doppler pitch / play param
+    native::be_f32 distance;      // +40
+    native::be_u32 pan;           // +44 degrees
+    native::be_s32 elevation;     // +48 (also the random angle range)
+    native::be_u32 angle;         // +52
+    u8 fixed_angle;               // +56
+};
+static_assert(sizeof(Block) == 57);
+
+// A sound definition (SoundDesc).
+struct SoundDef {
+    native::pad<4> _0;
+    native::gp<native::be_u32> bank;  // +4 -> bank pointer
+    native::be_f32 near_dist;     // +8
+    native::be_f32 far_dist;      // +12
+    native::be_f32 curve;         // +16
+    native::be_f32 range2;        // +20
+    native::be_f32 curve2;        // +24
+    native::be_f32 pitch_base;    // +28
+    native::be_f32 pitch_curve;   // +32
+    native::be_f32 range;         // +36
+    native::be_f32 radius;        // +40
+    native::pad<36> _44;
+    u8 zones;                     // +80
+    native::pad<3> _81;
+    native::be_u32 id;            // +84 (passed as s16)
+    native::be_u32 flagged;       // +88
+    native::pad<4> _92;
+    u8 no_cull;                   // +96
+    native::pad<3> _97;
+    native::be_s32 type;          // +100 (30 = ...; copied to the emitter's +168)
+};
+static_assert(offsetof(SoundDef, type) == 100);
+
+// An emitter (a handle pool node's data, node + 16).
+struct Emitter {
+    native::be_u32 voice;          // +0 voice handle (-1 = none)
+    native::gp<SoundDef> def;      // +4
+    native::be_u32 zone;           // +8 zone object (was "bank")
+    u8 bucketed;                   // +12
+    u8 is_virtual;                 // +13
+    u8 doppler;                    // +14
+    u8 _15;
+    Block base;                    // +16
+    native::pad<3> _73;
+    Block cur;                     // +76
+    native::pad<3> _133;
+    native::be_u32 shape;          // +136 shape object (was "spatial")
+    native::be_f32 fade_cur;       // +140
+    native::be_f32 fade_target;    // +144
+    native::be_f32 pitch_cur;      // +148
+    native::be_f32 pitch_target;   // +152
+    native::be_u32 key;            // +156
+    native::be_s32 priority;       // +160
+    native::be_u32 bucket;         // +164
+    native::be_u32 extra;          // +168
+    u8 no_key;                     // +172
+    native::pad<3> _173;
+    native::be_f32 position[3];    // +176
+    native::pad<4> _188;
+    u8 forced;                     // +192
+    native::pad<15> _193;
+    native::be_f32 velocity[3];    // +208
+    native::pad<4> _220;
+    u8 moving;                     // +224
+    native::pad<15> _225;
+};
+static_assert(offsetof(Emitter, cur) == 76 && offsetof(Emitter, shape) == 136 && offsetof(Emitter, position) == 176 &&
+              offsetof(Emitter, velocity) == 208 && sizeof(Emitter) == kNodeSerial - kNodeData);
+
+struct EmitterNode {
+    native::be_s32 prev;      // +0
+    native::be_s32 next;      // +4
+    native::pad<8> _8;
+    Emitter emitter;          // +16
+    native::be_u32 serial;    // +256: bits 15..30 serial, top bit free
+    native::pad<12> _260;
+};
+static_assert(sizeof(EmitterNode) == kNodeSize);
+
+struct EmitterPool {
+    native::be_u32 free_head;   // +0
+    native::be_s32 free_tail;   // +4
+    native::be_u32 first;       // +8
+    native::be_u32 last;        // +12
+    native::be_s32 used;        // +16
+    native::be_u32 free_count;  // +20
+    native::be_s32 capacity;    // +24
+    native::be_u32 nodes;       // +28
+    u8 can_grow;                // +32
+};
+
+inline EmitterPool& Pool() { return native::global<EmitterPool>(kEmitters); }
+inline EmitterNode& PoolNode(u32 index) { return gref<EmitterNode>(Pool().nodes + index * kNodeSize); }
+
+// The live emitter of `handle`, or nullptr (Emitter_FromHandle, native).
+inline Emitter* Emitter_Of(u32 handle) { return native::host<Emitter>(Emitter_FromHandle(handle)); }
+
+// Voice play parameters (220 bytes, "PlayParams"); +40.. the effect block.
+struct VoiceParams {
+    native::be_u32 size;      // +0 = 220
+    native::be_u32 mask;      // +4 changed fields
+    native::be_u32 opts;      // +8
+    native::pad<4> _12;
+    native::be_f32 gain;      // +16 (mask 4)
+    native::be_u32 angle;     // +20 (mask 8)
+    native::be_u32 spread;    // +24 (mask 0x10)
+    native::be_u32 param;     // +28 (mask 1)
+    native::pad<4> _32;
+    u8 params[4];             // +36 (mask 0x10000 << i)
+    native::be_u32 fx_mask;   // +40
+    native::pad<16> _44;
+    native::be_u32 w60;       // +60
+    native::pad<4> _64;
+    native::be_f32 f68, f72;  // +68
+    native::be_u32 w76;       // +76
+    native::be_f32 f80, f84, f88;  // +80
+    native::be_u32 w92;       // +92
+    native::be_f32 f96, f100, f104;  // +96
+    native::pad<12> _108;
+    native::be_f32 f120, f124, f128;  // +120
+    native::be_u32 w132, w136, w140;  // +132
+    native::be_f32 f144;      // +144
+    native::pad<16> _148;
+    native::be_f32 f164;      // +164
+    native::pad<52> _168;
+};
+static_assert(sizeof(VoiceParams) == 220 && offsetof(VoiceParams, f164) == 164);
+
+// The request Audio_StartFocusSound gets (PlayDesc).
+struct PlayDesc {
+    native::be_f32 position[3];  // +0
+    native::pad<4> _12;
+    native::be_f32 velocity[3];  // +16
+    native::pad<4> _28;
+    native::be_f32 gain;         // +32 (flag 4)
+    native::be_u32 w36;          // +36: nonzero = not positioned
+    native::be_u32 param;        // +40
+    u8 params[4];                // +44
+    native::be_u32 key;          // +48
+    native::be_s32 priority;     // +52
+    native::be_u32 flags;        // +56
+    native::be_u32 zone;         // +60
+    native::be_u32 shape;        // +64
+};
+static_assert(offsetof(PlayDesc, shape) == 64);
+
+// ---------------------------------------------------------------- native functions (emitters)
+void Emitter_Init(Emitter* e);
+bool KeyMap_Set(u32 handle, u32 key, s32 priority);
+void KeyMap_Insert(KeyMap* map, const native::be_u32* key, u64 value);
+void HandlePool_Grow(EmitterPool* pool, s32 capacity);
+void Emitter_BuildParams(VoiceParams* p, Block* cur, SoundDef* def, Block* prev);
+bool Emitter_Start(u32 handle);
+void Emitter_Update(Emitter* e, const native::be_f32* listener, u32 unused, u8 listener_still, f64 dt);
+void Emitter_Stop(u32 handle, u8 fade);
+void Audio_FocusPlay();
+void Emitter_Spatialise(Block* s, const native::be_f32* l, const native::be_f32* pos, const native::be_f32* vel,
+                        SoundDef* def, u32 zone, u32 shape, u8 occlude, u8 doppler);
+void Audio_StartFocusSound(native::be_u32* out, SoundDef* desc, PlayDesc* play);
+void Audio_UpdateMix(f64 dt);
+
+}  // namespace sly4::audio

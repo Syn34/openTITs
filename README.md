@@ -10,14 +10,14 @@ The goal is to rewrite every one of the game's 24,164 functions as native C++: t
 
 <!-- progress:start -->
 
-**5.3% complete:** 1,291 of 24,164 functions are native C++.
+**5.7% complete:** 1,372 of 24,164 functions are native C++.
 
-`██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` 5.3%
+`██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` 5.7%
 
 | Stage | Functions | Share |
 |---|---:|---:|
-| Native C++ (done) | 1,291 | 5.3% |
-| Decompiled in the old register style, being converted to native | 11,715 | 48.5% |
+| Native C++ (done) | 1,372 | 5.7% |
+| Decompiled in the old register style, being converted to native | 11,634 | 48.1% |
 | Not decompiled yet | 11,158 | 46.2% |
 
 By folder (functions decompiled so far):
@@ -25,11 +25,11 @@ By folder (functions decompiled so far):
 | Folder | Area | Native | To convert | Native share |
 |---|---|---:|---:|---:|
 | `src/` | Start-up: `main`, command line | 0 | 2 | 0.0% |
-| `src/audio/` | Sound library, emitters, voices, mixing | 11 | 59 | 15.7% |
+| `src/audio/` | Sound library, emitters, voices, mixing | 70 | 0 | 100.0% |
 | `src/common/` | Heaps, allocators, free lists, UI helpers | 36 | 0 | 100.0% |
 | `src/container/` | Vectors and free lists | 3 | 0 | 100.0% |
 | `src/debug/` | Debug start-up | 1 | 0 | 100.0% |
-| `src/file/` | File layer: FIOS, zip archives, disc files, caches | 0 | 74 | 0.0% |
+| `src/file/` | File layer: FIOS, zip archives, disc files, caches | 22 | 52 | 29.7% |
 | `src/font/` | Fonts, font sets, texture loading and decoding | 38 | 0 | 100.0% |
 | `src/game/` | `Game_Load`, `Game_Update`, per-frame, levels, trophies | 48 | 0 | 100.0% |
 | `src/gfx/` | Renderer: shaders, post-process, particles, RSX/GCM | 901 | 535 | 62.7% |

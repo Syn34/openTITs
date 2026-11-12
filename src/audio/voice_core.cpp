@@ -1,38 +1,35 @@
 // Handle layer of the sound library: lock, lookup, count and stop.
-#include "voice_layer.h"
+#include "snd.h"
 
-using namespace sly4;
-using namespace sly4::snd;
+namespace sly4::snd {
+using namespace opentit::native;
 
-// Snd_Lock / Snd_Unlock: the library's global mutex. r3 is passed through
-// unused; the result is the mutex call's.
-DECOMP(006EFD10, Snd_Lock) { call(ctx, sfn::Snd_LockImpl); }
-DECOMP(006EFD34, Snd_Unlock) { call(ctx, sfn::Snd_UnlockImpl); }
+// Snd_Lock / Snd_Unlock: the library's global mutex.
+void Snd_Lock() { call(sfn::Snd_LockImpl); }
+void Snd_Unlock() { call(sfn::Snd_UnlockImpl); }
 
 // Handler* Snd_Lookup(u32 handle)
 // 0 for a handle without the live bit. (The original's range check on the
 // index can't fail: it is 8 bits.)
-DECOMP(006E5B6C, Snd_Lookup) {
-    const u32 handle = arg<u32>(ctx, 0);
-    if ((handle & 0x80000000u) == 0) return ret(ctx, 0u);
-    call(ctx, sfn::Snd_Lock, {1});  // r3 holds the live bit here (unused)
-    const u32 p = Snd_Find(handle);
-    call(ctx, sfn::Snd_Unlock);
-    ret(ctx, p);
+Handler* Snd_Lookup(u32 handle) {
+    if ((handle & 0x80000000u) == 0) return nullptr;
+    Snd_Lock();
+    Handler* p = Snd_Find(handle);
+    Snd_Unlock();
+    return p;
 }
 
 // u32 Handler_CountActive(Handler* h)
 // Counts type-4 handlers with +581 set in h and all its descendants.
-DECOMP(006E6718, Handler_CountActive) {
-    const u32 h = arg<u32>(ctx, 0);
-    const u32 type = (load<u32>(h) >> 24) & 0x1F;
-    u32 child = load<u32>(h + kHFirstChild);
-    u32 count = (type == 4 && ref<u8>(h + kHType4Active) != 0) ? 1 : 0;
-    while (child != 0) {
-        count += static_cast<u32>(call(ctx, sfn::Handler_CountActive, {child}));
-        child = load<u32>(child + kHNextSibling);
+u32 Handler_CountActive(Handler* h) {
+    Handler& self = gref(h);
+    Handler* child = self.first_child;
+    u32 count = (self.type() == 4 && gref<u8>(guest(h) + 581) != 0) ? 1 : 0;
+    while (child) {
+        count += Handler_CountActive(child);
+        child = child->next_sibling;
     }
-    ret(ctx, count);
+    return count;
 }
 
 // void Handler_Stop(Handler* h, bool recurse, bool force, bool flag)
@@ -43,20 +40,18 @@ DECOMP(006E6718, Handler_CountActive) {
 // type 5, the type's stop function otherwise. If nothing was stopped and it
 // wasn't forced, it is released; otherwise it is detached, finished and,
 // if still there, freed.
-DECOMP(006E620C, Handler_Stop) {
-    u32 h = arg<u32>(ctx, 0);
-    u32 recurse = arg<u32>(ctx, 1), force = arg<u32>(ctx, 2);
-    const u32 flag = arg<u32>(ctx, 3);
-    if (flag != 0 && force == 0 && (load<u32>(h + kHFlags) & 0x80) != 0) return;
+void Handler_Stop(Handler* hp, u32 recurse, u32 force, u32 flag) {
+    Handler& h = gref(hp);
+    if (flag != 0 && force == 0 && (h.flags & 0x80) != 0) return;
 
-    call(ctx, sfn::Snd_Lock, {h, recurse, force, flag});
-    const u32 handle = load<u32>(h);
+    Snd_Lock();
+    const u32 handle = h.handle;
     if ((handle & 0x80000000u) == 0) {
-        Snd_Log(ctx, kFmtInactive, kFileSndhand, 1118);
-        call(ctx, sfn::Snd_Unlock);
+        Snd_LogAt(kFmtInactive, kFileSndhand, 1118);
+        Snd_Unlock();
         return;
     }
-    u32 state = load<u32>(h + kHFlags);
+    u32 state = h.flags;
     if (flag != 0) state |= 0x20;
     if (state & 0x80) {
         recurse = 1;
@@ -64,41 +59,48 @@ DECOMP(006E620C, Handler_Stop) {
     } else if (state & 0xE) {
         force = 1;
     }
-    store<u32>(h + kHFlags, state | 0x80);
+    h.flags = state | 0x80;
     if (recurse != 0)
-        for (u32 child = load<u32>(h + kHFirstChild); child != 0; child = load<u32>(child + kHNextSibling))
-            call(ctx, sfn::Handler_Stop, {child, recurse, force, flag});
+        for (Handler* child = h.first_child; child; child = child->next_sibling) Handler_Stop(child, recurse, force, flag);
 
     // (The original's checks on the handle's index and live bit here can't fail.)
-    call(ctx, sfn::Snd_Lock);
-    h = Snd_Find(handle);
-    call(ctx, sfn::Snd_Unlock);
-    if (h == 0) {
-        Snd_Log(ctx, kFmtChildren, kFileSndhand, 1161);
-        call(ctx, sfn::Snd_Unlock);
+    Snd_Lock();
+    Handler* found = Snd_Find(handle);
+    Snd_Unlock();
+    if (!found) {
+        Snd_LogAt(kFmtChildren, kFileSndhand, 1161);
+        Snd_Unlock();
         return;
     }
 
     u32 stopped = 0;
-    const u32 type = (load<u32>(h) >> 24) & 0x1F;
+    const u32 type = found->type();
     if (type == kHandlerTypeVoice) {
-        stopped = static_cast<u32>(call(ctx, sfn::Voice_Stop5, {h, force, flag}));
-    } else if (const u32 info = load<u32>(kHandlerTypes + type * 4)) {
-        if (const u32 stop = load<u32>(info + 32)) stopped = static_cast<u32>(call_ptr(ctx, stop, {h, force, stop}));
+        stopped = Voice_StopHandler(static_cast<VoiceHandler*>(found), force);
+    } else if (const HandlerType* info = global<gp<HandlerType>>(kHandlerTypes + type * 4)) {
+        if (const u32 stop = info->stop) stopped = call_ptr<u32>(stop, found, force, stop);
     }
     if ((force | stopped) == 0) {
-        call(ctx, sfn::Handler_Release, {h});
-        call(ctx, sfn::Snd_Unlock);
+        Handler_Release(found);
+        Snd_Unlock();
         return;
     }
-    call(ctx, sfn::Handler_Detach, {h});
-    call(ctx, sfn::Handler_Finish, {h});
-    call(ctx, sfn::Snd_Lock);
-    const u32 again = Snd_Find(handle);
-    call(ctx, sfn::Snd_Unlock);
-    if (again != 0) {
-        const u32 root = (load<u32>(again + kHParent) == 0 && load<u32>(again + kHFirstChild) != 0) ? 1 : 0;
-        call(ctx, sfn::Handler_Free, {again, root});
+    Handler_Detach(found);
+    Handler_UnlinkTracks(found);
+    Snd_Lock();
+    Handler* again = Snd_Find(handle);
+    Snd_Unlock();
+    if (again) {
+        const u32 root = (!again->parent && again->first_child) ? 1 : 0;
+        Handler_Free(again, root);
     }
-    call(ctx, sfn::Snd_Unlock);
+    Snd_Unlock();
 }
+
+}  // namespace sly4::snd
+
+NATIVE(006EFD10, sly4::snd::Snd_Lock)
+NATIVE(006EFD34, sly4::snd::Snd_Unlock)
+NATIVE(006E5B6C, sly4::snd::Snd_Lookup)
+NATIVE(006E6718, sly4::snd::Handler_CountActive)
+NATIVE(006E620C, sly4::snd::Handler_Stop)
