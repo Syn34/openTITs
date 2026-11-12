@@ -13546,3 +13546,33 @@
 0003E0CC Obj_PlayMoveState_0003E0CC       // u32 f(Obj* o): plays the animation state for the current move. With the move table o->+612 (r3 = o without one), the record o->+612 + 116 * o->+716 + 92 gives t (name?); decompiled: src/obj/obj48b.cpp
 00073EAC Cmd_RunOnComp_00073EAC           // u32 f(Cmd* c, Owner* x): like Cmd_RunOnTarget_0042E6C0 with a component target: o = the +20 of Effect_FindComponent(x, c->+16) when its vt[32] answers 18 (Hash_ (name?); decompiled: src/obj/obj48b.cpp
 00086528 XmlNew_B100F8_00086528           // T* f(?, XmlCursor* x): new 44-byte record (base Obj_InitVt_B21C98, vtable 0x00B100F8): hashes +12..+32 = 0x7A30D7E3, 0x8A93973F, 0x04B8CC71, 0x001F9B50, 0x93116 (name?); decompiled: src/obj/obj48b.cpp
+
+# Game code medium sweep part 29
+00085B10 AnimCmd_PlayTrackReverse_00085B10   // AnimScript: negate a track's speed (Obj_SetSign_003541E0), push to world list; decompiled: src/obj/mid29_a.cpp
+0006D078 AnimCmd_ResetToTarget_0006D078      // AnimScript: Obj_Reset121FA8(a, b, ...) + Player_Settle11F0E4; decompiled: src/obj/mid29_a.cpp
+00073AA8 AnimCmd_FlushPending_00073AA8       // AnimScript: flush pending work (mode 0xFD81 = global list *0x00F65BE8); decompiled: src/obj/mid29_a.cpp
+0007BF3C AnimCmd_CopyTargetState_0007BF3C    // AnimScript: target +576 matrix / +640 bytes into components; decompiled: src/obj/mid29_a.cpp
+00081400 AnimCmd_BindMaterial_00081400       // AnimScript: material by name into kind-7 component (+24 / +20); decompiled: src/obj/mid29_a.cpp
+00071928 AnimCmd_SendTargetMsg_00071928      // AnimScript: vt[344] message (vtable 0x00B0DADC) / vt[352] to target; decompiled: src/obj/mid29_a.cpp
+00080FC4 AnimCmd_MapEntityToVar_00080FC4     // AnimScriptCommandMapEntityToVar (strings at 0x00AC4E4C / 0x00AC4E7C); decompiled: src/obj/mid29_a.cpp
+00081B00 AnimCmd_SetTargetOverride_00081B00  // AnimScript: per-subsystem enable byte + 4-byte value on target; decompiled: src/obj/mid29_b.cpp
+00097E50 AnimCmd_ApplySaveProfile_00097E50   // AnimScript: Save_Profile0C9FC8 -> Player_SetSave124D58 / ResetFromDef / SwitchDef; decompiled: src/obj/mid29_b.cpp
+00073078 AnimCmd_RefreshVolumes_00073078     // AnimScript: three volume refreshes via manager *0x00F657FC; decompiled: src/obj/mid29_b.cpp
+00086000 AnimCmd_PostEvent_00086000          // AnimScript: event kinds 1/3/4/11/16/28 -> World_Query482D14; decompiled: src/obj/mid29_b.cpp
+00076970 AnimCmd_SetColour_00076970          // AnimScript: EffectRule_Colour76708 rgba to node / material / record; decompiled: src/obj/mid29_b.cpp
+0006D840 AnimCmd_AttachToTarget_0006D840     // AnimScript: Obj_Attach0D15C0 with a 228-byte descriptor (Euler -> quaternion); decompiled: src/obj/mid29_b.cpp
+0009170C AnimCmd_SetAudioParam_0009170C      // AnimScript: Call_6D5038_If_0044CEB0 / Voice_SetParamByHandle_0044A78C level; decompiled: src/obj/mid29_b.cpp
+000A0270 AnimCmd_QueueVtB21040_000A0270      // AnimScript: queue VtB21040_Ctor_004321A4 command (CmdList_Push_0042C138); decompiled: src/obj/mid29_c.cpp
+0009AA20 AnimCmd_QueueObj42CCD4_0009AA20     // AnimScript: queue Obj_Ctor_0042CCD4 command; decompiled: src/obj/mid29_c.cpp
+000A16C0 AnimCmd_QueueObj4335C0_000A16C0     // AnimScript: queue Obj_Construct4335C0 command (names copied from kind-16 comps); decompiled: src/obj/mid29_c.cpp
+000A28C8 AnimCmd_QueueObj4342DC_000A28C8     // AnimScript: queue f_004342DC command (Node_PushF65B7C handle); decompiled: src/obj/mid29_c.cpp
+000A4BB8 AnimCmd_QueueVtB21280_000A4BB8      // AnimScript: queue VtB21280_Ctor_004386C4 command; decompiled: src/obj/mid29_c.cpp
+000A67E4 AnimCmd_QueueNamedB21388_000A67E4   // AnimScript: queue Obj_InitNamed_B21388_00439E4C command (save profile + point map); decompiled: src/obj/mid29_c.cpp
+0005E178 Obj_GatherComps_0005E178            // o->308 = 2, player reset, 5 components of o->428's vt[272]() into o->352; decompiled: src/obj/mid29_c.cpp
+000F0B48 Obj_SyncComps_000F0B48              // sync 4 components of o->356 (flag, def id, acos(y), f_000F0298 angle); decompiled: src/obj/mid29_c.cpp
+00170418 Obj_TakeDamage_00170418             // damage callback: health share with player, Obj_ApplyDamage; decompiled: src/obj/mid29_d.cpp
+0014CB70 Obj_OwnerMsg_0014CB70               // message 2 handler: owner flags, def direction, o->432 = 2; decompiled: src/obj/mid29_d.cpp
+0005FE40 Obj_PushCamTarget_0005FE40          // camera target push (vtable 0x00B13B38, camera +816 matrix); decompiled: src/obj/mid29_d.cpp
+000F0298 Obj_AngleTo_000F0298                // (o, f32* out (preset 360), f32 p[3], f32 base[3]) -> angle; guess from use
+0039D32C Volume_Activate39D32C               // (item, u8 arg, 1, u8) third volume kind's refresh; guess from use
+00454E88 List_FlushPendingAll_00454E88       // sibling of List_FlushPending_00454DBC (u8 c->+20 clear); guess
