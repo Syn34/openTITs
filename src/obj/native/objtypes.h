@@ -82,6 +82,31 @@ constexpr u32 kGameRandLast = 0x01164888;
 constexpr u32 kGameRandState = 0x01164890;
 inline u32 GameRandMix(u32 s) { return (std::rotl(s, 4) + std::rotl(s, 16)) ^ 0x87654321u; }
 inline f64 GameRandF(u64 v) { return S(static_cast<f64>(static_cast<s64>(v))); }
+// The generator kept in registers across several draws: Load reads both
+// words, Next is the current value as a float followed by a step, Commit
+// stores both back.
+struct GameRng {
+    u32 seed = 0;
+    u64 last = 0;
+    void Load() {
+        last = global<be_u64>(kGameRandLast);
+        seed = global<be_u32>(kGameRandState);
+    }
+    void Step() {
+        const u32 t = GameRandMix(seed);
+        seed = std::rotl(t, 16);
+        last = t & 0xFFFFu;
+    }
+    f64 Next() {
+        const f64 r = GameRandF(last);
+        Step();
+        return r;
+    }
+    void Commit() const {
+        global<be_u32>(kGameRandState) = seed;
+        global<be_u64>(kGameRandLast) = last;
+    }
+};
 
 // ---------------------------------------------------------------- common shapes
 struct Vec3 {
@@ -364,6 +389,69 @@ inline u32 NodeParamAddr(u32 node, u32 k) {
     const u32 rowB = b != -1 ? rows + (static_cast<u32>(b) << 7) : 0u;
     const u32 sel = gm<u8>(rowB + 2) != 0 ? rowB + global<be_u16>(0x0106CF7E) : 0u;
     return rowA + global<be_u16>(0x0106CF70) + (static_cast<u32>(gm<u8>(sel + k)) << 2);
+}
+
+// Append x to the PtrVec v, doubling the capacity when full (PtrVector_Reserve);
+// the count and high-water mark re-read as the compiled code does.
+template <typename T>
+void PtrVecPush(PtrVec<T>& v, u32 x) {
+    u32 n = v.count;
+    const u32 cap = v.cap;
+    if (n == cap) {
+        call(fn::PtrVector_Reserve, &v, (cap << 1) & 0xFFFFFFFEu);
+        n = v.count;
+    }
+    gm<be_u32>(v.data.ea + (n << 2)) = x;
+    const u32 n1 = v.count + 1;
+    const u32 hi = v.mark;
+    v.count = static_cast<u16>(n1);
+    v.mark = static_cast<u16>(static_cast<s32>(hi) > static_cast<s32>(n1 & 0xFFFFu) ? hi : n1);
+}
+
+// ---------------------------------------------------------------- effect sets
+// The inlined BST select of an effect set (or a sub-set): the tree root
+// is *(set + rootOff); equality, the left child +12 when the node's key is
+// unsigned-greater than hash, else the right +16. Each node passed on the
+// way is pushed to the set's path (+pathOff + 4 * the s16 count at
+// +cntOff, unchecked). Found: +selOff = node and *g = node +8; a walk off
+// the tree leaves +selOff = the last node (*g untouched); an empty tree
+// zeroes +selOff and *g. Returns the found node or 0.
+inline u32 BstSelect(u32 set, u32 rootOff, u32 cntOff, u32 pathOff, u32 selOff, u32 g, u32 hash) {
+    u32 node = gm<be_u32>(gm<be_u32>(set + rootOff));
+    if (node == 0) {
+        gm<be_u32>(set + selOff) = 0u;
+        gm<be_u32>(g) = 0u;
+        return 0;
+    }
+    gm<be_u16>(set + cntOff) = 0;
+    for (;;) {
+        const u32 key = gm<be_u32>(node + 4);
+        if (key == hash) break;
+        const u32 next = gm<be_u32>(node + (key > hash ? 12 : 16));
+        if (next == 0) {
+            gm<be_u32>(set + selOff) = node;
+            return 0;
+        }
+        const s32 n = gm<be_s16>(set + cntOff);
+        gm<be_u16>(set + cntOff) = static_cast<u16>(n + 1);
+        gm<be_u32>(set + pathOff + 4u * static_cast<u32>(n)) = node;
+        node = next;
+    }
+    gm<be_u32>(set + selOff) = node;
+    gm<be_u32>(g) = gm<be_u32>(node + 8).get();
+    return node;
+}
+constexpr u32 kEffSetSelected = 0x011DE288u;  // the selected set entry's def (node +8)
+constexpr u32 kEffSubSelected = 0x011DE2A8u;  // a def's sub-set selected entry's value
+// The global effect set's select (root +16, path +20, count +100,
+// selected +104, global kEffSetSelected).
+inline u32 EffectSetSelect(u32 set, u32 hash) { return BstSelect(set, 16, 100, 20, 104, kEffSetSelected, hash); }
+// new Effect(def) in 140 bytes of SmallAlloc (0 when the allocation fails).
+inline u32 NewEffect140(u32 def) {
+    const u32 p = call<u32>(fn::SmallAlloc, 140u);
+    if (p == 0) return 0;
+    call(0x004C7A68u, p, def);  // Effect_Construct (Effect*, def)
+    return p;
 }
 
 }  // namespace sly4::obj

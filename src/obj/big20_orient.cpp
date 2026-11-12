@@ -2,33 +2,70 @@
 // yaw, an optional carrier matrix and a smoothed up vector.
 #include "big20.h"
 
-using namespace sly4;
-using namespace sly4::big20;
+namespace sly4::obj {
 
 namespace {
-namespace orient {
 constexpr u32 kK = 0x00191110u;        // .text f32: 0, 1, 0.5, 0.04, 0.001, 1e-4
 constexpr u32 kAxisA = 0x01164B70u;    // f32[3] (Constants_Init_0056B93C): yaw cos axis
 constexpr u32 kAxisB = 0x01164B50u;    // f32[3]: yaw sin axis
 constexpr u32 kUp = 0x01164B60u;       // f32[3]: the up axis
+constexpr u32 kIdentity = 0x01164BD0u; // f32[4][4] identity
 constexpr u32 Quat_ToMatrix = 0x00553A90;    // (f32 out[4][4], const f32 q[4], const f32 pos[3])
 constexpr u32 Quat_FromMatrix = 0x00555478;  // (f32 out[4], const f32 m[4][4])
 constexpr u32 Quat_Multiply = 0x005556A4;    // (f32 out[4], const f32 a[4], const f32 b[4])
 constexpr u32 WorldObj_MarkDirty = 0x0057D000;
 constexpr u32 WorldObj_UpdateLod = 0x0057EE00;  // (obj, unused, bool)
+constexpr u32 Math_Cosf = 0x007344E0;
+constexpr u32 Math_Sinf = 0x007345F0;
 
-inline f64 K(u32 off) { return Lf(kK + off); }
-inline f64 W(u32 w) { return mid13::LfsF(w); }
+struct OrientObj {
+    pad<96> _0;
+    Mtx44 m;            // +96
+    be_u32 world;       // +160 (+16 its rows)
+    pad<224> _164;
+    be_u32 posobj;      // +388 (+288 a vector)
+    pad<72> _392;
+    Vec3 up;            // +464
+    pad<12> _476;
+    be_f32 yaw;         // +488
+    pad<124> _492;
+    be_u32 carrier;     // +616
+    pad<4> _620;
+    be_u32 lod;         // +624 (+80 its matrix, +256 its world object)
+    pad<12> _628;
+    Vec3 q640;          // +640
+    pad<4> _652;
+    be_f32 spin;        // +656
+    pad<4> _660;
+    be_u32 direct;      // +664
+};
+static_assert(offsetof(OrientObj, world) == 160 && offsetof(OrientObj, posobj) == 388 && offsetof(OrientObj, up) == 464);
+static_assert(offsetof(OrientObj, yaw) == 488 && offsetof(OrientObj, carrier) == 616 && offsetof(OrientObj, q640) == 640);
+static_assert(offsetof(OrientObj, spin) == 656 && offsetof(OrientObj, direct) == 664);
+// The original's locals (sp offsets - 112).
+struct OrientLocals {
+    Vec4 q;             // sp+112
+    Vec4 qn;            // sp+128
+    Vec4 _144;
+    Vec4 q1;            // sp+160
+    Vec4 arc;           // sp+176
+    Vec4 prod;          // sp+192
+    Vec4 q3;            // sp+208
+    Vec4 q2;            // sp+224
+    Vec4 q4;            // sp+240
+    Vec4 q5;            // sp+256
+    Mtx44 n;            // sp+272
+    Mtx44 m;            // sp+336
+};
+static_assert(offsetof(OrientLocals, n) == 160 && offsetof(OrientLocals, m) == 224);
 
-// Rows 0..3 (3 words each, 16 apart) copied from src to dst.
-inline void CopyRows3(u32 dst, u32 src, u32 dstride, u32 sstride, u32 rows) {
-    for (u32 r = 0; r < rows; ++r)
-        for (u32 c = 0; c < 3; ++c) Cw(dst + dstride * r + 4 * c, src + sstride * r + 4 * c);
-}
+f64 K(u32 off) { return lf(global<be_f32>(kK + off)); }
+void SetW(be_f32& d, u32 w) { set_bits(d, w); }
+void SetF(be_f32& d, f64 x) { d = static_cast<f32>(x); }
 
 // The rotation taking the up axis v onto u (both unit, f32 math as
 // compiled; nearly opposite: a half turn about an axis normal to v).
-void ShortestArc(u32 out, f64 ux, f64 uy, f64 uz, f64 vx, f64 vy, f64 vz, u32 zeroW, f64 one) {
+void ShortestArc(Vec4& out, f64 ux, f64 uy, f64 uz, f64 vx, f64 vy, f64 vz, u32 zeroW, f64 one) {
     f64 d = S(S(vy + uy) * vy);
     d = Fmadds(S(vx + ux), vx, d);
     d = Fmadds(S(vz + uz), vz, d);
@@ -41,43 +78,35 @@ void ShortestArc(u32 out, f64 ux, f64 uy, f64 uz, f64 vx, f64 vy, f64 vz, u32 ze
         l = Fmadds(cz, cz, l);
         l = Fmadds(d, d, l);
         const f64 inv = S(one / S(std::sqrt(l)));
-        store<u32>(out + 0, Fb(S(cy * inv)));
-        store<u32>(out + 4, Fb(S(cx * inv)));
-        store<u32>(out + 8, Fb(S(cz * inv)));
-        store<u32>(out + 12, Fb(S(d * inv)));
+        SetF(out.x, S(cy * inv));
+        SetF(out.y, S(cx * inv));
+        SetF(out.z, S(cz * inv));
+        SetF(out.w, S(d * inv));
         return;
     }
-    if (vx > vy) {
-        const f64 n = S(std::sqrt(Fmadds(vx, vx, S(vz * vz))));
-        if (n < K(20)) {
-            store<u32>(out + 0, zeroW);
-            store<u32>(out + 4, zeroW);
-            store<u32>(out + 8, zeroW);
-            store<u32>(out + 12, 0x3F800000u);
-            return;
-        }
-        const f64 inv = S(one / n);
-        store<u32>(out + 4, zeroW);
-        store<u32>(out + 12, zeroW);
-        store<u32>(out + 8, Fb(S(inv * vx)));
-        store<u32>(out + 0, Fb(-S(inv * vz)));
+    const bool xbig = vx > vy;
+    const f64 a = xbig ? vx : vy;
+    const f64 n = S(std::sqrt(Fmadds(a, a, S(vz * vz))));
+    if (n < K(20)) {
+        SetW(out.x, zeroW);
+        SetW(out.y, zeroW);
+        SetW(out.z, zeroW);
+        SetW(out.w, 0x3F800000u);
+        return;
+    }
+    const f64 inv = S(one / n);
+    if (xbig) {
+        SetW(out.y, zeroW);
+        SetW(out.w, zeroW);
+        SetF(out.z, S(inv * vx));
+        SetF(out.x, -S(inv * vz));
     } else {
-        const f64 n = S(std::sqrt(Fmadds(vy, vy, S(vz * vz))));
-        if (n < K(20)) {
-            store<u32>(out + 0, zeroW);
-            store<u32>(out + 4, zeroW);
-            store<u32>(out + 8, zeroW);
-            store<u32>(out + 12, 0x3F800000u);
-            return;
-        }
-        const f64 inv = S(one / n);
-        store<u32>(out + 0, zeroW);
-        store<u32>(out + 12, zeroW);
-        store<u32>(out + 4, Fb(S(inv * vz)));
-        store<u32>(out + 8, Fb(-S(inv * vy)));
+        SetW(out.x, zeroW);
+        SetW(out.w, zeroW);
+        SetF(out.y, S(inv * vz));
+        SetF(out.z, -S(inv * vy));
     }
 }
-}  // namespace orient
 }  // namespace
 
 // void f(Obj* o): with o +664 set, o's matrix (+96, rows of 3) is copied
@@ -90,26 +119,26 @@ void ShortestArc(u32 out, f64 ux, f64 uy, f64 uz, f64 vx, f64 vy, f64 vz, u32 ze
 // applied to the quaternion o +640 (w 0) added. Without o +624 the smoothed
 // up vector o +464 is moved 4% toward kUp, renormalized, and the shortest
 // arc from kUp to it pre-multiplies the rotation. The normalized rotation
-// becomes the matrix handed to vfunc 84 (o, f32[4][4]).
-DECOMP(00191128, Obj_UpdateOrient191128) {
-    using namespace orient;
-    const u32 o = arg<u32>(ctx, 0);
-    if (load<u32>(o + 664) != 0) {
-        const u32 w = load<u32>(o + 160);
-        CopyRows3(w + 16, o + 96, 16, 16, 4);
-        call(ctx, WorldObj_MarkDirty, {w});
+// becomes the matrix handed to vfunc 84 (o, f32[4][4]). No caller reads r3.
+void Obj_UpdateOrient191128(OrientObj* o) {
+    if (o->direct != 0u) {
+        const u32 w = o->world;
+        CopyMtxXYZ(gm<Mtx44>(w + 16), o->m);
+        call(WorldObj_MarkDirty, w);
         return;
     }
-    Stack frame(ctx, 496);
-    const u32 sp = frame.addr();
-    const u32 m = sp + 336;
-    CopyRows3(m, kIdentity, 16, 16, 4);
-    const u32 zeroW = load<u32>(kK);  // f31 / f27: lfs of 0.0 (stored raw)
+    GuestFrame frame(496);
+    OrientLocals& L = *frame.as<OrientLocals>(112);
+    Mtx44& m = L.m;
+    CopyMtxXYZ(m, global<Mtx44>(kIdentity));
+    const u32 zeroW = global<be_u32>(kK);  // f31 / f27: lfs of 0.0 (stored raw)
     u32 w27 = zeroW, w28 = zeroW, w29 = zeroW;
-    const f64 c = callf(ctx, b20fn::Math_Cosf, {}, {Lf(o + 488)});
-    const f64 a0 = Lf(kAxisA), a1 = Lf(kAxisA + 4), a2 = Lf(kAxisA + 8);
-    const f64 s = callf(ctx, b20fn::Math_Sinf, {}, {Lf(o + 488)});
-    f64 fx = S(Lf(kAxisB) * s), fy = S(Lf(kAxisB + 4) * s), fz = S(Lf(kAxisB + 8) * s);
+    const f64 c = call<f64>(Math_Cosf, lf(o->yaw));
+    const Vec3& A = global<Vec3>(kAxisA);
+    const Vec3& B = global<Vec3>(kAxisB);
+    const f64 a0 = lf(A.x), a1 = lf(A.y), a2 = lf(A.z);
+    const f64 s = call<f64>(Math_Sinf, lf(o->yaw));
+    f64 fx = S(lf(B.x) * s), fy = S(lf(B.y) * s), fz = S(lf(B.z) * s);
     fx = Fmadds(a0, c, fx);
     fy = Fmadds(a1, c, fy);
     fz = Fmadds(a2, c, fz);
@@ -123,77 +152,71 @@ DECOMP(00191128, Obj_UpdateOrient191128) {
         fy = S(fy * inv);
         fz = S(fz * inv);
     }
-    // n = rows {fz, 0, -fx}, {0, 1, 0}, {fx, fy, fz}, kZeroVec at sp +272;
-    // the same rows at m.
-    const u32 n = sp + 272;
-    for (u32 b : {n, m}) {
-        store<u32>(b + 0, Fb(fz));
-        store<u32>(b + 4, 0);
-        store<u32>(b + 8, Fb(-fx));
-        store<u32>(b + 16, 0);
-        store<u32>(b + 20, 0x3F800000u);
-        store<u32>(b + 24, 0);
-        store<u32>(b + 32, Fb(fx));
-        store<u32>(b + 36, Fb(fy));
-        store<u32>(b + 40, Fb(fz));
-        Cw(b + 48, kZeroVec);
-        Cw(b + 52, kZeroVec + 4);
-        Cw(b + 56, kZeroVec + 8);
+    // n = rows {fz, 0, -fx}, {0, 1, 0}, {fx, fy, fz}, kZeroVec; the same rows at m.
+    for (Mtx44* b : {&L.n, &m}) {
+        SetF(b->r[0].x, fz);
+        SetW(b->r[0].y, 0u);
+        SetF(b->r[0].z, -fx);
+        SetW(b->r[1].x, 0u);
+        SetW(b->r[1].y, 0x3F800000u);
+        SetW(b->r[1].z, 0u);
+        SetF(b->r[2].x, fx);
+        SetF(b->r[2].y, fy);
+        SetF(b->r[2].z, fz);
+        CopyXYZ(b->r[3], global<Vec3>(kZeroVec));
     }
-    const u32 posObj = load<u32>(o + 388);
-    const u32 carrier = load<u32>(o + 616);
-    const u32 lod = load<u32>(o + 624);
+    const u32 posObj = o->posobj;
+    const u32 carrier = o->carrier;
+    const u32 lod = o->lod;
     if (posObj != 0) {
-        const u32 v = (posObj + 288) & ~15u;  // lvx
-        w27 = load<u32>(v);
-        w28 = load<u32>(v + 4);
-        w29 = load<u32>(v + 8);
+        const Quad& v = gm<Quad>((posObj + 288) & ~15u);  // lvx
+        w27 = v.w[0];
+        w28 = v.w[1];
+        w29 = v.w[2];
     }
     if (carrier != 0) {
-        call(ctx, WorldObj_UpdateLod, {load<u32>(lod + 256), 0, 1});
-        CopyRows3(m, load<u32>(o + 624) + 80, 16, 16, 4);
-        const f64 uy = Lf(kUp + 4), ux = Lf(kUp), uz = Lf(kUp + 8);
+        call(WorldObj_UpdateLod, gm<be_u32>(lod + 256).get(), 0u, 1u);
+        CopyMtxXYZ(m, gm<Mtx44>(o->lod + 80));
+        const Vec3& up = global<Vec3>(kUp);
+        const f64 uy = lf(up.y), ux = lf(up.x), uz = lf(up.z);
         f64 l = S(uy * uy);
         l = Fmadds(ux, ux, l);
         l = Fmadds(uz, uz, l);
         const f64 ln = S(std::sqrt(l));
-        const f64 half = S(Lf(o + 656) * K(8));
+        const f64 half = S(lf(o->spin) * K(8));
         const f64 inv = S(one / ln);
         f64 qx = S(ux * inv), qy = S(uy * inv), qz = S(uz * inv);
-        const f64 sh = callf(ctx, b20fn::Math_Sinf, {}, {half});
+        const f64 sh = call<f64>(Math_Sinf, half);
         qx = S(sh * qx);
         qy = S(sh * qy);
         qz = S(sh * qz);
-        const f64 ch = callf(ctx, b20fn::Math_Cosf, {}, {half});
-        const u32 q1 = sp + 160, q2 = sp + 224, q3 = sp + 208, q4 = sp + 240, q5 = sp + 256;
-        store<u32>(q1 + 0, Fb(qx));
-        store<u32>(q1 + 4, Fb(qy));
-        store<u32>(q1 + 8, Fb(qz));
-        store<u32>(q1 + 12, Fb(ch));
-        Cw(q2 + 0, o + 640);
-        Cw(q2 + 4, o + 644);
-        Cw(q2 + 8, o + 648);
-        store<u32>(q2 + 12, zeroW);
-        call(ctx, Quat_Multiply, {q3, q1, q2});
-        store<u32>(q4 + 12, load<u32>(q1 + 12));
-        store<u32>(q4 + 0, load<u32>(q1 + 0) ^ 0x80000000u);  // fneg
-        store<u32>(q4 + 4, load<u32>(q1 + 4) ^ 0x80000000u);
-        store<u32>(q4 + 8, load<u32>(q1 + 8) ^ 0x80000000u);
-        call(ctx, Quat_Multiply, {q5, q3, q4});
-        w27 = Fb(S(Lf(m + 48) + Lf(q5 + 0)));
-        w28 = Fb(S(Lf(m + 52) + Lf(q5 + 4)));
-        w29 = Fb(S(Lf(m + 56) + Lf(q5 + 8)));
+        const f64 ch = call<f64>(Math_Cosf, half);
+        SetF(L.q1.x, qx);
+        SetF(L.q1.y, qy);
+        SetF(L.q1.z, qz);
+        SetF(L.q1.w, ch);
+        CopyXYZ(L.q2, o->q640);
+        SetW(L.q2.w, zeroW);
+        call(Quat_Multiply, &L.q3, &L.q1, &L.q2);
+        SetW(L.q4.w, bits(L.q1.w));
+        SetW(L.q4.x, bits(L.q1.x) ^ 0x80000000u);  // fneg
+        SetW(L.q4.y, bits(L.q1.y) ^ 0x80000000u);
+        SetW(L.q4.z, bits(L.q1.z) ^ 0x80000000u);
+        call(Quat_Multiply, &L.q5, &L.q3, &L.q4);
+        w27 = std::bit_cast<u32>(static_cast<f32>(S(lf(m.r[3].x) + lf(L.q5.x))));
+        w28 = std::bit_cast<u32>(static_cast<f32>(S(lf(m.r[3].y) + lf(L.q5.y))));
+        w29 = std::bit_cast<u32>(static_cast<f32>(S(lf(m.r[3].z) + lf(L.q5.z))));
     }
-    store<u32>(m + 48, w27);
-    store<u32>(m + 52, w28);
-    store<u32>(m + 56, w29);
-    const u32 q = sp + 112;
-    call(ctx, Quat_FromMatrix, {q, m});
-    f64 x = Lf(q), y = Lf(q + 4), z = Lf(q + 8), w = Lf(q + 12);
-    if (load<u32>(o + 624) == 0) {
+    SetW(m.r[3].x, w27);
+    SetW(m.r[3].y, w28);
+    SetW(m.r[3].z, w29);
+    call(Quat_FromMatrix, &L.q, &m);
+    f64 x = lf(L.q.x), y = lf(L.q.y), z = lf(L.q.z), w = lf(L.q.w);
+    if (o->lod == 0u) {
         // Smoothed up vector o +464 moved 4% toward kUp, renormalized.
-        const f64 cy = Lf(kUp + 4), cx = Lf(kUp), cz = Lf(kUp + 8);
-        const f64 oy = Lf(o + 468), ox = Lf(o + 464), oz = Lf(o + 472);
+        const Vec3& up = global<Vec3>(kUp);
+        const f64 cy = lf(up.y), cx = lf(up.x), cz = lf(up.z);
+        const f64 oy = lf(o->up.y), ox = lf(o->up.x), oz = lf(o->up.z);
         const f64 k = K(12);
         const f64 ny0 = Fmadds(S(cy - oy), k, oy);
         const f64 nx0 = Fmadds(S(cx - ox), k, ox);
@@ -203,10 +226,10 @@ DECOMP(00191128, Obj_UpdateOrient191128) {
         l = Fmadds(nz0, nz0, l);
         const f64 inv = S(one / S(std::sqrt(l)));
         f64 ux = S(nx0 * inv), uy = S(ny0 * inv), uz = S(nz0 * inv);
-        store<u32>(o + 464, Fb(ux));
-        store<u32>(o + 468, Fb(uy));
-        store<u32>(o + 472, Fb(uz));
-        const f64 vy0 = Lf(kUp + 4), vx0 = Lf(kUp), vz0 = Lf(kUp + 8);
+        SetF(o->up.x, ux);
+        SetF(o->up.y, uy);
+        SetF(o->up.z, uz);
+        const f64 vy0 = lf(up.y), vx0 = lf(up.x), vz0 = lf(up.z);
         f64 lu = S(uy * uy);
         f64 lv = S(vy0 * vy0);
         lu = Fmadds(ux, ux, lu);
@@ -219,14 +242,13 @@ DECOMP(00191128, Obj_UpdateOrient191128) {
         ux = S(iu * ux);
         uz = S(iu * uz);
         const f64 vy = S(iv * vy0), vx = S(iv * vx0), vz = S(iv * vz0);
-        const u32 arc = sp + 176;
-        ShortestArc(arc, ux, uy, uz, vx, vy, vz, zeroW, one);
-        call(ctx, Quat_Multiply, {sp + 192, arc, q});
-        for (u32 k4 = 0; k4 < 16; k4 += 4) Cw(q + k4, sp + 192 + k4);
-        x = Lf(sp + 192);
-        y = Lf(sp + 196);
-        z = Lf(sp + 200);
-        w = Lf(sp + 204);
+        ShortestArc(L.arc, ux, uy, uz, vx, vy, vz, zeroW, one);
+        call(Quat_Multiply, &L.prod, &L.arc, &L.q);
+        L.q = L.prod;
+        x = lf(L.prod.x);
+        y = lf(L.prod.y);
+        z = lf(L.prod.z);
+        w = lf(L.prod.w);
     }
     {
         f64 l = S(y * y);
@@ -234,15 +256,19 @@ DECOMP(00191128, Obj_UpdateOrient191128) {
         l = Fmadds(z, z, l);
         l = Fmadds(w, w, l);
         const f64 inv = S(one / S(std::sqrt(l)));
-        store<u32>(sp + 128, Fb(S(x * inv)));
-        store<u32>(sp + 132, Fb(S(y * inv)));
-        store<u32>(sp + 136, Fb(S(z * inv)));
-        store<u32>(sp + 140, Fb(S(w * inv)));
+        SetF(L.qn.x, S(x * inv));
+        SetF(L.qn.y, S(y * inv));
+        SetF(L.qn.z, S(z * inv));
+        SetF(L.qn.w, S(w * inv));
     }
-    call(ctx, Quat_ToMatrix, {n, sp + 128, kZeroVec});
-    CopyRows3(m, n, 16, 16, 3);
-    store<u32>(m + 48, w27);
-    store<u32>(m + 52, w28);
-    store<u32>(m + 56, w29);
-    VCall(ctx, o, 84, {o, m});
+    call(Quat_ToMatrix, &L.n, &L.qn, kZeroVec);
+    for (u32 r = 0; r < 3; ++r) CopyXYZ(m.r[r], L.n.r[r]);
+    SetW(m.r[3].x, w27);
+    SetW(m.r[3].y, w28);
+    SetW(m.r[3].z, w29);
+    vcall(o, 84, &m);
 }
+
+}  // namespace sly4::obj
+
+NATIVE(00191128, sly4::obj::Obj_UpdateOrient191128)

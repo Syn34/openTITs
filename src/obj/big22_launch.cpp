@@ -2,29 +2,64 @@
 // (callee of f_00309AC8 / f_0030C6F8).
 #include "big22.h"
 
-using namespace sly4;
-using namespace sly4::big22;
+namespace sly4::obj {
 
 namespace {
-constexpr u32 kWorld = 0x00F65CA0u;    // world state; +4208 the player slot, +8 its object
 constexpr u32 kLaunchK = 0x00309438u;  // f32 0.0
-constexpr u32 kZeroVec = 0x01164B40u;  // f32[3] 0
 constexpr u32 kUpVec = 0x01164B60u;    // f32[3] (Constants_Init_0056B93C)
 constexpr u32 kLaunchMsgVt = 0x00B0DADCu;  // the 40-byte stack message's vtable
-
-namespace lfn {
-constexpr u32 Obj_ResetPos = 0x0026D9D4u;  // (Obj*)
+constexpr u32 Obj_ResetPos = 0x0026D9D4u;    // (Obj*)
 constexpr u32 Obj_Push2696E0 = 0x002696E0u;  // (Obj*, const Vec3*; f32)
 constexpr u32 Body_SetMode = 0x00261328u;    // (Obj*, u32 mode)
-}  // namespace lfn
+
+// The player: +20 (its +48 flag word), +172 / +192 flags; vfn[80] busy,
+// vfn[86] takes a message, vfn[16] the launched object, vfn[7](a, b).
+struct LaunchPlayer {
+    pad<20> _0;
+    be_u32 w20;      // +20
+    pad<148> _24;
+    be_u32 f172;     // +172
+    pad<8> _176;
+    be_u64 f184;     // +184 (bit 0 read on the source object)
+    be_u32 f192;     // +192
+};
+static_assert(offsetof(LaunchPlayer, f172) == 172 && offsetof(LaunchPlayer, f184) == 184 && offsetof(LaunchPlayer, f192) == 192);
+// The launched object.
+struct LaunchObj {
+    pad<416> _0;
+    be_u32 f416;     // +416
+    pad<172> _420;
+    Vec3 push;       // +592
+    pad<68> _604;
+    Vec3 vel;        // +672
+};
+static_assert(offsetof(LaunchObj, push) == 592 && offsetof(LaunchObj, vel) == 672);
+// The 40-byte message.
+struct LaunchMsg {
+    be_u32 vt;       // +0
+    be_u32 a;        // +4
+    be_u32 b;        // +8
+    be_u16 h12;      // +12
+    be_u16 flags;    // +14
+    Vec3 dir;        // +16
+    pad<4> _28;
+    be_f32 x;        // +32
+    be_f32 speed;    // +36
+};
+static_assert(sizeof(LaunchMsg) == 40);
+struct LaunchLocals {
+    Vec4 push;       // sp+112
+    LaunchMsg msg;   // sp+128
+};
 
 // The player slot's object when it has bit 3 of +192 set, else 0.
-u32 PlayerOf(u32 pl) { return pl != 0 && (load<u32>(pl + 192) & 8u) != 0 ? pl : 0; }
-u32 PlayerRaw() { return load<u32>(load<u32>(kWorld) + 4208 + 8); }
+u32 PlayerOf(u32 pl) { return pl != 0 && (gm<LaunchPlayer>(pl).f192 & 8u) != 0 ? pl : 0; }
+u32 PlayerRaw() { return gm<be_u32>(global<be_u32>(kWorld) + 4208 + 8); }
 u32 Player() { return PlayerOf(PlayerRaw()); }
+LaunchPlayer& P(u32 p) { return gm<LaunchPlayer>(p); }
 }  // namespace
 
-// u32 Player_Launch309440(Obj* a, -, u32 b, -, -, const Vec3* dir; f32 x,
+// void Player_Launch309440(Obj* a, -, u32 b, -, -, const Vec3* dir; f32 x,
 // f32 f2, f32 speed): nothing when x == 0.0, when the local player (world
 // +4208 +8, used only with bit 3 of +192; a null object is read through as
 // the original does) lacks bit 18 of +172 or its vfn[80] says busy. A
@@ -36,93 +71,73 @@ u32 Player() { return PlayerOf(PlayerRaw()); }
 // = dir * speed (dir = kUpVec when it is the zero vector), u32 +416 |=
 // 0x00800000, mode 2; o's vfn[2] object's +168 and the player's +20 ->+48
 // get 0x40000000; the player's vfn[7](0, 1) and (1, 1) between them.
-// r3 as left by each exit (see the comments).
-DECOMP(00309440, Player_Launch309440) {
-    const u32 a = arg<u32>(ctx, 0);
-    const u32 b = arg<u32>(ctx, 2);
-    const u32 dir = arg<u32>(ctx, 5);
-    const f64 x = farg(ctx, 0), f2 = farg(ctx, 1), speed = farg(ctx, 2);
-    const f64 zero = Lf(kLaunchK);
-    if (x == zero) {
-        ret(ctx, a);  // r3 untouched
-        return;
-    }
-    Stack frame(ctx, 56);
-    const u32 sp = frame.addr();  // +0: the push vector (r1+112), +16: the message (r1+128)
-    const u32 msg = sp + 16;
+// No caller reads r3 or f1.
+void Player_Launch309440(LaunchPlayer* a, u32, u32 b, u32, u32, Vec3* dir, f64 x, f64 f2, f64 speed) {
+    const f64 zero = lf(global<be_f32>(kLaunchK));
+    if (x == zero) return;
+    GuestFrame frame(56);
+    LaunchLocals& L = *frame.as<LaunchLocals>();
+    LaunchMsg& msg = L.msg;
     u32 p = Player();
-    if ((load<u32>(p + 172) & 0x40000u) == 0) {
-        ret(ctx, 0u);
-        return;
-    }
-    if (const u32 r = static_cast<u32>(VCall(ctx, p, 320, {p})); r != 0) {
-        ret(ctx, r);
-        return;
-    }
-    f64 vx = Lf(dir), vy = Lf(dir + 4), vz = Lf(dir + 8);
-    const u32 hi = (a != 0 && (load<u64>(a + 184) & 1u) != 0) ? 1u : 0u;
-    const u16 fl = static_cast<u16>((load<u16>(msg + 14) & ~0xEF00u) | 0x6000u | (hi << 12));
-    store<u32>(msg + 8, b);
-    store<u32>(msg + 4, a);
-    store<u16>(msg + 12, 0);
-    Cw(msg + 16, dir);
-    store<u16>(msg + 14, fl);
-    Cw(msg + 20, dir + 4);
-    store<u32>(msg + 0, kLaunchMsgVt);
-    Cw(msg + 24, dir + 8);
-    Sf(msg + 32, x);
-    Sf(msg + 36, speed);
+    if ((P(p).f172 & 0x40000u) == 0) return;
+    if (vcall<u32>(&P(p), 320) != 0) return;
+    f64 vx = lf(dir->x), vy = lf(dir->y), vz = lf(dir->z);
+    const u32 hi = (a != nullptr && (a->f184 & 1u) != 0) ? 1u : 0u;
+    const u16 fl = static_cast<u16>((msg.flags & ~0xEF00u) | 0x6000u | (hi << 12));
+    msg.b = b;
+    msg.a = guest(a);
+    msg.h12 = 0;
+    msg.flags = fl;
+    CopyXYZ(msg.dir, *dir);
+    msg.vt = kLaunchMsgVt;
+    msg.x = static_cast<f32>(x);
+    msg.speed = static_cast<f32>(speed);
     p = Player();
-    VCall(ctx, p, 344, {p, msg});
-    const u32 pl = PlayerRaw();
-    p = PlayerOf(pl);
-    if ((load<u32>(p + 172) & 0x40000u) == 0) {
-        ret(ctx, pl);  // r3 = the raw slot object
-        return;
-    }
-    if (const u32 r = static_cast<u32>(VCall(ctx, p, 320, {p})); r != 0) {
-        ret(ctx, r);
-        return;
-    }
+    vcall(&P(p), 344, &msg);
     p = Player();
-    const u32 o = static_cast<u32>(VCall(ctx, p, 64, {p}));
-    const u32 w = load<u32>(kWorld);
-    if (o == 0 || !(speed > zero)) {
-        ret(ctx, w);  // r3 = the world pointer
-        return;
-    }
-    if (load<u64>(dir) == load<u64>(kZeroVec) && load<u32>(dir + 8) == load<u32>(kZeroVec + 8)) {
-        vx = Lf(kUpVec);
-        vy = Lf(kUpVec + 4);
-        vz = Lf(kUpVec + 8);
-    }
-    p = PlayerOf(load<u32>(w + 4208 + 8));
-    VCall(ctx, p, 28, {p, 0, 0});
+    if ((P(p).f172 & 0x40000u) == 0) return;
+    if (vcall<u32>(&P(p), 320) != 0) return;
     p = Player();
-    VCall(ctx, p, 28, {p, 1, 2});
-    const u32 ox = load<u32>(o + 592), oy = load<u32>(o + 596), oz = load<u32>(o + 600);
-    call(ctx, lfn::Obj_ResetPos, {o});
-    store<u32>(sp + 0, ox ^ 0x80000000u);  // fneg / stfs
-    store<u32>(sp + 4, oy ^ 0x80000000u);
-    store<u32>(sp + 8, oz ^ 0x80000000u);
-    callf(ctx, lfn::Obj_Push2696E0, {o, sp}, {f2});
+    const u32 o = vcall<u32>(&P(p), 64);
+    const u32 w = global<be_u32>(kWorld);
+    if (o == 0 || !(speed > zero)) return;
+    const Vec3& z = global<Vec3>(kZeroVec);
+    if (bits(dir->x) == bits(z.x) && bits(dir->y) == bits(z.y) && bits(dir->z) == bits(z.z)) {
+        const Vec3& up = global<Vec3>(kUpVec);
+        vx = lf(up.x);
+        vy = lf(up.y);
+        vz = lf(up.z);
+    }
+    p = PlayerOf(gm<be_u32>(w + 4208 + 8));
+    vcall(&P(p), 28, 0u, 0u);
+    p = Player();
+    vcall(&P(p), 28, 1u, 2u);
+    LaunchObj& lo = gm<LaunchObj>(o);
+    const u32 ox = bits(lo.push.x), oy = bits(lo.push.y), oz = bits(lo.push.z);
+    call(Obj_ResetPos, o);
+    set_bits(L.push.x, ox ^ 0x80000000u);  // fneg / stfs
+    set_bits(L.push.y, oy ^ 0x80000000u);
+    set_bits(L.push.z, oz ^ 0x80000000u);
+    call(Obj_Push2696E0, o, &L.push, f2);
     const f64 m1 = S(vy * speed), m2 = S(vz * speed), m0 = S(vx * speed);
-    Sf(sp + 4, m1);
-    Sf(sp + 8, m2);
-    Sf(sp + 0, m0);
-    Sf(o + 672, m0);
-    const u32 f416 = load<u32>(o + 416);
-    Cw(o + 676, sp + 4);
-    store<u32>(o + 416, f416 | 0x00800000u);
-    Cw(o + 680, sp + 8);
-    call(ctx, lfn::Body_SetMode, {o, 2});
-    const u32 r = static_cast<u32>(VCall(ctx, o, 8, {o}));
-    store<u32>(r + 168, load<u32>(r + 168) | 0x40000000u);
+    L.push.y = static_cast<f32>(m1);
+    L.push.z = static_cast<f32>(m2);
+    L.push.x = static_cast<f32>(m0);
+    lo.vel.x = static_cast<f32>(m0);
+    set_bits(lo.vel.y, bits(L.push.y));
+    lo.f416 = lo.f416 | 0x00800000u;
+    set_bits(lo.vel.z, bits(L.push.z));
+    call(Body_SetMode, o, 2u);
+    const u32 r = vcall<u32>(&lo, 8);
+    gm<be_u32>(r + 168) = gm<be_u32>(r + 168) | 0x40000000u;
     p = Player();
-    VCall(ctx, p, 28, {p, 0, 1});
+    vcall(&P(p), 28, 0u, 1u);
     p = Player();
-    VCall(ctx, p, 28, {p, 1, 1});
-    const u32 t = load<u32>(Player() + 20) + 48;
-    store<u32>(t, load<u32>(t) | 0x40000000u);
-    ret(ctx, t);
+    vcall(&P(p), 28, 1u, 1u);
+    be_u32& t = gm<be_u32>(P(Player()).w20 + 48);
+    t = t | 0x40000000u;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(00309440, sly4::obj::Player_Launch309440)

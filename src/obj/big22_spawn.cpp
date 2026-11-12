@@ -2,8 +2,7 @@
 // object built by SpawnerC0FE8 / Obj_SlotApply_000B6208 / f_000B3A60.
 #include "big22.h"
 
-using namespace sly4;
-using namespace sly4::big22;
+namespace sly4::obj {
 
 namespace {
 constexpr u32 kSpawnK = 0x000B2DD0u;   // f32 1.0, 1e-5; masks +16 / +32 / +48; f32 1/65535 +64, -1.0 +68
@@ -11,7 +10,52 @@ constexpr u32 kSpawnVt = 0x00B12080u;  // the object's vtable
 constexpr u32 kListenerVt = 0x00B12204u;  // the embedded listener's (+380) vtable
 constexpr u32 kUnknownName = 0x00B0DA98u;  // "<unknown>"
 constexpr u32 kUpVec = 0x01164B60u;    // f32[3] (Constants_Init_0056B93C)
+constexpr u32 Thunk_000E02D8 = 0x000E02D8;         // (o, QueryEx*): the base object constructor (0x000E01C0)
+constexpr u32 StateMachine_SetState = 0x00464D1C;  // (o, level, id)
+constexpr u32 HkBody_SetName = 0x007CE950;         // (body + 120, const char*)
+constexpr u32 HkBody_AddListener = 0x0091A82C;     // (body, listener)
+constexpr u32 Hk_SetTransform = 0x0091EAB8;        // (body, const f32 m[4][4])
+constexpr u32 Hk_AddProperty = 0x0093FE00;         // (entity, u32 key, u64 value)
+
 }  // namespace
+
+// The construction query: +208 / +224 the box corners, +240 / +252
+// copied, +244 / +248 the anchor weights.
+struct SpawnQuery {
+    pad<208> _0;
+    Vec4 lo;         // +208
+    Vec4 hi;         // +224
+    be_u32 w240;     // +240
+    be_f32 up;       // +244
+    be_f32 len;      // +248
+    be_u32 w252;     // +252
+};
+static_assert(offsetof(SpawnQuery, w240) == 240 && offsetof(SpawnQuery, w252) == 252);
+// The source def (p->216): +208 / +224 the random range, +240 the body factory.
+struct SpawnSrc {
+    pad<208> _0;
+    Vec4 lo;         // +208
+    Vec4 hi;         // +224
+    be_u32 factory;  // +240
+};
+struct SpawnedObj {
+    be_u32 vt;       // +0
+    pad<16> _4;
+    be_u32 out;      // +20: the random vector's destination
+    pad<72> _24;
+    Mtx44 m;         // +96 (+144 the position)
+    be_u32 name;     // +160 (vfn[3] its string)
+    pad<52> _164;
+    be_u32 src;      // +216: SpawnSrc*
+    pad<160> _220;
+    be_u32 listener; // +380: the listener's vtable
+    Vec4 box[3];     // +384: min / anchor / max
+    be_u32 body;     // +432
+    be_u32 w436;     // +436
+    be_u32 w440;     // +440
+};
+static_assert(offsetof(SpawnedObj, name) == 160 && offsetof(SpawnedObj, src) == 216 && offsetof(SpawnedObj, listener) == 380);
+static_assert(offsetof(SpawnedObj, box) == 384 && offsetof(SpawnedObj, body) == 432);
 
 // void Spawned_Construct_000B2E18(Obj* p, QueryEx* q): the base object
 // (Thunk_000E02D8), vtable 0x00B12080, body +432 = 0, +436 / +440 = q->240 /
@@ -25,41 +69,31 @@ constexpr u32 kUpVec = 0x01164B60u;    // f32[3] (Constants_Init_0056B93C)
 // the properties 0xA734004D = 0x7A30D7E3 and 0x91C7CF5B = p and the listener.
 // Then state (0, 0), and p->20 gets a random vector: per axis lerp(p->216's
 // +208, +224, r) with r a draw of the game's generator, times -1 or (odd
-// seed bit) 1. Returns r3 = the last sign bit, f1 = the x value.
-DECOMP(000B2E18, Spawned_Construct_000B2E18) {
-    const u32 p = arg<u32>(ctx, 0);
-    const u32 q = arg<u32>(ctx, 1);
-    constexpr u32 K = kSpawnK;
-    Stack frame(ctx, 64);
-    const u32 sp = frame.addr();
-    call(ctx, b22fn::Thunk_000E02D8, {p, q});
-    store<u32>(p + 432, 0);
-    store<u32>(p + 0, kSpawnVt);
-    Cw(p + 436, q + 240);
-    store<u32>(p + 380, kListenerVt);
-    Cw(p + 440, q + 252);
-    const u32 src = load<u32>(p + 216);
-    const u32 zb = (p + 384) & ~15u;  // stvx x3: aligned 16-byte rows
-    for (u32 k = 0; k < 48; k += 4) store<u32>(zb + k, 0);
-    const f64 a0 = Lf(q + 208);
-    Cw(p + 384, q + 208);
-    const f64 a1 = Lf(q + 212);
-    Cw(p + 388, q + 212);
-    const f64 a2 = Lf(q + 216);
-    Cw(p + 392, q + 216);
-    const f64 b0 = Lf(q + 224);
-    Cw(p + 416, q + 224);
-    const f64 b1 = Lf(q + 228);
-    Cw(p + 420, q + 228);
-    const f64 b2 = Lf(q + 232);
-    Cw(p + 424, q + 232);
+// seed bit) 1. No caller reads r3 or f1.
+void Spawned_Construct_000B2E18(SpawnedObj* p, SpawnQuery* q) {
+    GuestFrame frame(64);
+    Vec4* rows = frame.as<Vec4>();
+    call(Thunk_000E02D8, p, q);
+    p->body = 0u;
+    p->vt = kSpawnVt;
+    p->w436 = q->w240.get();
+    p->listener = kListenerVt;
+    p->w440 = q->w252.get();
+    SpawnSrc& src = gm<SpawnSrc>(p->src);
+    Quad* zb = &gm<Quad>(guest(&p->box[0]) & ~15u);  // stvx x3: aligned 16-byte rows
+    for (u32 k = 0; k < 3; ++k) zb[k] = Quad{};
+    const f64 a0 = lf(q->lo.x), a1 = lf(q->lo.y), a2 = lf(q->lo.z);
+    CopyXYZ(p->box[0], q->lo);
+    const f64 b0 = lf(q->hi.x), b1 = lf(q->hi.y), b2 = lf(q->hi.z);
+    CopyXYZ(p->box[2], q->hi);
     f64 d0 = S(b0 - a0), d1 = S(b1 - a1), d2 = S(b2 - a2);
-    const f64 one = Lf(K + 0);
-    const f64 lenSel = Lf(q + 248), upSel = Lf(q + 244);
-    const u32 factory = load<u32>(src + 240);
+    const f64 one = lf(global<be_f32>(kSpawnK));
+    const f64 lenSel = lf(q->len), upSel = lf(q->up);
+    const u32 factory = src.factory;
     const f64 sq = Fmadds(d2, d2, Fmadds(d0, d0, S(d1 * d1)));
     f64 len = one;
-    if (sq > Lf(K + 4) || sq == Lf(K + 4)) {
+    const f64 eps = lf(global<be_f32>(kSpawnK + 4));
+    if (sq > eps || sq == eps) {
         len = Sqrts(sq);
         const f64 inv = Divs(one, len);
         d0 = S(inv * d0);
@@ -68,53 +102,53 @@ DECOMP(000B2E18, Spawned_Construct_000B2E18) {
     }
     const f64 sc = S(len * lenSel);
     f64 x = Fmadds(sc, d0, a0), y = Fmadds(sc, d1, a1), z = Fmadds(sc, d2, a2);
-    Sf(p + 400, x);
-    Sf(p + 404, y);
-    Sf(p + 408, z);
-    x = Fmadds(Lf(kUpVec), upSel, x);
-    y = Fmadds(Lf(kUpVec + 4), upSel, y);
-    z = Fmadds(Lf(kUpVec + 8), upSel, z);
-    Sf(p + 400, x);
-    Sf(p + 404, y);
-    Sf(p + 408, z);
-    Cw(p + 144, q + 208);  // stfs of the loaded q->208
-    Cw(p + 148, p + 388);
-    Cw(p + 152, p + 392);
+    const Vec3& up = global<Vec3>(kUpVec);
+    x = Fmadds(lf(up.x), upSel, x);
+    y = Fmadds(lf(up.y), upSel, y);
+    z = Fmadds(lf(up.z), upSel, z);
+    p->box[1].x = static_cast<f32>(x);
+    p->box[1].y = static_cast<f32>(y);
+    p->box[1].z = static_cast<f32>(z);
+    CopyXYZ(p->m.r[3], q->lo);  // stfs of the loaded q->208 (+148 / +152 from +388 / +392, the same words)
     if (factory != 0) {
-        const u32 body = static_cast<u32>(VCall(ctx, factory, 32, {factory}));
-        store<u32>(p + 432, body);
-        const u32 nm = load<u32>(p + 160);
-        const u32 name = nm != 0 ? static_cast<u32>(VCall(ctx, nm, 12, {nm})) : kUnknownName;
-        call(ctx, b22fn::HkBody_SetName, {body + 120, name});
-        const u32 b = load<u32>(p + 432);
-        Row3(sp + 0, p + 96);
-        Row3(sp + 16, p + 112);
-        Row3(sp + 32, p + 128);
-        Row3(sp + 48, p + 144);
-        call(ctx, b22fn::Hk_SetTransform, {b, sp});
-        call(ctx, b22fn::Hk_AddProperty, {load<u32>(p + 432), 0xA734004Du, 0x7A30D7E3u});
-        call(ctx, b22fn::Hk_AddProperty, {load<u32>(p + 432), 0x91C7CF5Bu, p});
-        call(ctx, b22fn::HkBody_AddListener, {load<u32>(p + 432), p + 380});
+        const u32 body = vcall<u32>(&gm<u8>(factory), 32);
+        p->body = body;
+        const u32 nm = p->name;
+        const u32 name = nm != 0 ? vcall<u32>(&gm<u8>(nm), 12) : kUnknownName;
+        call(HkBody_SetName, body + 120, name);
+        const u32 b = p->body;
+        for (u32 r = 0; r < 4; ++r) {
+            CopyXYZ(rows[r], p->m.r[r]);
+            set_bits(rows[r].w, 0u);
+        }
+        call(Hk_SetTransform, b, rows);
+        call(Hk_AddProperty, p->body.get(), 0xA734004Du, 0x7A30D7E3u);
+        call(Hk_AddProperty, p->body.get(), 0x91C7CF5Bu, p);
+        call(HkBody_AddListener, p->body.get(), &p->listener);
     }
-    call(ctx, b22fn::StateMachine_SetState, {p, 0, 0});
-    Rng rng;
+    call(StateMachine_SetState, p, 0u, 0u);
+    GameRng rng;
     rng.Load();
-    const f64 rk = Lf(K + 64), neg = Lf(K + 68);
-    const u32 out = load<u32>(p + 20);
+    const f64 rk = lf(global<be_f32>(kSpawnK + 64)), neg = lf(global<be_f32>(kSpawnK + 68));
+    const u32 out = p->out;
+    const be_f32* lo = &src.lo.x;
+    const be_f32* hi = &src.hi.x;
     f64 v[3];
-    u32 bit = 0;
     for (u32 k = 0; k < 3; ++k) {
-        const f64 lo = Lf(src + 208 + 4 * k), hi = Lf(src + 224 + 4 * k);
+        const f64 l = lf(lo[k]), h = lf(hi[k]);
         const f64 r = S(rng.Next() * rk);
-        const f64 t = Fmadds(S(hi - lo), r, lo);
-        bit = rng.seed & 1;
+        const f64 t = Fmadds(S(h - l), r, l);
+        const u32 bit = rng.seed & 1;
         rng.Step();
         v[k] = S(t * (bit != 0 ? one : neg));
     }
     rng.Commit();
-    Sf(out + 0, v[0]);
-    Sf(out + 4, v[1]);
-    Sf(out + 8, v[2]);
-    ctx.fpr[1] = v[0];
-    ret(ctx, bit);  // r3 is left holding the third sign bit
+    Vec3& o = gm<Vec3>(out);
+    o.x = static_cast<f32>(v[0]);
+    o.y = static_cast<f32>(v[1]);
+    o.z = static_cast<f32>(v[2]);
 }
+
+}  // namespace sly4::obj
+
+NATIVE(000B2E18, sly4::obj::Spawned_Construct_000B2E18)
