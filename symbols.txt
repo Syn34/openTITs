@@ -1197,7 +1197,7 @@
 00476C30 World_Obj128164Is1       // decompiled: src/world/event_small.cpp
 004896F8 World_SetFlags44         // decompiled: src/world/event_small.cpp
 0048CEE0 Display_GetMode          // decompiled: src/world/event_small.cpp
-004A82DC Obj_Release36CDA8        // decompiled: src/world/event_small.cpp
+004A82DC Actor_Release4A82DC               // (actor) (callee, name?); decompiled: src/world/event_small.cpp
 004BCE08 AnimScript_RegisterIffChunks // decompiled: src/world/construct_members.cpp
 004D2268 Obj_Get272_12            // decompiled: src/world/event_small.cpp
 004F4490 Nop_004F4490             // decompiled: src/world/event_small.cpp
@@ -1456,7 +1456,7 @@
 000A1CEC AnimCmd_9F8D96A1_Construct           // decompiled: src/world/construct2_animscript.cpp (name?)
 00766C44 Registry_Find                     // (map 0x010686A8, const u32* key) -> value slot or &null; decompiled: src/world/hevent2_a.cpp (name?)
 00799474 Table_Find                        // same code, default comparator 0x00F3B118; decompiled: src/world/hevent2_a.cpp (name?)
-0046B5F8 World_AddTimedCallback           // reads r3..r7 only (world, kind, fn, data, 0); decompiled: src/world/hevent2_a.cpp
+0046B5F8 World_AddTimedCallback            // (world, kind, OPD, o, 0) (callee); decompiled: src/world/hevent2_a.cpp
 00509090 Material_CopyFrom                 // (dst, src): slots, scalars, value array, AglMaterialAnim; decompiled: src/world/hevent2_b.cpp (name?)
 004FB56C Trophy_Has                        // (Trophy*, s32 i) -> bool: +8 ready, +168 bitset; decompiled: src/world/hevent2_a.cpp
 000D5F58 Xml_Load0D5F58                    // (XmlDoc*, path, u8) -> u32; mutually recursive with 000D6398 (name?)
@@ -7462,8 +7462,8 @@
 00749E88 Avl_RotateL_00749E88     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0076BE8C Avl_RotateR_0076BE8C     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0076BFD4 Avl_RotateL_0076BFD4     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
-0077B570 Avl_RotateR_0077B570     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
-0077B6B8 Avl_RotateL_0077B6B8     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
+0077B570 Avl_RotateR_0077B570              // (tree, Node** pp) (callee, not decompiled); decompiled: src/obj/obj19_tmpl2.cpp
+0077B6B8 Avl_RotateL_0077B6B8              // (tree, Node** pp) (callee, not decompiled); decompiled: src/obj/obj19_tmpl2.cpp
 007854B4 Avl_RotateR_007854B4     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 007855FC Avl_RotateL_007855FC     // (?, Node** pp): the +16 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
 0078A028 Avl_RotateR_0078A028     // (?, Node** pp): the +12 child up, heights fixed (template instance); decompiled: src/obj/obj19_tmpl2.cpp
@@ -9201,7 +9201,7 @@
 00433AD0 World_VCall32Ne12_00433AD0       // bool f(): the world's virtual +32 (world, 1) != 12 (name?); decompiled: src/obj/obj24.cpp
 00437BB0 Obj_VCall160_00437BB0            // f(const T* o): p = o->+32->+244's virtual +160 (p) when both are set, else true (name?); decompiled: src/obj/obj24.cpp
 0048A0E4 Obj_SetState30_0048A0E4          // f(T* o, u8 v): u8 +51 = the old +30, +30 = v; then Obj_SelectEntry(Player_Get(), 0x0023FDB9) and Obj_SetMode470750(o, 4, 0) (name?); decompiled: src/obj/obj24.cpp
-004A5D40 Obj_Anim353EB0_004A5D40          // bool f(Obj* o, u8 b): 0x00353EB0(Anim_Find34CC34(o, 0), b) when o and the find are set, else true (name?); decompiled: src/obj/obj24.cpp
+004A5D40 Obj_Anim353EB0_004A5D40           // (anim, 0) -> finished (callee); decompiled: src/obj/obj24.cpp
 004A6BF0 Math_Ramp_004A6BF0               // f32 f(f32 x, f32 a, f32 len, f32 t): t / x when x > t; else 1 - clamp1((t - (a + x)) / len) when t > a + x; else 1.0f when a > 0, else 0.0f (r3 / f2 / f3 left) (name?); decompiled: src/obj/obj24.cpp
 004C1ABC Effect_Single_004C1ABC           // bool f(const T* o, a): e = Effect_Bind4BB7E0(a, o->+36, 0); true when e is null or its s16 +4 is <= 1 (name?); decompiled: src/obj/obj24.cpp
 0073B890 Ref_Release_0073B890             // void Ref_Release(T* o): --(u16)o->+4; when it drops to <= 0 (signed), o's virtual +4 (o) unless o is null (r5 / r6 left) (name?); decompiled: src/obj/obj24.cpp
@@ -10158,7 +10158,7 @@
 0042E040 VtB20DD0_Ctor                    // T::T(u8 a, f32 x, f32 y, f32 z, f32 w): base 0x0042C9D0(o, 1), the u8 +9 = a, +12 / +16 / +20 = x / y / z, +24 = 1.0f, +28 = w, +32 = 0, vtable 0x00B20DD0 (r3 / (name?); decompiled: src/obj/obj27b.cpp
 0042E618 VtB20E18_Ctor                    // T::T(u32 a, u8 b..f, bool on): base 0x0042C9D0(o, on), +12 = a, the u8s +16..+20 = b..f, vtable 0x00B20E18 (r3 = the vtable) (name?); decompiled: src/obj/obj27b.cpp
 00488078 Player_Dispatch_00488078         // void f(World* g, u32 i, x, u8 kind): with player i's object (bit 8 of its +192 set), Obj_DispatchKind_0012BB9C(p, x) when kind is set, else 0x0012B908(p, x) (r3 (name?); decompiled: src/obj/obj27b.cpp
-0048970C State_Enter6_0048970C            // void f(T* o): the u8 +47 = o->+8->+0; for a state +50 in 1..11, +49 = 6, else StateMachine_SetState(o, 1, 6); then the u8 +1 of the state record (+20 + the u16  (name?); decompiled: src/obj/obj27b.cpp
+0048970C State_Enter6_0048970C             // (world) (callee); decompiled: src/obj/obj27b.cpp
 004A21F8 Node_FindKind13_004A21F8         // Node* f(Node* n, s32 key): the first node in the chain n (next at +268) of kind 13 (bits 10..15 of +4) with +204 equal to key, searching each node's children (+ (name?); decompiled: src/obj/obj27b.cpp
 004A5A48 WorldObj_FindMaterial_004A5A48   // Material* f(WorldObj* o, u32 k): WorldObj_Material4A59B4(o, k), else the first match among o's kind-8 children (+272, chained by +268; bits 10..15 of +4), searc (name?); decompiled: src/obj/obj27b.cpp
 004A5B80 Model_SetPartsMode_004A5B80      // void f(WorldObj* o): for each of the u8 +112 sections of the model o->+208 (+132, 8-byte stride) and each of its u16 +52 parts (+48, 8-byte entries, +4 the obje (name?); decompiled: src/obj/obj27b.cpp
@@ -11481,7 +11481,7 @@
 00804570 AnimSkel_LoadFromStream          // (src, s32 n, Skel** out, 12-byte struct by value in r6:r7) -> skeleton or 0 (name?); called by 0x0034A108
 000E1738 Obj_ApplyDamage                  // (o, e, e, x; f1 scaled damage) (name?); called by 0x000E8768
 00930B70 Hk_UpdateEntityGroup             // (world list, e, 0, 1) (name?); called by 0x000E9728
-004A9270 Hk_ShapeInit                     // (p, a, b, c, -, -, -, -, stack 9th; f1..f4) (name?); called by 0x004AC718
+004A9270 Fade_Construct4A9270              // (fade, owner, world, area; f1..f4; stack9 u8): was Hk_ShapeInit; decompiled: src/obj/mid34_d.cpp
 00371BA8 Obj_TalkBegin                    // (o, 0) (name?); called by 0x003735C8
 00371360 Obj_TalkResume                   // void (T* o): ends the current talk line (o +356 of script o->+8): +160 state 16/18, stops +344 and plays "Default_Shutdown" on +340, partner handles script +156 / +160 (names o +362 / +490 or Obj_NotifyA362F1C), closing text (0x8DD33161 or tables 0x00ADC668/80/98) via Speaker_Say3514AC + o->+360 bit 0x04000000, o->+24 vt +40 (1, 1), line sub-entries vt +88, +168 = 0; behaves like a shutdown (name kept from symbols.txt; Obj_TalkShutdown?); decompiled: src/obj/big31_talk.cpp
 000E02F8 Obj_SetRagdollBase             // (o, u8 full): full: o's hit-queue records (0x01022100) swap-removed (lvx/stvx), effect +356 ended (0x879D1B7A / component 0x0027469E), +364 = 0; then Obj_ShutdownBase_000D74C0; decompiled: src/obj/vmx1_hit.cpp
@@ -12130,7 +12130,7 @@
 0002C9A8 Heading_Jitter2C9A8                  // (Mover*): random heading drift / direction nudge via RNG 0x01164888, atan2f; decompiled: src/obj/mid15_b.cpp
 0023AD48 Blend_ByAngle23AD48                  // (Obj*, Out*) -> 0: acosf angle drives key-range lerps into p->140; decompiled: src/obj/mid15_b.cpp
 0028A0E8 Cam_SphereInView28A0E8               // (Cam*, f32 sphere[4]) -> bool: view-cone + near-plane test (Cam_UpdateViewCache_00289EC0 first); decompiled: src/obj/mid15_b.cpp
-004A0990 Timer_Advance4A0990                  // (Timer*, f32 dt): wrap modes clamp/loop/ping-pong, easing linear/cos/smooth into +12; decompiled: src/obj/mid15_b.cpp
+004A0990 Timer_Advance4A0990               // (timer; f1 dt) (callee); decompiled: src/obj/mid15_b.cpp
 0002DC20 Mover_FacePlayer2DC20                // (Mover*): face nearest player (atan2f) within range, byte w+592; decompiled: src/obj/mid15_b.cpp
 0002D618 Mover_WobbleAway2D618                // (Mover*, f32 dt): heading away from nearest player + sine wobble, timer +308; decompiled: src/obj/mid15_b.cpp
 0002DE70 Mover_WobbleToward2DE70              // (Mover*, f32 dt): heading toward nearest player + wobble inside 5, timer +312; decompiled: src/obj/mid15_b.cpp
@@ -12147,7 +12147,7 @@
 0039366C Cmd_PushRecordPair_0039366C      // u32 f(T* o, Cmd* c) (no direct caller: a vtable slot): with the queue q = c->+12, the two s16 indices i = o->+4 and j = o->+2 select 128-byte records of (*0x00F (name?); decompiled: src/obj/obj38.cpp
 0042E27C SeqCmd_EnablePhysics_0042E27C    // u32 f(Cmd* c) (no direct caller): the object x = Obj_FindByHandle42C2B0( c->+12, 0); without it, or when bit 3 of x->+192 is clear, a warning (String_Format "Se (name?); decompiled: src/obj/obj38.cpp
 0044D740 Audio_SetFilterValue_0044D740    // void f(f32 v) (World_UpdateAudioFilter): while the u8 *0x010AEC60 is set, v (or, when the u8 0x010B0808 is set, the f32 0x010B0858) above 0 that differs from th (name?); decompiled: src/obj/obj38.cpp
-004A9130 Fade_SetState_004A9130           // T* f(T* o, s32 state): o->+44 = state, with the tuning t = o->+32 + 16 and k = {0.0f, 1.0f, 0.0}: state 0 clears the f32 +144, 2 sets it to 1.0; states 1 / 3 re (name?); decompiled: src/obj/obj38.cpp
+004A9130 Fade_SetState_004A9130            // (fade, state) (callee); decompiled: src/obj/obj38.cpp
 004E32A4 Registrant_Unregister_004E32A4   // u32 f(T* o) (no direct caller: a base destructor body): o->vt = 0x00B22F60; every entry e of the list *0x00F668A0 (next +28) whose +4 is o gets e->vt[1](e); o i (name?); decompiled: src/obj/obj38.cpp
 00789280 Pool_Init76_00789280             // void f(Pool* out, u32 n, u32 extra, Allocator* a) (from Clip_Init4B1708): the pool setup PoolInit38 with 76-byte elements. (name?); decompiled: src/obj/obj38.cpp
 000154AC Node_FindRoot_000154AC           // Node* f(Node* n) (from 0x0001574C): the root of n's parent chain in the 20-byte node array g = *0x00F557F4 (data +12, count u16 (+4)->+2; an s16 index out of ra (name?); decompiled: src/obj/obj38.cpp
@@ -12438,7 +12438,7 @@
 00929E98 Hk_SetBodyTransform_00929E98       // (hkpRigidBody*, const f32 rows[4][4]) (name?); reads r3 / r4; Havok
 007CFA2C HkQs_ApproxEqual7CFA2C             // bool (const hkQsTransform* a, const hkQsTransform* b; f1 eps) (name?)
 007CF654 HkQs_ToTransform7CF654             // (const hkQsTransform*, hkTransform* out) (name?)
-0034C918 Anim_Advance34C918                 // (anim; f1 dt) (name?)
+0034C918 Anim_Advance34C918                // (anim; f1 dt) (callee)
 00353EB0 Anim_IsDone353EB0                  // bool (comp, 0) (name?)
 006C0AA4 Path_Query6C0AA4                   // (path, const Vec3*, *0x011AD1D4) (name?)
 006C1B94 Path_Point6C1B94                   // (Vec3* out, path) (name?)
@@ -12810,7 +12810,7 @@
 00301C48 Dragon_OnMessage_00301C48         // the dragon class's message handler (no direct callers) (name?)
 002FEA20 Dragon_Fn2FEA20                   // (T* o) (reads r3 only) (name?)
 0044D9E0 Loading_Fn44D9E0                  // T* (T* x) (reads r3 only) (name?)
-0030D434 Climb_Fn30D434                    // (T* t, u32 t->+1060, f32 out[4][4]) (name?)
+0030D434 Obj_EntryToWorld_0030D434        // bool f(Obj* o, s32 id, f32 out[4][4]): out = Obj_Entry16(o,id)->+8 rows (xyz) * (o->+160)+80 (replaces Climb_Fn30D434; not decompiled)
 009256C0 Hk_Ctor9256C0                     // (p, const T* info, u32): 208-byte Havok object ctor (name?)
 
 # Game code sweep part 42
@@ -13168,8 +13168,8 @@
 0074A210 AvlMulti_RemoveF32_74A210        // void (AVL*, Node** slot, u32 value, -, u8* changed; f32 key): f32-keyed multimap remove (24-byte nodes, value chain +8 / next +20; value 0 removes the head; follower swapped in, else the node deleted with SmallFree); rebalances skip the reloaded-slot null check; r6 passed through; decompiled: src/obj/big23_avl.cpp
 0046EFB8 OptionsMenu_HandleInput46EFB8    // void (Menu* m, const UiEvent* e): options page 1 by widget hash (e+12 +128): u8 choices settings(m+4144) +8/+9/+10 (6/3/6-way, setters 0044D9B8 / 0044D9BC / Global_10B0100_Set), f32 sliders +16/+24/+12/+20 (step 1 / s32 0x010BC120, clamp [0,1]; mirrors 0x00F65B40/44/48), Sound_Play44C474 (m+0x128604 toggle, +0x128608 slide, +0x12860C blocked), u8 m+4180 = 1, Ui_SendEvent(16, e+4, player+340, 0); decompiled: src/obj/big23_menu.cpp
 0046FBD0 OptionsMenu_HandleInput2_46FBD0  // void (Menu* m, const UiEvent* e): options page 2: sliders +4 / +28 (types 10/11 only), settings word toggles 0x04000000 / 0x02000000 / 0x08000000, AR toggle 0x01000000 (0x000A88C0, AR object m+0x1286A4 made with Ar_Init0A85C0 / released via vfn[1]), language index m+4184 (0x010B8A64 == 1; count 0x00F65DD0, ids 0x00F65D90 -> settings +32, u8 m+4183); decompiled: src/obj/big23_menu.cpp
-0078FA2C AvlF_TakeMax78FA2C               // (AVL*, Node** slot, Node** left, u8* changed): float AVL's two-child delete helper (callee of Avl_RemoveF32_0078FD34) (name?)
-00749FD0 AvlMulti_TakeMax749FD0           // (AVL*, Node** slot, Node** left, u8* changed): the multimap's two-child delete helper (callee of AvlMulti_RemoveF32_74A210) (name?)
+0078FA2C AvlFKey_RemoveMax78FA2C           // (tree, target, pp, changed): AVL<float,u32> delete-max helper; decompiled: src/obj/mid34_a.cpp
+00749FD0 AvlMulti_TakeMax749FD0            // (tree, target, pp, changed): multimap delete-max helper; decompiled: src/obj/mid34_a.cpp
 
 # Game code sweep part 45
 000DEAE0 Obj_TickParts_000DEAE0           // bool f(T* o, f32 dt): StateMachine_Tick(o, dt) == 0 -> 0. Then every entry e of the array +248 (u16 count +8) with the byte e->+16 set gets e->vt[28](e, dt); wh (name?); decompiled: src/obj/obj45.cpp
@@ -13232,8 +13232,8 @@
 0032AAE8 Desc_CopyOut_0032AAE8            // Src+72* f(const Src* s, Dst* d): fills d from s: +16..+24 = s->+0..+8, +36 = 2, +8 = s->+20; bits 0x10000000..0x00800000 of +120 = bits 0x80000000..0x04000000 o (name?); decompiled: src/obj/obj45b.cpp
 003767C8 Obj_Reset_003767C8               // u32 f(T* o): o->vt[20](o, 0), Obj_Place3626E8(o, 0x01164B40, 1); +204 / +200 = 0, +160 keeps bit 0 only; the flag word +216 drops bits 0x3F000000 except that 0x (name?); decompiled: src/obj/obj45b.cpp
 00125A80 Obj_Damage_00125A80               // (o, -, m, hash, f32 x): applies damage (reads r3, r5, r6, f1)
-004AD7C8 Area_Update_004AD7C8              // (area, f32 dt)
-004AE160 Area_4AE160                       // (area, obj, 1)
+004AD7C8 WindArea_Update4AD7C8             // (area; f1 dt): was Area_Update_004AD7C8; decompiled: src/obj/mid34_d.cpp
+004AE160 WindArea_Remove4AE160             // (area, id, u8 remove): was Area_4AE160; decompiled: src/obj/mid34_d.cpp
 0037AE00 Obj_37AE00                        // speech tail (reads r3)
 0037F32C Obj_37F32C                        // speech tail (reads r3)
 007430AC Desc_Init_007430AC                // (desc*, a, b, c): 768-byte stack description
@@ -13410,7 +13410,7 @@
 002F6578 Obj2F6578_Ctor                    // (m, rec): 1136-byte object ctor from a Record_Init_000E44E0 record (via 002F7BC4) (name?)
 00305A44 Obj305A44_Ctor                    // (m, rec): 1088-byte object ctor from a Record_Init_000E44E0 record (via 003072A8) (name?)
 001F85F0 ColObj_Ctor1F85F0                // (ColObj* o, const Rec256* d) -> body: 304-byte collision object ctor; rigid body from the named physics object d->+160 or a box of half extents o+192; decompiled: src/obj/big27_colobj.cpp
-0077C760 NodeRef_AcquireExisting           // (h, a, h->+0, h; f1): the already-bound path of NodeRef_Acquire_0077CBE0 (name?)
+0077C760 AvlScale_Insert77C760             // (tree, u32 key, -, Node** pp; f1 value): AVL<u32,float> insert (was NodeRef_AcquireExisting); decompiled: src/obj/mid34_a.cpp
 00F2FAF8 OPD_FindChildByName               // .opd of the WorldObj_ForEach callback used by 0008546C ({name, result} record) (name?)
 00F3A028 OPD_SortedTblCmpU32               // .opd of the default u32-key row comparator recognised by SortedTbl_Find_00789A1C (name?)
 00F65AAC g_StatSerial                      // u32 serial counter incremented by StatBlock_Construct_0043E040 (name?)
@@ -14016,3 +14016,40 @@
 0094032C Body_SetProperty94032C           // (body, u32 key, value): Havok-style property set (keys 0xC2928F03 face table, 0x8CFD3EFD mark) (name?)
 007CCD60 HkArray_Grow7CCD60               // (allocator 0x011DF31C, hkArray*, elem size): grows a Havok array (name?)
 003292C8 ObjB1E3E0_Load3292C8             // builds the 3280-byte 0x00B1E3E0 object from a stack Desc + list (0x00328D24) (name?)
+
+# mid34
+0077B800 AvlScale_RemoveMax77B800          // (tree, Node** target, Node** pp, u8* changed): AVL<u32,float> delete-max helper; decompiled: src/obj/mid34_a.cpp
+0074AD48 AvlMulti_Insert74AD48             // (tree, -, value, pp; f1 key): float-keyed multimap insert (+20 dup chain); decompiled: src/obj/mid34_a.cpp
+0077016C SortedS32F_Remove77016C           // (array, const s32* key): sorted {s32,f32} array remove (lazy qsort, bsearch); decompiled: src/obj/mid34_b.cpp
+00786D94 SortedU32_Remove786D94            // (array, const u32* key): sorted {u32,u32} array remove; decompiled: src/obj/mid34_b.cpp
+0036DED8 AnimActor_Update36DED8            // (o; f1 dt): vtable Update of a scripted anim actor; decompiled: src/obj/mid34_c.cpp
+0036ED28 AnimActor_Update36ED28            // (o; f1 dt); decompiled: src/obj/mid34_c.cpp
+0036C5BC AnimActor_Update36C5BC            // (o; f1 dt); decompiled: src/obj/mid34_c.cpp
+003704E8 AnimActor_Update3704E8            // (o; f1 dt): with watched-object list cleanup; decompiled: src/obj/mid34_c.cpp
+0036D350 AnimActor_Update36D350            // (o; f1 dt): gauge actor (level timer); decompiled: src/obj/mid34_c.cpp
+0036F438 AnimActor_Update36F438            // (o; f1 dt): cue actor with partner; decompiled: src/obj/mid34_c.cpp
+004AD580 WindArea_SetOn4AD580              // (area, u8 on): move fades between active/inactive lists; decompiled: src/obj/mid34_d.cpp
+004ADAF8 WindArea_Move4ADAF8               // (area, id, new_area): move a fade object to another area; decompiled: src/obj/mid34_d.cpp
+004AC820 Fade_Update4AC820                 // (fade; f1 dt); decompiled: src/obj/mid34_d.cpp
+003FA970 SeqObj_Fire3FA970                 // (o): sequence starter 0x40877911; decompiled: src/obj/mid34_e.cpp
+0041DCBC SeqObj_Fire41DCBC                 // (o): sequence starter 0x48E4C38D; decompiled: src/obj/mid34_e.cpp
+00411AB0 SeqObj_Fire411AB0                 // (o): sequence starter 0x02E6CA58; decompiled: src/obj/mid34_e.cpp
+00393418 RIncrementKVarData_Run393418      // (op, vm) -> 0: script op, increment a KVar; decompiled: src/obj/mid34_f.cpp
+008FFEA0 HkEntity_Ctor8FFEA0               // (entity, world, 0) (callee, name?)
+
+# obj54
+004AC5D8 Force_ApplySteps_004AC5D8        // u32 f(Force* t, const Def* d): d->+32 split into n = ceil(d->+32 * 15) steps, Force_Apply_004AC210(&rec) per step; decompiled: src/obj/obj54.cpp
+0023C960 Body_SetVecPair_0023C960         // u32 f(T* o, const f32 a[3], const f32 b[3]): rigid body (o->+612)->+24 (u8 +232 not 4/5, +8 set) vt[88](&ra, &rb); else r3 = b; decompiled: src/obj/obj54.cpp
+0027FAF0 LaunchState_Dispatch_0027FAF0    // u32 f(T* o, const Msg* m): state (o+80)->vt[32] / m->+12; st 1/2/3 -> 0027F630 / SplineFollow_Step_0027F2C0 / Launch_OnMsg_0027EE70; kind 2 clears o+32..+79; decompiled: src/obj/obj54.cpp
+0027E330 LaunchState_Dispatch_0027E330    // u32 f(T* o, const Msg* m): as 0027FAF0; st 4/3/2/1 -> 0027D340 / Launch_OnMsg_0027D6E8 / SplineFollow_Step_0027DB68 / 0027DEA8; decompiled: src/obj/obj54.cpp
+002B0480 Obj_SetTargetLocal_002B0480      // void f(T* o, u32 target, const Event* e): for list entries == target: +76 = target, +80.. = e+16.., +96 = target+144 in the frame of (o->+8)+96; decompiled: src/obj/obj54.cpp
+00346734 HkArray_PushRec64_00346734       // u32 f(T* o, const Rec* src, u32 a, u32 b, u8 c): push a 64-byte record onto the hkArray at o+56; r3 = new size; decompiled: src/obj/obj54.cpp
+00111200 Obj_EnableBody_00111200          // u32 f(Obj* o): o->+484 |= 0x80000000; adds the body (o->+600) to the physics world if unworlded, zeroes its velocity (vt[68]); decompiled: src/obj/obj54.cpp
+0076E5A8 Vec224_RemoveSwap_0076E5A8       // u32 f(Vec224* v, s32 i): swap-remove of a 224-byte element (data +0, u16 count +8); decompiled: src/obj/obj54.cpp
+0027F630 LaunchState_OnSt1_0027F630       // (o, m) handler for state 1 of 0027FAF0 (reads r3, r4) (name?)
+0027D340 LaunchState_OnSt4_0027D340       // (o, m) handler for state 4 of 0027E330 (reads r3, r4) (name?)
+0027DEA8 LaunchState_OnSt1_0027DEA8       // (o, m) handler for state 1 of 0027E330 (reads r3, r4) (name?)
+002FBB44 Obj_EntryToWorld_002FBB44        // same code as 0030D434 (not decompiled)
+
+# big36
+001BC0F0 Chain_Solve1BC0F0           // void f(Chain* c): mass-spring chain step (springs, gravity, pinned ends, integrate, remeasure) on the scratch copy at 0x01042B40; decompiled: src/obj/big36_rope.cpp

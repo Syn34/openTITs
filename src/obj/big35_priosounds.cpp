@@ -1,10 +1,63 @@
 // Game code, large-function sweep part 35: one pass of the sound priority
 // lists (PrioList_Update445A40 runs it over both lists).
-#include "../sly4.h"
-#include "big35.h"
+#include "native/objtypes.h"
 
-using namespace sly4;
-using namespace sly4::big35;
+namespace sly4::obj {
+
+struct SoundDef {
+    pad<88> _0;
+    be_s32 cost;     // +88
+    pad<4> _92;
+    u8 direct;       // +96: stop through the voice
+};
+struct SoundOwner {
+    pad<96> _0;
+    u8 flag;         // +96
+};
+// The emitter handle pool's 272-byte entry.
+struct EmitterEntry {
+    pad<16> _0;
+    be_u32 voice;          // +16
+    gp<SoundOwner> owner;  // +20
+    pad<5> _24;
+    u8 stopping;           // +29
+    pad<226> _30;
+    be_u32 gen;            // +256: generation in bits 15..30, bit 31 free
+    pad<12> _260;
+};
+static_assert(sizeof(EmitterEntry) == 272 && offsetof(EmitterEntry, gen) == 256);
+struct EmitterPool {
+    pad<24> _0;
+    be_s32 count;              // +24
+    gp<EmitterEntry> entries;  // +28
+};
+struct Sound {
+    be_u32 defp;     // +0: SoundDef** (read through even when 0)
+    be_u32 handle;   // +4
+    pad<88> _8;
+    u8 queued;       // +96
+    u8 playing;      // +97
+    u8 quiet;        // +98
+    u8 b99;          // +99
+    u8 reacquire;    // +100
+    u8 b101;         // +101
+    u8 b102;         // +102
+    u8 allowed;      // +103
+    pad<4> _104;
+    be_u32 keep;     // +108
+    be_f32 t;        // +112
+    gp<Sound> prev;  // +116
+    gp<Sound> next;  // +120
+};
+static_assert(offsetof(Sound, keep) == 108 && offsetof(Sound, next) == 120);
+struct SoundMgr {
+    pad<8196> _0;
+    gp<Sound> free_list;  // +8196
+    gp<Sound> head;       // +8200: the +96 sounds
+    gp<Sound> tail;       // +8204
+    gp<Sound> head2;      // +8208: the others
+};
+static_assert(offsetof(SoundMgr, head2) == 8208);
 
 namespace {
 // The emitter handle pool: +24 s32 count, +28 272-byte entries (+16 voice,
@@ -24,44 +77,45 @@ constexpr u32 Voice_Stop = 0x006D60AC;        // (voice, 1)
 
 // The pool entry of a live handle h (low half the generation, high half
 // the index), or 0.
-u32 LiveEntry(u32 h) {
+EmitterEntry* LiveEntry(u32 h) {
     const u32 gen = h & 0xFFFF;
-    if (gen == 0) return 0;
+    if (gen == 0) return nullptr;
     const s32 idx = static_cast<s32>((h >> 16) & 0xFFFF);
-    if (!(idx < static_cast<s32>(load<u32>(kEmitters + 24)))) return 0;
-    const u32 e = load<u32>(kEmitters + 28) + static_cast<u32>(idx) * 272u;
-    if (((load<u32>(e + 256) >> 15) & 0xFFFF) != gen) return 0;
-    if ((load<u8>(e + 256) & 0x80) != 0) return 0;
-    return e;
+    EmitterPool& pool = global<EmitterPool>(kEmitters);
+    if (!(idx < pool.count)) return nullptr;
+    EmitterEntry& e = gm<EmitterEntry>(pool.entries.ea + static_cast<u32>(idx) * 272u);
+    if (((e.gen >> 15) & 0xFFFF) != gen) return nullptr;
+    if ((reinterpret_cast<const u8*>(&e.gen)[0] & 0x80) != 0) return nullptr;
+    return &e;
 }
 
 // Takes sound n off its list (+116 prev, +120 next; at the ends the
 // manager's +8200 head / +8204 tail for sounds with +96 set, else the +8208
-// head, which has no tail), clears +97 / +99, then frees it
-// (Sound_Free445390) when +108 is 0, else pushes it onto the free list at
-// the manager's +8196.
-void Detach(PPUContext& ctx, u32 mgr, u32 n) {
-    if (const u32 prev = load<u32>(n + 116); prev != 0)
-        store<u32>(prev + 120, load<u32>(n + 120));
-    else if (load<u8>(n + 96) != 0)
-        store<u32>(mgr + 8200, load<u32>(n + 120));
+// head, which has no tail), clears +97 / +99, then frees it (Sound_Free)
+// when +108 is 0, else pushes it onto the free list at the manager's
+// +8196.
+void Detach(SoundMgr* mgr, Sound* n) {
+    if (Sound* prev = n->prev)
+        prev->next = n->next;
+    else if (n->queued != 0)
+        mgr->head = n->next;
     else
-        store<u32>(mgr + 8208, load<u32>(n + 120));
-    if (const u32 next = load<u32>(n + 120); next != 0)
-        store<u32>(next + 116, load<u32>(n + 116));
-    else if (load<u8>(n + 96) != 0)
-        store<u32>(mgr + 8204, load<u32>(n + 116));
-    const u32 keep = load<u32>(n + 108);
-    store<u8>(n + 97, 0);
-    store<u8>(n + 99, 0);
+        mgr->head2 = n->next;
+    if (Sound* next = n->next)
+        next->prev = n->prev;
+    else if (n->queued != 0)
+        mgr->tail = n->prev;
+    const u32 keep = n->keep;
+    n->playing = 0;
+    n->b99 = 0;
     if (keep == 0) {
-        call(ctx, Sound_Free, {mgr, n});
+        call(Sound_Free, mgr, n);
         return;
     }
-    store<u32>(n + 120, load<u32>(mgr + 8196));
-    if (const u32 f = load<u32>(mgr + 8196); f != 0) store<u32>(f + 116, n);
-    store<u32>(n + 116, 0);
-    store<u32>(mgr + 8196, n);
+    n->next = mgr->free_list;
+    if (Sound* f = mgr->free_list) f->prev = n;
+    n->prev = nullptr;
+    mgr->free_list = n;
 }
 }  // namespace
 
@@ -83,78 +137,68 @@ void Detach(PPUContext& ctx, u32 mgr, u32 n) {
 //    live handle's voice gets Voice_Stop(voice, 1), +13 of the entry's
 //    +16 block set first when its owner's +96 is) and detached;
 //  - playing but not alive: reported unless +98, then detached.
-// Each sound then takes its cost off *budget (signed compares). r3 is the
-// last budget stored (mgr for an empty list).
-DECOMP(004454B4, PrioList_UpdateSounds4454B4) {
-    const u32 mgr = arg<u32>(ctx, 0);
-    u32 n = arg<u32>(ctx, 1);
-    const u32 budget = arg<u32>(ctx, 2);
-    const f64 dt = farg(ctx, 0);
-    if (n == 0) return;  // r3 stays mgr
-    u32 count = 0;  // +96 sounds kept playing (r29)
-    u64 left = 0;
-    Stack frame(ctx, 16);  // sp+112: Handle_Acquire's output
+// Each sound then takes its cost off *budget (signed compares).
+void PrioList_UpdateSounds4454B4(SoundMgr* mgr, Sound* n, be_u32* budget, f32 dt) {
+    if (n == nullptr) return;
+    u32 count = 0;  // +96 sounds kept playing
+    GuestFrame frame(16);  // Handle_Acquire's output
     do {
         u32 cost = 0;
-        const u32 next = load<u32>(n + 120);
-        if (load<u8>(n + 102) != 0) store<u8>(n + 102, 0);
-        const bool playing = load<u8>(n + 97) != 0;
-        if (playing) {
-            const f64 t = Adds(Lfs(n + 112), dt);
-            store<u32>(n + 112, std::bit_cast<u32>(static_cast<f32>(t)));
-            ctx.fpr[1] = t;
-        }
-        const u32 defp = load<u32>(n + 0);
-        const u32 d = load<u32>(defp);
+        Sound* next = n->next;
+        if (n->b102 != 0) n->b102 = 0;
+        const bool playing = n->playing != 0;
+        if (playing) n->t = static_cast<f32>(Adds(lf(n->t), dt));
+        const u32 defp = n->defp;
+        const u32 d = gm<be_u32>(defp);  // quirk: read at address 0 when there is no pointer
         if (d == 0) {
-            call(ctx, Emitter_Stop, {load<u32>(n + 4), 0});
-            Detach(ctx, mgr, n);
+            call(Emitter_Stop, n->handle.get(), 0u);
+            Detach(mgr, n);
         } else {
-            const u32 def = defp == 0 ? 0u : d;
-            cost = load<u32>(def + 88);
-            store<u8>(n + 103, 0);
+            SoundDef& def = gm<SoundDef>(defp == 0 ? 0u : d);
+            cost = static_cast<u32>(def.cost.get());
+            n->allowed = 0;
             if (!playing) {
-                const bool queued = load<u8>(n + 96) != 0;
+                const bool queued = n->queued != 0;
                 if (queued && !(static_cast<s32>(count) < 4)) {
                     cost = 0;
-                } else if (static_cast<s32>(cost) < static_cast<s32>(load<u32>(budget))) {
-                    store<u8>(n + 103, 1);
+                } else if (static_cast<s32>(cost) < static_cast<s32>(budget->get())) {
+                    n->allowed = 1;
                     if (queued) ++count;
                 }
             } else {
                 bool alive = false;
-                const u32 h = load<u32>(n + 4);
-                if (load<u8>(kAudioReady) != 0) {
-                    if (const u32 e = LiveEntry(h); e != 0)
-                        alive = static_cast<u32>(call(ctx, Voice_IsPlaying, {load<u32>(e + 16)})) != 0;
+                const u32 h = n->handle;
+                if (global<u8>(kAudioReady) != 0) {
+                    if (EmitterEntry* e = LiveEntry(h)) alive = call<u32>(Voice_IsPlaying, e->voice.get()) != 0;
                 }
                 if (!alive) {
-                    if (load<u8>(n + 98) == 0) call(ctx, String_Format, {kFmtStolen, kUnknown});
-                    Detach(ctx, mgr, n);
-                } else if (!(static_cast<s32>(cost) > static_cast<s32>(load<u32>(budget)))) {
-                    if (load<u8>(n + 96) != 0) ++count;
-                    if (load<u8>(n + 100) != 0) {
-                        call(ctx, Handle_Acquire, {frame.addr(), n, 0});
-                        store<u8>(n + 100, load<u8>(kAudioDirty));
+                    if (n->quiet == 0) call(String_Format, kFmtStolen, kUnknown);
+                    Detach(mgr, n);
+                } else if (!(static_cast<s32>(cost) > static_cast<s32>(budget->get()))) {
+                    if (n->queued != 0) ++count;
+                    if (n->reacquire != 0) {
+                        call(Handle_Acquire, frame.as<be_u32>(), n, 0u);
+                        n->reacquire = global<u8>(kAudioDirty);
                     }
                 } else {
-                    if (load<u8>(n + 96) != 0) call(ctx, String_Format, {kFmtStopping, kUnknown});
-                    if (load<u8>(def + 96) == 0) {
-                        call(ctx, Emitter_Stop, {load<u32>(n + 4), 0});
-                    } else if (load<u8>(kAudioReady) != 0) {
-                        if (const u32 e = LiveEntry(load<u32>(n + 4)); e != 0) {
-                            const u32 v = e + 16;
-                            if (load<u8>(load<u32>(v + 4) + 96) != 0) store<u8>(v + 13, 1);
-                            call(ctx, Voice_Stop, {load<u32>(v), 1});
+                    if (n->queued != 0) call(String_Format, kFmtStopping, kUnknown);
+                    if (def.direct == 0) {
+                        call(Emitter_Stop, n->handle.get(), 0u);
+                    } else if (global<u8>(kAudioReady) != 0) {
+                        if (EmitterEntry* e = LiveEntry(n->handle)) {
+                            if (e->owner->flag != 0) e->stopping = 1;
+                            call(Voice_Stop, e->voice.get(), 1u);
                         }
                     }
-                    Detach(ctx, mgr, n);
+                    Detach(mgr, n);
                 }
             }
         }
-        left = static_cast<u64>(load<u32>(budget)) - cost;  // subfc on the zero-extended words
-        store<u32>(budget, static_cast<u32>(left));
+        *budget = budget->get() - cost;
         n = next;
-    } while (n != 0);
-    ret(ctx, left);
+    } while (n != nullptr);
 }
+
+}  // namespace sly4::obj
+
+NATIVE(004454B4, sly4::obj::PrioList_UpdateSounds4454B4)

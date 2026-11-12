@@ -1,10 +1,37 @@
 // Game code, large-function sweep part 35: the object registry's
 // constructor (the singleton at 0x00F668D8; destructor Obj_Dtor_B22FC8_004F3CB4).
-#include "../sly4.h"
-#include "big35.h"
+#include "native/objtypes.h"
 
-using namespace sly4;
-using namespace sly4::big35;
+namespace sly4::obj {
+
+// A pool array (24 bytes): +0 u16 count, +6 u16 element size (16), +8
+// data, +12 allocator, +20 the element descriptor.
+struct PoolArray24 {
+    be_u16 count;   // +0
+    be_u16 h2;      // +2
+    be_u16 h4;      // +4
+    be_u16 elem;    // +6
+    be_u32 data;    // +8
+    be_u32 alloc;   // +12
+    be_u32 w16;     // +16
+    be_u32 desc;    // +20
+};
+static_assert(sizeof(PoolArray24) == 24);
+struct ObjRegistry {
+    be_u32 vtable;       // +0
+    be_u32 buf;          // +4: 24-byte buffer
+    PoolArray24 a8;      // +8
+    PoolArray24 a32;     // +32
+    PoolArray24 a56;     // +56
+    PoolArray24 a80;     // +80
+    pad<36> slots;       // +104: the slot list
+    be_u32 w140;         // +140
+    u8 b144;             // +144
+    pad<3> _145;
+    be_u32 block;        // +148: 32 x 48 bytes when hashed
+    be_u32 w152;         // +152
+};
+static_assert(offsetof(ObjRegistry, a80) == 80 && offsetof(ObjRegistry, w140) == 140 && offsetof(ObjRegistry, block) == 148);
 
 namespace {
 constexpr u32 kRegistryVtable = 0x00B22FC8;
@@ -20,23 +47,23 @@ constexpr u32 Registry_AddFactories4F3554 = 0x004F3554;  // (Registry*, Factory*
 constexpr u32 Registry_AddFactories4F32F4 = 0x004F32F4;  // (Registry*, Factory* const*, n): array +56
 constexpr u32 Iff_RegisterChunk = 0x0055902C;     // (fourcc, opd, arg, name, flags)
 
-// A pool array at a (+0 u16 count, +2 / +4 0, +6 u16 element size 16, +8
-// data, +12 allocator): count from n; the data alloc->vfn[0](alloc, count *
-// ((size >> 1) & 0x7FFF), 0, 16) for a non-zero count; then Array_Init.
-// The caller stores the fields (and the descriptor words before them).
-void PoolArray(PPUContext& ctx, u32 a) {
-    const u32 alloc = static_cast<u32>(call(ctx, Mem_DefaultAllocator));
-    const u32 n = load<u16>(a);
-    store<u32>(a + 12, alloc);
+// A pool array: the default allocator stored at +12; for a non-zero
+// count the data = alloc->vfn[0](alloc, count * ((size >> 1) & 0x7FFF), 0,
+// 16); then Array_Init. The caller stores the fields (and the descriptor
+// words before them).
+void PoolArray(PoolArray24* a) {
+    const u32 alloc = call<u32>(Mem_DefaultAllocator);
+    const u32 n = a->count;
+    a->alloc = alloc;
     if (n != 0) {
-        const u32 size = n * ((load<u16>(a + 6) >> 1) & 0x7FFFu);
-        store<u32>(a + 8, static_cast<u32>(VCall(ctx, alloc, 0, {alloc, size, 0, 16})));
+        const u32 size = n * ((a->elem >> 1) & 0x7FFFu);
+        a->data = vcall<u32>(host<u8>(alloc), 0, size, 0u, 16u);
     }
-    call(ctx, Array_Init, {a});
+    call(Array_Init, a);
 }
 }  // namespace
 
-// u64 Registry_Construct4F37B0(Registry* o, Factory* const* fa, u32 na,
+// void Registry_Construct4F37B0(Registry* o, Factory* const* fa, u32 na,
 // Factory* const* fb, u32 nb, x, u8 hashed, u8 b) (Call_4F37B0_004F3C88):
 // +0 the vtable; +4 a 24-byte buffer (Mem_Alloc(24, 0, 16), then
 // Buffer_Init565CC8(buf, x, 0, 0); 0 when the allocation fails); pool
@@ -45,79 +72,76 @@ void PoolArray(PPUContext& ctx, u32 a) {
 // +104 (1500 slots); +144 = b, +140 0; +148 a zeroed 1536-byte block
 // (32 x 48) when hashed (0 without, or when the allocation fails); +152 0.
 // Then *0x00F668D8 = o, the factories fa / fb are added when na / nb are
-// non-zero (as 32-bit values), and the six IFF chunk handlers FTES, HTES,
-// DTES, FTMG, HTMG, DTMG registered. Returns the last registration's r3.
-DECOMP(004F37B0, Registry_Construct4F37B0) {
-    const u32 o = arg<u32>(ctx, 0);
-    // passed on as the full registers, as in the original
-    const u64 fa = ctx.gpr[4], na = ctx.gpr[5], fb = ctx.gpr[6], nb = ctx.gpr[7], x = ctx.gpr[8];
-    const u32 hashed = arg<u32>(ctx, 6) & 0xFF;
-    const u8 b = arg<u8>(ctx, 7);
-    store<u32>(o + 0, kRegistryVtable);
+// non-zero, and the six IFF chunk handlers FTES, HTES, DTES, FTMG, HTMG,
+// DTMG registered.
+void Registry_Construct4F37B0(ObjRegistry* o, u32 fa, u32 na, u32 fb, u32 nb, u32 x, u8 hashed, u8 b) {
+    o->vtable = kRegistryVtable;
     u32 buf = 0;
-    if (const u32 p = static_cast<u32>(call(ctx, Mem_Alloc, {24, 0, 16})); p != 0) {
-        call(ctx, Buffer_Init565CC8, {p, x, 0, 0});
+    if (const u32 p = call<u32>(Mem_Alloc, 24u, 0u, 16u); p != 0) {
+        call(Buffer_Init565CC8, p, x, 0u, 0u);
         buf = p;
     }
-    store<u32>(o + 4, buf);
-    store<u16>(o + 8, static_cast<u16>(na));
-    store<u16>(o + 10, 0);
-    store<u16>(o + 12, 0);
-    store<u16>(o + 14, 16);
-    store<u32>(o + 16, 0);
-    PoolArray(ctx, o + 8);
+    o->buf = buf;
+    o->a8.count = static_cast<u16>(na);
+    o->a8.h2 = 0;
+    o->a8.h4 = 0;
+    o->a8.elem = 16;
+    o->a8.data = 0u;
+    PoolArray(&o->a8);
 
-    store<u32>(o + 28, kPool8Desc);
-    store<u32>(o + 24, 0);
-    store<u16>(o + 34, 0);
-    store<u16>(o + 32, 600);
-    store<u16>(o + 36, 0);
-    store<u16>(o + 38, 16);
-    store<u32>(o + 40, 0);
-    PoolArray(ctx, o + 32);
+    o->a8.desc = kPool8Desc;
+    o->a8.w16 = 0u;
+    o->a32.h2 = 0;
+    o->a32.count = 600;
+    o->a32.h4 = 0;
+    o->a32.elem = 16;
+    o->a32.data = 0u;
+    PoolArray(&o->a32);
 
-    store<u32>(o + 52, kPool32Desc);
-    store<u32>(o + 48, 0);
-    store<u16>(o + 56, static_cast<u16>(nb));
-    store<u16>(o + 58, 0);
-    store<u16>(o + 60, 0);
-    store<u16>(o + 62, 16);
-    store<u32>(o + 64, 0);
-    PoolArray(ctx, o + 56);
+    o->a32.desc = kPool32Desc;
+    o->a32.w16 = 0u;
+    o->a56.count = static_cast<u16>(nb);
+    o->a56.h2 = 0;
+    o->a56.h4 = 0;
+    o->a56.elem = 16;
+    o->a56.data = 0u;
+    PoolArray(&o->a56);
 
-    store<u32>(o + 76, kPool56Desc);
-    store<u32>(o + 72, 0);
-    store<u16>(o + 80, 100);
-    store<u16>(o + 82, 0);
-    store<u16>(o + 86, 16);
-    store<u16>(o + 84, 0);
-    store<u32>(o + 88, 0);
-    PoolArray(ctx, o + 80);
-    store<u32>(o + 96, 0);
-    store<u32>(o + 100, kPool80Desc);
-    call(ctx, SlotList_Init, {o + 104, 1500});
+    o->a56.desc = kPool56Desc;
+    o->a56.w16 = 0u;
+    o->a80.count = 100;
+    o->a80.h2 = 0;
+    o->a80.elem = 16;
+    o->a80.h4 = 0;
+    o->a80.data = 0u;
+    PoolArray(&o->a80);
+    o->a80.w16 = 0u;
+    o->a80.desc = kPool80Desc;
+    call(SlotList_Init, &o->slots, 1500);
 
-    store<u8>(o + 144, b);
-    store<u32>(o + 140, 0);
+    o->b144 = b;
+    o->w140 = 0u;
     u32 block = 0;
     if (hashed != 0) {
-        block = static_cast<u32>(call(ctx, Mem_Alloc, {1536, 0, 16}));
+        block = call<u32>(Mem_Alloc, 1536u, 0u, 16u);
         if (block != 0) {
-            for (u32 p = block, k = 0; k < 32; ++k, p += 48) {
-                for (u32 j = 0; j < 24; j += 4) store<u32>(p + j, 0);
-                for (u32 j = 0; j < 24; j += 4) store<u32>(p + 24 + j, 0);
-            }
+            be_u32* w = host<be_u32>(block);
+            for (u32 k = 0; k < 32 * 12; ++k) w[k] = 0u;
         }
     }
-    store<u32>(o + 148, block);
-    store<u32>(o + 152, 0);
-    store<u32>(kRegistry, o);
-    if (static_cast<u32>(na) != 0) call(ctx, Registry_AddFactories4F3554, {o, fa, na});
-    if (static_cast<u32>(nb) != 0) call(ctx, Registry_AddFactories4F32F4, {o, fb, nb});
-    call(ctx, Iff_RegisterChunk, {0x46544553u, 0x00F3B168u, 0, 0, 0});  // 'FTES'
-    call(ctx, Iff_RegisterChunk, {0x48544553u, 0x00F3B170u, 0, 0, 0});  // 'HTES'
-    call(ctx, Iff_RegisterChunk, {0x44544553u, 0x00F3B178u, 0, 0, 0});  // 'DTES'
-    call(ctx, Iff_RegisterChunk, {0x46544D47u, 0x00F3B180u, 0, 0, 0});  // 'FTMG'
-    call(ctx, Iff_RegisterChunk, {0x48544D47u, 0x00F3B188u, 0, 0, 0});  // 'HTMG'
-    ret(ctx, call(ctx, Iff_RegisterChunk, {0x44544D47u, 0x00F3B190u, 0, 0, 0}));  // 'DTMG'
+    o->block = block;
+    o->w152 = 0u;
+    global<be_u32>(kRegistry) = guest(o);
+    if (na != 0) call(Registry_AddFactories4F3554, o, fa, na);
+    if (nb != 0) call(Registry_AddFactories4F32F4, o, fb, nb);
+    call(Iff_RegisterChunk, 0x46544553u, 0x00F3B168u, 0u, 0u, 0u);  // 'FTES'
+    call(Iff_RegisterChunk, 0x48544553u, 0x00F3B170u, 0u, 0u, 0u);  // 'HTES'
+    call(Iff_RegisterChunk, 0x44544553u, 0x00F3B178u, 0u, 0u, 0u);  // 'DTES'
+    call(Iff_RegisterChunk, 0x46544D47u, 0x00F3B180u, 0u, 0u, 0u);  // 'FTMG'
+    call(Iff_RegisterChunk, 0x48544D47u, 0x00F3B188u, 0u, 0u, 0u);  // 'HTMG'
+    call(Iff_RegisterChunk, 0x44544D47u, 0x00F3B190u, 0u, 0u, 0u);  // 'DTMG'
 }
+
+}  // namespace sly4::obj
+
+NATIVE(004F37B0, sly4::obj::Registry_Construct4F37B0)

@@ -1,10 +1,16 @@
 // Game code, large-function sweep part 34: a settings block filled from its
 // global tuning variables.
-#include "../sly4.h"
-#include "big34.h"
+#include "native/objtypes.h"
 
-using namespace sly4;
-using namespace sly4::big34;
+namespace sly4::obj {
+
+struct TuningBlock {
+    pad<4> _0;
+    u8 b4, b5;       // +4, +5
+    pad<2> _6;
+    be_u32 w[118];   // +8 .. +476
+};
+static_assert(sizeof(TuningBlock) == 480);
 
 namespace {
 // One copied value: the destination offset, the source address (a tuning
@@ -46,15 +52,17 @@ constexpr u32 kTailA = 0x01038430, kTailB = 0x0103847C;
 // void T::LoadTuning(T* o) (called through a pointer). Copies the global
 // tuning values into o as raw words (bytes for +4 / +5): the kCopies list,
 // then the 14-entry array +416..+468 from the variables at kArrayVars, then
-// +472 / +476. f1 is left as the last value loaded, as in the original.
-DECOMP(007379FC, Tuning_CopyDefaults_007379FC) {
-    const u32 o = arg<u32>(ctx, 0);
+// +472 / +476.
+void Tuning_CopyDefaults_007379FC(TuningBlock* o) {
     for (const Copy& c : kCopies) {
-        if (c.size == 1) store<u8>(o + c.dst, load<u8>(c.src));
-        else store<u32>(o + c.dst, load<u32>(c.src));
+        if (c.size == 1) (c.dst == 4 ? o->b4 : o->b5) = global<u8>(c.src);
+        else o->w[(c.dst - 8) / 4] = global<be_u32>(c.src).get();
     }
-    for (u32 k = 0; k < 14; ++k) store<u32>(o + 416 + 4 * k, load<u32>(kArrayVars + 76 * k + 72));
-    store<u32>(o + 472, load<u32>(kTailA));
-    store<u32>(o + 476, load<u32>(kTailB));
-    ctx.fpr[1] = Lfs(kTailB);
+    for (u32 k = 0; k < 14; ++k) o->w[(416 - 8) / 4 + k] = global<be_u32>(kArrayVars + 76 * k + 72).get();
+    o->w[(472 - 8) / 4] = global<be_u32>(kTailA).get();
+    o->w[(476 - 8) / 4] = global<be_u32>(kTailB).get();
 }
+
+}  // namespace sly4::obj
+
+NATIVE(007379FC, sly4::obj::Tuning_CopyDefaults_007379FC)

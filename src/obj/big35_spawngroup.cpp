@@ -1,10 +1,78 @@
 // Game code, large-function sweep part 35: the spawn group's constructor
 // (the object Obj_SlotApply_000B6208 and Group_Reset0B7384 work on).
-#include "../sly4.h"
-#include "big35.h"
+#include "native/objtypes.h"
 
-using namespace sly4;
-using namespace sly4::big35;
+namespace sly4::obj {
+
+// A u16-counted vector {+0 data, +4 capacity, +6 element size, +8 count,
+// +10 high-water mark} in a 20-byte slot.
+struct UVec20 {
+    be_u32 data;    // +0
+    be_u16 cap;     // +4
+    be_u16 step;    // +6
+    be_u16 count;   // +8
+    be_u16 mark;    // +10
+    pad<8> _12;
+};
+static_assert(sizeof(UVec20) == 20);
+struct SpawnGroupDef {
+    gp<be_u32> hashes;   // +0: point hashes
+    pad<4> _4;
+    be_u16 n;            // +8
+    pad<38> _10;
+    be_u32 point;        // +48
+    be_u32 owner;        // +52
+    be_u32 item;         // +56
+    be_u32 profile;      // +60
+};
+static_assert(offsetof(SpawnGroupDef, point) == 48 && offsetof(SpawnGroupDef, profile) == 60);
+struct SpawnGroup {
+    be_u32 vtable;       // +0
+    be_u32 world;        // +4
+    be_u32 flags;        // +8
+    UVec20 v12, v32, v52;  // +12 / +32 / +52
+    UVec20 markers;      // +72
+    UVec20 indices;      // +92
+    gp<SpawnGroupDef> def;  // +112
+    be_u32 point;        // +116
+    be_u32 profile;      // +120
+    be_u32 rec;          // +124
+    be_u32 index;        // +128
+    be_u32 owner;        // +132
+    be_u32 item;         // +136
+    be_u32 w140[3];      // +140 .. +148
+};
+static_assert(sizeof(SpawnGroup) == 152 && offsetof(SpawnGroup, def) == 112);
+struct SgProfile {
+    pad<20> _0;
+    be_u32 flags;  // +20: bit 0x00200000 = template
+};
+struct SgTable {
+    pad<108> _0;
+    be_u32 list;   // +108
+};
+struct SgHolder {
+    pad<208> _0;
+    gp<SgTable> table;  // +208
+};
+struct SgWorld {
+    pad<160> _0;
+    gp<SgHolder> holder;  // +160
+};
+struct SgItemHeader {
+    pad<2> _0;
+    be_u16 count;  // +2
+};
+struct SgItems {
+    pad<36> _0;
+    gp<SgItemHeader> header;  // +36
+    pad<4> _40;
+    be_u32 items;             // +44: 368-byte items
+};
+struct SgPointHolder {
+    pad<16> _0;
+    be_u32 map;  // +16
+};
 
 namespace {
 constexpr u32 kGroupVtable = 0x00B11E20;
@@ -23,20 +91,19 @@ constexpr u32 Item_Hash = 0x0039FEBC;            // (Item*) -> u32
 constexpr u32 Obj_Call4A71D0 = 0x0039FEE0;       // (Item*, 0)
 constexpr u32 Volume_Activate = 0x0039D32C;      // (Item*, 0, 1, 0)
 
-// Appends x to the u16-counted vector at v (+0 data, +4 capacity, +8
-// count, +10 high-water mark), doubling the capacity when full.
-void Push(PPUContext& ctx, u32 v, u32 x) {
-    const u32 cap = load<u16>(v + 4);
-    if (load<u16>(v + 8) == cap) call(ctx, PtrVector_Reserve, {v, (cap << 1) & 0x1FFFEu});
-    store<u32>(load<u32>(v) + ((static_cast<u32>(load<u16>(v + 8)) << 2) & 0x3FFFCu), x);
-    const u32 n = load<u16>(v + 8) + 1u;
-    const u32 hi = load<u16>(v + 10);
-    store<u16>(v + 8, static_cast<u16>(n));
-    store<u16>(v + 10, static_cast<u16>(static_cast<s32>(hi) > static_cast<s32>(n & 0xFFFF) ? hi : n));
+// Appends x to the u16-counted vector v, doubling the capacity when full.
+void Push(UVec20* v, u32 x) {
+    const u32 cap = v->cap;
+    if (v->count == cap) call(PtrVector_Reserve, v, (cap << 1) & 0x1FFFEu);
+    gm<be_u32>(v->data + ((static_cast<u32>(v->count) << 2) & 0x3FFFCu)) = x;
+    const u32 n = v->count + 1u;
+    const u32 hi = v->mark;
+    v->count = static_cast<u16>(n);
+    v->mark = static_cast<u16>(static_cast<s32>(hi) > static_cast<s32>(n & 0xFFFF) ? hi : n);
 }
 }  // namespace
 
-// u32 SpawnGroup_Construct0B5D14(Group* o, World* w, const Def* d) (from
+// void SpawnGroup_Construct0B5D14(Group* o, World* w, const Def* d) (from
 // 0x000B9020, on a 152-byte SmallAlloc block): +0 the vtable, +4 w, +8 its
 // top bit cleared; four u16 vectors (+12 capacity 4 / step 16, +32 4 / 16,
 // +52 4 / 8, then the marker list +72 and its index list +92, both with
@@ -53,115 +120,116 @@ void Push(PPUContext& ctx, u32 v, u32 x) {
 //   +116 = *PointMap_Find(points, &d->48);
 //   for each non-zero point hash i of d->0 (d->8 entries) that the point map
 //          resolves: the point onto +72 and i onto +92.
-// Returns d->8 (the loop bound last read).
-DECOMP(000B5D14, SpawnGroup_Construct0B5D14) {
-    const u32 o = arg<u32>(ctx, 0), w = arg<u32>(ctx, 1), d = arg<u32>(ctx, 2);
-    store<u32>(o + 4, w);
-    store<u32>(o + 8, load<u32>(o + 8) & 0x7FFFFFFFu);
-    store<u32>(o + 0, kGroupVtable);
-    call(ctx, PtrVector_Construct, {o + 12});
-    store<u16>(o + 18, 16);
-    call(ctx, PtrVector_Init, {o + 12, 4, 0, 0});
-    call(ctx, PtrVector_Construct, {o + 32});
-    store<u16>(o + 38, 16);
-    call(ctx, PtrVector_Init, {o + 32, 4, 0, 0});
-    call(ctx, PtrVector_Construct, {o + 52});
-    store<u16>(o + 58, 8);
-    call(ctx, PtrVector_Init, {o + 52, 4, 0, 0});
-    const u32 markers = o + 72, indices = o + 92;
-    u32 n = load<u16>(d + 8);
-    call(ctx, PtrVector_Construct, {markers});
-    store<u16>(o + 78, 4);
-    call(ctx, PtrVector_Init, {markers, n, 0, 1});
-    n = load<u16>(d + 8);
-    call(ctx, PtrVector_Construct, {indices});
-    store<u16>(o + 98, 4);
-    call(ctx, PtrVector_Init, {indices, n, 0, 1});
-    store<u32>(o + 112, d);
-    store<u32>(o + 116, 0);
-    store<u32>(o + 120, 0);
-    store<u32>(o + 124, 0);
-    store<u32>(o + 128, 0xFFFFFFFFu);
-    for (u32 k = 132; k <= 148; k += 4) store<u32>(o + k, 0);
+void SpawnGroup_Construct0B5D14(SpawnGroup* o, SgWorld* w, SpawnGroupDef* d) {
+    o->world = guest(w);
+    o->flags = o->flags & 0x7FFFFFFFu;
+    o->vtable = kGroupVtable;
+    call(PtrVector_Construct, &o->v12);
+    o->v12.step = 16;
+    call(PtrVector_Init, &o->v12, 4u, 0u, 0u);
+    call(PtrVector_Construct, &o->v32);
+    o->v32.step = 16;
+    call(PtrVector_Init, &o->v32, 4u, 0u, 0u);
+    call(PtrVector_Construct, &o->v52);
+    o->v52.step = 8;
+    call(PtrVector_Init, &o->v52, 4u, 0u, 0u);
+    u32 n = d->n;
+    call(PtrVector_Construct, &o->markers);
+    o->markers.step = 4;
+    call(PtrVector_Init, &o->markers, n, 0u, 1u);
+    n = d->n;
+    call(PtrVector_Construct, &o->indices);
+    o->indices.step = 4;
+    call(PtrVector_Init, &o->indices, n, 0u, 1u);
+    o->def = d;
+    o->point = 0u;
+    o->profile = 0u;
+    o->rec = 0u;
+    o->index = 0xFFFFFFFFu;
+    o->owner = 0u;
+    o->item = 0u;
+    for (u32 k = 0; k < 3; ++k) o->w140[k] = 0u;
 
     // the template profile
-    const u32 prof = static_cast<u32>(call(ctx, Save_Profile, {load<u32>(d + 60)}));
-    if (prof == 0) {
-        if (const u32 h = load<u32>(load<u32>(o + 112) + 60); h != 0) call(ctx, Hash_ToString, {h});
+    SgProfile* prof = call<SgProfile*>(Save_Profile, d->profile.get());
+    if (prof == nullptr) {
+        if (const u32 h = o->def->profile; h != 0) call(Hash_ToString, h);
     } else {
-        const u32 dd = load<u32>(o + 112);
-        const u32 t = (load<u32>(prof + 20) & 0x00200000u) != 0 ? prof : 0u;
-        store<u32>(o + 120, t);
-        if (t == 0) call(ctx, Hash_ToString, {load<u32>(dd + 60)});
+        SpawnGroupDef* dd = o->def;
+        const u32 t = (prof->flags & 0x00200000u) != 0 ? guest(prof) : 0u;
+        o->profile = t;
+        if (t == 0) call(Hash_ToString, dd->profile.get());
     }
 
     // the owner object
-    u32 dd = load<u32>(o + 112);
-    if (const u32 key = load<u32>(dd + 52); key != 0) {
+    SpawnGroupDef* dd = o->def;
+    if (const u32 key = dd->owner; key != 0) {
         u32 rec = 0;
         bool table = false;
-        if (const u32 a = load<u32>(w + 160); a != 0) {
-            if (const u32 b = load<u32>(a + 208); b != 0) {
+        if (SgHolder* a = w->holder) {
+            if (SgTable* b = a->table) {
                 table = true;
-                if (const u32 list = load<u32>(b + 108); list != 0) {
-                    rec = static_cast<u32>(call(ctx, Rec80_Find, {list, key}));
-                    dd = load<u32>(o + 112);
+                if (const u32 list = b->list; list != 0) {
+                    rec = call<u32>(Rec80_Find, list, key);
+                    dd = o->def;
                 }
-                store<u32>(o + 124, rec);
+                o->rec = rec;
             }
         }
         if (!table || rec == 0) {
-            const u32 idx = static_cast<u32>(call(ctx, Obj_IndexByHash, {w, load<u32>(dd + 52)}));
-            store<u32>(o + 128, idx);
-            if (idx == 0xFFFFFFFFu)
-                store<u32>(o + 132, static_cast<u32>(call(ctx, Obj_FindByKey, {w, load<u32>(load<u32>(o + 112) + 52)})));
+            const u32 idx = call<u32>(Obj_IndexByHash, w, dd->owner.get());
+            o->index = idx;
+            if (idx == 0xFFFFFFFFu) o->owner = call<u32>(Obj_FindByKey, w, o->def->owner.get());
         }
     }
 
     // the item
-    const u32 items = load<u32>(kItems);
-    const u32 itemHash = load<u32>(load<u32>(o + 112) + 56);
+    SgItems* items = global<gp<SgItems>>(kItems);
+    const u32 itemHash = o->def->item;
     u32 item = 0;
-    if (itemHash != 0 && load<u16>(load<u32>(items + 36) + 2) != 0) {
+    if (itemHash != 0 && items->header->count != 0) {
         for (u32 i = 0, off = 0;; ++i, off += 368) {
-            const u32 p = load<u32>(items + 44) + off;
-            if (p != 0 && static_cast<u32>(call(ctx, Item_Hash, {p})) == itemHash) {
+            const u32 p = items->items + off;
+            if (p != 0 && call<u32>(Item_Hash, p) == itemHash) {
                 item = p;
                 break;
             }
-            if (i + 1 >= load<u16>(load<u32>(items + 36) + 2)) break;
+            if (i + 1 >= items->header->count) break;
         }
     }
-    store<u32>(o + 136, item);
+    o->item = item;
     if (item != 0) {
-        call(ctx, Obj_Call4A71D0, {item, 0});
-        call(ctx, Volume_Activate, {load<u32>(o + 136), 0, 1, 0});
-    } else if (const u32 h = load<u32>(load<u32>(o + 112) + 56); h != 0) {
-        call(ctx, Hash_ToString, {h});
+        call(Obj_Call4A71D0, item, 0u);
+        call(Volume_Activate, o->item.get(), 0u, 1u, 0u);
+    } else if (const u32 h = o->def->item; h != 0) {
+        call(Hash_ToString, h);
     }
 
     // the points
-    Stack frame(ctx, 8);  // sp+112 (the list keys) and sp+116 (d->48)
-    const u32 key = frame.addr();
-    const u32 pointMap = load<u32>(load<u32>(kMapHolderPoint) + 16);
-    store<u32>(key + 4, load<u32>(d + 48));
-    const u32 pt = load<u32>(static_cast<u32>(call(ctx, PointMap_Find, {pointMap, key + 4})));
-    store<u32>(o + 116, pt);
-    if (pt == 0) call(ctx, Hash_ToString, {load<u32>(d + 48)});
-    u32 cnt;
+    GuestFrame frame(8);  // the list keys (+0) and d->48 (+4)
+    be_u32* key = frame.as<be_u32>(0);
+    be_u32* pkey = frame.as<be_u32>(4);
+    const u32 pointMap = global<gp<SgPointHolder>>(kMapHolderPoint)->map;
+    *pkey = d->point.get();
+    const u32 pt = *call<be_u32*>(PointMap_Find, pointMap, pkey);
+    o->point = pt;
+    if (pt == 0) call(Hash_ToString, d->point.get());
     for (u32 i = 0;; ++i) {
-        cnt = load<u16>(d + 8);
+        const u32 cnt = d->n;
         if (i >= cnt) break;
-        const u32 h = load<u32>(load<u32>(d) + 4 * i);
+        const u32 h = d->hashes.get()[i];
         if (h == 0) continue;
-        store<u32>(key, h);
-        const u32 p = load<u32>(static_cast<u32>(call(ctx, PointMap_Find, {load<u32>(load<u32>(kMapHolderPoint) + 16), key})));
+        *key = h;
+        const u32 p = *call<be_u32*>(PointMap_Find, global<gp<SgPointHolder>>(kMapHolderPoint)->map.get(), key);
         if (p == 0) {
-            call(ctx, Hash_ToString, {h});
+            call(Hash_ToString, h);
             continue;
         }
-        Push(ctx, markers, p);
-        Push(ctx, indices, i);
+        Push(&o->markers, p);
+        Push(&o->indices, i);
     }
-    ret(ctx, cnt);
 }
+
+}  // namespace sly4::obj
+
+NATIVE(000B5D14, sly4::obj::SpawnGroup_Construct0B5D14)
