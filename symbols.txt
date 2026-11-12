@@ -7592,7 +7592,6 @@
 001683A0 AdjDtor_001683A0         // p = this -380: vtables 0x00B126B8 / 0x00B12528 / 0x00B1200C at +0 / +384 / +380, then 0x000DF934(p) (template instance); decompiled: src/obj/obj19_tmpl3.cpp
 0075919C AdjDtor_0075919C         // p = this -384: vtables 0x00B126B8 / 0x00B12528 / 0x00B1200C at +0 / +384 / +380, then 0x000DF934(p) (template instance); decompiled: src/obj/obj19_tmpl3.cpp
 007591EC AdjDtor_007591EC         // p = this -380: vtables 0x00B126B8 / 0x00B12528 / 0x00B1200C at +0 / +384 / +380, then 0x000DF934(p) (template instance); decompiled: src/obj/obj19_tmpl3.cpp
-00391694 Node_Init                // (p, s16 id, const char* name) (name?); called by the NewNamed_* factories (src/obj/obj19_tmpl*.cpp); not decompiled
 004D3088 Node_Bind                        // Binding* (Owner* o, const char* name, s32 kind, u32 k6, s32 offset (-1 = o->+48), const void* value): 96-byte binding, value printed ("%d" / "%.2f") into a heap copy +80, pushed onto o->+8 (0 on a failed allocation), o->+48 += 1 / 2 (kind 6) / 3 (7) / 4 (8) (r4 = the new +48); decompiled: src/obj/mid1_node.cpp
 
 # Renderer sweep part 8
@@ -11524,8 +11523,6 @@
 001F5BA8 XmlDef_NewF5BA8                  // factory of XmlDef_Read_001F5938, 368 B, vtable 0x00B188C0; decompiled: src/obj/mid11_dmg2.cpp
 002F8EE0 XmlDef_New2F8EE0                 // factory of 002F8CF0 + 80 B child items (0x002F8AFC), 336 B, vtable 0x00B1D5C8; decompiled: src/obj/mid11_misc.cpp
 00307A78 XmlDef_New307A78                 // factory of 003078D8, 368 B, vtable 0x00B1DA78, then 0x0030743C(p, c); decompiled: src/obj/mid11_misc.cpp
-001D5A40 DamageColDef_FromRecD5A40        // (p, rec) (not decompiled)
-002F8CF0 XmlDef_Read2F8CF0                // (a0, c, x, tmpl, o) reader (118; not decompiled)
 002F8AFC XmlItem_Read2F8AFC               // (item or 0, XmlCursor* child) (not decompiled)
 
 # Game code large functions part 12
@@ -11702,7 +11699,6 @@
 0023FA28 XmlDef_New23FA28                 // factory: as 00245A30 (reader 0x0023E590, ctor 0x00226A28 + inline copy, vtable 0x00B1B9B8); decompiled: src/obj/mid12_fac.cpp
 0020A298 XmlDef_New20A298                 // factory with inlined reader (Rec_CopyFields_000C387C, tmpl flag 0x80 in +28), 192 B via 0x0020A0F0; decompiled: src/obj/mid12_fac.cpp
 0055578C String_Alloc_0055578C            // (n) -> char* (reads r3 only; used before String_CopyN) (name?)
-0030386C XmlItem_Read30386C               // (item, child) for the 0xD9ABF25D list of 0030743C (118; not decompiled)
 0016A828 XmlDef_Read16A828                // (a0, c, x, tmpl, o) -> 1: Damage_Read0C3910, empty names -> "", o+124 "colObjName" attr, 14 floats o+128.., hash o+188 (tmpl flag 0x400 / body tmpl+244), byte o+24 = 1; decompiled: src/obj/mid13_rd.cpp
 00203718 XmlDef_Read203718                // (a0, c, x, tmpl, o): Damage_Read0C3910, enum 0x0027873A (6 hashes 0x00AD2C54) o+124, s32 o+128, 8 floats, 2 hashes (tmpl flag 0x1000 / body tmpl+200); decompiled: src/obj/mid13_rd.cpp
 001668B4 XmlDef_Read1668B4                // reader of 00167080
@@ -11993,7 +11989,6 @@
 # Game code large functions part 19
 002464F0 Owner_StartEffects_002464F0    // (Obj* o): owner o+216; o+1376 from o+356; fills empty effect slots +1364 / +1352 / +1360 from the global effect set entries named by owner +880 / +872 / +876 (inlined TreeSelect), component 0x0027469E gets o+160, +1368/+1372 = sub-set values 2527 / 0x10CBB, Effect_Start, Effect_SetTime(.text 0x002464EC) (name?); decompiled: src/obj/big19_fx.cpp
 00484BE0 User_Travel484BE0              // (World*, UserBlock*, level, Mat*, u8 a5..a8, u8 a9 stack): reuse/spawn the user's slot object for the level profile ("Player%02d_Controllable" descriptor), move the player state, layer-object retargeting, camera target; decompiled: src/obj/big19_user.cpp
-0034B0F8 Def_Resolve34B0F8              // (u32 rec+56 hash, owner +164) -> value stored at def +128 (name?)
 
 # Game code sweep part 37
 00398ED0 Bounds_Init_00398ED0             // void f(T* o): Shape_Reset63778C(o), then the bounds +16..+24 = FLT_MAX and +32..+40 = -FLT_MAX, +64 / +68 = 0, bit 31 of +72 set and bit 30 cleared; the array + (name?); decompiled: src/obj/obj37.cpp
@@ -12882,7 +12877,6 @@
 001EAD18 Obj_SetCamTarget_001EAD18        // bool SetCamTarget(T* o, Obj* c): o->+428 = c; with c, a 224-byte follower (SmallAlloc(224); 0x00111FE0(p, cam, c, o); 0 on failure) becomes o->+424 and is pushe (name?); decompiled: src/obj/obj42b.cpp
 002126B4 TriggerAlert_New_002126B4        // T* New(a, b, Src* s, c): the 85-byte definition on the stack (+0 = 0x00400000, +4 = 8, +12 = s->+12, +16 / +20 = 0x00AD366C, -1.0 at +36 / +40 / +72, +76 = name (name?); decompiled: src/obj/obj42b.cpp
 00225600 VolumeShape_Dtor_00225600        // ~T(): vtable 0x00B1B180 and the PtrVector +432 destroyed; then the volume-shape body (vtable 0x00B19558, Volume_Notify(*0x00F557EC, o + 424), Shape_Release(o +  (name?); decompiled: src/obj/obj42b.cpp
-004B36A0 Table_PickFinish_004B36A0       // (o, table, out, x): tail of Table_Pick_004B453C (name?)
 004A8778 Vec_StepDist_004A8778           // (consts, ?, b, x, &s; f1, f2 = length, f3 = t) -> f1 distance; used by 004A8950 (name?)
 00933120 Hk_BodyRefRelease_00933120      // (body, x): reads r3 and r4 (name?)
 001BAFFC Def_Read_001BAFFC               // (a, b, s, c, &def): 168-byte definition reader for 001BB6C4 (name?)
@@ -13334,7 +13328,6 @@
 000F7E74 Reward_SpawnAt_000F7E74         // (const SpawnFrame* f, const RewardInfo* info, u32 kind, PtrVector* out) (name?); called by 00268300
 0026621C Stage_Complete_0026621C         // (Stage*, Obj* owner, x) (reads r5) (name?); called by 00268300
 003055E8 Obj_AttachCam_003055E8          // (x, u8, -, u8; f32) (reads r3 r4 r6 f1) (name?); called by 0030FD68
-0040E220 Sumo_RoundEnd_0040E220          // (Game*) (name?); called by 0040EA08
 0040E400 Sumo_SpawnerState3_0040E400     // (Spawner*; f1) (name?); called by 0040EA08
 0040E6E0 Sumo_SpawnerState1_0040E6E0     // (Spawner*; f1) (name?); called by 0040EA08
 
@@ -13560,7 +13553,6 @@
 003218B0 Section_Link_003218B0            // (const Link20*, Section*, u8 on) (name?)
 011DE288 g_FxSetCacheVal                  // u32: the section effect set's last found record +8 (003260F0)
 0020DFD8 Obj_UpdateTeamBase_0020DFD8      // u32 (T* o; f32 dt): prune members +372/+366 and pending +396/+390 (object +172 bit 0x40000), body add + bounds centre to +144, sync members +344/+352 with the body's overlap query (vfn[288] leave / vfn[284] enter), then Obj_UpdateBase; decompiled: src/obj/big28_team.cpp
-0020DC6C Team_Refresh_0020DC6C            // (T*) (name?)
 002CEF30 Comp_HitTimer_002CEF30           // bool f(comp; f1 t): hit timer update used by the kind-2 hit handlers (callee, not decompiled); decompiled: src/obj/big28_ledge.cpp
 00F1DE30 VtOverlapCollector               // overlap result collector vtable (16-byte entries, inline 16) (0020DFD8)
 00B13B38 VtCamTarget112                   // 112-byte camera target (00054880)
@@ -13868,3 +13860,55 @@
 002E34A8 Game_Stat2E34A8                  // (session, src) -> f32 save-details stat (name?)
 002E3698 Game_Stat2E3698                  // (session, src) -> f32 save-details stat (name?)
 002E3898 Game_Stat2E3898                  // (session, src) -> f32 save-details stat (name?)
+
+# Game code sweep part 52
+0034B0F8 BoneRemap_Build_0034B0F8         // u16* f(u32 key, SkeletonDef* sk): the entry of key in the sorted map 0x0106BC14 (SortedMap_Find76D894(map, &key), key at sp+112); none -> String_Format(0x00ADC0 (name?); decompiled: src/obj/obj52.cpp
+0039CB9C Obj_Construct_0039CB9C           // void f(T* o) (constructor): PtrVectors at +0, +20, +40, +60 (PtrVector_Construct, u16 +6 = 4 / +26 = 4 / +46 = 16 / +66 = 16 set before PtrVector_Init(v, 16, 0, (name?); decompiled: src/obj/obj52.cpp
+003F2990 Spline_PickNode_003F2990         // void f(T* o): picks the next spline node. t = f32 (o->+56)->+48 and the spline (o->+56)->+12; with nodes (u16 o->+140 != 0) o->+256 = node 0 and node 0 is the d (name?); decompiled: src/obj/obj52.cpp
+0042ECB8 SpawnRef_Construct_0042ECB8      // void f(T* o, Ref a, u32 b, u32 c, u8 d, u8 e, u8 spawn) (constructor): Obj_InitVt_B20CC8(o, e), vtable 0x00B20E90, +12 = a (Field_Inc20_00446170 when set), +16  (name?); decompiled: src/obj/obj52.cpp
+00455D68 Obj_ChanceRoll_00455D68          // u32 f(T* o): a chance roll. Nothing (r3 = 0) when bit 0x80 of u8 o->+88 is set. With v = the f32 (o->+48)->+12[(*0x010AB068)->+64] below the threshold 0x00455D5 (name?); decompiled: src/obj/obj52.cpp
+004A67E8 Screen_Unproject_004A67E8        // void f(Vec3* out, Mat4* m, ?, Vec2* v, f32 a, f32 z) (screen point to world): Matrix_Perspective(P (sp+208), ..., 0x010C5A20, v) with f1 = a, f2 = f32 0x010C5A3 (name?); decompiled: src/obj/obj52.cpp
+004F57CC Node_BuildObj_004F57CC           // Obj* f(Ctx* c, Node* n): n's object, made on first use: o = vt[32](n, 0) -> n->+84, then vt[8](o); then for each child in n's slot list (+12: head index +20, ta (name?); decompiled: src/obj/obj52.cpp
+00072EA8 Def40_ReadXml_00072EA8           // T* f(?, XmlCursor* x): a 40-byte def (Mem_Alloc(40, 0, 16); r3 = 0 when that fails): Obj_InitVt_B21C98(d, x), vtable 0x00B0F518, +12..+32 = 0, u8 +36..+38 = 0;  (name?); decompiled: src/obj/obj52.cpp
+00087A40 SeqCmd_SetFlagBits_00087A40      // u32 f(Cmd* c, Effect* e) (sequence command): only when u8 c->+25 or u8 c->+27 is set. The target t: with c->+12 set, the component Effect_FindComponent(e, c->+1 (name?); decompiled: src/obj/obj52.cpp
+00098EA4 SeqCmd_SpawnBurst_00098EA4       // u32 f(Cmd* c, Effect* e) (sequence command, spawn burst): the target t as in 0x00087A40 (the component Effect_FindComponent(e, c->+36) with vt[32]() == 5 -> ->+ (name?); decompiled: src/obj/obj52.cpp
+000B9738 Query_BuildObj_000B9738          // Obj* f(Src* o, Sink* w): QueryBuildObj52 with class 0x00B11E78, a11 1, q->+4 bit 0x00100000, a 736-byte SmallAlloc object built by 0x000B9020. r3 = it. (name?); decompiled: src/obj/obj52.cpp
+00121968 Query_BuildObj_00121968          // Obj* f(Src* o, Sink* w): QueryBuildObj52 with class 0x00B0DBAC, a11 0, q->+4 bit 0x8, a 1360-byte Mem_Alloc(1360, 0, 16) object built by 0x00120A58. r3 = it. (name?); decompiled: src/obj/obj52.cpp
+000E281C Obj_Dtor_000E281C                // void f(T* o) (destructor body): vtable 0x00B12838; each 160-byte entry of the PtrVector o->+192 (u16 count +8, data +0; the vector re-read after each release) w (name?); decompiled: src/obj/obj52.cpp
+000EDBA4 Obj_CanAct_000EDBA4              // bool f(Obj* o, Obj* x, u32 k) (may o act on x with kind k): 0 when k is 2 and bit 0x200 of (o->+216)->+372 is set, when k >= 3, when x is 0 and so is o->+432, w (name?); decompiled: src/obj/obj52.cpp
+000EF564 Obj_SyncEffect_000EF564          // void f(Obj* o): Obj_LaunchFactor_000EF3C8(o); with the effect o->+356: component 0x03CBAB04 of kind 4 gets the three vec3 rows o->+448 / +464 / +480 / +496 at + (name?); decompiled: src/obj/obj52.cpp
+001241A0 Obj_SetHeldColour_001241A0       // u32 f(Obj* o, u8 b) (sets the held / colour state): u8 o->+996 = b, bit 0x10 of u8 o->+968 cleared; Mem_FreeFrom(o->+976, 0) and +976 = 0 when set; the colour { (name?); decompiled: src/obj/obj52.cpp
+0020DC6C Volume_FlushPending_0020DC6C     // u32 f(Volume* o) (flushes the pending list): with n = u16 o->+366 entries, bit 0x02000000 of o->+412 is set while the 8-byte entries at o->+372 are memmoved to  (name?); decompiled: src/obj/obj52.cpp
+002F892C Def_ReadItems_002F892C           // u32 f(T* o, XmlCursor* x): the name attribute 0x0024728B (String_Assign(o, a) when found), the bool 0x0027129B -> u8 o->+56 (its old value as default); then for (name?); decompiled: src/obj/obj52.cpp
+0030C3F0 Obj_AddWatched_0030C3F0          // u32 f(T* o, Obj* x, Vec3* v): x (when set and not yet in it) is appended to the PtrVector o->+920 (u16 cap +924, count +928, high-water +930); then with the pla (name?); decompiled: src/obj/obj52.cpp
+00340FC8 Loader_PadStep_00340FC8          // u32 f(Loader* o, ? a, Msg* m): Loader_Step_003252D8(o, a, m) (r3 = its result), first, when u8 o->+18 is 4 and m->+0 is 6 and the player slot s = (*0x00F65CA0)  (name?); decompiled: src/obj/obj52.cpp
+00387E98 Seg_Distances_00387E98           // void f(Vec2* out, T* o, Vec3* p): the distances of p to the current segment of o (entry i = o->+536 of the 16-byte array at o->+332: points a (+0), b (+4), c (+ (name?); decompiled: src/obj/obj52.cpp
+00391694 Graph_Register_00391694          // Node* f(Slot* o, u16 kind, const char* name) (registers a named node graph): u16 o->+8 = kind, +0 = 0; +12 = a 52-byte NodeGraph (Mem_Alloc(52, 0, 16) -> NodeGr (name?); decompiled: src/obj/obj52.cpp
+00393240 Bank_ResolveName_00393240        // u32 f(Ref* a, Bank* b) (resolves a sound / anim name to an index): the u16 slot written is ((s16 a->+6 < u16 b->+144 and the 132-byte entry b + 152 + 132 i has  (name?); decompiled: src/obj/obj52.cpp
+0043AE5C TuningVars_StaticDtor_0043AE5C   // void f() (static destructor): the twenty 80-byte tuning variables at 0x010AAD50 down to 0x010AA760 (step -80) get their vtable back (0x00B0D99C; 0x00B0DA6C for  (name?); decompiled: src/obj/obj52.cpp
+004B36A0 Key_Resolve_004B36A0             // u32 f(Def* o, Ctx* a, Out* b, Key* c) (resolves a key into b): with no key (c->+0 == 0) bit 0x40 of u8 b->+4 is cleared, b->+36 = o->+24 (f32), u8 b->+40 = u8 o (name?); decompiled: src/obj/obj52.cpp
+00056ED0 Scene_BeginView_00056ED0         // u32 f(Scene* o, Camera* cam) (starts the scene view's frame): only with the view v (o->+6260), o->+6272, o->+6268 and o->+6184 all set (else r3 = v). v->+660 =  (name?); decompiled: src/obj/obj52.cpp
+000A3E04 Def36_ReadXml_000A3E04           // T* f(?, XmlCursor* x): a 36-byte def (Mem_Alloc(36, 0, 16); r3 = 0 when that fails): Obj_InitVt_B21C98(d, x), vtable 0x00B11760, +12..+24 = 0, u8 +28 / +29 / +3 (name?); decompiled: src/obj/obj52.cpp
+0016EC4C Obj_Dtor_0016EC4C                // void f(T* o) (destructor body): vtables 0x00B14730 / +380 0x00B148CC / +384 0x00B148F4; World_ListRemove_0046B7A4(*0x00F65CA0, 0, 0x00F31548, o, o); List1013B48 (name?); decompiled: src/obj/obj52.cpp
+001C111C Obj_FireSplineEvent_001C111C     // u32 f(Obj* o) (resolves the target spline, then fires its event): 0 when Obj_Check_001AEA50(o) fails (it reads f1 as the caller left it). With bit 0x04 of u8 o- (name?); decompiled: src/obj/obj52.cpp
+001CC660 Obj_ZoneEvent_001CC660           // u32 f(Obj* o) (target-zone update): 0 when Obj_Check_001AEA50(o) fails (f1 passed through), 1 without o->+216. Once (bit 0x80 of u8 o->+852 then set): o->+752 = (name?); decompiled: src/obj/obj52.cpp
+001D5A40 Obj_CopyConstruct_001D5A40       // u32 f(T* o, const T* s) (copy constructor): Thunk_000E27FC(o, s); the f32 rows s->+256..+336 -> o->+336..+416 (with w unwritten: 3 of each 4 words, the last row (name?); decompiled: src/obj/obj52.cpp
+00274AC0 Obj_Dtor_00274AC0                // u32 f(T* o) (destructor body): vtable 0x00B1C050; the attached object o->+180 gets bit 0x200 of +136 and +180 = 0; Emitter_Stop(o->+184, 1); the PtrVector +160  (name?); decompiled: src/obj/obj52.cpp
+002C6B24 Tracker_Add_002C6B24             // u32 f(T* o, Obj* x) (adds a tracked object): 0 for no x or when x is already in the 12-byte entry array o->+356 (u16 cap +360, count +364, high-water +366). Els (name?); decompiled: src/obj/obj52.cpp
+003A0010 Pools_Construct_003A0010         // void f(Pools* o) (constructor; registers itself in *0x00F657FC): three pools on Mem_DefaultHeap() (+0..+12 = 0 then Pool112_Setup_0077AC14(o, 32, 0, heap); +16. (name?); decompiled: src/obj/obj52.cpp
+003AC070 Sensor_InCone_003AC070           // bool f(Sensor* o, f32 r, f32 maxdeg, ?, ?, Vec3* p): p within r + q->+132 of the owner position A ((o->+96)->+144; q = o->+108), and the angle (Acosf of the dot (name?); decompiled: src/obj/obj52.cpp
+003BC718 Char_SyncFrame_003BC718          // u32 f(Char* o) (per-frame sync): with o->+532 == 0 / 1 the hash (o->+60)->+4996 / +4984 is set on the effect o->+32 when both are set (Effect_SetHash4CF988); Ob (name?); decompiled: src/obj/obj52.cpp
+0040E220 Obj_Activate_0040E220            // u32 f(Obj* o) (activation step): with u8 o->+53 set, u8 +478 = u8 +476 = 1. Otherwise, the first time (bit 0x80000000 of +96 clear, o->+44 set with u8 ->+18 !=  (name?); decompiled: src/obj/obj52.cpp
+0043A8E4 SeqCmd_ApplySave_0043A8E4        // u32 f(Cmd* c) (applies a save profile to a player): with c->+20 set, the player t (Obj_FindByHandle42C2B0(c->+16, 0), or the main player ((*0x00F65CA0)->+4208)- (name?); decompiled: src/obj/obj52.cpp
+004E51D4 Node_Dtor_004E51D4               // u32 f(Node* o) (destructor body): vtable 0x00B229E8; the parts +168 / +172 get vt[8]() when set; vtable 0x00B22710; while o->+152 (the first child) is set it ge (name?); decompiled: src/obj/obj52.cpp
+001FDF7C ColObj_CopyConstruct_001FDF7C    // u32 f(T* o, const T* s) (copy constructor): ColObj_Ctor1F85F0(o, s); the rows s->+256..+312 (3 words of each 16; +288..+300 all 4) -> o->+304.., vtable 0x00B18F (name?); decompiled: src/obj/obj52b.cpp
+00223F94 Def224_ReadXml_00223F94          // T* f(a, b, Xml* x, d) (reads a 224-byte def): the 124-byte record at sp+112 ({0x00400000, 2, 0, x->+12, 0x00AD366C, 0x00AD366C, 8 bytes 0, 0, -1.0f, -1.0f, u8 0 (name?); decompiled: src/obj/obj52b.cpp
+00255F18 Range_Construct_00255F18         // void f(T* o, const Def* s): Range_Construct52 with vtables 0x00B1CDB0 / 0x00B1CDFC. (name?); decompiled: src/obj/obj52b.cpp
+002560F0 Range_Construct_002560F0         // void f(T* o, const Def* s): Range_Construct52 with vtables 0x00B1CCD8 / 0x00B1CD24. (name?); decompiled: src/obj/obj52b.cpp
+002F8CF0 DamageCol_ReadCheck_002F8CF0     // u32 f(a, b, Xml* x, Tmpl* d, Rec* r) (damage-collision def check): DamageColDef_Read_000C85A8(a, b, x, d, r); then the defaults record on the stack (Def_Constru (name?); decompiled: src/obj/obj52b.cpp
+0030386C Shapes_ReadXml_0030386C          // u32 f(Shapes* o, XmlCursor* x): the name attribute 0x0024728B (String_Assign(o, a); missing: the name used in messages is 0x00AD9F68), the hash 0x0024728B -> o- (name?); decompiled: src/obj/obj52b.cpp
+004272F4 Net_CloseAll_004272F4            // void f() (network shutdown): the socket sets *0x00F6584C, *0x00F65850, *0x00F65854 closed and freed (SocketSetFree52); r3 = PtrVector_Clear(0x0108A13C). (name?); decompiled: src/obj/obj52b.cpp
+00017420 GroupRef_ReadXml_00017420        // T* f(?, XmlCursor* x, u8 flag) (a group-ref def): no "name" attribute (XmlCursor_FindAttrByName(x, 0x00AC019C)) -> XmlCursor_DocPath(r3 as passed), r3 = 0. Else (name?); decompiled: src/obj/obj52b.cpp
+000650B0 KList_ReadEntry_000650B0         // s32 f(XmlCursor* x, T* o, Msg* m) (resolves o's list handle, then reads x's first child into its entry): with no handle (low half of o->+40 0) KListLib_Add_0039 (name?); decompiled: src/obj/obj52b.cpp
+000E7B0C Obj_EnableMotion_000E7B0C        // u32 f(Obj* o, u8 on) (enables / disables the motion): bit 0x20000 of o->+172 = !on; with u8 *0x01022014 set, o->vt[68]() gives r -> r->vt[44](r, on); without co (name?); decompiled: src/obj/obj52b.cpp
+000F4200 Obj_ChargeUpdate_000F4200        // u32 f(Obj* o, f32 dt) (charge update): the pending part o->+432 (unless bit 0x40000 of its +172) gets vt[40](p, 0) and +432 = 0. With bit 0x20000 of o->+376 and (name?); decompiled: src/obj/obj52b.cpp
