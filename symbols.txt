@@ -11489,7 +11489,6 @@
 004A9270 Hk_ShapeInit                     // (p, a, b, c, -, -, -, -, stack 9th; f1..f4) (name?); called by 0x004AC718
 00371BA8 Obj_TalkBegin                    // (o, 0) (name?); called by 0x003735C8
 00371360 Obj_TalkResume                   // (o) (name?); called by 0x003735C8
-000E5EF0 Obj_RefreshBase                  // (o, x): reads r4 (passed through by 0x001C7C5C) (name?)
 000E02F8 Obj_SetRagdollBase             // (o, u8 full): full: o's hit-queue records (0x01022100) swap-removed (lvx/stvx), effect +356 ended (0x879D1B7A / component 0x0027469E), +364 = 0; then Obj_ShutdownBase_000D74C0; decompiled: src/obj/vmx1_hit.cpp
 000F6A68 Obj_ApplyKindEntry               // (a, entry, b, d, e, f) (name?); called by 0x000F8058
 
@@ -13672,7 +13671,6 @@
 004A4780 Obj_LineOfSight_004A4780         // u32 f(Obj* a, Obj* b, Opd* cb): Havok ray a+144 -> b+144; ignores shape types 5/6/>=16 and hits owned by a/b; first other hit: no owner -> 0, owner -> cb(owner) or 0; clear -> 1; decompiled: src/obj/big29_los.cpp
 0075C364 DefRec_Construct_0075C364        // u32 f(Rec* o, a, b, c, params[8], src, -, r10; f1, f2; stack args 9, 10, 18..21): XML def defaults record base (src 0..476 -> o+176.., name String_Alloc/String_CopyN into +672); decompiled: src/obj/big29_defrec.cpp
 0075CBEC DefRec_ConstructFull_0075CBEC    // u32 f(Rec* o, ...; f1..f4; stack args 9..14, 17): DefRec_Construct_0075C364 (name 0x00AD3C14, arg 20 = 2) + defaults +684..+1540 (3 PtrVectors), +8 |= 0x800; decompiled: src/obj/big29_defrec.cpp
-000DC314 Obj_Release_000DC314             // (Obj*, 0, 0) called by PairTable_Add_0042C328 when o->vfn[60]() is 0 (name?)
 01021FC8 g_SoundMute                      // data: u8, no object sounds start while set (Obj_StartSound_000DB348)
 00F64C1C g_ScorePopupSerial               // data: u32, "Scoring%u" popup counter (Score_SpawnPopup_002B21D8)
 0106A268 g_CamMinEyeY                     // data: f32, the follow camera's lowest eye y (Cam_UpdateFollow_00304FD0)
@@ -13721,3 +13719,12 @@
 002975F4 Item_New_002975F4                // Item* f(x, XmlCursor* cur, u8 v): as Item_New_002B06D4 with +12 = 2, the final vtable 0x00B1434C and +20 / +24 = 0; then u8 +16 = v and the hashes +20 (0x000140 (name?); decompiled: src/obj/obj50b.cpp
 002997C8 Shape_Init_002997C8              // u32 f(Shape* o, a, b, const f32* pos, c, d, e, f, [stack] g..m, n; f32 r): shape constructor: PtrVector_Construct(o), u16 +6 = 8, +20 = a, +24 = b, +32..40 = po (name?); decompiled: src/obj/obj50b.cpp
 002AB428 Meter_Set_002AB428               // u32 f(f32 x): sets the global meter value 0x010592EC to x clamped to [K[1], the limit 0x010592F0] (K = the .text pool 0x002AB418). When the limit is above K[1]: (name?); decompiled: src/obj/obj50b.cpp
+
+# Game code big sweep part 30
+000DC314 Obj_StopVoiceTree_000DC314       // void f(Obj* o, key, u8 release): recurses into the +192 object of each 240-byte slot of o->+340 (u16 count +8) with +176 bit 31; then Entry_Stop353CC0(Obj_FindComp34CC34(o->+164, key), release) when both are set; decompiled: src/obj/big30_voice.cpp
+00321324 Ref_Resolve_00321324             // void f(Ref* r, u8 warn): resolves the 20-byte typed reference {+0 id, +4 kind 0..7, +11 missing, +12, +16 ptr} (object / target def / id maps / lib groups / records / object with +200 bit 1); not found: Hash_ToString for warn, +11 = +12 = 1; decompiled: src/obj/big30_ref.cpp
+0032549C Section_Ready_0032549C           // void f(Section* o, u8 on, s32 k): readiness of the five child lists +2232..+2264, mode from k / +20 bits / state word, entry refs +2272 reset and Ref_Resolve'd, o->vfn[26](o, mode, flag), lists marked ready in state 5; decompiled: src/obj/big30_lists.cpp
+000FAE00 CamObj_PushView_000FAE00         // void f(CamObj* o, u8 force): camera matrix from +96 (optionally via Obj_SetMatrixD87CC / the +624 matrix), inverse to RenderTarget_SetMatrix(o->+364), View_SetFov(+356), lens (+440..+455) and post settings (+456..+466) to rt->+656's +12 / +24; decompiled: src/obj/big30_camview.cpp
+000E5EF0 Obj_SyncBodies_000E5EF0          // void f(Obj* o, const Mtx* m): m's x/y/z rows to o+96; per 48-byte slot of o->+388 with a body (+28, its +8 set): Obj_AttachMatrix, and Hk_SetTransform + Hk_Activate when the body's +240 transform differs; decompiled: src/obj/big30_bodysync.cpp
+00333BC8 Section_SetLinkMode_00333BC8     // void f(Section* o, s32 mode, u8 force): adds / removes the keys of lists +2652 / +2632 and the single key +2672 in the holder's 128-byte records (modes 0..3); +2676 = mode; decompiled: src/obj/big30_links.cpp
+00390DC8 KListLib_Add_00390DC8            // KList* f(KListLib* lib, XmlNode* x, u32* handle): rejects a duplicate "Name" hash, takes a handle-pool entry (inlined insert), Knowledge_Load(k, x), appends {key, k} to the name map +36 when flagged; decompiled: src/obj/big30_klist.cpp
