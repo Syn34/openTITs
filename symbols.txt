@@ -1618,7 +1618,7 @@
 0037370C Obj_ShowPanel                     // "Default_Init" timeline; decompiled: src/world/hevent3_k.cpp (name?)
 0047E3CC World_ClearLayers                 // World +0x12820C vector; decompiled: src/world/hevent3_k.cpp (name?)
 000CFA24 Objects_FinishJobA                // waits 0x01021D80, deletes job A's listed objects; decompiled: src/world/hevent3_k.cpp (name?)
-000AE78C SaveParams_Set                    // (dst, a, 128, b, 128, c, 1024, d, 64) (name?)
+000AE78C SaveParams_Set                   // (src, title, 128, sub, 128, det, 1024, save, [stack] 64): save entry strings from the string table *0x00F6687C; det = STR_SAVE_DETAILS of the floored completion stats; decompiled: src/obj/big33_saveparams.cpp
 00556038 String_Dup                        // (const char*) -> pooled copy (Mem_AllocPool / strcpy) (name?)
 00771DD0 SortedMap_Remove         // sorted map remove (obj.h layout), default compare 0x00F35F90; decompiled: src/obj/obj16_map.cpp
 0073B608 SortedMap_Find73B608     // sorted map find (obj.h layout), default compare 0x00F2FD30; decompiled: src/obj/obj16_map.cpp
@@ -13848,3 +13848,23 @@
 010BC0D0 g_TickMinX                       // f32: audio slider tick x at volume 0 (data)
 010BC080 g_TickMaxX                       // f32: audio slider tick x at volume 1 (data)
 01021CD0 g_TurnDivisor                    // f32: Obj_SweepTurnToMove_000EB420 turn divisor (data)
+
+# Game code big sweep part 33
+004EC20C NameTree_AddPath_004EC20C        // void f(const char* name, u32 value, u8 flag): "A.B.C" split at '.', parents looked up from the name-tree map 0x010C2BC0 (child maps at value +12), a 124-byte node (+4 value, +8 flag, +12 child map, +116 parent) inserted under the last element's hash; decompiled: src/obj/big33_nametree.cpp
+0038C7F0 Knowledge_ParseRule_0038C7F0     // bool f(Ctx* a, XmlCursor* x, u32 val): a 132-byte knowledge rule (owner *a - 152, s16 count +144): Name / value attrs, cause (first child) and result (next sibling) types from the maps at *0x00F65788 (+0 / +24); decompiled: src/obj/big33_knowrule.cpp
+000179C0 ObjKind_Construct_000179C0       // T::T(T* o, const Desc* d): Obj_Register, vt 0x00B0DDC0, +28 from the map *0x00F658D4 +32, kind component (by hash d+24, 10 kinds + default) allocated into +24; decompiled: src/obj/big33_objkind.cpp
+0046EA98 Menu_CycleTab_0046EA98           // void f(Menu* t, const Event* e): event 10 / 11 = next / previous tab (u8 t+0x1285C5, 0..3): sound, UI events, tab node (Node_Find_0046E7B0) and the two cursors at 0x010B19E0 placed in NDC; decompiled: src/obj/big33_menutab.cpp
+0046DB28 Menu_RefreshExtras_0046DB28      // void f(World* t, const Event* x): "Menu" / "Cost" / "Data" groups' Extra01..08 texts (ON/OFF/UNKNOWN, cost, description from 0x00AE6A60) and "MaskCount" "%d/%d"; decompiled: src/obj/big33_extras.cpp
+00446EE4 SoundBank_Load_00446EE4          // bool f(u32 key, const char* name, data, size, bool global): unless loaded (0x010B00D8 / map 0x010AFEB0), a 316-byte bank is filled from the zip's IFF file and set global (0x00F65B60) or appended to the map; decompiled: src/obj/big33_sndbank.cpp
+002DDC5C Session_Count2DDC5C              // u32 f(Session*): the count an extra's cost is compared with (Menu_RefreshExtras_0046DB28) (name?)
+0038C4E0 Knowledge_CauseSetup_0038C4E0    // (type, ctx, 7, rule, s16 type+16, type+12, elem, u16* out) (name?)
+0038BE18 Knowledge_ResultSetup_0038BE18   // (type, ctx, 7, rule, s16 type+16, type+12, elem, u16* out) (name?)
+0038C0C8 Knowledge_SpecialResult_0038C0C8 // (ctx, elem): result element with tag 0xCD1F984F (name?)
+000175FC Comp_C83BCA3D_Construct_000175FC // (component): constructor of the 784-byte kind 0xC83BCA3D component (name?)
+006279E8 Comp_InitMember_006279E8         // (p): member init at component +216 (also Obj_Init_00760CE0) (name?)
+002DABCC Session_FindLevel2DABCC          // (session, key) -> level record or 0 (name?)
+002E23AC Session_Level2E23AC              // (session) -> level record or 0 (name?)
+002E32D8 Game_Stat2E32D8                  // (session, src) -> f32 save-details stat (name?)
+002E34A8 Game_Stat2E34A8                  // (session, src) -> f32 save-details stat (name?)
+002E3698 Game_Stat2E3698                  // (session, src) -> f32 save-details stat (name?)
+002E3898 Game_Stat2E3898                  // (session, src) -> f32 save-details stat (name?)
