@@ -2837,7 +2837,7 @@
 0035BD08 Obj_Register35BD08                   // (HudObject*): Effect_Spawn into +20, HUD / script components (0x760CB725 / 0x0027469E), "has no commands" report; better Hud_StartEffect; decompiled: src/world/hevent11_f.cpp (name?)
 00364408 Obj_Attach364408                     // (unused, u32 hash): def from Set_Find(0) map -> new 140-byte Effect started at *0x00364400, +136 bit 9; better Effect_StartAttached; decompiled: src/world/hevent11_b.cpp (name?)
 0031D4A4 Child_Place31D4A4                    // (Group*, const Mat34*): world objects to translation, child records' objects to m * offset (vt +84), Body_Add931D10 + vt +304; decompiled: src/world/hevent11_f.cpp (name?)
-009D19C8 Hk_GetBody9D19C8                     // (entity) -> rigid body: Havok range (name?)
+009D19C8 Hk_GetBody9D19C8                 // (hkpCharacterRigidBody*) -> hkpRigidBody* (note only: existing name kept)
 00867058 Hk_GetAgents867058                   // (collidable) -> {entries, s32 count}: Havok range (name?)
 0091A4C8 Hk_Activate91A4C8                    // (body): Havok range (name?)
 0092F0C8 Hk_StepDeltaTime92F0C8               // (world, *0x00F64C94, *0x00F64C90; f32 dt): Havok range (name?)
@@ -12625,7 +12625,7 @@
 001CE094 Obj_UpdateContacts1CE094           // (Obj* o): 001CCF40(o, o+853, o+854) unless o->854 and vfn[32](0) in 2..4; edge of +853 -> vfn[420](2|6, 0), vfn[28](1,1), vfn[28](2,0); else edge of +854 (while +853) -> vfn[420](2|6, 0); decompiled: src/obj/mid19_b.cpp
 00F64738 g_ProjNameCounter_00F64738         // u32 running counter for "EntityCompWeapon_Proj_%i" (Obj_SpawnDef0EDE30) (name?)
 00B12CB8 VtSpawnQueryProj_00B12CB8          // vtable of the projectile spawn query (Obj_SpawnDef0EDE30) (name?)
-0030E1E0 Anim_PickState_0030E1E0            // u32 (Ctl*): next state for AnimTask_Update3129E8 (not decompiled) (name?)
+0030E1E0 Anim_PickState_0030E1E0          // (not done: released; vmaddfp/vperm matrix path + string append loop, ~2x the others)
 003CF0F8 Obj_State1_003CF0F8                // (Obj*; f32 dt): state 1 of Obj_StateTick3CF648 (VMX; vmx agent) (name?)
 00F557F4 g_NodeGraph_00F557F4               // Graph*: +4 -> u16 +2 node count, +12 20-byte nodes (Walker_Step1574C) (name?)
 00F557F0 g_AvoidList_00F557F0               // List*: +24 count, +3732 entry pointers (Obj_ResetBase12928) (name?)
@@ -12988,7 +12988,6 @@
 001B9EB8 Obj_Ctor_001B9EB8                // (p, q): ctor of the 416-byte object of Spawner1BADD8 (not decompiled) (name?)
 001A4680 Obj_Ctor_001A4680                // (p, q): ctor of the 384-byte object of Spawner1A51E8 (not decompiled) (name?)
 000DDCA8 Obj_Ctor_000DDCA8                // (p, q): ctor of the 384-byte object of SpawnerDE208 (not decompiled) (name?)
-001D1170 Obj_Ctor_001D1170                // (p, q): ctor of the 976-byte object of Spawner1D1B18 (not decompiled) (name?)
 0021BBE4 Obj_Ctor_0021BBE4                // (p, q): ctor of the 464-byte object of Spawner21BD90 (not decompiled) (name?)
 001CB000 Obj_Ctor_001CB000                // (p, q): ctor of the 864-byte object of Spawner1CB448 (not decompiled) (name?)
 001C5A80 Obj_Ctor_001C5A80                // (p, q): ctor of the 704-byte object of Spawner1C6528 (not decompiled) (name?)
@@ -13454,3 +13453,12 @@
 00F2FAF8 OPD_FindChildByName               // .opd of the WorldObj_ForEach callback used by 0008546C ({name, result} record) (name?)
 00F3A028 OPD_SortedTblCmpU32               // .opd of the default u32-key row comparator recognised by SortedTbl_Find_00789A1C (name?)
 00F65AAC g_StatSerial                      // u32 serial counter incremented by StatBlock_Construct_0043E040 (name?)
+
+# Game code big sweep part 26
+00247068 Char_CreateRigidBody_00247068    // T* (Char* o): hkpCharacterRigidBody on a sphere+box list shape -> o+412/+416, 4 bone frame pairs; decompiled: src/obj/big26_charbody.cpp
+008947A0 Hk_ListShapeCtor_008947A0        // (hkpListShape*, hkpShape* const* children, n, 0) (Havok; name?)
+009D32E0 Hk_CharRigidBodyCtor_009D32E0    // (hkpCharacterRigidBody*, const hkpCharacterRigidBodyCinfo*) (Havok; name?)
+00411088 Pusher_PadTick_00411088         // T* (Pusher* o; f32 dt): stick-driven push of o->+92 along o's axis (anims 0x437569E0/0x0E984C33/0xBAB5810B/0xBA23BD8C, effects), approach pull; decompiled: src/obj/big26_padpush.cpp (name?)
+0024B1E8 Player_SwitchDef_0024B1E8        // T* (Player* o, Def* nd): tears down body/children/effects of the old def, Player%02d_Controllable query, Char_CreateRigidBody, user name; decompiled: src/obj/big26_switchdef.cpp (name?)
+001D1170 PathObj_Ctor_001D1170           // u32 (PathObj* o, const Rec* d): ctor of Spawner1D1B18's 976-byte object (record vector o+556, frames o+576/640/720 from bones/objects, camera fov/step), ends in Obj_ResetPath1D0F68; decompiled: src/obj/big26_pathobj.cpp (was Obj_Ctor_001D1170)
+00B13CCC kVtCrbCinfo                      // data: hkpCharacterRigidBodyCinfo vtable (name?)
