@@ -4,15 +4,13 @@
 #include <bit>
 
 #include "gfx7.h"
+#include "rsx.h"
 
-using namespace sly4;
+namespace sly4::gfx {
 
 namespace {
 
-constexpr u32 kConfig = 0x010C5A20;     // sly4::g::config
-constexpr u32 kMemStats = 0x010F0E20;   // render::g::mem_stats: +168 / +172 f32 clamps, +184 u32 mode
-constexpr u32 kGcmState = 0x010F10A0;   // fx::g::state (+0 the gcm context)
-constexpr u32 kPool = 0x010DF8B0;       // layers3::g::pool (+312 shade intensity)
+constexpr u32 kPool = 0x010DF8B0;          // layers3::g::pool (+312 shade intensity)
 constexpr u32 kName010DDB40 = 0x010DDB40;  // char[64] (name?)
 constexpr u32 kFlag010DDB84 = 0x010DDB84;  // u8: 00546EF4's once-flag (name?)
 constexpr u32 kGlobal00F66FBC = 0x00F66FBC;  // u32 (name?)
@@ -25,366 +23,290 @@ constexpr u32 kArg011640E8 = 0x011640E8;     // u32 (pool::query::g::report_base
 constexpr u32 kSkinMatrices = 0x01151A80;    // draw3::g::skin_matrices
 constexpr u32 kAngle010DFA00 = 0x010DFA00;   // f32 (name?)
 
-constexpr u32 kfn_String_Copy = 0x00553684;
 constexpr u32 kfn_sys_ppu_thread_get_id = 0x00ABF1E4;
 constexpr u32 kfn_memalign = 0x0072A88C;
-constexpr u32 kfn_Shader_LoadGroup = 0x0050F0F0;
 constexpr u32 kfn_Math_Cosf = 0x007344E0;
 constexpr u32 kfn_Iff_RegisterChunk = 0x0055902C;
-constexpr u32 kfn_MaterialAnim_UploadUV = 0x0050D124;
 constexpr u32 kfn_Ctor_00548D14 = 0x00548D14;
 constexpr u32 kfn_Copy416To512 = 0x0052AA48;
 constexpr u32 kfn_True_0053B650 = 0x0053B650;
 constexpr u32 kfn_Nop_0051FF18 = 0x0051FF18;
 
-f64 lfs(u32 a) { return static_cast<f64>(load<f32>(a)); }
+be_u32& word(const void* p, u32 off) { return *at<be_u32>(p, off); }
+u8* cfg() { return reinterpret_cast<u8*>(&config()); }
 
-// f1 clamped to [lo, hi] (k: f32 lo, hi) the way the clamps branch: lo
+// v clamped to [lo, hi] (k: f32 lo, hi) the way the clamps branch: lo
 // when lo > v, else hi when hi < v, else v (NaN stays).
-f64 clamp_branch(f64 v, u32 k) {
-    const f64 lo = lfs(k), hi = lfs(k + 4);
+f32 clamp_branch(f32 v, u32 k) {
+    const f32 lo = global<be_f32>(k), hi = global<be_f32>(k + 4);
     if (lo > v) return lo;
     if (hi < v) return hi;
     return v;
 }
 
+// this->+48..+56 = v * k (k: the f32 at `k`).
+void set_half(u8* self, const be_f32* v, u32 k) {
+    const f32 h = global<be_f32>(k);
+    const f32 x = v[0] * h, y = v[1] * h, z = v[2] * h;
+    *at<be_f32>(self, 48) = x;
+    *at<be_f32>(self, 52) = y;
+    *at<be_f32>(self, 56) = z;
+}
+
 }  // namespace
 
 // void (this): this->u8 +48 ? 005170B8(this) : 00518E78(this)
-DECOMP(0051A6A0, Call_0051A6A0) {
-    const u32 flag = load<u8>(arg<u32>(ctx, 0) + 48);
-    ctx.gpr[4] = flag;  // still in r4 at either call
-    call(ctx, flag != 0 ? 0x005170B8u : 0x00518E78u);
-}
+void Call_0051A6A0(u8* self) { call(*at<u8>(self, 48) != 0 ? 0x005170B8u : 0x00518E78u, self); }
 
 // void (const char* name): String_Copy(0x010DDB40, name, 64)
-DECOMP(0051E7F0, SetName_0051E7F0) { call(ctx, kfn_String_Copy, {kName010DDB40, ctx.gpr[3], 64}); }
+void SetName_0051E7F0(const char* name) { call(sly4::fn::String_Copy, kName010DDB40, name, 64u); }
 
 // void (): 005325D8(0), then 0053B668(*(u32*)0x00F66FBC, 1)
-DECOMP(0053BBE0, Call_0053BBE0) {
-    call(ctx, 0x005325D8u, {0});
-    call(ctx, 0x0053B668u, {load<u32>(kGlobal00F66FBC), 1});
+void Call_0053BBE0() {
+    call(0x005325D8u, 0u);
+    call(0x0053B668u, global<be_u32>(kGlobal00F66FBC).get(), 1u);
 }
 
 // u64 (): sys_ppu_thread_get_id into a zeroed stack u64, returned
-DECOMP(005DB070, ThreadId_005DB070) {
-    Stack id(ctx, 8);  // 112(r1) of a 128-byte frame
-    store<u64>(id.addr(), 0);
-    ctx.gpr[4] = 0;
-    call(ctx, kfn_sys_ppu_thread_get_id, {id.addr()});
-    ctx.gpr[3] = load<u64>(id.addr());
+u64 ThreadId_005DB070() {
+    GuestFrame id(8);  // 112(r1) of a 128-byte frame
+    be_u64* v = id.as<be_u64>();
+    *v = u64{0};
+    call(kfn_sys_ppu_thread_get_id, v);
+    return *v;
 }
 
 // void (this, const f32 v[3]): this->+48..+56 = v * 0.5 (k at 0x0079F808)
-DECOMP(0079F810, SetHalf_0079F810) {
-    const u32 self = arg<u32>(ctx, 0), v = arg<u32>(ctx, 1);
-    const f64 k = lfs(0x0079F808u), vz = lfs(v + 8);
-    const f32 x = static_cast<f32>(lfs(v) * k), y = static_cast<f32>(lfs(v + 4) * k), z = static_cast<f32>(vz * k);
-    store<f32>(self + 48, x);
-    store<f32>(self + 52, y);
-    store<f32>(self + 56, z);
-    ctx.gpr[5] = 0x0079F808u;
-    ctx.fpr[1] = x;
-    ctx.fpr[2] = z;
-    ctx.fpr[3] = y;
-    ctx.fpr[4] = vz;
-}
+void SetHalf_0079F810(u8* self, const be_f32* v) { set_half(self, v, 0x0079F808u); }
 
 // void (this, const f32 v[3]): this->+48..+56 = v * 0.5 (k at 0x0079FE20)
-DECOMP(0079FE28, SetHalf_0079FE28) {
-    const u32 self = arg<u32>(ctx, 0), v = arg<u32>(ctx, 1);
-    const f64 k = lfs(0x0079FE20u), vz = lfs(v + 8);
-    const f32 x = static_cast<f32>(lfs(v) * k), y = static_cast<f32>(lfs(v + 4) * k), z = static_cast<f32>(vz * k);
-    store<f32>(self + 48, x);
-    store<f32>(self + 52, y);
-    store<f32>(self + 56, z);
-    ctx.gpr[5] = 0x0079FE20u;
-    ctx.fpr[1] = x;
-    ctx.fpr[2] = z;
-    ctx.fpr[3] = y;
-    ctx.fpr[4] = vz;
-}
+void SetHalf_0079FE28(u8* self, const be_f32* v) { set_half(self, v, 0x0079FE20u); }
 
 // void* FiosAllocator_Alloc(this, u32 size, u32 align_log2): memalign(1 << (align_log2 & 31), size)
-DECOMP(007A5F20, FiosAllocator_Alloc) {
-    const u32 align = 1u << (ctx.gpr[5] & 31);  // rlwinm 0,27,31 / slw
-    ctx.gpr[5] = 1;
-    call(ctx, kfn_memalign, {align});  // r4 (the size) passed through
+u32 FiosAllocator_Alloc(void*, u32 size, u32 align_log2) {
+    return call<u32>(kfn_memalign, 1u << (align_log2 & 31), size);  // rlwinm 0,27,31 / slw
 }
 
-// void (s32 which): Shader_LoadGroup(which == 1 ? 4 : 3)
-DECOMP(00523AA8, LoadShaders_00523AA8) { call(ctx, kfn_Shader_LoadGroup, {arg<s32>(ctx, 0) == 1 ? 4u : 3u}); }
+// Material* (s32 which): Shader_LoadGroup(which == 1 ? 4 : 3)
+Material* LoadShaders_00523AA8(s32 which) { return Shader_LoadGroup(which == 1 ? 4 : 3); }
 
 // u32 (bool on): the u8 at 0x00F671DC = on && config +35 (returned)
-DECOMP(00536958, SetFlag_00536958) {
-    u32 r = 0;
-    if ((arg<u32>(ctx, 0) & 0xFF) != 0 && load<u8>(kConfig + 35) != 0) r = 1;
-    store<u8>(kFlag00F671DC, static_cast<u8>(r));
-    ctx.gpr[4] = 0x00F60000u;
-    ret(ctx, r);
+u32 SetFlag_00536958(u32 on) {
+    const u32 r = (on & 0xFF) != 0 && config().stereo_ok != 0 ? 1u : 0u;
+    global<u8>(kFlag00F671DC) = static_cast<u8>(r);
+    return r;
 }
 
 // void (): 00527D34(), then 005E31B8(gcm context, 0)
-DECOMP(00548900, Call_00548900) {
-    call(ctx, 0x00527D34u);
-    call(ctx, 0x005E31B8u, {load<u32>(kGcmState), 0});
+void Call_00548900() {
+    call(0x00527D34u);
+    call(0x005E31B8u, gcm(), 0u);
 }
 
 // void (): 00527DAC(mode) unless mem_stats +184 (mode) == 2
-DECOMP(00548B88, Call_00548B88) {
-    const u32 mode = load<u32>(kMemStats + 184);
-    ctx.gpr[3] = mode;
+void Call_00548B88() {
+    const u32 mode = mem_stats().buffer_select;
     if (static_cast<s32>(mode) == 2) return;
-    call(ctx, 0x00527DACu, {mode});
+    call(0x00527DACu, mode);
 }
 
 // void (this): 0052BB60(this), then 00549410(this)
-DECOMP(00549594, Call_00549594) {
-    const u64 self = ctx.gpr[3];
-    call(ctx, 0x0052BB60u, {self});
-    call(ctx, 0x00549410u, {self});
+void Call_00549594(void* self) {
+    call(0x0052BB60u, self);
+    call(0x00549410u, self);
 }
 
 // void (this): 0060DDF0(this->+11976, this + 128, this->+11980)
-DECOMP(007A6840, Call_007A6840) {
-    const u32 self = arg<u32>(ctx, 0);
-    const u32 b = load<u32>(self + 11980);
-    ctx.gpr[6] = b;
-    call(ctx, 0x0060DDF0u, {load<u32>(self + 11976), static_cast<u32>(ctx.gpr[3] + 128), b});
+void Call_007A6840(u8* self) {
+    const u32 b = word(self, 11980);
+    call(0x0060DDF0u, word(self, 11976).get(), at<u8>(self, 128), b);
 }
 
 // u32 (): ++config +72, True_0053B650(), returns 1
-DECOMP(0050FDC8, Count_0050FDC8) {
-    const u64 n = static_cast<u64>(load<u32>(kConfig + 72)) + 1;
-    store<u32>(kConfig + 72, static_cast<u32>(n));
-    ctx.gpr[3] = kConfig;
-    ctx.gpr[4] = n;
-    call(ctx, kfn_True_0053B650);
-    ret(ctx, 1u);
+u32 Count_0050FDC8() {
+    word(cfg(), 72) = word(cfg(), 72) + 1u;
+    call(kfn_True_0053B650);
+    return 1;
 }
 
 // void (f32 degrees): *(f32*)0x010DFA00 = Math_Cosf(degrees * pi/180)
-DECOMP(005275C0, SetCos_005275C0) {
-    const f64 rad = static_cast<f64>(static_cast<f32>(farg(ctx, 0) * lfs(0x005275BCu)));  // fmuls
-    ctx.gpr[3] = 0x005275BCu;
-    ctx.fpr[2] = lfs(0x005275BCu);
-    const f64 c = callf(ctx, kfn_Math_Cosf, {}, {rad});
-    store<f32>(kAngle010DFA00, static_cast<f32>(c));
-    ctx.gpr[3] = 0x010E0000u;
+void SetCos_005275C0(f32 degrees) {
+    const f32 rad = degrees * global<be_f32>(0x005275BCu);  // fmuls
+    global<be_f32>(kAngle010DFA00) = static_cast<f32>(call<f64>(kfn_Math_Cosf, rad));
 }
 
 // Entry* (Entry* table, u32 key, u32 kind): the first 12-byte entry {+0
 // key, +4 nonzero (0 ends the table), +9 u8 kind} matching both, or 0
-DECOMP(00537B7C, FindEntry_00537B7C) {
-    u64 p = ctx.gpr[3];
-    const u32 key = arg<u32>(ctx, 1), kind = arg<u32>(ctx, 2);
-    for (;;) {
-        const u32 e = static_cast<u32>(p);
-        u32 r6 = load<u32>(e + 4);
-        if (r6 == 0) {
-            ctx.gpr[6] = 0;
-            return ret(ctx, 0u);
-        }
-        r6 = load<u32>(e);
-        if (r6 == key) {  // cmpw
-            r6 = load<u8>(e + 9);
-            if (r6 == kind) {
-                ctx.gpr[6] = r6;
-                ctx.gpr[3] = p;
-                return;
-            }
-        }
-        ctx.gpr[6] = r6;
-        p = static_cast<u32>(e + 12);
+const u8* FindEntry_00537B7C(const u8* table, u32 key, u32 kind) {
+    for (u32 e = guest(table);; e += 12) {
+        const u8* p = at<u8>(nullptr, e);
+        if (word(p, 4) == 0) return nullptr;
+        if (word(p, 0) == key && p[9] == kind) return p;  // cmpw
     }
 }
 
 // void (this): 00527ACC(this), then 00527A70(this)
-DECOMP(00548938, Call_00548938) {
-    const u64 self = ctx.gpr[3];
-    call(ctx, 0x00527ACCu, {self});
-    call(ctx, 0x00527A70u, {self});
+void Call_00548938(void* self) {
+    call(0x00527ACCu, self);
+    call(0x00527A70u, self);
 }
 
 // void (this): 0060DC8C(this->+11972, this->+11984, this + 10752, 512)
-DECOMP(007A6804, Call_007A6804) {
-    const u32 self = arg<u32>(ctx, 0);
-    const u32 b = load<u32>(self + 11984);
-    ctx.gpr[7] = b;
-    call(ctx, 0x0060DC8Cu, {load<u32>(self + 11972), b, static_cast<u32>(ctx.gpr[3] + 10752), 512});
+void Call_007A6804(u8* self) {
+    const u32 b = word(self, 11984);
+    call(0x0060DC8Cu, word(self, 11972).get(), b, at<u8>(self, 10752), 512u);
 }
 
 // bool (): flag 0x01163F80 set, config +34 clear and config u16 +6 <= 720
-DECOMP(005319CC, Check_005319CC) {
-    u32 r = 0;
-    if (load<u8>(kFlag01163F80) != 0) {
-        const u32 c34 = load<u8>(kConfig + 34);
-        ctx.gpr[5] = c34;
-        if (c34 == 0 && static_cast<s32>(load<u16>(kConfig + 6)) <= 720) r = 1;  // cmpwi
-    }
-    ctx.gpr[4] = r;
-    ret(ctx, r);
+u32 Check_005319CC() {
+    if (global<u8>(kFlag01163F80) == 0) return 0;
+    return config().stereo == 0 && static_cast<s32>(config().height.get()) <= 720 ? 1u : 0u;  // cmpwi
 }
 
 // void (this): this->+152 / +144 / +156 / +148 / +140 = the words at
 // 0x01164060 +0 / +4 / +16 / +20 / +28
-DECOMP(00543C04, CopyGlobals_00543C04) {
-    const u32 self = arg<u32>(ctx, 0);
-    store<u32>(self + 152, load<u32>(kGlobals01164060));
-    store<u32>(self + 144, load<u32>(kGlobals01164060 + 4));
-    store<u32>(self + 156, load<u32>(kGlobals01164060 + 16));
-    store<u32>(self + 148, load<u32>(kGlobals01164060 + 20));
-    const u32 last = load<u32>(kGlobals01164060 + 28);
-    store<u32>(self + 140, last);
-    ctx.gpr[4] = last;
-    for (int r = 5; r <= 8; ++r) ctx.gpr[r] = 0x01160000u;
+void CopyGlobals_00543C04(u8* self) {
+    const be_u32* g = host<be_u32>(kGlobals01164060);
+    word(self, 152) = g[0].get();
+    word(self, 144) = g[1].get();
+    word(self, 156) = g[4].get();
+    word(self, 148) = g[5].get();
+    word(self, 140) = g[7].get();
 }
 
 // void (): Iff_RegisterChunk('GDEM', OPD 0x00F3BEB0, 0, 0, 0)
-DECOMP(00548BC0, RegisterGDEM) { call(ctx, kfn_Iff_RegisterChunk, {0x4744454Du, 0x00F3BEB0u, 0, 0, 0}); }
+void RegisterGDEM() { call(kfn_Iff_RegisterChunk, 0x4744454Du, 0x00F3BEB0u, 0u, 0u, 0u); }
 
 // void (): Iff_RegisterChunk('KLBM', OPD 0x00F3BE70, 0, 0, 0)
-DECOMP(00548CD4, RegisterKLBM) { call(ctx, kfn_Iff_RegisterChunk, {0x4B4C424Du, 0x00F3BE70u, 0, 0, 0}); }
+void RegisterKLBM() { call(kfn_Iff_RegisterChunk, 0x4B4C424Du, 0x00F3BE70u, 0u, 0u, 0u); }
 
 // void (): config +81 = 1 around 0053C4A0()
-DECOMP(0051096C, Call_0051096C) {
-    store<u8>(kConfig + 81, 1);
-    ctx.gpr[3] = 0x010C0000u;
-    ctx.gpr[4] = 1;
-    call(ctx, 0x0053C4A0u);
-    store<u8>(kConfig + 81, 0);
-    ret(ctx, 0u);
+void Call_0051096C() {
+    cfg()[81] = 1;
+    call(0x0053C4A0u);
+    cfg()[81] = 0;
 }
 
 // void (this, x, const f32 v[2]): 00522838(this, x, {v[0], v[1], 0, this->+60})
-DECOMP(0052296C, Call_0052296C) {
-    const u32 self = arg<u32>(ctx, 0), v = arg<u32>(ctx, 2);
-    Stack q(ctx, 16);  // 112(r1) of a 128-byte frame
-    const u32 x = load<u32>(v), y = load<u32>(v + 4), w = load<u32>(self + 60);  // lfs / stfs: raw words
-    store<u32>(q.addr(), x);
-    store<u32>(q.addr() + 4, y);
-    store<u32>(q.addr() + 8, 0);
-    store<u32>(q.addr() + 12, w);
-    ctx.gpr[6] = 0;
-    ctx.fpr[1] = static_cast<f64>(std::bit_cast<f32>(x));
-    ctx.fpr[2] = static_cast<f64>(std::bit_cast<f32>(y));
-    ctx.fpr[3] = static_cast<f64>(std::bit_cast<f32>(w));
-    call(ctx, 0x00522838u, {ctx.gpr[3], ctx.gpr[4], q.addr()});
+void Call_0052296C(u8* self, u32 x, const be_u32* v) {
+    GuestFrame q(16);  // 112(r1) of a 128-byte frame
+    be_u32* w = q.as<be_u32>();
+    const u32 a = v[0], b = v[1], c = word(self, 60);  // lfs / stfs: raw words
+    w[0] = a;
+    w[1] = b;
+    w[2] = 0u;
+    w[3] = c;
+    call(0x00522838u, self, x, w);
 }
 
 // void (Light* l): *(u32*)0x00F66FD0 = l, then l's virtual slot 3 (+12)
-DECOMP(00527668, SetLight_00527668) {
-    const u32 l = arg<u32>(ctx, 0);
-    store<u32>(kGlobal00F66FD0, l);
-    fx::vcall(ctx, l, 12, {ctx.gpr[3]});
+void SetLight_00527668(u8* l) {
+    global<gp<u8>>(kGlobal00F66FD0) = l;
+    vcall(l, 12);
 }
 
 // void (this): Ctor_00548D14(this), +1536 = 1.0f, vtable 0x00B23D28
-DECOMP(0052D08C, Ctor_0052D08C) {
-    const u32 self = arg<u32>(ctx, 0);
-    call(ctx, kfn_Ctor_00548D14, {ctx.gpr[3]});
-    store<u32>(self + 1536, 0x3F800000u);
-    store<u32>(self, 0x00B23D28u);
-    ctx.gpr[3] = 0x00B23D28u;
-    ctx.gpr[4] = 0x3F800000u;
+void Ctor_0052D08C(u8* self) {
+    call(kfn_Ctor_00548D14, self);
+    word(self, 1536) = 0x3F800000u;
+    word(self, 0) = 0x00B23D28u;
 }
 
 // void (f32 v): mem_stats +168 = clamp(v, 0.1, 150)
-DECOMP(00536998, SetClamp168_00536998) {
-    const f64 v = clamp_branch(farg(ctx, 0), 0x00536990u);
-    store<f32>(kMemStats + 168, static_cast<f32>(v));
-    ctx.fpr[1] = v;
-    ctx.fpr[2] = lfs(0x00536994u);
-    ctx.fpr[3] = lfs(0x00536990u);
-    ctx.gpr[3] = kMemStats;
-}
+void SetClamp168_00536998(f32 v) { *at<be_f32>(&mem_stats(), 168) = clamp_branch(v, 0x00536990u); }
 
 // void (f32 v): mem_stats +172 = clamp(v, 0.01, 0.1)
-DECOMP(005369E8, SetClamp172_005369E8) {
-    const f64 v = clamp_branch(farg(ctx, 0), 0x005369DCu);
-    store<f32>(kMemStats + 172, static_cast<f32>(v));
-    ctx.fpr[1] = v;
-    ctx.fpr[2] = lfs(0x005369E0u);
-    ctx.fpr[3] = lfs(0x005369DCu);
-    ctx.gpr[3] = kMemStats;
-}
+void SetClamp172_005369E8(f32 v) { *at<be_f32>(&mem_stats(), 172) = clamp_branch(v, 0x005369DCu); }
 
-// void (this): x = this->+672; 00521D20(x), then 005380D0(skin_matrices, x)
-DECOMP(00548508, Call_00548508) {
-    const u32 x = load<u32>(arg<u32>(ctx, 0) + 672);
-    call(ctx, 0x00521D20u, {x});
-    call(ctx, 0x005380D0u, {kSkinMatrices, x});
+// void (this): x = this->+672; View_BeginFrame(x), then 005380D0(skin_matrices, x)
+// (00057178 reads the r7 this leaves: 005380D0's, which the bridge keeps
+// since that guest call is the last thing done.)
+void Call_00548508(u8* self) {
+    const u32 x = word(self, 672);
+    View_BeginFrame(host<u8>(x));
+    call(0x005380D0u, kSkinMatrices, x);
 }
 
 // void (): 00527BA8(), then 0056C8A4(*(u32*)0x011640E8) when *(u32*)0x011640E4 == 1
-DECOMP(005489CC, Call_005489CC) {
-    call(ctx, 0x00527BA8u);
-    const u32 mode = load<u32>(kMode011640E4);
-    ctx.gpr[3] = mode;
-    if (static_cast<s32>(mode) != 1) return;
-    call(ctx, 0x0056C8A4u, {load<u32>(kArg011640E8)});
+void Call_005489CC() {
+    call(0x00527BA8u);
+    if (static_cast<s32>(global<be_u32>(kMode011640E4).get()) != 1) return;
+    call(0x0056C8A4u, global<be_u32>(kArg011640E8).get());
 }
 
 // void (this): Copy416To512_0052AA48(this), then u32 +768 / +896 / +1024 / +1152 = 0
-DECOMP(005493B0, Reset_005493B0) {
-    const u32 self = arg<u32>(ctx, 0);
-    call(ctx, kfn_Copy416To512, {ctx.gpr[3]});
-    for (u32 off = 768; off <= 1152; off += 128) store<u32>(self + off, 0);
-    ret(ctx, 0u);
+void Reset_005493B0(u8* self) {
+    call(kfn_Copy416To512, self);
+    for (u32 off = 768; off <= 1152; off += 128) word(self, off) = 0u;
 }
 
 // void (this, Material* m): MaterialAnim_UploadUV(m->+128, 4, 1.0, 1.0) when m->+128 is set
-DECOMP(005D6578, UploadUV_005D6578) {
-    const u32 anim = load<u32>(arg<u32>(ctx, 1) + 128);
-    ctx.gpr[3] = anim;
+void UploadUV_005D6578(void*, Material* m) {
+    const u32 anim = word(m, 128);
     if (anim == 0) return;
-    const f64 one = lfs(0x005D6570u);
-    ctx.gpr[5] = 0x005D6570u;
-    callf(ctx, kfn_MaterialAnim_UploadUV, {anim, 4}, {one, one});
+    const f32 one = global<be_f32>(0x005D6570u);
+    MaterialAnim_UploadUV(anim, 4, one, one);
 }
 
 // void (this): when set, its virtual slot 1 (+4)
-DECOMP(00508054, VDelete_00508054) {
-    const u64 self = ctx.gpr[3];
-    ctx.gpr[4] = self;
-    if (static_cast<u32>(self) == 0) return;
-    fx::vcall(ctx, static_cast<u32>(self), 4, {self});
+void VDelete_00508054(u8* self) {
+    if (self) vcall(self, 4);
 }
 
 // void (f32 v): pool +312 (shade intensity) = clamp(v, 0, 1)
-DECOMP(00527608, SetShadeIntensity_00527608) {
-    const f64 v = clamp_branch(farg(ctx, 0), 0x00527600u);
-    store<f32>(kPool + 312, static_cast<f32>(v));
-    ctx.fpr[1] = lfs(0x00527604u);
-    ctx.fpr[2] = v;
-    ctx.fpr[3] = farg(ctx, 0);
-    ctx.gpr[3] = kPool;
-}
+void SetShadeIntensity_00527608(f32 v) { global<be_f32>(kPool + 312) = clamp_branch(v, 0x00527600u); }
 
 // void (): once (flag 0x010DDB84): Nop_0051FF18(), 005467DC(0), flag = 1
-DECOMP(00546EF4, Render_Init546EF4) {
-    const u32 done = load<u8>(kFlag010DDB84);
-    ctx.gpr[3] = done;
-    if (done != 0) return;
-    call(ctx, kfn_Nop_0051FF18);
-    call(ctx, 0x005467DCu, {0});
-    store<u8>(kFlag010DDB84, 1);
-    ctx.gpr[3] = 0x010E0000u;
-    ctx.gpr[4] = 1;
+void Render_Init546EF4() {
+    if (global<u8>(kFlag010DDB84) != 0) return;
+    call(kfn_Nop_0051FF18);
+    call(0x005467DCu, 0u);
+    global<u8>(kFlag010DDB84) = 1;
 }
 
 // u32 (this, Item* item, Mat* m): item->+16->+12[m->+28->u8 +100 bit 7 && m->+44 ? 1 : 0]
-DECOMP(005D7D9C, Pick_005D7D9C) {
-    const u32 item = arg<u32>(ctx, 1), m = arg<u32>(ctx, 2);
-    const u32 flag = (load<u8>(load<u32>(m + 28) + 100) >> 7) & 1;  // rlwinm 25,31,31
-    const u32 table = load<u32>(load<u32>(item + 16) + 12);
-    u32 k = 0;
-    if (flag != 0) {
-        const u32 e = load<u32>(m + 44);
-        ctx.gpr[5] = e;
-        if (e != 0) k = 1;
-    }
-    ctx.gpr[4] = k << 2;
-    ctx.gpr[6] = flag;
-    ret(ctx, load<u32>(table + (k << 2)));
+u32 Pick_005D7D9C(void*, u8* item, u8* m) {
+    const u32 flag = (*at<u8>(*at<gp<u8>>(m, 28), 100) >> 7) & 1;  // rlwinm 25,31,31
+    const u32 table = word(*at<gp<u8>>(item, 16), 12);
+    const u32 k = flag != 0 && word(m, 44) != 0 ? 1u : 0u;
+    return *at<be_u32>(nullptr, table + (k << 2));
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(0051A6A0, sly4::gfx::Call_0051A6A0)
+NATIVE(0051E7F0, sly4::gfx::SetName_0051E7F0)
+NATIVE(0053BBE0, sly4::gfx::Call_0053BBE0)
+NATIVE(005DB070, sly4::gfx::ThreadId_005DB070)
+NATIVE(0079F810, sly4::gfx::SetHalf_0079F810)
+NATIVE(0079FE28, sly4::gfx::SetHalf_0079FE28)
+NATIVE(007A5F20, sly4::gfx::FiosAllocator_Alloc)
+NATIVE(00523AA8, sly4::gfx::LoadShaders_00523AA8)
+NATIVE(00536958, sly4::gfx::SetFlag_00536958)
+NATIVE(00548900, sly4::gfx::Call_00548900)
+NATIVE(00548B88, sly4::gfx::Call_00548B88)
+NATIVE(00549594, sly4::gfx::Call_00549594)
+NATIVE(007A6840, sly4::gfx::Call_007A6840)
+NATIVE(0050FDC8, sly4::gfx::Count_0050FDC8)
+NATIVE(005275C0, sly4::gfx::SetCos_005275C0)
+NATIVE(00537B7C, sly4::gfx::FindEntry_00537B7C)
+NATIVE(00548938, sly4::gfx::Call_00548938)
+NATIVE(007A6804, sly4::gfx::Call_007A6804)
+NATIVE(005319CC, sly4::gfx::Check_005319CC)
+NATIVE(00543C04, sly4::gfx::CopyGlobals_00543C04)
+NATIVE(00548BC0, sly4::gfx::RegisterGDEM)
+NATIVE(00548CD4, sly4::gfx::RegisterKLBM)
+NATIVE(0051096C, sly4::gfx::Call_0051096C)
+NATIVE(0052296C, sly4::gfx::Call_0052296C)
+NATIVE(00527668, sly4::gfx::SetLight_00527668)
+NATIVE(0052D08C, sly4::gfx::Ctor_0052D08C)
+NATIVE(00536998, sly4::gfx::SetClamp168_00536998)
+NATIVE(005369E8, sly4::gfx::SetClamp172_005369E8)
+NATIVE(00548508, sly4::gfx::Call_00548508)
+NATIVE(005489CC, sly4::gfx::Call_005489CC)
+NATIVE(005493B0, sly4::gfx::Reset_005493B0)
+NATIVE(005D6578, sly4::gfx::UploadUV_005D6578)
+NATIVE(00508054, sly4::gfx::VDelete_00508054)
+NATIVE(00527608, sly4::gfx::SetShadeIntensity_00527608)
+NATIVE(00546EF4, sly4::gfx::Render_Init546EF4)
+NATIVE(005D7D9C, sly4::gfx::Pick_005D7D9C)

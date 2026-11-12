@@ -1251,6 +1251,54 @@ void PostProc_InitEffects();
 void ProgramPair_Load(gp<VProgram>* v, gp<FProgram>* f, const char* name, const Binding* bindings, u32 unused);
 void Blur11H_SetOffsets();
 
+// The UV animation block as MaterialAnim_GetUVAlt reads it.
+struct UVAnim {
+    pad<4> _0;
+    u8 wrap;           // +4
+    pad<7> _5;
+    be_f32 u_steps;    // +12
+    pad<28> _16;
+    be_f32 u_offset;   // +44
+    pad<12> _48;
+    be_f32 v_steps;    // +60
+    pad<28> _64;
+    be_f32 v_offset;   // +92
+};
+static_assert(offsetof(UVAnim, u_steps) == 12 && offsetof(UVAnim, u_offset) == 44 && offsetof(UVAnim, v_steps) == 60 &&
+              offsetof(UVAnim, v_offset) == 92);
+
+// shader4.cpp
+void Shader_Construct(ShaderPrograms* s);
+void Shader_Load(ShaderPrograms* s, const char* name, const char* fname, const Binding* bindings);
+void Shader_SetFpControl(ShaderPrograms* s, u32 bits);
+be_f32* MaterialAnim_GetUV(u8* anim, f32 su, f32 sv);
+void MaterialAnim_GetUVAlt(UVAnim* anim, be_f32* out);
+void Vec3_ToItemSpace(be_f32* v, const be_f32* m);
+void Vec3_RotateTo(be_f32* out, const be_f32* v, const be_f32* m);
+// shader4_draw.cpp, shader4_frame.cpp, shader4_setup.cpp
+void Matrix_RotateRows(be_f32* out, const be_f32* rows, const be_f32* m);
+void View_BeginFrame(u8* scene);
+void SlyCharacter2_SetupDraw(ShaderPrograms* s, DrawItem* item);
+// shader5_util.cpp
+struct MatrixAnim;
+be_f32* MaterialAnim_GetMatrix(MatrixAnim* a);
+void Matrix_Perspective(be_f32* out, f32 fov, f32 aspect, f32 near, f32 far);
+void ProjTxr_BuildProjection(be_f32* pos_out, be_f32* m_out, const be_f32* eye, const be_f32* target, const be_f32* up,
+                             const be_f32* proj, const be_f32* item, const be_f32* block);
+void SelfLight_GetLight(ShaderPrograms* s, DrawItem* item, be_u32* a, be_u32* dir, be_u32* b);
+void View_SetConstants(u8* view);
+// shader6_util.cpp
+struct SortedMap;
+be_u32* Material_ParamSlot(Material* mat, u32 index);
+be_u32* Map_Find3(SortedMap* map, const be_u32* key);
+be_f32* Matrix_MultiplyTo(be_f32* out, const be_f32* a, const be_f32* b);
+void SlyWater3_UploadFragment(Material* mat);
+void SlyHeightFog_BuildMatrices(Material* mat, be_f32* a, be_f32* b);
+// gfx7_math.cpp
+void Matrix_SplitScale(const be_f32* m, be_f32* rot, be_f32* scale);
+void Matrix_RotationZ(be_f32* out, f32 a);
+u32 Fur_ShellCount(ShaderPrograms* s, DrawItem* item, be_f32* fade_out);
+
 // At least `min` registers for the fragment program *f.
 inline void min_registers(gp<FProgram>* f, u8 min) {
     constexpr u32 Cg_GetRegisterCount = 0x005E5F38;  // (CgProgram*) -> u32 (name?)

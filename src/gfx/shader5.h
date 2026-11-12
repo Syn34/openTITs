@@ -21,7 +21,7 @@
 // 0, 0}.
 #pragma once
 
-#include "shader4_util.h"
+#include "shader4.h"
 
 namespace sly4::render {
 namespace shader5 {
