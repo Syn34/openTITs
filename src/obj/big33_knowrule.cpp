@@ -1,11 +1,71 @@
 // Game code, large-function sweep part 33: one knowledge rule parsed from
 // XML: the "Name" attribute, a value, the cause element (first child) and the
 // result element (its next sibling), each resolved to a registered type.
-#include "../sly4.h"
 #include "big33.h"
 
-using namespace sly4;
-using namespace sly4::big33;
+namespace sly4::obj {
+
+// An XML element cursor.
+struct XmlElem {
+    pad<8> _0;
+    be_u32 line;    // +8
+    be_u32 column;  // +12
+    pad<4> _16;
+    be_u32 hash;    // +20: the tag hash, valid when bit 0x80 of +24 is set
+    u8 flags;       // +24
+};
+static_assert(offsetof(XmlElem, hash) == 20 && offsetof(XmlElem, flags) == 24);
+
+// A rule's cause or result: the type index, the type's +16 value, the
+// setup's out value, -1.
+struct KnowSlot {
+    be_s16 type;  // +0
+    be_u16 k;     // +2
+    be_u16 out;   // +4
+    be_u16 end;   // +6
+};
+struct KnowRule {
+    be_u32 name;      // +0
+    be_u32 val;       // +4
+    be_u16 line;      // +8
+    pad<2> _10;
+    be_u32 value;     // +12
+    u8 b16;           // +16
+    pad<1> _17;
+    KnowSlot cause;   // +18
+    pad<2> _26;
+    KnowSlot result;  // +28
+    be_u32 r36;       // +36
+    pad<88> _40;
+};
+static_assert(offsetof(KnowRule, cause) == 18 && offsetof(KnowRule, result) == 28 && sizeof(KnowRule) == 128);
+// The owner's 132-byte rule entries (from +152).
+struct KnowRuleEntry {
+    be_u32 active;  // +0
+    KnowRule rule;  // +4
+};
+struct KnowOwner {
+    pad<6> _0;
+    be_u16 flags;   // +6: 0x10 a cause / result element is missing
+    pad<136> _8;
+    be_s16 count;   // +144
+    pad<6> _146;
+    KnowRuleEntry rules[1];  // +152 (indexed by guest address)
+};
+static_assert(offsetof(KnowOwner, count) == 144 && offsetof(KnowOwner, rules) == 152);
+struct KnowCtx {
+    be_u32 rules;  // +0: its owner's rules (owner + 152)
+};
+// A registered cause / result type.
+struct KnowType {
+    pad<12> _0;
+    be_u32 w12;  // +12
+    be_s16 k;    // +16
+};
+struct KnowledgeSys {
+    pad<24> causes;   // +0: sorted map hash -> u16 type
+    pad<4> results;   // +24
+};
 
 namespace {
 constexpr u32 kStrName = 0x00ADD4CC;          // "Name"
@@ -14,9 +74,9 @@ constexpr u32 kFmtNoCauseType = 0x00ADD488;   // "Cannot find a cause type (hash
 constexpr u32 kFmtNoResult = 0x00ADD514;      // "Cannot find the result element in knowledge (%s) (%s %d:%d)"
 constexpr u32 kFmtNoResultType = 0x00ADD390;  // "Cannot find a result type (%s) in the system in (%s %d:%d)"
 constexpr u32 kEmptyStr = 0x00B1FAC7;         // ""
-constexpr u32 kKnowledgeSys = 0x00F65788;     // u32: the knowledge system (cause map at +0, result map at +24)
-constexpr u32 kCauseTypes = 0x00F6503C;       // 28-byte entries, +24 the type descriptor
-constexpr u32 kResultTypes = 0x00F65100;      // 44-byte entries, +40 the type descriptor
+constexpr u32 kKnowledgeSys = 0x00F65788;     // KnowledgeSys*
+constexpr u32 kCauseTypes = 0x00F6503C;       // 28-byte entries, +24 the KnowType
+constexpr u32 kResultTypes = 0x00F65100;      // 44-byte entries, +40 the KnowType
 constexpr u32 kHashRuleValue = 0xE92E69A4;    // attribute read with XmlCursor_ReadS32 (default 50)
 constexpr u32 kHashResultSpecial = 0xCD1F984F;  // result element tag handled by Knowledge_SpecialResult
 
@@ -26,131 +86,136 @@ constexpr u32 XmlCursor_FirstChildAny = 0x004F9140;   // (cursor) -> cursor
 constexpr u32 Xml_FindResolved = 0x004F9434;          // (cursor) -> cursor
 constexpr u32 XmlCursor_FindAttrByName = 0x004F9628;  // (cursor, name) -> const char*
 constexpr u32 XmlCursor_ReadS32 = 0x004F99BC;         // (cursor, hash, s32* out, s32 default)
-constexpr u32 String_Format = 0x005534D0;             // (fmt, ...)
 constexpr u32 Hash_ToString = 0x0056A6E0;             // (u32) -> const char*
 constexpr u32 SortedMap_Find734750 = 0x00734750;      // (map, const u32* key) -> const u16*
 constexpr u32 Obj_EvalChannels = 0x0038B3A8;          // (rule, ctx)
 constexpr u32 Node_NotifyVars = 0x0038B588;           // (rule, owner)
-constexpr u32 Knowledge_ResultSetup = 0x0038BE18;     // (type, ctx, 7, rule, s16 type+16, type+12, elem, u16* out)
+constexpr u32 Knowledge_ResultSetup = 0x0038BE18;     // (type, ctx, 7, rule, s16 type->k, type->w12, elem, u16* out)
 constexpr u32 Knowledge_SpecialResult = 0x0038C0C8;   // (ctx, elem)
-constexpr u32 Knowledge_CauseSetup = 0x0038C4E0;      // (type, ctx, 7, rule, s16 type+16, type+12, elem, u16* out)
+constexpr u32 Knowledge_CauseSetup = 0x0038C4E0;      // (type, ctx, 7, rule, s16 type->k, type->w12, elem, u16* out)
 
-u64 Sx32(u32 v) { return static_cast<u64>(static_cast<s64>(static_cast<s32>(v))); }
-u64 Sx16(u16 v) { return static_cast<u64>(static_cast<s64>(static_cast<s16>(v))); }
+// (unchecked: a null type is read at address 0)
+KnowType& CauseType(s32 t) { return gm<KnowType>(gm<be_u32>(kCauseTypes + 24 + static_cast<u32>(t) * 28)); }
+KnowType& ResultType(s32 t) { return gm<KnowType>(gm<be_u32>(kResultTypes + 40 + static_cast<u32>(t) * 44)); }
 
 // String_Format(fmt, a1, the document path of el, line + 1, column + 1).
-void Report(PPUContext& ctx, u32 fmt, u32 a1, u32 el) {
-    const u32 res = static_cast<u32>(call(ctx, Xml_FindResolved, {el}));
-    const u32 path = static_cast<u32>(call(ctx, XmlCursor_DocPath, {res}));
-    call(ctx, String_Format, {fmt, a1, path, Sx32(load<u32>(el + 8) + 1), Sx32(load<u32>(el + 12) + 1)});
+void Report(u32 fmt, u32 a1, const XmlElem* el) {
+    const u32 res = call<u32>(Xml_FindResolved, el);
+    const u32 path = call<u32>(XmlCursor_DocPath, res);
+    call(fn::String_Format, fmt, a1, path, static_cast<s32>(el->line + 1), static_cast<s32>(el->column + 1));
 }
 
-// The element's tag hash: +20 when the flag 0x80 of the u8 +24 is set, else 0.
-u32 TagHash(u32 el) { return (load<u8>(el + 24) & 0x80) ? load<u32>(el + 20) : 0; }
+// The element's tag hash, or 0 without one.
+u32 TagHash(const XmlElem* el) { return (el->flags & 0x80) ? el->hash.get() : 0u; }
 }  // namespace
 
 // bool f(Ctx* a, XmlCursor* x, u32 val) (called by f_0038CCF4 and
-// f_0038D498). The owner o = *a - 152 keeps 132-byte rules from o + 152, the
-// s16 count at +144 and flags at +6. Rule n (n = the count) gets +0 = 1; with
-// r = rule + 4: +4 = val, u16 +8 = x line + 1; when x has no non-empty "Name"
-// attribute +0 = 0 (a non-empty one is not stored); +12 = the kHashRuleValue
-// attribute (default 50). The first child's tag hash is looked up in the
-// cause map: u16 r+18 = type, r+22 = the out value of Knowledge_CauseSetup (or
-// the type when unknown, after an error message), r+20 = the type's s16 +16,
-// r+24 = -1. The next sibling either has the tag kHashResultSpecial
-// (Knowledge_SpecialResult(a, elem)) or is looked up in the result map:
-// r+16 = 0, r+28 = type, r+32 = Knowledge_ResultSetup's out value, r+30 =
-// type +16, r+34 = -1, r+36 = 0 and the count + 1. Then Obj_EvalChannels(r,
-// a) and Node_NotifyVars(r, o) and 1. A missing cause or result element sets
-// the flag 0x10 of o+6; any miss returns 0.
-DECOMP(0038C7F0, Knowledge_ParseRule_0038C7F0) {
-    const u32 a = arg<u32>(ctx, 0), x = arg<u32>(ctx, 1), val = arg<u32>(ctx, 2);
-    Stack frame(ctx, 16);  // sp+112: s32 value, +116 / +120 keys, +124 / +126 u16 outs
-    const u32 sp = frame.addr();
-    const u32 o = load<u32>(a) - 152;
-    auto rule = [&]() { return static_cast<u32>(static_cast<s32>(static_cast<s16>(load<u16>(o + 144)))) * 132; };
-    store<u32>(o + 152 + rule(), 1);
-    const u32 r = o + 156 + rule();
-    const u32 line = load<u32>(x + 8);
-    store<u32>(r + 4, val);
-    store<u16>(r + 8, static_cast<u16>(line + 1));
-    // r5 (val) and r6 (line + 1) are also live at this call; it reads neither.
-    const u32 nm = static_cast<u32>(call(ctx, XmlCursor_FindAttrByName, {x, kStrName}));
-    if (nm == 0 || load<u8>(nm) == 0) store<u32>(r, 0);
-    call(ctx, XmlCursor_ReadS32, {x, kHashRuleValue, sp, 50u});
-    store<u32>(r + 12, load<u32>(sp));
+// f_0038D498). The owner o = a->rules - 152 keeps 132-byte rules. Rule n
+// (n = o->count) gets active = 1; its body r: val, line = x's line + 1;
+// when x has no non-empty "Name" attribute name = 0 (a non-empty one is
+// not stored); value = the kHashRuleValue attribute (default 50). The first
+// child's tag hash is looked up in the cause map: cause.type, cause.out =
+// the out value of Knowledge_CauseSetup (or the type when unknown, after an
+// error message), cause.k = the type's k, cause.end = -1. The next sibling
+// either has the tag kHashResultSpecial (Knowledge_SpecialResult(a, elem))
+// or is looked up in the result map: b16 = 0, the result slot likewise
+// (Knowledge_ResultSetup), r36 = 0 and the count + 1. Then
+// Obj_EvalChannels(r, a) and Node_NotifyVars(r, o) and 1. A missing cause
+// or result element sets the flag 0x10 of o->flags; any miss returns 0.
+bool Knowledge_ParseRule_0038C7F0(KnowCtx* a, XmlElem* x, u32 val) {
+    GuestFrame frame(16);  // sp+112: s32 value, +116 / +120 keys, +124 / +126 u16 outs
+    be_s32* value = frame.as<be_s32>(0);
+    be_u32* rkey = frame.as<be_u32>(4);
+    be_u32* ckey = frame.as<be_u32>(8);
+    be_u16* rout = frame.as<be_u16>(12);
+    be_u16* cout = frame.as<be_u16>(14);
+    const u32 o_ea = a->rules - 152;
+    KnowOwner& o = gm<KnowOwner>(o_ea);
+    KnowRuleEntry& ent = gm<KnowRuleEntry>(o_ea + 152 + static_cast<u32>(static_cast<s32>(o.count)) * 132);
+    ent.active = 1u;
+    KnowRule& r = ent.rule;
+    const u32 line = x->line;
+    r.val = val;
+    r.line = static_cast<u16>(line + 1);
+    const u32 nm = call<u32>(XmlCursor_FindAttrByName, x, kStrName);
+    if (nm == 0 || gm<u8>(nm) == 0) r.name = 0u;
+    call(XmlCursor_ReadS32, x, kHashRuleValue, value, 50u);
+    r.value = static_cast<u32>(value->get());
 
     // Cause.
-    const u32 c = static_cast<u32>(call(ctx, XmlCursor_FirstChildAny, {x}));
-    if (c == 0) {
-        Report(ctx, kFmtNoCause, load<u32>(r), x);
-        store<u16>(o + 6, load<u16>(o + 6) | 0x10);
-        return ret(ctx, 0u);
+    XmlElem* c = call<XmlElem*>(XmlCursor_FirstChildAny, x);
+    if (c == nullptr) {
+        Report(kFmtNoCause, r.name, x);
+        o.flags = static_cast<u16>(o.flags | 0x10);
+        return false;
     }
-    const u32 cr = r + 18;
+    KnowSlot& cr = r.cause;
     const u32 ch = TagHash(c);
-    store<u32>(sp + 8, ch);
-    u16 t = load<u16>(static_cast<u32>(call(ctx, SortedMap_Find734750, {load<u32>(kKnowledgeSys), sp + 8})));
-    store<u16>(cr, t);
+    *ckey = ch;
+    KnowledgeSys& ks0 = gm<KnowledgeSys>(global<be_u32>(kKnowledgeSys));
+    s16 t = gm<be_s16>(call<u32>(SortedMap_Find734750, &ks0.causes, ckey));
+    cr.type = t;
     u16 out;
-    if (static_cast<s16>(t) == -1) {
-        Report(ctx, kFmtNoCauseType, ch, c);
-        t = load<u16>(cr);
-        out = t;
+    if (t == -1) {
+        Report(kFmtNoCauseType, ch, c);
+        t = cr.type;
+        out = static_cast<u16>(t);
     } else {
-        const u32 ty = load<u32>(kCauseTypes + 24 + static_cast<u32>(static_cast<s16>(t)) * 28);
-        call(ctx, Knowledge_CauseSetup, {ty, a, 7u, r, Sx16(load<u16>(ty + 16)), load<u32>(ty + 12), c, sp + 14});
-        out = load<u16>(sp + 14);
-        t = load<u16>(cr);
+        KnowType& ty = CauseType(t);
+        call(Knowledge_CauseSetup, &ty, a, 7u, &r, ty.k.get(), ty.w12.get(), c, cout);
+        out = *cout;
+        t = cr.type;
     }
-    store<u16>(cr + 4, out);
-    if (static_cast<s16>(t) == -1) return ret(ctx, 0u);
+    cr.out = out;
+    if (t == -1) return false;
     {
-        const u32 ty = load<u32>(kCauseTypes + 24 + static_cast<u32>(static_cast<s16>(t)) * 28);
-        const u16 k = load<u16>(ty + 16);
-        store<u16>(cr + 6, 0xFFFF);
-        store<u16>(cr + 2, k);
+        const u16 k = static_cast<u16>(CauseType(t).k);
+        cr.end = 0xFFFF;
+        cr.k = k;
     }
 
     // Result.
-    const u32 d = static_cast<u32>(call(ctx, XmlCursor_NextSiblingAny, {c}));
-    if (d == 0) {
-        Report(ctx, kFmtNoResult, kEmptyStr, x);
-        store<u16>(o + 6, load<u16>(o + 6) | 0x10);
-        return ret(ctx, 0u);
+    XmlElem* d = call<XmlElem*>(XmlCursor_NextSiblingAny, c);
+    if (d == nullptr) {
+        Report(kFmtNoResult, kEmptyStr, x);
+        o.flags = static_cast<u16>(o.flags | 0x10);
+        return false;
     }
     if (TagHash(d) == kHashResultSpecial) {
-        call(ctx, Knowledge_SpecialResult, {a, d});
+        call(Knowledge_SpecialResult, a, d);
     } else {
-        store<u8>(r + 16, 0);
-        const u32 ks = load<u32>(kKnowledgeSys);
-        const u32 rr = r + 28;
+        r.b16 = 0;
+        KnowledgeSys& ks = gm<KnowledgeSys>(global<be_u32>(kKnowledgeSys));
+        KnowSlot& rr = r.result;
         const u32 rh = TagHash(d);
-        store<u32>(sp + 4, rh);
-        u16 t2 = load<u16>(static_cast<u32>(call(ctx, SortedMap_Find734750, {ks + 24, sp + 4})));
-        store<u16>(rr, t2);
+        *rkey = rh;
+        s16 t2 = gm<be_s16>(call<u32>(SortedMap_Find734750, &ks.results, rkey));
+        rr.type = t2;
         u16 out2;
-        if (static_cast<s16>(t2) == -1) {
-            const u32 str = static_cast<u32>(call(ctx, Hash_ToString, {rh}));
-            Report(ctx, kFmtNoResultType, str, d);
-            t2 = load<u16>(rr);
-            out2 = t2;
+        if (t2 == -1) {
+            const u32 str = call<u32>(Hash_ToString, rh);
+            Report(kFmtNoResultType, str, d);
+            t2 = rr.type;
+            out2 = static_cast<u16>(t2);
         } else {
-            const u32 ty = load<u32>(kResultTypes + 40 + static_cast<u32>(static_cast<s16>(t2)) * 44);
-            call(ctx, Knowledge_ResultSetup, {ty, a, 7u, r, Sx16(load<u16>(ty + 16)), load<u32>(ty + 12), d, sp + 12});
-            out2 = load<u16>(sp + 12);
-            t2 = load<u16>(rr);
+            KnowType& ty = ResultType(t2);
+            call(Knowledge_ResultSetup, &ty, a, 7u, &r, ty.k.get(), ty.w12.get(), d, rout);
+            out2 = *rout;
+            t2 = rr.type;
         }
-        store<u16>(rr + 4, out2);
-        if (static_cast<s16>(t2) == -1) return ret(ctx, 0u);
-        const u32 ty = load<u32>(kResultTypes + 40 + static_cast<u32>(static_cast<s16>(t2)) * 44);
-        const u16 k = load<u16>(ty + 16);
-        store<u16>(rr + 6, 0xFFFF);
-        store<u16>(rr + 2, k);
-        store<u32>(rr + 8, 0);
-        store<u16>(o + 144, static_cast<u16>(load<u16>(o + 144) + 1));
+        rr.out = out2;
+        if (t2 == -1) return false;
+        const u16 k = static_cast<u16>(ResultType(t2).k);
+        rr.end = 0xFFFF;
+        rr.k = k;
+        r.r36 = 0u;
+        o.count = static_cast<s16>(o.count + 1);
     }
-    call(ctx, Obj_EvalChannels, {r, a});
-    call(ctx, Node_NotifyVars, {r, o});
-    ret(ctx, 1u);
+    call(Obj_EvalChannels, &r, a);
+    call(Node_NotifyVars, &r, &o);
+    return true;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(0038C7F0, sly4::obj::Knowledge_ParseRule_0038C7F0)

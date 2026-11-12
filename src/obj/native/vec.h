@@ -91,6 +91,30 @@ inline V4 Sub4(const V4& a, const V4& b) {
     for (u32 k = 0; k < 4; ++k) o.e[k] = a.e[k] - b.e[k];
     return o;
 }
+// vxor.
+inline V4 Xor4(const V4& a, const V4& b) {
+    V4 o;
+    for (u32 k = 0; k < 4; ++k) o.e[k] = std::bit_cast<f32>(LaneW(a, k) ^ LaneW(b, k));
+    return o;
+}
+// vminfp / vmaxfp as the runtime's vmx.h evaluates them: a NaN in a, else
+// a NaN in b, else the smaller / larger (a on ties, so +0 / -0 keep a).
+inline V4 Min4(const V4& a, const V4& b) {
+    V4 o;
+    for (u32 k = 0; k < 4; ++k) {
+        const f32 x = a.e[k], y = b.e[k];
+        o.e[k] = std::isnan(x) ? x : std::isnan(y) ? y : (y < x ? y : x);
+    }
+    return o;
+}
+inline V4 Max4(const V4& a, const V4& b) {
+    V4 o;
+    for (u32 k = 0; k < 4; ++k) {
+        const f32 x = a.e[k], y = b.e[k];
+        o.e[k] = std::isnan(x) ? x : std::isnan(y) ? y : (x < y ? y : x);
+    }
+    return o;
+}
 // vmaddfp chain for one row: c2 * s2 + (c1 * s1 + (c0 * s0 + 0)), lane by
 // lane (fused, single precision).
 inline V4 Row3(const V4& c0, const V4& c1, const V4& c2, f32 s0, f32 s1, f32 s2) {
@@ -111,6 +135,13 @@ inline Masks3 LoadMasks3(u32 ea) { return Masks3{{Lvx(host<u8>(ea)), Lvx(host<u8
 // {x, y, z, 0}: the words at px / py / pz merged with the masks.
 inline V4 RowSelW(const void* px, const void* py, const void* pz, const Masks3& k) {
     return Andc(Sel(Sel(SplatW(px), SplatW(py), k.m[0]), SplatW(pz), k.m[1]), k.m[2]);
+}
+
+// x in every lane.
+inline V4 Fill4(f32 x) { return V4{{x, x, x, x}}; }
+// {x, y, z, 0} from three splats and the masks (vsel y, vsel z, vandc).
+inline V4 RowSel(const V4& x, const V4& y, const V4& z, const Masks3& k) {
+    return Andc(Sel(Sel(x, y, k.m[0]), z, k.m[1]), k.m[2]);
 }
 
 // The rigid inverse the compiler builds of the 4x4 rows at m: the

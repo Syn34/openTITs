@@ -159,8 +159,67 @@ constexpr u32 String_Format = 0x005534D0;      // (fmt, ...) -> char*
 constexpr u32 Memmove = 0x0071C3F0;            // (dst, src, n)
 constexpr u32 Effect_SetHash = 0x004CF988;     // (set, hash)
 constexpr u32 HkArray_Grow = 0x007CCD60;       // (allocator, hkArray*, elem size)
+constexpr u32 Ui_Find = 0x004D5544;           // (const char* path, UiElem* parent) -> UiElem* or 0
 }  // namespace fn
 constexpr u32 kHkArrayAlloc = 0x011DF31C;  // the allocator HkArray_Grow is given
+
+// A UI element (widget): vt slot 12 its type / state (3: a text choice),
+// slot 188 sets its text (e, s, 0). Found with fn::Ui_Find.
+struct UiElem;
+inline u32 UiElem_State(UiElem* e) { return vcall<u32>(e, 12); }
+inline void UiElem_SetText(UiElem* e, u32 s) { vcall(e, 188, s, 0u); }
+
+// ---------------------------------------------------------------- Havok memory
+// The thread's Havok memory router: *(r13 - 28332) +44 the allocator, vt +8
+// alloc(a, size). (r13 is the PPU thread pointer, read from the context:
+// fixed per thread, not a leftover register.) The u16 size goes to +4 of
+// the result, also when the allocation failed (a store to address 4, as the
+// original does).
+inline u32 HkAlloc(u32 size) {
+    const u32 router = gm<be_u32>(static_cast<u32>(ctx().gpr[13]) - 28332u);
+    u8* a = host<u8>(gm<be_u32>(router + 44));
+    const u32 p = vcall<u32>(a, 8, size);
+    gm<be_u16>(p + 4) = static_cast<u16>(size);
+    return p;
+}
+
+// A Havok entity's property block: 16-byte entries {u32 key, ..., u64
+// value at +8} at +124, s32 count +128 (both re-read every step).
+struct HkPropEntry {
+    be_u32 key;   // +0
+    pad<4> _4;
+    be_u32 hi;    // +8
+    be_u32 lo;    // +12
+};
+static_assert(sizeof(HkPropEntry) == 16);
+struct HkProps {
+    pad<124> _0;
+    gp<HkPropEntry> table;  // +124
+    be_s32 count;           // +128
+};
+static_assert(offsetof(HkProps, count) == 128);
+// The low word of property `key` of the block at guest address props, 0
+// when absent (count and table re-read every step; unchecked).
+inline u32 HkPropLo(u32 props, u32 key) {
+    const HkProps& p = gm<HkProps>(props);
+    for (s32 j = 0; j < p.count; ++j) {
+        const HkPropEntry& e = gm<HkPropEntry>(p.table.ea + 16 * static_cast<u32>(j));
+        if (e.key == key) return e.lo;
+    }
+    return 0;
+}
+// A collidable (hkpCdBody / shape holder) as the ray and cast filters read
+// it: +16 the s8 offset to its owner block, +24 the s8 kind (1: an entity
+// with a property block, 2: a phantom), +28 the shape type (low 5 bits).
+struct HkCollidable {
+    pad<16> _0;
+    s8 owner_off;  // +16
+    pad<7> _17;
+    s8 kind;       // +24
+    pad<3> _25;
+    be_u32 type;   // +28
+};
+static_assert(offsetof(HkCollidable, kind) == 24 && offsetof(HkCollidable, type) == 28);
 
 // ---------------------------------------------------------------- AVL helpers
 // The node's height and balance fixed from its children's heights (a null

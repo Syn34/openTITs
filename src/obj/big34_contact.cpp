@@ -1,69 +1,135 @@
 // Game code, large-function sweep part 34: a contact listener's pair
 // callback, which pairs up the two bodies' owners or records the lone one.
-#include "../sly4.h"
 #include "big34.h"
 
-using namespace sly4;
-using namespace sly4::big34;
+namespace sly4::obj {
+
+// A rigid body of a contact pair: +12 the parent body, +16 the s8 offset
+// from the topmost body to its owner, +24 the s8 kind (1: has an owner).
+struct PairBody {
+    pad<12> _0;
+    gp<PairBody> parent;  // +12
+    s8 owner_off;         // +16
+    pad<7> _17;
+    s8 kind;              // +24
+};
+static_assert(offsetof(PairBody, owner_off) == 16 && offsetof(PairBody, kind) == 24);
+
+// An owner's component table entry (16 bytes): +0 the kind hash, +12 the
+// component.
+struct CompEntry16 {
+    be_u32 hash;  // +0
+    pad<8> _4;
+    be_u32 comp;  // +12
+};
+static_assert(sizeof(CompEntry16) == 16);
+struct CompOwner {
+    pad<124> _0;
+    gp<CompEntry16> table;  // +124
+    be_s32 count;           // +128
+};
+static_assert(offsetof(CompOwner, count) == 128);
+
+// The object a body's owner leads to.
+struct PairObj {
+    pad<168> _0;
+    be_u32 key;    // +168
+    be_u32 flags;  // +172
+    pad<40> _176;
+    be_u32 group;  // +216
+};
+static_assert(offsetof(PairObj, flags) == 172 && offsetof(PairObj, group) == 216);
+
+// An entry of the listener's sorted {key, object} vector.
+struct KeyObj8 {
+    be_u32 key;       // +0
+    gp<PairObj> obj;  // +4
+};
+
+struct ContactListener {
+    pad<116> _0;
+    be_u16 cap;          // +116: sorted u16 vector of KeyObj8
+    be_u16 count;        // +118
+    be_u16 mark;         // +120: high-water mark
+    be_u16 flags;        // +122
+    gp<KeyObj8> data;    // +124
+    pad<32> _128;
+    be_u32 groups[3];    // +160
+    pad<52> _172;
+    be_u32 group;        // +224
+    pad<144> _228;
+    be_u32 focus;        // +372: a PairObj
+};
+static_assert(offsetof(ContactListener, data) == 124 && offsetof(ContactListener, groups) == 160);
+static_assert(offsetof(ContactListener, group) == 224 && offsetof(ContactListener, focus) == 372);
+
+struct ContactPair {
+    gp<PairBody> a, b;  // +0, +4
+    pad<24> _8;
+    be_u32 done;        // +32
+};
+static_assert(offsetof(ContactPair, done) == 32);
 
 namespace {
-constexpr u32 kCompHash = 0x91C7CF5B;  // the component kind looked up in each owner's table
-constexpr u32 kFlagPairable = 0x00040000;  // +172 bit: the object may be recorded
+constexpr u32 kCompHash = 0x91C7CF5B;      // the component kind looked up in each owner's table
+constexpr u32 kFlagPairable = 0x00040000;  // PairObj::flags bit: the object may be recorded
 constexpr u32 PairVec_AddUnique = 0x003A95F4;  // (o, x, v)
 constexpr u32 Array_Reserve = 0x00558F3C;      // (array, u16 capacity)
 constexpr u32 SortedMap_Find = 0x00759654;     // (map, const u32* key) -> entry*
 
 // The topmost body: follow +12 while it is non-zero.
-u32 Root(u32 b) {
-    while (load<u32>(b + 12) != 0) b = load<u32>(b + 12);
+PairBody* Root(PairBody* b) {
+    while (b->parent) b = b->parent;
     return b;
 }
 
-// The +12 word of the owner's kCompHash entry (16-byte entries at +124,
-// count +128; both reloaded per step), or 0. A root whose kind byte +24 is
-// not 1 has no owner, and its table is read from address 0 (unchecked).
-u32 FindComp(u32 root) {
-    const u32 owner = static_cast<s8>(load<u8>(root + 24)) == 1 ? root + static_cast<s8>(load<u8>(root + 16)) : 0;
-    for (s32 i = 0; i < static_cast<s32>(load<u32>(owner + 128)); ++i) {
-        const u32 e = load<u32>(owner + 124) + 16 * static_cast<u32>(i);
-        if (load<u32>(e) == kCompHash) return load<u32>(e + 12);
+// The comp word of the owner's kCompHash entry (count and table reloaded
+// per step), or 0. A root whose kind is not 1 has no owner, and its table
+// is read from address 0 (unchecked, as the original does).
+u32 FindComp(const PairBody* root) {
+    const u32 owner = root->kind == 1 ? guest(root) + static_cast<s32>(root->owner_off) : 0u;
+    const CompOwner& w = gm<CompOwner>(owner);
+    for (s32 i = 0; i < w.count; ++i) {
+        const CompEntry16& e = gm<CompEntry16>(w.table.ea + 16 * static_cast<u32>(i));
+        if (e.hash == kCompHash) return e.comp;
     }
     return 0;
 }
 
 struct Side {
     u32 obj;
-    bool group;   // obj+216 is the listener's group (+224)
-    bool focus;   // obj is the listener's +372
-    bool listed;  // obj+216 is one of the listener's three groups at +160
+    bool group;   // obj's group is the listener's group
+    bool focus;   // obj is the listener's focus
+    bool listed;  // obj's group is one of the listener's three groups
 };
 
-Side Classify(u32 o, u32 x) {
+Side Classify(const ContactListener* o, u32 x) {
     Side s{x, false, false, false};
     if (x == 0) return s;
-    const u32 g = load<u32>(x + 216);
-    s.group = g == load<u32>(o + 224);
-    s.focus = x == load<u32>(o + 372);
+    const u32 g = gm<PairObj>(x).group;
+    s.group = g == o->group;
+    s.focus = x == o->focus;
     if (g != 0)
         for (u32 k = 0; k < 3; ++k)
-            if (load<u32>(o + 160 + 4 * k) == g) { s.listed = true; break; }
+            if (o->groups[k] == g) {
+                s.listed = true;
+                break;
+            }
     return s;
 }
 }  // namespace
 
 // bool T::OnPair(T* o, Pair* p) (through AdjThunk_003A9C1C, this - 56).
-// The roots of the bodies p+0 and p+4 lead to two objects (FindComp). When
-// exactly one of them is in o's group (+224): if either one's group is
-// listed at o+160..168, PairVec_AddUnique(o, the grouped one, the other);
-// otherwise, unless either is o+372 or both exist, the grouped one (when it
-// has kFlagPairable and a key +168 not yet in the sorted u16 vector at o+116:
-// capacity +116, count +118, high-water +120, flags +122, data +124) is
-// appended there as {key, object}, doubling the capacity when full, and
-// +122 gets bit 0. Always sets p+32 = 1 and returns 1.
-DECOMP(003A96F8, ContactListener_OnPair_003A96F8) {
-    const u32 o = arg<u32>(ctx, 0), p = arg<u32>(ctx, 1);
-    const u32 a = Root(load<u32>(p));
-    const u32 b = Root(load<u32>(p + 4));
+// The roots of the bodies p->a and p->b lead to two objects (FindComp).
+// When exactly one of them is in o's group: if either one's group is
+// listed in o->groups, PairVec_AddUnique(o, the grouped one, the other);
+// otherwise, unless either is o->focus or both exist, the grouped one (when
+// it has kFlagPairable and a key not yet in o's sorted vector) is appended
+// there as {key, object}, doubling the capacity when full, and the flags
+// get bit 0. Always sets p->done = 1 and returns 1.
+u32 ContactListener_OnPair_003A96F8(ContactListener* o, ContactPair* p) {
+    const PairBody* a = Root(p->a);
+    const PairBody* b = Root(p->b);
     const u32 xa = FindComp(a);
     const u32 xb = FindComp(b);
     const Side sa = Classify(o, xa), sb = Classify(o, xb);
@@ -72,29 +138,33 @@ DECOMP(003A96F8, ContactListener_OnPair_003A96F8) {
         const Side& g = sa.group ? sa : sb;
         const Side& other = sa.group ? sb : sa;
         if (sa.listed || sb.listed) {
-            call(ctx, PairVec_AddUnique, {o, g.obj, other.obj});
+            call(PairVec_AddUnique, o, g.obj, other.obj);
         } else if (!sa.focus && !sb.focus && !(xa != 0 && xb != 0)) {
-            const u32 x = g.obj;
-            if (x != 0 && (load<u32>(x + 172) & kFlagPairable) != 0 && load<u32>(x + 168) != 0) {
-                Stack frame(ctx, 16);  // the key (sp+112 or sp+116 in the original)
-                store<u32>(frame.addr(), load<u32>(x + 168));
-                const u32 hit = static_cast<u32>(call(ctx, SortedMap_Find, {o + 116, frame.addr()}));
-                if (load<u32>(hit) == 0) {
-                    const u32 key = load<u32>(x + 168);
-                    if (load<u16>(o + 118) == load<u16>(o + 116))
-                        call(ctx, Array_Reserve, {o + 116, (static_cast<u32>(load<u16>(o + 116)) << 1) & 0xFFFE});
-                    const u32 data = load<u32>(o + 124);
-                    store<u32>(data + ((static_cast<u32>(load<u16>(o + 118)) << 3) & 0x7FFF8), key);
-                    store<u32>(data + (static_cast<u32>(load<u16>(o + 118)) << 3) + 4, x);
-                    const u32 n = static_cast<u32>(load<u16>(o + 118)) + 1;
-                    const u16 hi = load<u16>(o + 120), fl = load<u16>(o + 122);
-                    store<u16>(o + 118, static_cast<u16>(n));
-                    store<u16>(o + 120, static_cast<s32>(hi) > static_cast<s32>(n & 0xFFFF) ? hi : static_cast<u16>(n));
-                    store<u16>(o + 122, fl | 1);
+            PairObj* x = host<PairObj>(g.obj);
+            if (x != nullptr && (x->flags & kFlagPairable) != 0 && x->key != 0) {
+                GuestFrame frame(16);  // the key (sp+112 or sp+116 in the original)
+                be_u32* key_slot = frame.as<be_u32>();
+                *key_slot = x->key.get();
+                const u32 hit = call<u32>(SortedMap_Find, &o->cap, key_slot);
+                if (gm<be_u32>(hit) == 0) {
+                    const u32 key = x->key;
+                    if (o->count == o->cap) call(Array_Reserve, &o->cap, (static_cast<u32>(o->cap) << 1) & 0xFFFE);
+                    KeyObj8* data = &gm<KeyObj8>(o->data.ea);  // address 0 when unset (unchecked)
+                    data[o->count].key = key;
+                    data[o->count].obj = x;
+                    const u32 n = static_cast<u32>(o->count) + 1;
+                    const u16 hi = o->mark, fl = o->flags;
+                    o->count = static_cast<u16>(n);
+                    o->mark = static_cast<s32>(hi) > static_cast<s32>(n & 0xFFFF) ? hi : static_cast<u16>(n);
+                    o->flags = static_cast<u16>(fl | 1);
                 }
             }
         }
     }
-    store<u32>(p + 32, 1);
-    ret(ctx, 1u);
+    p->done = 1u;
+    return 1;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(003A96F8, sly4::obj::ContactListener_OnPair_003A96F8)

@@ -1,14 +1,25 @@
 // Game code, large-function sweep part 32: refresh the audio options menu
 // (volume slider ticks and the format / centre speaker / dynamic range
 // choice texts) from the saved settings.
-#include "../sly4.h"
 #include "big32.h"
 
-using namespace sly4;
-using namespace sly4::big32;
+namespace sly4::obj {
+
+struct AudioSettings {
+    pad<4152> _0;
+    u8 format;        // +4152
+    u8 center;        // +4153
+    u8 range;         // +4154
+    pad<1> _4155;
+    be_f32 vol[4];    // +4156: SFX, music, VO, movie
+};
+static_assert(offsetof(AudioSettings, format) == 4152 && offsetof(AudioSettings, vol) == 4156);
+struct AudioScreen {
+    pad<12> _0;
+    gp<UiElem> root;  // +12
+};
 
 namespace {
-constexpr u32 Ui_Find4D5544 = 0x004D5544;  // (const char* path, Widget* parent) -> Widget* or 0
 constexpr u32 kTickMinX = 0x010BC0D0;      // f32: slider tick x at volume 0
 constexpr u32 kTickMaxX = 0x010BC080;      // f32: slider tick x at volume 1
 constexpr u32 sMenu = 0x00AE8800;          // "Menu"
@@ -21,63 +32,51 @@ constexpr u32 sCss[2] = {0x00AE89AC, 0x00AE89C4};  // "$STR_AUDIO_CSS_SMALL" / _
 constexpr u32 sRange = 0x00AE89DC;         // "DynamicRange"
 constexpr u32 sDr[5] = {0x00AE89EC, 0x00AE8A04, 0x00AE8A1C, 0x00AE8A34, 0x00AE8A4C};  // "$STR_AUDIO_DR_MAX" / WIDE / NORMAL / NARROW / MIDNIGHT
 
-// A choice widget's type (vfn 12) is 3 (a text choice).
-bool IsText(PPUContext& ctx, u32 w) { return static_cast<s32>(VCall(ctx, w, 12, {w})) == 3; }
+bool IsText(UiElem* w) { return static_cast<s32>(UiElem_State(w)) == 3; }
 
-// The texts {"$STR_DEFAULT", names...} at sp + off and entry idx of them
-// (idx unchecked, as the original).
-u32 PickText(u32 sp, u32 off, const u32* names, u32 n, u32 idx) {
-    store<u32>(sp + off, sDefault);
-    for (u32 k = 0; k < n; ++k) store<u32>(sp + off + 4 + 4 * k, names[k]);
-    return load<u32>(sp + (idx << 2) + off);
+// The texts {"$STR_DEFAULT", names...} at frame offset off and entry idx
+// of them. The tables live in guest stack memory as in the original, so an
+// out-of-range idx reads the neighbouring stack words (unchecked).
+u32 PickText(const GuestFrame& f, u32 off, const u32* names, u32 n, u32 idx) {
+    be_u32* t = f.as<be_u32>(off);
+    t[0] = sDefault;
+    for (u32 k = 0; k < n; ++k) t[1 + k] = names[k];
+    return gm<be_u32>(f.addr() + off + (idx << 2));
 }
 }  // namespace
 
 // void f(Settings* s, Screen* scr) (called by f_004734E0 and f_00476C70).
-// Under scr->+12's "Menu" widget (returns when missing, r3 0): each of
-// the four "Volume*.Tick" widgets present gets its position (vfn 24, a
-// f32[3]) with x = (kTickMaxX - kTickMinX) * volume + kTickMinX (volumes
-// f32 at s + 4156 / 4160 / 4164 / 4168) set back (vfn 28, from sp + 112 /
-// 128 / 144 / 160). Then "Format" (u8 s + 4152), "CenterSpeakerSize" (u8
-// s + 4153) and "DynamicRange" (u8 s + 4154; returns when missing), when
-// of type 3, get vfn 188(w, text, 0) with the text picked from a table
-// starting with "$STR_DEFAULT" (the Format call has the entry in r6 and
-// the OPD in r7; the CenterSpeakerSize call has the text in r4 and r6 and
-// the entry in r7).
-DECOMP(0046D5C8, AudioMenu_Refresh_0046D5C8) {
-    const u32 st = arg<u32>(ctx, 0) + 4144;
-    const u32 menu = static_cast<u32>(call(ctx, Ui_Find4D5544, {sMenu, load<u32>(arg<u32>(ctx, 1) + 12)}));
-    if (menu == 0) return;
-    Stack frame(ctx, 128);
-    const u32 sp = frame.addr() - 112;  // the original's frame (offsets below are its sp offsets)
+// Under scr->root's "Menu" widget (returns when missing): each of the four
+// "Volume*.Tick" widgets present gets its position (vfn 24, a f32[3]) with
+// x = (kTickMaxX - kTickMinX) * volume + kTickMinX set back (vfn 28, from
+// the stack). Then "Format", "CenterSpeakerSize" and "DynamicRange"
+// (returns when missing), when of type 3, get their text (vfn 188) picked
+// from a table starting with "$STR_DEFAULT".
+void AudioMenu_Refresh_0046D5C8(const AudioSettings* s, const AudioScreen* scr) {
+    UiElem* menu = call<UiElem*>(fn::Ui_Find, sMenu, scr->root.get());
+    if (menu == nullptr) return;
+    GuestFrame frame(128);  // the original's sp+112..: ticks +0 / +16 / +32 / +48, tables +64 / +76 / +100
     for (u32 i = 0; i < 4; ++i) {
-        const u32 w = static_cast<u32>(call(ctx, Ui_Find4D5544, {sTicks[i], menu}));
-        if (w == 0) continue;
-        const u32 pos = static_cast<u32>(VCall(ctx, w, 24, {w}));
-        const u32 v = sp + 112 + 16 * i;
-        Copy3W(v, pos);
-        const f64 lo = Lfs(kTickMinX), hi = Lfs(kTickMaxX);
-        const f64 x = Fmadds(Subs(hi, lo), Lfs(st + 12 + 4 * i), lo);
-        store<u32>(v, Fb(x));
-        ctx.fpr[1] = x;  // left in f1 by the original
-        VCall(ctx, w, 28, {w, v});
+        UiElem* w = call<UiElem*>(fn::Ui_Find, sTicks[i], menu);
+        if (w == nullptr) continue;
+        const Vec3& pos = gm<Vec3>(vcall<u32>(w, 24));
+        Vec3* v = frame.as<Vec3>(16 * i);
+        set_bits(v->x, bits(pos.x));  // lfs / stfs: raw words
+        set_bits(v->y, bits(pos.y));
+        set_bits(v->z, bits(pos.z));
+        const f64 lo = lf(global<be_f32>(kTickMinX)), hi = lf(global<be_f32>(kTickMaxX));
+        v->x = static_cast<f32>(Fmadds(Subs(hi, lo), lf(s->vol[i]), lo));
+        vcall(w, 28, v);
     }
-    const u32 fmt = static_cast<u32>(call(ctx, Ui_Find4D5544, {sFormat, menu}));
-    if (fmt != 0 && IsText(ctx, fmt)) {
-        const u32 t = PickText(sp, 188, sFormats, 5, load<u8>(st + 8));
-        const u32 opd = load<u32>(load<u32>(fmt) + 188);
-        call_ptr(ctx, opd, {fmt, t, 0, load<u32>(opd), opd});  // entry in r6, OPD in r7
-    }
-    const u32 css = static_cast<u32>(call(ctx, Ui_Find4D5544, {sCenter, menu}));
-    if (css != 0 && IsText(ctx, css)) {
-        const u32 opd = load<u32>(load<u32>(css) + 188);
-        const u32 t = PickText(sp, 176, sCss, 2, load<u8>(st + 9));
-        call_ptr(ctx, opd, {css, t, 0, t, load<u32>(opd)});  // the text in r4 and r6, entry in r7
-    }
-    const u32 dr = static_cast<u32>(call(ctx, Ui_Find4D5544, {sRange, menu}));
-    if (dr == 0) return;
-    if (IsText(ctx, dr)) {
-        const u32 t = PickText(sp, 212, sDr, 5, load<u8>(st + 10));
-        VCall(ctx, dr, 188, {dr, t, 0});
-    }
+    UiElem* fmt = call<UiElem*>(fn::Ui_Find, sFormat, menu);
+    if (fmt != nullptr && IsText(fmt)) UiElem_SetText(fmt, PickText(frame, 76, sFormats, 5, s->format));
+    UiElem* css = call<UiElem*>(fn::Ui_Find, sCenter, menu);
+    if (css != nullptr && IsText(css)) UiElem_SetText(css, PickText(frame, 64, sCss, 2, s->center));
+    UiElem* dr = call<UiElem*>(fn::Ui_Find, sRange, menu);
+    if (dr == nullptr) return;
+    if (IsText(dr)) UiElem_SetText(dr, PickText(frame, 100, sDr, 5, s->range));
 }
+
+}  // namespace sly4::obj
+
+NATIVE(0046D5C8, sly4::obj::AudioMenu_Refresh_0046D5C8)

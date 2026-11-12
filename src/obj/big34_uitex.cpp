@@ -1,10 +1,36 @@
 // Game code, large-function sweep part 34: the B8 linear texture set a UI
 // screen draws into, carved out of the surface heap.
-#include "../sly4.h"
 #include "big34.h"
 
-using namespace sly4;
-using namespace sly4::big34;
+namespace sly4::obj {
+
+// One plane of a layer (12 bytes).
+struct UiPlane {
+    be_u32 enabled;  // +0
+    be_u32 data;     // +4
+    be_u32 pitch;    // +8
+};
+// A layer's four planes (48 bytes at the screen's +24).
+struct UiLayerPlanes {
+    UiPlane p[4];
+};
+// A layer's texture pointers (20 bytes at the screen's +120; +16 zeroed).
+struct UiLayerTex {
+    gp<GcmTexture> t[4];  // +0 .. +12
+    be_u32 end;           // +16
+};
+struct UiTexScreen {
+    be_s32 layers;              // +0
+    be_u32 w, h;                // +4, +8: the full-size planes
+    be_u32 hw, hh;              // +12, +16: the half planes
+    pad<4> _20;
+    UiLayerPlanes planes[2];    // +24 (indexed past 2 by guest address)
+    UiLayerTex tex[2];          // +120
+    be_u32 buffer;              // +160
+    be_u32 stride;              // +164
+};
+static_assert(offsetof(UiTexScreen, planes) == 24 && offsetof(UiTexScreen, tex) == 120);
+static_assert(offsetof(UiTexScreen, buffer) == 160 && offsetof(UiTexScreen, stride) == 164);
 
 namespace {
 constexpr u32 kSurfaceHeap = 0x01163FC8;  // the cursor allocator the buffers come from
@@ -21,75 +47,79 @@ constexpr u32 BufSize(u32 bytes) {
 }
 }  // namespace
 
-// bool T::AllocTextures(T* o) (called by Ui_OpenScreen4D245C).
-// o+0 is the layer count; o+4/+8 the width/height of the full-size planes,
-// o+12/+16 those of the half planes. Each layer i owns four planes, 12 bytes
-// each at o + 24 + 48 i + 12 k: {enabled, data, pitch}, and four texture
-// pointers at o + 120 + 20 i + 4 k (+16 is zeroed). Layer 0's enable flags
-// size every layer: planes 0 and 3 have pitch (o+24 ? w : 0) | (o+60 ? w : 0),
-// planes 1 and 2 pitch (o+36 ? align16(o+12) : 0); the full set is
-// Cursor_Alloc(kSurfaceHeap, 64, n * stride) into o+160, rejected when null or
-// in 0xC0000000..0xCFFFFFFF. Each enabled plane gets its data pointer and pitch
-// and a CellGcmTexture (B8, linear, main memory) right after its pixels, whose
-// offset cellGcmAddressToOffset fills in; a zero offset fails. Returns 1 with
-// o+164 = the layer stride, or 0 (o+160 cleared when it was set).
-DECOMP(004D10C8, UiScreen_AllocB8Textures) {
-    const u32 o = arg<u32>(ctx, 0);
-    const u32 w = load<u32>(o + 4);
-    const u32 pa = load<u32>(o + 24) != 0 ? w : 0;
-    const u32 pb = load<u32>(o + 60) != 0 ? w : 0;
-    const u32 pitchHalf = load<u32>(o + 36) != 0 ? (load<u32>(o + 12) + 15) & ~15u : 0;
-    const u32 h = load<u32>(o + 8);
+// bool T::AllocTextures(T* o) (called by Ui_OpenScreen4D245C). Layer 0's
+// enable flags size every layer: planes 0 and 3 have pitch (plane 0 on ?
+// w : 0) | (plane 3 on ? w : 0), planes 1 and 2 pitch (plane 1 on ?
+// align16(hw) : 0); the full set is Cursor_Alloc(kSurfaceHeap, 64, layers *
+// stride) into o->buffer, rejected when null or in 0xC0000000..0xCFFFFFFF.
+// Each enabled plane gets its data pointer and pitch and a CellGcmTexture
+// (B8, linear, main memory) right after its pixels, whose offset
+// cellGcmAddressToOffset fills in; a zero offset fails. Returns 1 with
+// o->stride set, or 0 (o->buffer cleared when it was set).
+bool UiScreen_AllocB8Textures(UiTexScreen* o) {
+    const u32 w = o->w;
+    const UiLayerPlanes& l0 = o->planes[0];
+    const u32 pa = l0.p[0].enabled != 0 ? w : 0;
+    const u32 pb = l0.p[3].enabled != 0 ? w : 0;
+    const u32 pitchHalf = l0.p[1].enabled != 0 ? (o->hw + 15) & ~15u : 0;
+    const u32 h = o->h;
     const u32 s0 = BufSize(h * pa);
     const u32 s3 = BufSize(pb * h);
-    const u32 s12 = BufSize(load<u32>(o + 16) * pitchHalf);
-    const u32 off3 = s0;               // plane 3
-    const u32 off1 = s3 + s0;          // plane 1
-    const u32 off2 = off1 + s12;       // plane 2
+    const u32 s12 = BufSize(o->hh * pitchHalf);
+    const u32 off3 = s0;          // plane 3
+    const u32 off1 = s3 + s0;     // plane 1
+    const u32 off2 = off1 + s12;  // plane 2
     const u32 stride = off1 + 2 * s12;
     const u32 pitchFull = pa | pb;
 
-    u32 cur = static_cast<u32>(call(ctx, b34fn::Cursor_Alloc, {kSurfaceHeap, 64u, static_cast<u32>(stride * load<u32>(o))}));
-    store<u32>(o + 160, cur);
+    u32 cur = call<u32>(b34fn::Cursor_Alloc, kSurfaceHeap, 64u, stride * static_cast<u32>(o->layers));
+    o->buffer = cur;
     bool ok = cur != 0 && !(cur >= 0xC0000000u && cur < 0xD0000000u);
     if (ok) {
         cur = Align128(cur);
-        // One plane: data/pitch into its slot, the texture after the pixels,
-        // its pointer into *texSlot. False when the offset comes back 0.
-        auto plane = [&](u32 slot, u32 texSlot, u32 data, u32 pitch, u32 wOff, u32 hOff) {
-            store<u32>(slot + 4, data);
-            store<u32>(slot + 8, pitch);
-            const u32 hh = load<u32>(o + hOff), ww = load<u32>(o + wOff);
-            const u32 tex = data + Align128(hh * pitch);
-            store<u8>(tex + 0, kTexFormatB8Linear);
-            store<u8>(tex + 1, 1);  // mipmap
-            store<u8>(tex + 2, 2);  // dimension: 2D
-            store<u8>(tex + 3, 0);  // cubemap
-            store<u32>(tex + 4, kTexRemap);
-            store<u16>(tex + 8, static_cast<u16>(ww));
-            store<u16>(tex + 10, static_cast<u16>(hh));
-            store<u16>(tex + 12, 1);  // depth
-            store<u8>(tex + 14, kLocationMain);
-            store<u32>(tex + 16, pitch);
-            call(ctx, b34fn::cellGcmAddressToOffset, {data, tex + 20});
-            if (load<u32>(tex + 20) == 0) return false;
-            store<u32>(texSlot, tex);
+        // One plane: data / pitch into it, the texture after the pixels,
+        // its pointer into *slot. False when the offset comes back 0.
+        auto plane = [&](UiPlane& pl, gp<GcmTexture>& slot, u32 data, u32 pitch, bool half) {
+            pl.data = data;
+            pl.pitch = pitch;
+            const u32 hh = half ? o->hh : o->h, ww = half ? o->hw : o->w;
+            const u32 tex_ea = data + Align128(hh * pitch);
+            GcmTexture& tex = gm<GcmTexture>(tex_ea);
+            tex.format = kTexFormatB8Linear;
+            tex.mipmap = 1;
+            tex.dimension = 2;  // 2D
+            tex.cubemap = 0;
+            tex.remap = kTexRemap;
+            tex.width = static_cast<u16>(ww);
+            tex.height = static_cast<u16>(hh);
+            tex.depth = 1;
+            tex.location = kLocationMain;
+            tex.pitch = pitch;
+            call(b34fn::cellGcmAddressToOffset, data, &tex.offset);
+            if (tex.offset == 0) return false;
+            slot.ea = tex_ea;
             return true;
         };
-        for (u32 i = 0; static_cast<s32>(i) < static_cast<s32>(load<u32>(o)); ++i) {
-            const u32 l = o + 24 + 48 * i, t = o + 120 + 20 * i;
-            if (load<u32>(l) != 0 && !plane(l, t, cur, pitchFull, 4, 8)) { ok = false; break; }
-            if (load<u32>(l + 12) != 0 && !plane(l + 12, t + 4, cur + off1, pitchHalf, 12, 16)) { ok = false; break; }
-            if (load<u32>(l + 24) != 0 && !plane(l + 24, t + 8, cur + off2, pitchHalf, 12, 16)) { ok = false; break; }
-            if (load<u32>(l + 36) != 0 && !plane(l + 36, t + 12, cur + off3, pitchFull, 4, 8)) { ok = false; break; }
-            store<u32>(t + 16, 0);
+        for (s32 i = 0; i < o->layers; ++i) {
+            // by guest address: the count is not limited to the two layers the screen has room for
+            UiLayerPlanes& l = gm<UiLayerPlanes>(guest(o) + 24 + 48 * static_cast<u32>(i));
+            UiLayerTex& t = gm<UiLayerTex>(guest(o) + 120 + 20 * static_cast<u32>(i));
+            if (l.p[0].enabled != 0 && !plane(l.p[0], t.t[0], cur, pitchFull, false)) { ok = false; break; }
+            if (l.p[1].enabled != 0 && !plane(l.p[1], t.t[1], cur + off1, pitchHalf, true)) { ok = false; break; }
+            if (l.p[2].enabled != 0 && !plane(l.p[2], t.t[2], cur + off2, pitchHalf, true)) { ok = false; break; }
+            if (l.p[3].enabled != 0 && !plane(l.p[3], t.t[3], cur + off3, pitchFull, false)) { ok = false; break; }
+            t.end = 0u;
             cur += stride;
         }
     }
     if (!ok) {
-        if (load<u32>(o + 160) != 0) store<u32>(o + 160, 0);
-        return ret(ctx, 0u);
+        if (o->buffer != 0) o->buffer = 0u;
+        return false;
     }
-    store<u32>(o + 164, stride);
-    ret(ctx, 1u);
+    o->stride = stride;
+    return true;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(004D10C8, sly4::obj::UiScreen_AllocB8Textures)

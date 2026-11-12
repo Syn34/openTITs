@@ -1,15 +1,76 @@
 // Game code, large-function sweep part 34: a driven object's per-frame
 // input step (steering, throttle and brake smoothed from the pad state).
-#include "../sly4.h"
 #include "big34.h"
 
-using namespace sly4;
-using namespace sly4::big34;
+namespace sly4::obj {
+
+// The drive tuning block (the tuning owner's +872).
+struct DriveTuning {
+    be_f32 rate;         // +0: steering approach rate (and the integration rate)
+    be_f32 rate_out;     // +4: steering rate while the target exceeds the current value
+    be_f32 dead;         // +8: stick dead zone
+    be_f32 accel_idle;   // +12
+    be_f32 accel_thr;    // +16
+    be_f32 accel_brk;    // +20
+    pad<28> _24;
+    u8 horn;             // +52: the horn button is read
+    u8 analog;           // +53: throttle / brake kept as levels, not signs
+    u8 no_block;         // +54: the block button does not cancel them
+};
+static_assert(offsetof(DriveTuning, horn) == 52);
+struct DriveTuningOwner {
+    pad<872> _0;
+    DriveTuning tuning;  // +872
+};
+// The input state (o->src's vt slot 12).
+struct DriveInput {
+    be_f32 x;         // +0
+    pad<4> _4;
+    be_f32 y;         // +8
+    pad<24> _12;
+    be_u32 buttons;   // +36
+};
+static_assert(offsetof(DriveInput, buttons) == 36);
+// The output block.
+struct DriveOut {
+    pad<8> _0;
+    be_f32 steer;  // +8
+    be_f32 level;  // +12
+    u8 horn;       // +16
+    u8 brake;      // +17
+};
+struct DriveOutHolder {
+    pad<156> _0;
+    be_u32 out;  // +156: a DriveOut
+};
+struct DriveObj {
+    pad<384> _0;
+    be_u32 flags;                    // +384: bit 31 input enabled
+    pad<8> _388;
+    gp<DriveTuningOwner> tuning;     // +396
+    pad<212> _400;
+    gp<DriveOutHolder> out;          // +612
+    pad<316> _616;
+    be_f32 steer;                    // +932
+    be_f32 level;                    // +936
+    be_f32 int_x;                    // +940
+    be_f32 int_y;                    // +944
+    pad<4> _948;
+    be_u32 src;                      // +952: the input source (vt slot 12)
+    pad<16> _956;
+    be_f32 thr;                      // +972
+    be_f32 t_thr;                    // +976
+    be_f32 brk;                      // +980
+    be_f32 t_brk;                    // +984
+    be_f32 t_idle;                   // +988
+};
+static_assert(offsetof(DriveObj, tuning) == 396 && offsetof(DriveObj, out) == 612);
+static_assert(offsetof(DriveObj, steer) == 932 && offsetof(DriveObj, src) == 952 && offsetof(DriveObj, t_idle) == 988);
 
 namespace {
-constexpr f64 kDead = 1e-5f;     // 0x00236328 + 4 (-kDead at +8)
+constexpr f64 kDead = 1e-5f;          // 0x00236328 + 4 (-kDead at +8)
 constexpr f64 kThrottleLow = 0.01f;   // +28: the throttle level below which the brake button counts
-constexpr u32 kBtnThrottle = 0x4, kBtnBrake = 0x10, kBtnHorn = 0x40, kBtnBlock = 0x4000;  // in->36
+constexpr u32 kBtnThrottle = 0x4, kBtnBrake = 0x10, kBtnHorn = 0x40, kBtnBlock = 0x4000;
 
 // The sign of x with a dead zone, as a float (-1, 0 or 1).
 f64 Sign(f64 x) { return static_cast<f64>(static_cast<f32>((x > kDead ? 1 : 0) - (x < -kDead ? 1 : 0))); }
@@ -22,77 +83,72 @@ f64 Clamp1(f64 x) {
 }  // namespace
 
 // void T::UpdateDriveInput(T* o, f32 dt) (called by f_00238F78). Needs
-// o->612 (whose +156 is the output block) and o->396 (+872: the tuning P).
-// The input state comes from o->952's vt slot 12; o->384 bit 31 enables
-// it. Steering: the stick in->0 past the dead zone P+8 (rescaled to 0..1,
-// signed) is approached at rate P+4 while its magnitude exceeds the current
-// o->932, else P+0; o->940 / o->944 integrate in->0 / -in->8 at P+0 * dt;
-// all clamped to [-1, 1]. Throttle (in->36 bit 0x4) and brake (0x10 when not
-// throttling), as signs unless P+53 is set, both zeroed by bit 0x4000 unless
-// P+54; o->936 follows throttle - brake at rate P+16 / P+20 (P+12 when
-// idle). Writes out+8 / +12 (steer, throttle level), out+17 (braking),
-// out+16 (bit 0x40 when P+52), o->972 / 980 (throttle, brake) and the time
-// spent throttling / braking / idle in o->976 / 984 / 988 (reset when not).
-DECOMP(00236348, Drive_UpdateInput_00236348) {
-    const u32 o = arg<u32>(ctx, 0);
-    const f64 dt = farg(ctx, 0);
-    if (load<u32>(o + 612) == 0 || load<u32>(o + 396) == 0) return ret(ctx, 0u);
-    const u32 src = load<u32>(o + 952);
-    const u32 in = static_cast<u32>(VCall(ctx, src, 12, {src}));
-    const u32 P = load<u32>(o + 396) + 872;
-    const u32 out = load<u32>(load<u32>(o + 612) + 156);
-    const bool on = (load<u32>(o + 384) & 0x80000000u) != 0;
-    const f64 v932 = Lfs(o + 932), v940 = Lfs(o + 940), v944 = Lfs(o + 944), v936 = Lfs(o + 936);
-    const u8 noBlock = load<u8>(P + 54);
+// o->out and o->tuning (P = its tuning block). The input state comes from
+// o->src's vt slot 12; o->flags bit 31 enables it. Steering: the stick x
+// past the dead zone (rescaled to 0..1, signed) is approached at rate
+// P.rate_out while its magnitude exceeds the current o->steer, else P.rate;
+// o->int_x / int_y integrate x / -y at P.rate * dt; all clamped to [-1, 1].
+// Throttle (bit 0x4) and brake (0x10 when not throttling), as signs unless
+// P.analog, both zeroed by bit 0x4000 unless P.no_block; o->level follows
+// throttle - brake at rate accel_thr / accel_brk (accel_idle when idle).
+// Writes the output's steer / level / brake / horn (bit 0x40 when P.horn),
+// o->thr / brk and the time spent throttling / braking / idle (reset when
+// not).
+void Drive_UpdateInput_00236348(DriveObj* o, f32 dt_) {
+    const f64 dt = dt_;
+    if (!o->out || !o->tuning) return;
+    const u32 in_ea = vcall<u32>(host<u8>(o->src), 12);
+    const DriveInput& in = gm<DriveInput>(in_ea);  // read only when enabled, except the block bit (unchecked)
+    const DriveTuning& P = o->tuning->tuning;
+    DriveOut& out = gm<DriveOut>(o->out->out);  // unchecked
+    const bool on = (o->flags & 0x80000000u) != 0;
+    const f64 v932 = lf(o->steer), v940 = lf(o->int_x), v944 = lf(o->int_y), v936 = lf(o->level);
+    const u8 noBlock = P.no_block;
 
     // steering
-    const f64 stick = on ? Lfs(in) : 0.0;
-    const f64 dz = Lfs(P + 8);
+    const f64 stick = on ? lf(in.x) : 0.0;
+    const f64 dz = lf(P.dead);
     const f64 q = Divs(Subs(std::fabs(stick), dz), Subs(1.0, dz));
     const f64 target = Muls(Sign(stick), S(-q >= 0.0 ? 0.0 : q));
-    const f64 rate = std::fabs(target) > std::fabs(v932) ? Lfs(P + 4) : Lfs(P + 0);
-    const f64 step = Muls(Lfs(P + 0), dt);
+    const f64 rate = std::fabs(target) > std::fabs(v932) ? lf(P.rate_out) : lf(P.rate);
+    const f64 step = Muls(lf(P.rate), dt);
     const f64 dSteer = Fmadds(Subs(target, v932), Muls(rate, dt), 0.0);
-    store<u32>(o + 940, big29::Fb(Clamp1(Fmadds(v940, step, stick))));
-    const f64 pitch = on ? -Lfs(in + 8) : 0.0;
-    store<u32>(o + 944, big29::Fb(Clamp1(Fmadds(v944, step, pitch))));
+    o->int_x = static_cast<f32>(Clamp1(Fmadds(v940, step, stick)));
+    const f64 pitch = on ? -lf(in.y) : 0.0;
+    o->int_y = static_cast<f32>(Clamp1(Fmadds(v944, step, pitch)));
 
     // throttle / brake
     f64 thr = 0.0, brk = 0.0;
     if (on) {
-        const u32 b = load<u32>(in + 36);
+        const u32 b = in.buttons;
         thr = (b & kBtnThrottle) != 0 ? 1.0 : 0.0;
         brk = thr < kThrottleLow && (b & kBtnBrake) != 0 ? 1.0 : 0.0;
-        if (load<u8>(P + 53) == 0) {
+        if (P.analog == 0) {
             thr = Sign(thr);
             brk = Sign(brk);
         }
     }
-    if (noBlock == 0 && (load<u32>(in + 36) & kBtnBlock) != 0) thr = brk = 0.0;
-    const f64 accel = thr == 0.0 && brk == 0.0 ? Lfs(P + 12) : (thr > 0.0 ? Lfs(P + 16) : Lfs(P + 20));
+    if (noBlock == 0 && (in.buttons & kBtnBlock) != 0) thr = brk = 0.0;
+    const f64 accel = thr == 0.0 && brk == 0.0 ? lf(P.accel_idle) : (thr > 0.0 ? lf(P.accel_thr) : lf(P.accel_brk));
     const f64 d = Subs(Adds(v936, thr), brk);
     const f64 steer = Clamp1(Adds(v932, dSteer));
     const f64 dThr = S(-std::fma(Muls(d, accel), dt, -0.0));
-    store<u32>(o + 932, big29::Fb(steer));
+    o->steer = static_cast<f32>(steer);
     const f64 level = Clamp1(Adds(v936, dThr));
-    store<u32>(o + 936, big29::Fb(level));
+    o->level = static_cast<f32>(level);
     u8 horn = 0;
-    if (on && load<u8>(P + 52) != 0) {
-        const u32 bits = load<u32>(in + 36) & kBtnHorn;
-        horn = bits != 0;
-        ctx.gpr[3] = static_cast<u32>(std::countl_zero(bits));  // r3 as the original leaves it
-    } else {
-        ctx.gpr[3] = in;
-    }
-    store<u32>(out + 8, big29::Fb(steer));
-    store<u32>(out + 12, big29::Fb(level));
-    store<u8>(out + 17, brk != 0.0 ? 1 : 0);
-    store<u8>(out + 16, horn);
-    store<u32>(o + 972, big29::Fb(thr));
-    store<u32>(o + 980, big29::Fb(brk));
-    store<u32>(o + 976, big29::Fb(thr != 0.0 ? Adds(Lfs(o + 976), dt) : 0.0));
-    const f64 tb = brk != 0.0 ? Adds(Lfs(o + 984), dt) : 0.0;
-    store<u32>(o + 984, big29::Fb(tb));
-    store<u32>(o + 988, big29::Fb(thr == 0.0 && brk == 0.0 ? Adds(Lfs(o + 988), dt) : 0.0));
-    ctx.fpr[1] = tb;  // f1 as the original leaves it
+    if (on && P.horn != 0) horn = (in.buttons & kBtnHorn) != 0;
+    out.steer = static_cast<f32>(steer);
+    out.level = static_cast<f32>(level);
+    out.brake = brk != 0.0 ? 1 : 0;
+    out.horn = horn;
+    o->thr = static_cast<f32>(thr);
+    o->brk = static_cast<f32>(brk);
+    o->t_thr = static_cast<f32>(thr != 0.0 ? Adds(lf(o->t_thr), dt) : 0.0);
+    o->t_brk = static_cast<f32>(brk != 0.0 ? Adds(lf(o->t_brk), dt) : 0.0);
+    o->t_idle = static_cast<f32>(thr == 0.0 && brk == 0.0 ? Adds(lf(o->t_idle), dt) : 0.0);
 }
+
+}  // namespace sly4::obj
+
+NATIVE(00236348, sly4::obj::Drive_UpdateInput_00236348)
