@@ -53,3 +53,6 @@ inline void ScaleAt(u32 ea, f64 k) { Stfs(ea, Ms(LfsX(ea), k)); }
 
 }  // namespace big16
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

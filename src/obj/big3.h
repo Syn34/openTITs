@@ -54,3 +54,6 @@ inline u32 PropFind(u32 s, u32 hash) {
 
 }  // namespace big3
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

@@ -35,3 +35,6 @@ inline f32 Divs(f64 a, f64 b) { return static_cast<f32>(a / b); }
 
 }  // namespace big11
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

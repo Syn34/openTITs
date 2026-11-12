@@ -2,38 +2,55 @@
 // player's link driving.
 #include "big14.h"
 
-using namespace sly4;
-using namespace sly4::big14;
+namespace sly4::obj {
+
+namespace {
+inline be_u32& W(u32 base, u32 off) { return gm<be_u32>(base + off); }
+inline f64 F(u32 ea) { return LfsW(gm<be_u32>(ea)); }
+inline void St(u32 ea, f64 v) { gm<be_u32>(ea) = StfsBits(v); }
+inline void CopyW(u32 dst, u32 src) { gm<be_u32>(dst) = gm<be_u32>(src).get(); }
+// The f32 word at ea, bit for bit.
+inline f32 Fw(u32 ea) { return std::bit_cast<f32>(gm<be_u32>(ea).get()); }
+// vmaddfp lane: a * c + b, one single rounding; a NaN operand comes out
+// quieted (a, else b, else c), a NaN the operation makes is 0x7FC00000.
+inline f32 Vmadd(f32 a, f32 c, f32 b) {
+    auto q = [](f32 x) { return std::bit_cast<f32>(std::bit_cast<u32>(x) | 0x00400000u); };
+    if (a != a) return q(a);
+    if (b != b) return q(b);
+    if (c != c) return q(c);
+    const f32 r = std::fma(a, c, b);
+    return r != r ? std::bit_cast<f32>(0x7FC00000u) : r;
+}
+// vaddfp lane with the same NaN rules.
+inline f32 Vadd(f32 a, f32 b) {
+    auto q = [](f32 x) { return std::bit_cast<f32>(std::bit_cast<u32>(x) | 0x00400000u); };
+    if (a != a) return q(a);
+    if (b != b) return q(b);
+    const f32 r = a + b;
+    return r != r ? std::bit_cast<f32>(0x7FC00000u) : r;
+}
+}  // namespace
 
 // u32 Obj_SetMatrixD87CC(Obj* o, const Mat44* m): with a world object at
 // o->160, copies the 3x3 + translation part of the 16-byte rows of m (x, y,
 // z of each) to the object's rows at +16 / +32 / +48 / +64 and calls
 // WorldObj_MarkDirty when any of the 48 bytes differ; then sets 0x800 in
-// o->172 and returns the new flags. Without a world object it returns m
-// (the original's leftover r3).
-DECOMP(000D87CC, Obj_SetMatrixD87CC) {
-    const u32 o = arg<u32>(ctx, 0), m = arg<u32>(ctx, 1);
-    const u32 w = load<u32>(o + 160);
-    if (w == 0) {
-        ctx.gpr[3] = m;
-        return;
-    }
+// o->172 (no caller reads r3 or f1).
+void Obj_SetMatrixD87CC(u32 o, u32 m) {
+    const u32 w = gm<be_u32>(o + 160);
+    if (w == 0) return;
     bool same = true;
     for (u32 k = 0; k < 4; ++k)
-        same = same && load<u64>(w + 16 + 16 * k) == load<u64>(m + 16 * k) && load<u32>(w + 24 + 16 * k) == load<u32>(m + 8 + 16 * k);
+        same = same && gm<be_u64>(w + 16 + 16 * k) == gm<be_u64>(m + 16 * k) && gm<be_u32>(w + 24 + 16 * k) == gm<be_u32>(m + 8 + 16 * k);
     if (!same) {
-        u32 last = 0;
         for (u32 k = 0; k < 4; ++k)
             for (u32 j = 0; j < 3; ++j) {
-                last = load<u32>(m + 16 * k + 4 * j);
-                store<u32>(w + 16 + 16 * k + 4 * j, last);
+                CopyW(w + 16 + 16 * k + 4 * j, m + 16 * k + 4 * j);
             }
-        SetF1Bits(ctx, last);   // f1 as the lfs / stfs copy leaves it
-        call(ctx, b14fn::WorldObj_MarkDirty, {w});
+        call(fn14::WorldObj_MarkDirty, w);
     }
-    const u32 fl = load<u32>(o + 172) | 0x800u;
-    store<u32>(o + 172, fl);
-    ctx.gpr[3] = fl;
+    const u32 fl = gm<be_u32>(o + 172) | 0x800u;
+    gm<be_u32>(o + 172) = fl;
 }
 
 // u16 Player_DriveLink236DB8(Player*, Link* link, const Mat44* m, -, bool
@@ -45,48 +62,45 @@ DECOMP(000D87CC, Obj_SetMatrixD87CC) {
 // +108 object +8 = d->53 ? lerp(d->40, e->16, t) : (on ? e->16 : 0). Then
 // the object's rows +16..+72 take Quat_ToMatrix(d quat, d + 16 position)
 // times m (vmaddfp chains; the translation row adds m's row 3), followed
-// by WorldObj_MarkDirty and WorldObj_UpdateLod(obj, -, 0). Returns the
-// count (the original's leftover r3).
-DECOMP(00236DB8, Player_DriveLink236DB8) {
+// by WorldObj_MarkDirty and WorldObj_UpdateLod(obj, -, 0) (no caller
+// reads r3 or f1).
+void Player_DriveLink236DB8(u32, u32 link, u32 m, u32, u8 on, f64 rate) {
     constexpr u32 kZero = 0x00236DB0u;   // .text f32 0
-    const u32 link = arg<u32>(ctx, 1), m = arg<u32>(ctx, 2);
-    const bool on = (ctx.gpr[7] & 0xFFu) != 0;
-    const f64 rate = ctx.fpr[1];
-    Stack frame(ctx, 64);
+    GuestFrame frame(64);
     const u32 q = frame.addr();
     u32 n;
     for (u32 i = 0;; ++i) {
-        n = load<u16>(link + 8);
+        n = gm<be_u16>(link + 8);
         if (i >= n) break;
-        const u32 e = load<u32>(link) + 20 * i;
-        const u32 drv = load<u32>(e + 4);
-        if (drv == 0 || load<u32>(e + 8) == 0) continue;
-        u32 d = load<u32>(e);
-        const f64 lo = LfsX(d + 44), hi = LfsX(d + 48);
+        const u32 e = gm<be_u32>(link) + 20 * i;
+        const u32 drv = gm<be_u32>(e + 4);
+        if (drv == 0 || gm<be_u32>(e + 8) == 0) continue;
+        u32 d = gm<be_u32>(e);
+        const f64 lo = F(d + 44), hi = F(d + 48);
         const bool in = lo <= rate && hi >= rate;
-        const u32 kz = load<u32>(kZero);
-        f64 t = LfsX(kZero);
+        const u32 kz = gm<be_u32>(kZero);
+        f64 t = F(kZero);
         if (on && in) t = Divs(Subs(rate, lo), Subs(hi, lo));
-        const u32 tgt = load<u32>(drv + 112);
+        const u32 tgt = gm<be_u32>(drv + 112);
         if (tgt != 0) {
-            if (load<u8>(d + 52) != 0) {
-                const f64 a = LfsX(d + 36);
-                Stfs(tgt + 16, Fmadds(Subs(LfsX(e + 12), a), t, a));
+            if (gm<u8>(d + 52) != 0) {
+                const f64 a = F(d + 36);
+                St(tgt + 16, Fmadds(Subs(F(e + 12), a), t, a));
             } else {
-                store<u32>(tgt + 16, on ? load<u32>(e + 12) : kz);
+                gm<be_u32>(tgt + 16) = on ? gm<be_u32>(e + 12) : kz;
             }
-            d = load<u32>(e);
-            if (load<u8>(d + 53) != 0) {
-                const f64 a = LfsX(d + 40);
-                const f32 v = Fmadds(Subs(LfsX(e + 16), a), t, a);
-                Stfs(load<u32>(tgt + 108) + 8, v);
+            d = gm<be_u32>(e);
+            if (gm<u8>(d + 53) != 0) {
+                const f64 a = F(d + 40);
+                const f32 v = Fmadds(Subs(F(e + 16), a), t, a);
+                St(gm<be_u32>(tgt + 108) + 8, v);
             } else {
-                const u32 v = on ? load<u32>(e + 16) : kz;
-                store<u32>(load<u32>(tgt + 108) + 8, v);
+                const u32 v = on ? gm<be_u32>(e + 16) : kz;
+                gm<be_u32>(gm<be_u32>(tgt + 108) + 8) = v;
             }
         }
-        d = load<u32>(e);
-        call(ctx, b14fn::Quat_ToMatrix, {q, d, d + 16});
+        d = gm<be_u32>(e);
+        call(fn14::Quat_ToMatrix, q, d, d + 16);
         f32 row[4][4], qm[4][4];
         for (u32 k = 0; k < 4; ++k)
             for (u32 j = 0; j < 4; ++j) {
@@ -97,14 +111,17 @@ DECOMP(00236DB8, Player_DriveLink236DB8) {
         for (u32 k = 0; k < 4; ++k)
             for (u32 j = 0; j < 3; ++j) {
                 const f32 v = Vmadd(row[2][j], qm[k][2], Vmadd(row[1][j], qm[k][1], Vmadd(row[0][j], qm[k][0], 0.0f)));
-                r[k][j] = k == 3 ? row[3][j] + v : v;
+                r[k][j] = k == 3 ? Vadd(row[3][j], v) : v;
             }
-        const u32 obj = load<u32>(e + 8);
+        const u32 obj = gm<be_u32>(e + 8);
         for (u32 k = 0; k < 4; ++k)
-            for (u32 j = 0; j < 3; ++j) store<u32>(obj + 16 + 16 * k + 4 * j, std::bit_cast<u32>(r[k][j]));
-        SetF1Bits(ctx, std::bit_cast<u32>(r[3][2]));   // f1 as the lfs / stfs copy leaves it
-        call(ctx, b14fn::WorldObj_MarkDirty, {obj});
-        call(ctx, b14fn::WorldObj_UpdateLod, {load<u32>(e + 8), 0, 0});
+            for (u32 j = 0; j < 3; ++j) gm<be_u32>(obj + 16 + 16 * k + 4 * j) = std::bit_cast<u32>(r[k][j]);
+        call(fn14::WorldObj_MarkDirty, obj);
+        call(fn14::WorldObj_UpdateLod, gm<be_u32>(e + 8), 0u, 0u);
     }
-    ctx.gpr[3] = n;
 }
+
+}  // namespace sly4::obj
+
+NATIVE(000D87CC, sly4::obj::Obj_SetMatrixD87CC)
+NATIVE(00236DB8, sly4::obj::Player_DriveLink236DB8)

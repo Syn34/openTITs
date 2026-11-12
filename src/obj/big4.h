@@ -43,3 +43,6 @@ inline u32 PropSetAt(u32 block, s32 k) { return load<u32>(block + 4 + 4 * static
 
 }  // namespace big4
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

@@ -58,3 +58,6 @@ inline u32 HitEntity(u32 col) {
 
 }  // namespace big8
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

@@ -86,3 +86,20 @@ inline void StoreVec3W(u32 dst, u32 wa, u32 wb, u32 wc) {
 
 }  // namespace big13
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"
+
+namespace sly4::obj {
+// big13_player.cpp
+void Player_TunePart232B60(u32 p, u32 a, u32 part);
+void Player_TunePart2329DC(u32 p, u32 a, u32 part);
+void Player_TunePart2327A8(u32 p, u32 a, u32 part);
+void Player_TunePart232650(u32 p, u32 a, u32 part);
+void Player_TunePart232360(u32 p, u32 a, u32 part);
+void Player_InitLinkPart231208(u32, u32 out, u32 src);
+}  // namespace sly4::obj
+
+namespace sly4::obj {
+void Player_SetRate2371F8(u32 p, f64 dt);  // big13_player.cpp
+}  // namespace sly4::obj

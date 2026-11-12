@@ -75,3 +75,6 @@ inline V4 Add4(const V4& a, const V4& b) {
 
 }  // namespace big5
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

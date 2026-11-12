@@ -33,3 +33,6 @@ inline void ReadS32(PPUContext& ctx, u32 cur, u32 hash, u32 p) {
 
 }  // namespace big2
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

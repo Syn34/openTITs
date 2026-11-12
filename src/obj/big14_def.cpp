@@ -2,8 +2,14 @@
 // XML base reader.
 #include "big14.h"
 
-using namespace sly4;
-using namespace sly4::big14;
+namespace sly4::obj {
+
+namespace {
+inline be_u32& W(u32 base, u32 off) { return gm<be_u32>(base + off); }
+inline f64 F(u32 ea) { return LfsW(gm<be_u32>(ea)); }
+inline void St(u32 ea, f64 v) { gm<be_u32>(ea) = StfsBits(v); }
+inline void CopyW(u32 dst, u32 src) { gm<be_u32>(dst) = gm<be_u32>(src).get(); }
+}  // namespace
 
 namespace {
 namespace hc40 {
@@ -62,22 +68,23 @@ constexpr BoolBit kBools[22] = {
 // of +336 (named by the table at 0x00AC66CC, only when present);
 // 0x1DD0B478 bit 13 of +340 and the f32s +324..+332; 0x03C599D8 the byte
 // +321 = 1, the f32s +304..+316 and the bool +320.
-DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
+void DefLeaf_ReadBase_000C4020(u32 a0, u32 c, u32 x, u32 tmpl, u32 o) {
     using namespace hc40;
-    const u32 a0 = arg<u32>(ctx, 0), c = arg<u32>(ctx, 1), x = arg<u32>(ctx, 2), tmpl = arg<u32>(ctx, 3), o = arg<u32>(ctx, 4);
-    Stack frame(ctx, 832);
+    GuestFrame frame(832);
     const u32 sp = frame.addr();   // offsets as the original's frame; the defaults at sp + 416
-    call(ctx, Damage_Read, {a0, c, x, tmpl, o});
-    auto kw = [](u32 k) { return load<u32>(kK + 4 * k); };
-    store<u32>(sp + 828, kw(4));   // the f32 0 and -1 kept in the frame
-    store<u32>(sp + 824, kw(5));
-    const f64 k0 = LfsX(kK), k1 = LfsX(kK + 4), k4 = LfsX(kK + 16), k5 = LfsX(kK + 20);
-    // r9 / r10 and the unnamed stack arguments are not written (the callee reads r3..r7 and f1..f13).
-    callf(ctx, Def_Construct,
-          {sp + 416, load<u32>(x + 12), kEmpty, kEmpty, kEmpty, 0x7641A763u, ctx.gpr[9], ctx.gpr[10],
-           0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0x01164B40u, 0, kw(5), 0x01164AFCu, kw(2), kw(2), kw(3), kw(4), kw(5), kw(5), kw(5),
-           0, 0x7641A763u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-          {k5, k5, k5, k5, k5, k0, k1, k5, k1, k1, k1, k5, k4});
+    call(Damage_Read, a0, c, x, tmpl, o);
+    auto kw = [](u32 k) { return gm<be_u32>(kK + 4 * k).get(); };
+    gm<be_u32>(sp + 828) = kw(4);   // the f32 0 and -1 kept in the frame
+    gm<be_u32>(sp + 824) = kw(5);
+    const f64 k0 = F(kK), k1 = F(kK + 4), k4 = F(kK + 16), k5 = F(kK + 20);
+    // The callee reads r3..r7 and f1..f13; the floats sit in slots it does not read.
+    call(Def_Construct, sp + 416, gm<be_u32>(x + 12), kEmpty, kEmpty, kEmpty, 0x7641A763u,
+         k5, k5,                          // f1, f2 (r9 / r10, not read)
+         k5, k5, k5, k0, k1, k5, k1,      // f3..f9 (slots 112..160, left 0)
+         1u,                              // s172
+         k1, k1, k5, k4,                  // f10..f13 (slots 176..200, left 0)
+         0x01164B40u, 0u, kw(5), 0x01164AFCu, kw(2), kw(2), kw(3), kw(4), kw(5), kw(5), kw(5),
+         0u, 0x7641A763u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u);
 
     // The defaults take o's fields.
     for (u32 k = 0; k < 124; k += 4) CopyW(sp + 416 + k, o + k);
@@ -85,27 +92,25 @@ DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
     for (u32 k = 160; k <= 200; k += 4) CopyW(sp + 416 + k, o + k);
     for (u32 k = 208; k <= 216; k += 4) CopyW(sp + 416 + k, o + k);
     for (u32 k = 224; k <= 300; k += 4) CopyW(sp + 416 + k, o + k);
-    call(ctx, Memmove, {sp + 720, o + 304, 18});
+    call(Memmove, sp + 720, o + 304, 18);
     for (u32 k = 0; k < 16; k += 4) CopyW(sp + 740 + k, o + 324 + k);
-    store<u32>(sp + 756, (load<u32>(sp + 756) & 0x000001FFu) | (load<u32>(o + 340) & 0xFFFFFE00u));
+    gm<be_u32>(sp + 756) = (gm<be_u32>(sp + 756) & 0x000001FFu) | (gm<be_u32>(o + 340) & 0xFFFFFE00u);
 
     if (tmpl == 0) {
-    } else if ((load<u32>(tmpl + 20) & 0x2000u) == 0) {
-        call(ctx, XmlCursor_DocPath, {a0});   // not a usable template (its return value unused)
+    } else if ((gm<be_u32>(tmpl + 20) & 0x2000u) == 0) {
+        call(XmlCursor_DocPath, a0);   // not a usable template (its return value unused)
     } else {
         // ... or the template's.
         for (u32 k = 0; k < 12; k += 4) CopyW(sp + 544 + k, tmpl + 384 + k);
-        SetF1Bits(ctx, load<u32>(tmpl + 392));   // f1 as the lfs / stfs copy leaves it
-        if (load<u32>(tmpl + 400) != 0) {
-            const u32 p = load<u32>(tmpl + 400);
-            store<u32>(sp + 560, load<u32>(p + 120) & ~1u);
-            call(ctx, Comp_GetF32, {p + 224});
-            store<u32>(sp + 564, StfsW(ctx.fpr[1]));
-            const u32 q = load<u32>(tmpl + 400);
+        if (gm<be_u32>(tmpl + 400) != 0) {
+            const u32 p = gm<be_u32>(tmpl + 400);
+            gm<be_u32>(sp + 560) = gm<be_u32>(p + 120) & ~1u;
+            gm<be_u32>(sp + 564) = StfsBits(call<f64>(Comp_GetF32, p + 224));
+            const u32 q = gm<be_u32>(tmpl + 400);
             CopyW(sp + 568, q + 140);
             CopyW(sp + 572, q + 144);
-            store<u32>(sp + 576, static_cast<u32>(load<u16>(q + 404)) << 16);
-            store<u32>(sp + 580, static_cast<u32>(load<u16>(q + 406)) << 16);
+            gm<be_u32>(sp + 576) = static_cast<u32>(gm<be_u16>(q + 404)) << 16;
+            gm<be_u32>(sp + 580) = static_cast<u32>(gm<be_u16>(q + 406)) << 16;
         }
         for (u32 k = 0; k <= 32; k += 4) CopyW(sp + 584 + k, tmpl + 192 + k);
         for (u32 k = 0; k < 12; k += 4) CopyW(sp + 624 + k, tmpl + 240 + k);
@@ -113,7 +118,7 @@ DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
         for (u32 k = 0; k < 16; k += 4) CopyW(sp + 684 + k, tmpl + 300 + k);
         for (u32 k = 0; k < 12; k += 4) CopyW(sp + 700 + k, tmpl + 316 + k);
         CopyW(sp + 716, tmpl + 332);
-        call(ctx, Memmove, {sp + 720, tmpl + 336, 18});
+        call(Memmove, sp + 720, tmpl + 336, 18);
         for (u32 k = 0; k < 12; k += 4) CopyW(sp + 740 + k, tmpl + 356 + k);
         CopyW(sp + 712, tmpl + 328);
         CopyW(sp + 672, tmpl + 288);
@@ -121,32 +126,29 @@ DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
         CopyW(sp + 652, tmpl + 268);
         CopyW(sp + 656, tmpl + 272);
         constexpr u32 kMask = 0xFFC9FE00u;   // bits 0..9, 12, 15..22 (5..9 merged first, the rest after the memmove)
-        store<u32>(sp + 756, (load<u32>(sp + 756) & ~kMask) | (load<u32>(tmpl + 372) & kMask));
+        gm<be_u32>(sp + 756) = (gm<be_u32>(sp + 756) & ~kMask) | (gm<be_u32>(tmpl + 372) & kMask);
         CopyW(sp + 660, tmpl + 276);
         CopyW(sp + 668, tmpl + 284);
         CopyW(sp + 664, tmpl + 280);
     }
 
-    store<u8>(sp + 772, 0);
-    const f64 k4f = LfsX(sp + 828);   // f31
-    const u32 s16 = load<u32>(o + 16);
-    if (s16 == 0 || load<u8>(s16) == 0) store<u32>(o + 16, load<u32>(sp + 432));
-    const u32 s20 = load<u32>(o + 20);
-    if (s20 == 0 || load<u8>(s20) == 0) store<u32>(o + 20, load<u32>(sp + 436));
+    gm<u8>(sp + 772) = 0;
+    const f64 k4f = F(sp + 828);   // f31
+    const u32 s16 = gm<be_u32>(o + 16);
+    if (s16 == 0 || gm<u8>(s16) == 0) gm<be_u32>(o + 16) = gm<be_u32>(sp + 432);
+    const u32 s20 = gm<be_u32>(o + 20);
+    if (s20 == 0 || gm<u8>(s20) == 0) gm<be_u32>(o + 20) = gm<be_u32>(sp + 436);
 
-    auto f32r = [&](u32 cur, u32 hash, u32 dst, f64 def) {
-        callf(ctx, XmlCursor_ReadF32, {cur, hash, dst}, {def});
-        return static_cast<u32>(ctx.gpr[3]);
-    };
-    auto d = [&](u32 off) { return LfsX(sp + off); };
+    auto f32r = [&](u32 cur, u32 hash, u32 dst, f64 def) { return call<u32>(XmlCursor_ReadF32, cur, hash, dst, def); };
+    auto d = [&](u32 off) { return F(sp + off); };
     // f32 *= k (fmuls) at o + off.
-    auto scale = [&](u32 off, f64 k) { Stfs(o + off, Muls(LfsX(o + off), k)); };
-    const f64 deg = LfsX(kK + 24);
+    auto scale = [&](u32 off, f64 k) { St(o + off, Muls(F(o + off), k)); };
+    const f64 deg = F(kK + 24);
 
-    call(ctx, XmlCursor_ReadVec3, {c, 0x63662D61u, o + 128, sp + 544});
-    u32 attr = static_cast<u32>(call(ctx, XmlCursor_FindAttrByName, {c, sColObjName}));
-    if (attr == 0) attr = load<u32>(sp + 560);
-    store<u32>(o + 144, attr);
+    call(XmlCursor_ReadVec3, c, 0x63662D61u, o + 128, sp + 544);
+    u32 attr = call<u32>(XmlCursor_FindAttrByName, c, sColObjName);
+    if (attr == 0) attr = gm<be_u32>(sp + 560);
+    gm<be_u32>(o + 144) = attr;
     f32r(c, 0x0023FEF4u, o + 148, d(564));
     f32r(c, 0xD9BA76FAu, o + 152, d(568));
     f32r(c, 0x5AF2884Au, o + 156, d(572));
@@ -156,8 +158,8 @@ DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
     f32r(c, 0x43B894DBu, o + 172, d(588));
     f32r(c, 0xFA012435u, o + 176, d(592));
     {
-        const u32 v = load<u32>(o + 176);
-        store<u32>(o + 176, LfsX(o + 176) > k4f ? v : load<u32>(sp + 828));   // max(v, 0); NaN gives 0
+        const u32 v = gm<be_u32>(o + 176);
+        gm<be_u32>(o + 176) = F(o + 176) > k4f ? v : gm<be_u32>(sp + 828);   // max(v, 0); NaN gives 0
     }
     f32r(c, 0x824F3B6Fu, o + 180, d(596));
     f32r(c, 0xAD6099F3u, o + 184, d(600));
@@ -165,7 +167,7 @@ DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
     f32r(c, 0x86D97BF8u, o + 192, d(608));
     f32r(c, 0x6D6DEDACu, o + 196, d(612));
     f32r(c, 0x48110963u, o + 200, d(616));
-    if (static_cast<u32>(call(ctx, XmlCursor_ReadVec3, {c, 0xBCEEA49Fu, o + 208, sp + 624})) == 0) {
+    if (call<u32>(XmlCursor_ReadVec3, c, 0xBCEEA49Fu, o + 208, sp + 624) == 0) {
         scale(208, deg);
         scale(212, deg);
         scale(216, deg);
@@ -175,58 +177,61 @@ DECOMP(000C4020, DefLeaf_ReadBase_000C4020) {
     f32r(c, 0xE6233EB6u, o + 232, d(648));
     f32r(c, 0x38D66ECBu, o + 244, d(660));
     f32r(c, 0x6C01B0DCu, o + 248, d(664));
-    f32r(c, 0x717526C2u, o + 256, LfsX(o + 196));
-    if (f32r(c, 0x56C86E35u, o + 260, LfsX(o + 260)) == 0) scale(260, deg);
-    if (static_cast<u32>(call(ctx, XmlCursor_ReadVec2, {c, 0x0D13FD3Fu, o + 236, o + 236})) == 0) scale(240, LfsX(kK + 28));
-    f32r(c, 0xDD16AC83u, o + 264, LfsX(o + 264));
-    store<u32>(sp + 768, 0x42700000u);
-    if (f32r(c, 0x7DEAD86Bu, sp + 768, LfsX(kK + 32)) == 0) {
-        const f64 a = LfsX(sp + 768);
-        if (a <= k4f || a >= LfsX(kK + 36)) {
+    f32r(c, 0x717526C2u, o + 256, F(o + 196));
+    if (f32r(c, 0x56C86E35u, o + 260, F(o + 260)) == 0) scale(260, deg);
+    if (call<u32>(XmlCursor_ReadVec2, c, 0x0D13FD3Fu, o + 236, o + 236) == 0) scale(240, F(kK + 28));
+    f32r(c, 0xDD16AC83u, o + 264, F(o + 264));
+    gm<be_u32>(sp + 768) = 0x42700000u;
+    if (f32r(c, 0x7DEAD86Bu, sp + 768, F(kK + 32)) == 0) {
+        const f64 a = F(sp + 768);
+        if (a <= k4f || a >= F(kK + 36)) {
             CopyW(o + 252, sp + 824);
         } else {
-            callf(ctx, Math_Cosf, {}, {Muls(a, deg)});
-            Stfs(o + 252, ctx.fpr[1]);
+            St(o + 252, call<f64>(Math_Cosf, Muls(a, deg)));
         }
     }
     f32r(c, 0x263F3CA1u, o + 268, d(684));
     f32r(c, 0xF4521F7Fu, o + 272, d(688));
-    if (LfsX(o + 272) > k4f) scale(272, LfsX(o + 272));
+    if (F(o + 272) > k4f) scale(272, F(o + 272));
     f32r(c, 0xA11783B1u, o + 276, d(692));
-    if (LfsX(o + 276) > k4f) scale(276, LfsX(o + 276));
+    if (F(o + 276) > k4f) scale(276, F(o + 276));
     f32r(c, 0xF58DBE1Fu, o + 280, d(696));
-    call(ctx, XmlCursor_ReadHash, {c, 0x2D9FE345u, o + 284, load<u32>(sp + 700)});
-    call(ctx, XmlCursor_ReadHash, {c, 0xC8E6EA68u, o + 288, load<u32>(sp + 704)});
-    call(ctx, XmlCursor_ReadHash, {c, 0x51D7D9E6u, o + 292, load<u32>(sp + 708)});
+    call(XmlCursor_ReadHash, c, 0x2D9FE345u, o + 284, gm<be_u32>(sp + 700));
+    call(XmlCursor_ReadHash, c, 0xC8E6EA68u, o + 288, gm<be_u32>(sp + 704));
+    call(XmlCursor_ReadHash, c, 0x51D7D9E6u, o + 292, gm<be_u32>(sp + 708));
     for (const BoolBit& b : kBools) {
         const u32 m = 0x80000000u >> b.bit;
-        call(ctx, XmlCursor_ReadBool, {c, b.hash, sp + 772, (load<u32>(sp + 756) & m) != 0 ? 1u : 0u});
-        store<u32>(o + 340, (load<u32>(o + 340) & ~m) | ((load<u8>(sp + 772) & 1u) != 0 ? m : 0));
+        call(XmlCursor_ReadBool, c, b.hash, sp + 772, (gm<be_u32>(sp + 756) & m) != 0 ? 1u : 0u);
+        gm<be_u32>(o + 340) = (gm<be_u32>(o + 340) & ~m) | ((gm<u8>(sp + 772) & 1u) != 0 ? m : 0);
     }
-    call(ctx, XmlCursor_ReadHash, {c, 0x64129428u, o + 296, load<u32>(sp + 712)});
-    call(ctx, XmlCursor_ReadHash, {c, 0x632DA119u, o + 300, load<u32>(sp + 716)});
+    call(XmlCursor_ReadHash, c, 0x64129428u, o + 296, gm<be_u32>(sp + 712));
+    call(XmlCursor_ReadHash, c, 0x632DA119u, o + 300, gm<be_u32>(sp + 716));
 
-    for (u32 n = static_cast<u32>(call(ctx, XmlCursor_FirstChildAny, {c})); n != 0;
-         n = static_cast<u32>(call(ctx, XmlCursor_NextSiblingAny, {n}))) {
-        const u32 h = (load<u8>(n + 24) & 0x80u) != 0 ? load<u32>(n + 20) : 0;
+    for (u32 n = call<u32>(XmlCursor_FirstChildAny, c); n != 0;
+         n = call<u32>(XmlCursor_NextSiblingAny, n)) {
+        const u32 h = (gm<u8>(n + 24) & 0x80u) != 0 ? gm<be_u32>(n + 20) : 0;
         if (h == 0x7C28C95Eu) {
             for (u32 k = 0; k < 13; ++k) {
-                if (static_cast<u32>(call(ctx, XmlCursor_ReadBool, {n, load<u32>(kFlagNames + 4 * k), sp + 773, 0})) != 0) continue;
+                if (call<u32>(XmlCursor_ReadBool, n, gm<be_u32>(kFlagNames + 4 * k), sp + 773, 0) != 0) continue;
                 const u32 m = 1u << k;
-                store<u32>(o + 336, load<u8>(sp + 773) != 0 ? (load<u32>(o + 336) | m) : (load<u32>(o + 336) & ~m));
+                gm<be_u32>(o + 336) = gm<u8>(sp + 773) != 0 ? (gm<be_u32>(o + 336) | m) : (gm<be_u32>(o + 336) & ~m);
             }
         } else if (h == 0x1DD0B478u) {
-            store<u32>(o + 340, load<u32>(o + 340) | 0x00040000u);
+            gm<be_u32>(o + 340) = gm<be_u32>(o + 340) | 0x00040000u;
             f32r(n, 0xC40CA429u, o + 324, d(740));
             f32r(n, 0x17D91276u, o + 328, d(744));
             f32r(n, 0x52EB1B8Fu, o + 332, d(748));
         } else if (h == 0x03C599D8u) {
-            store<u8>(o + 321, 1);
+            gm<u8>(o + 321) = 1;
             f32r(n, 0x77C17F6Fu, o + 304, d(720));
             f32r(n, 0x9D9B30D5u, o + 308, d(724));
             f32r(n, 0x6CA62860u, o + 312, d(728));
             f32r(n, 0x6CA62772u, o + 316, d(732));
-            call(ctx, XmlCursor_ReadBool, {n, 0xB38E5179u, o + 320, load<u8>(sp + 736)});
+            call(XmlCursor_ReadBool, n, 0xB38E5179u, o + 320, gm<u8>(sp + 736));
         }
     }
 }
+
+}  // namespace sly4::obj
+
+NATIVE(000C4020, sly4::obj::DefLeaf_ReadBase_000C4020)

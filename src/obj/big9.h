@@ -58,3 +58,6 @@ inline V4 AndcSplat3(u32 w, const V4& m0, const V4& m1, const V4& m2) {
 
 }  // namespace big9
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

@@ -38,3 +38,6 @@ inline void AddRef178(u32 o) { store<u16>(o + 178, static_cast<u16>(load<u16>(o 
 
 }  // namespace big10
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

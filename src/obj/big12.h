@@ -122,3 +122,23 @@ inline u32 EffectTimeFlag(PPUContext& ctx, u32 e, u32 k) {
 
 }  // namespace big12
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"
+
+namespace sly4::obj {
+void SetSelect_491000(u32, u32 hash);  // big12_game.cpp
+}  // namespace sly4::obj
+
+namespace sly4::obj {
+// big12_game.cpp / big12_player.cpp
+void Hud_ShowBanner36E568(u32, u32 hash, u32 tier);
+void Player_SetTierKey16BA60(u32 p);
+f64 Vec_SignedAngle16680(u32 a, u32 b);
+void Player_Setup232F00(u32 p, u32 q);
+void Player_DropLinks2349E0(u32 p);
+void Player_Setup231470(u32 p);
+void Player_Setup230CA0(u32 p);
+void Player_SetRate2_236868(u32 p, u32, f64 speed, f64 spin);
+void Player_Setup231928(u32 p);
+}  // namespace sly4::obj

@@ -47,3 +47,17 @@ inline f32 Vmadd(f32 a, f32 c, f32 b) { return std::fma(a, c, b); }
 
 }  // namespace big14
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"
+
+namespace sly4::obj::fn14 {
+constexpr u32 WorldObj_MarkDirty = 0x0057D000;   // (obj): reads r3 only
+constexpr u32 WorldObj_UpdateLod = 0x0057EE00;   // (obj, -, s32): reads r3 / r5
+constexpr u32 Quat_ToMatrix = 0x00553A90;        // (f32 out[4][4], const f32 q[4], const f32 pos[3]); w lanes untouched
+}  // namespace sly4::obj::fn14
+
+namespace sly4::obj {
+void Obj_SetMatrixD87CC(u32 o, u32 m);                                      // big14_game.cpp
+void Player_DriveLink236DB8(u32, u32 link, u32 m, u32, u8 on, f64 rate);    // big14_game.cpp
+}  // namespace sly4::obj

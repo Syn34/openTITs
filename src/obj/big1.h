@@ -105,3 +105,6 @@ inline void ReadName(PPUContext& ctx, u32 cur, u32 hash, u32 p) {
 
 }  // namespace big1
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

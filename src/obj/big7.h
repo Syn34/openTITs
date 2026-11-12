@@ -113,3 +113,6 @@ inline void SetF1Bits(PPUContext& ctx, u32 w) { ctx.fpr[1] = std::bit_cast<f64>(
 
 }  // namespace big7
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"

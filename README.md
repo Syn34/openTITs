@@ -10,14 +10,14 @@ The goal is to rewrite every one of the game's 24,164 functions as native C++: t
 
 <!-- progress:start -->
 
-**5.7% complete:** 1,372 of 24,164 functions are native C++.
+**5.9% complete:** 1,429 of 24,164 functions are native C++.
 
-`██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` 5.7%
+`██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░` 5.9%
 
 | Stage | Functions | Share |
 |---|---:|---:|
-| Native C++ (done) | 1,372 | 5.7% |
-| Decompiled in the old register style, being converted to native | 11,634 | 48.1% |
+| Native C++ (done) | 1,429 | 5.9% |
+| Decompiled in the old register style, being converted to native | 11,577 | 47.9% |
 | Not decompiled yet | 11,158 | 46.2% |
 
 By folder (functions decompiled so far):
@@ -36,7 +36,7 @@ By folder (functions decompiled so far):
 | `src/heap/` | Bucket, stack and default heaps | 3 | 0 | 100.0% |
 | `src/math/` | libm helpers | 5 | 0 | 100.0% |
 | `src/memory/` | Allocators, pools, heaps | 10 | 0 | 100.0% |
-| `src/obj/` | World objects and game code | 124 | 9,784 | 1.3% |
+| `src/obj/` | World objects and game code | 181 | 9,727 | 1.8% |
 | `src/platform/` | Platform layer and threads | 6 | 0 | 100.0% |
 | `src/resource/` | Resources and IFF loaders | 6 | 0 | 100.0% |
 | `src/string/` | String helpers | 6 | 0 | 100.0% |

@@ -74,3 +74,10 @@ inline u64 Sx64(u32 v) { return static_cast<u64>(static_cast<s64>(static_cast<s3
 
 }  // namespace big15
 }  // namespace sly4
+
+// ---------------------------------------------------------------- native
+#include "native/objtypes.h"
+
+namespace sly4::obj {
+u32 DamageColDef_KindFromHashD6164(s32 h);  // big16_dmg.cpp
+}  // namespace sly4::obj

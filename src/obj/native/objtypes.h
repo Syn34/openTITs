@@ -11,6 +11,7 @@
 #include <bit>
 #include <cmath>
 #include <cstddef>
+#include <utility>
 
 #include "opentit/native.h"
 
@@ -452,6 +453,126 @@ inline u32 NewEffect140(u32 def) {
     if (p == 0) return 0;
     call(0x004C7A68u, p, def);  // Effect_Construct (Effect*, def)
     return p;
+}
+
+
+// ---------------------------------------------------------------- float stores
+// stfs of the double an FPR holds: a NaN keeps its payload's top bits (not
+// quieted), as the hardware stores it.
+inline u32 StfsBits(f64 v) {
+    const u64 d = std::bit_cast<u64>(v);
+    if (v != v) return static_cast<u32>(((d >> 63) << 31) | (0xFFu << 23) | ((d >> 29) & 0x7FFFFFu));
+    return std::bit_cast<u32>(static_cast<f32>(v));
+}
+inline void Stfs(be_f32& d, f64 v) { set_bits(d, StfsBits(v)); }
+
+// ---------------------------------------------------------------- damage / collision defs
+// (the Def_Construct74FD80 family of XML def readers)
+namespace fn {
+constexpr u32 Def_Construct74FD80 = 0x0074FD80;   // the damage def record constructor (13 floats, 39 slots)
+constexpr u32 XmlCursor_ReadF32 = 0x004F9B20;     // (c, hash, f32* out; f1 default) -> status
+constexpr u32 XmlCursor_DocPath = 0x004F8944;     // (a0) (reads r3 only)
+constexpr u32 Math_Cosf = 0x007344E0;             // f1 -> f1
+constexpr u32 Math_Sinf = 0x007345F0;             // f1 -> f1
+constexpr u32 PtrVector_Clear = 0x0054EC1C;       // (vec)
+constexpr u32 Nop54EC18 = 0x0054EC18;             // (p)
+constexpr u32 PtrVector_Construct = 0x005516E0;   // (vec)
+constexpr u32 PtrVector_Init = 0x00551598;        // (vec, capacity, a, b)
+constexpr u32 XmlCursor_FirstChild = 0x004F92BC;  // (c, tag) -> child or 0
+constexpr u32 XmlCursor_NextSibling = 0x004F8FC8; // (c, tag) -> sibling or 0
+constexpr u32 XmlCursor_FirstChildAny = 0x004F9140;   // (c) -> child or 0
+constexpr u32 XmlCursor_NextSiblingAny = 0x004F8D74;  // (c) -> sibling or 0
+constexpr u32 DamageColDef_ReadAD1F8 = 0x001AD1F8;    // (a0, c, x, tmpl, o): the 0x80000 group reader
+constexpr u32 DamageColDef_Read_000C85A8 = 0x000C85A8;  // (a0, c, x, tmpl, o): the damage def base reader
+constexpr u32 XmlCursor_ReadBool = 0x004F986C;          // (c, hash, u8* out, u8 default) -> 0 ok / 1 missing / 2 wrong type
+constexpr u32 XmlCursor_ReadS32 = 0x004F99BC;           // (c, hash, s32* out, s32 default) -> status
+constexpr u32 XmlCursor_ReadVec2 = 0x004F9C9C;          // (c, hash, f32 out[2], const f32 default[2]) -> status
+constexpr u32 XmlCursor_ReadVec3 = 0x004F9E0C;          // (c, hash, f32 out[3], const f32 default[3]) -> status
+constexpr u32 XmlCursor_ReadHash = 0x004FA14C;          // (c, hash, u32* out, u32 default) -> status
+constexpr u32 XmlCursor_FindAttrByName = 0x004F9628;    // (c, const char* name) -> value string or 0
+constexpr u32 String_Length = 0x00555FA4;               // strlen
+constexpr u32 String_Alloc = 0x0055578C;                // (n) -> char*
+constexpr u32 String_CopyN = 0x00553638;                // (dst, src, n)
+constexpr u32 Mem_FreeIfSet = 0x00555CC0;               // (p)
+}  // namespace fn
+
+// Def_Construct74FD80(rec, a, b, c, r7, r8, hash 0x9260C26E, the zero vec3;
+// f1..f13 = pool +0, +16, +12 x4, +4, +8, +16, +12 x4; stack words s204..
+// s228 = pool +12, s340 / s348 = pool +16, s300 = 1, the rest 0), as every
+// reader / factory of the family builds its defaults record. The floats
+// sit in the argument slots 8..18 / 23..24 (stack words the original
+// leaves 0 and the callee does not read); r7 / r8 are not read (passed as
+// 0). swap: f1 = pool +4 and f7 = pool +0.
+inline void DmgDef_Ctor(u32 rec, u32 a, u32 b, u32 c, u32 pool, bool swap = false) {
+    f64 k0 = LfsW(gm<be_u32>(pool)), k4 = LfsW(gm<be_u32>(pool + 4));
+    if (swap) std::swap(k0, k4);
+    const f64 k8 = LfsW(gm<be_u32>(pool + 8)), k12 = LfsW(gm<be_u32>(pool + 12)), k16 = LfsW(gm<be_u32>(pool + 16));
+    const u32 w12 = gm<be_u32>(pool + 12), w16 = gm<be_u32>(pool + 16);
+    call(fn::Def_Construct74FD80, rec, a, b, c, 0u, 0u, 0x9260C26Eu, kZeroVec,
+         k0, k16, k12, k12, k12, k12, k4, k8, k16, k12, k12,  // f1..f11 (slots 112..192)
+         w12, w12, w12, w12,                                    // s204..s228
+         k12, k12,                                              // f12, f13 (s232 / s240)
+         0u, 0u, 0u, 0u, 0u, 0u,                                // s248..s288
+         1u,                                                    // s300
+         0u, 0u, 0u, 0u,                                        // s304..s328
+         w16, w16, 0u);                                         // s340, s348, s352
+}
+// The record's vector +124 destroyed (PtrVector_Clear, Nop, SmallFree(.., 20)).
+inline void DmgDef_Destroy(u32 rec) {
+    const u32 v = gm<be_u32>(rec + 124);
+    if (v != 0) {
+        call(fn::PtrVector_Clear, v);
+        call(fn::Nop54EC18, v);
+        call(fn::SmallFree, gm<be_u32>(rec + 124).get(), 20u);
+    }
+}
+// The 0x80000 (DamageColDef_ReadAD1F8) part of the defaults: f32
+// +288..+296 = the zero vec3, +304 / +308 0, f32 +312 1.0, bit 0x80 of
+// byte +316 cleared, the seven {+224 hash 0, +228 f32 -1} pairs, f32 +36
+// -1, byte +44 0, then +4 |= flags.
+inline void DmgDef_Flags80000(u32 rec, u32 flags) {
+    auto W = [rec](u32 off) -> be_u32& { return gm<be_u32>(rec + off); };
+    W(288) = gm<be_u32>(kZeroVec);
+    W(292) = gm<be_u32>(kZeroVec + 4);
+    W(296) = gm<be_u32>(kZeroVec + 8);
+    W(304) = 0u;
+    W(308) = 0u;
+    W(312) = 0x3F800000u;
+    gm<u8>(rec + 316) = static_cast<u8>(gm<u8>(rec + 316) & 0x7Fu);
+    for (u32 k = 0; k < 7; ++k) W(224 + 8 * k) = 0u;
+    for (u32 k = 0; k < 7; ++k) W(228 + 8 * k) = 0xBF800000u;
+    W(36) = 0xBF800000u;
+    gm<u8>(rec + 44) = 0;
+    W(4) = W(4) | flags;
+}
+// A PtrVector constructed in place: PtrVector_Construct, element size
+// (+6), PtrVector_Init(v, capacity, 0, last).
+inline void PtrVec_New(u32 v, u32 capacity, u16 elem, u32 last) {
+    call(fn::PtrVector_Construct, v);
+    gm<be_u16>(v + 6) = elem;
+    call(fn::PtrVector_Init, v, capacity, 0u, last);
+}
+// XmlCursor_ReadF32(c, hash, out; f1 = the lfs of the f32 word at def).
+inline u32 DmgReadF32(u32 c, u32 hash, u32 out, u32 def) {
+    return call<u32>(fn::XmlCursor_ReadF32, c, hash, out, LfsW(gm<be_u32>(def)));
+}
+// The quaternion of the euler angles (radians) ex / ey / ez, each halved
+// (half): cos / sin through Math_Cosf / Math_Sinf, stored w, x, z, y.
+inline void DmgEulerQuat(u32 q, f64 ex, f64 ey, f64 ez, f64 half) {
+    const f64 hy = Muls(ey, half), hz = Muls(ez, half), hx = Muls(ex, half);
+    const f64 cy = call<f64>(fn::Math_Cosf, hy);
+    const f64 cz = call<f64>(fn::Math_Cosf, hz);
+    const f64 cx = call<f64>(fn::Math_Cosf, hx);
+    const f64 sy = call<f64>(fn::Math_Sinf, hy);
+    const f64 sz = call<f64>(fn::Math_Sinf, hz);
+    const f64 sx = call<f64>(fn::Math_Sinf, hx);
+    const f64 a = Muls(sy, sz), b = Muls(cy, cz), d = Muls(cz, sy), e = Muls(cy, sz);
+    const f64 a1 = Muls(a, sx), b1 = Muls(b, sx), d1 = Muls(d, sx), e1 = Muls(e, sx);
+    Vec4& o = gm<Vec4>(q);
+    o.w = static_cast<f32>(std::fma(b, cx, -a1));
+    o.x = static_cast<f32>(std::fma(a, cx, b1));
+    o.z = static_cast<f32>(std::fma(e, cx, -d1));
+    o.y = static_cast<f32>(std::fma(d, cx, e1));
 }
 
 }  // namespace sly4::obj
