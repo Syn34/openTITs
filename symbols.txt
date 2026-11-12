@@ -1456,7 +1456,7 @@
 000A1CEC AnimCmd_9F8D96A1_Construct           // decompiled: src/world/construct2_animscript.cpp (name?)
 00766C44 Registry_Find                     // (map 0x010686A8, const u32* key) -> value slot or &null; decompiled: src/world/hevent2_a.cpp (name?)
 00799474 Table_Find                        // same code, default comparator 0x00F3B118; decompiled: src/world/hevent2_a.cpp (name?)
-0046B5F8 World_AddTimedCallback            // (World*, kind, opd, arg, c): 12-byte entry in list +0x128480 + kind*20; decompiled: src/world/hevent2_a.cpp (name?)
+0046B5F8 World_AddTimedCallback          // (world, 12, fn 0x00F32400, o, o) (already named); decompiled: src/world/hevent2_a.cpp
 00509090 Material_CopyFrom                 // (dst, src): slots, scalars, value array, AglMaterialAnim; decompiled: src/world/hevent2_b.cpp (name?)
 004FB56C Trophy_Has                        // (Trophy*, s32 i) -> bool: +8 ready, +168 bitset; decompiled: src/world/hevent2_a.cpp
 000D5F58 Xml_Load0D5F58                    // (XmlDoc*, path, u8) -> u32; mutually recursive with 000D6398 (name?)
@@ -8260,7 +8260,7 @@
 002DA718 Rec_Set8_12_002DA718             // bool f(?, ?, u32 a, u32 b, Rec* r): r->+8 = a, r->+12 = b, r->+0->+56 = 0; returns 1 (name?); decompiled: src/obj/obj21.cpp
 0032120C Global_Clear106B250              // void f(): the three words at 0x0106B250 = 0 (name?); decompiled: src/obj/obj21.cpp
 00369658 Global_F64CBC_Copy216            // void f(): if (*(Obj**)0x00F64CBC) its +220 (f32) = its +216 (name?); decompiled: src/obj/obj21.cpp
-00369D58 Global_F64CB8_Copy216            // void f(): if (*(Obj**)0x00F64CB8) its +220 (f32) = its +216 (name?); decompiled: src/obj/obj21.cpp
+00369D58 Global_F64CB8_Copy216           // (already named) takes no arguments; decompiled: src/obj/obj21.cpp
 003DC924 Obj_InitLinks_003DC924           // void f(Obj* o): o->+8 = o->+28 = 0 (u16), o->+40 = o, o->+44 = o + 20 (name?); decompiled: src/obj/obj21.cpp
 00439DA8 Global_SetF65B4CIf1              // void f(const Msg* m): if (m->+12 == 1) *(f32*)0x00F65B4C = m->+16 (name?); decompiled: src/obj/obj21.cpp
 00455F34 Flag_Set88b_00455F34             // void f(Obj* o, bool on): o->+88 (u8): clear 0x80, set 0x04, bit 0x40 = on (name?); decompiled: src/obj/obj21.cpp
@@ -9740,7 +9740,7 @@
 0044D168 Id_Lookup_0044D168               // u32 f(u32 id, u8 b): when the u8 0x010AEC60 is set, 0x0044CEE8(index, b) for the index of id (0x782CF148 -> 2, 0x0464F605 -> 1, 0x00014065 -> 0, else -1); other (name?); decompiled: src/obj/obj26.cpp
 0044F040 Iff_ReadByteSetting_0044F040     // bool f(Iff* f): the static u8 0x010B1690 (guard 0x010B1688) = 6, Iff_ReadU8(f, &it, the name at 0x00B218C8), then the s32 0x00F65B3C = it; returns 1 (name?); decompiled: src/obj/obj26.cpp
 00465AB0 EventRec_Fill29_00465AB0         // void f(Rec* r, T* o): the event record of kind 29 (name?); decompiled: src/obj/obj26.cpp
-00465B30 EventRec_Fill30_00465B30         // void f(Rec* r, T* o): the event record of kind 30 (name?); decompiled: src/obj/obj26.cpp
+00465B30 EventRec_Fill30_00465B30        // (ev, o) (already named); decompiled: src/obj/obj26.cpp
 00489DF8 World_Forward12847C_00489DF8     // u32 f(o, a4, a5, a6, a7, a8, a9, a10): when o->+0x12847C = p is set, 0x00424FB8(p, a4, a5, a7, a7, a8, a9, a10) (f1 passed on); else a10 (name?); decompiled: src/obj/obj26.cpp
 004CBDB8 VtB22498_Delete                  // T::~T deleting form: vtable 0x00B22498, ~PtrVector(+12), vtable 0x00B11B20, Mem_FreeFrom(o, 0) (name?); decompiled: src/obj/obj26.cpp
 00743984 VtB11DE0_Delete                  // T::~T deleting form (56 bytes): vtable 0x00B11DE0, ~PtrVector(+12), vtable 0x00B11DC4 (name?); decompiled: src/obj/obj26.cpp
@@ -11798,7 +11798,7 @@
 004B6C88 Tree_SeekB_004B6C88              // void f(T* o): TreeSeek35 on the tree 0x010C2820 (current 0x011DE4A0), the found node's object getting vt[24]. (name?); decompiled: src/obj/obj35.cpp
 000CEA48 Slot_BuildMatrix_000CEA48          // (already named) out = (q rotation, t) through the bone / m+80 / o+96 frame; decompiled: src/obj/vmx4_math.cpp
 001AEA50 Obj_Check_001AEA50              // (o; f1) reads f1 (name?)
-000D74C0 Obj_ShutdownBase_000D74C0       // (o, full) base of 0020ABD8 (name?)
+000D74C0 Obj_ShutdownBase_000D74C0       // (o, u8 full): ref count +178, listener/slot/stack teardown, sound slots, global tables; decompiled: src/obj/mid30_c.cpp
 006D612C Voice_SetParams_006D612C        // (voice, const Params220* p) (name?)
 004EAD20 Level_RecordConstruct_004EAD20  // (rec) 1168-byte level record (name?)
 
@@ -12098,7 +12098,6 @@
 000E9DD8 Obj_BaseCtor_000E9DD8           // (o, a): base constructor of 0x000F4A08, reads r4 (name?); not decompiled
 0040AD98 Helper_Setup_0040AD98           // (helper, a, owner) (name?); not decompiled
 0048FA54 Obj_SetFlagHash_0048FA54        // (obj, hash, 1) called twice by 0x0003C090 (name?); not decompiled
-0003E280 Obj_ApplyMode_0003E280          // (o, o) after +716 is set by 0x000400D4 (name?); not decompiled
 004ADD68 Area_Test_004ADD68              // (q, m): gate for the +440 callback in 0x00224E20 (name?); not decompiled
 0028D7B0 World_SubmitRest_0028D7B0       // (o): tail of 0x000D016C (name?); not decompiled
 00746148 Query_BaseCtor_00746148         // (m, c, 0, 0, 1, 0, 1, 0, 0, 0) base of the 240-byte query (name?); not decompiled
@@ -12907,7 +12906,7 @@
 004F457C Xmlb_Apply_004F457C             // (dst, &doc, 0): applies the xmlb chunk loaded by 004F505C (name?)
 0091A2CC Skel_BoneCount_0091A2CC         // (skel) -> s32 (name?)
 0091A7D8 Skel_BoneAt_0091A7D8            // (skel, i) -> bone (name?)
-00014004 Obj_ApplyAnimHash_00014004      // (o, hash): second mode name of 0003DED8 (name?)
+00014004 Obj_ApplyAnimHash_00014004      // (o, hash): effect def from Set_Find(0 / 0x7719A548) inline AVL, new Effect, sound/placement comps, +136 |= 0x200, Effect_Start; decompiled: src/obj/mid30_b.cpp
 00251B10 GroupMember_SetOn_00251B10      // (e, 1): turn-on of Group_SetOn_002B4D14 entries (name?)
 
 # Game code medium sweep part 22
@@ -12935,7 +12934,7 @@
 01056EE0 g_SinCache_01056EE0               // f32 sin(K) cache, valid flag u8 0x01056ED8 (Player_RateCheck23B3E8) (name?)
 
 # Game code big sweep part 20
-004AED50 SpawnQueue_Burst4AED50          // (SpawnReq* p): aim matrix of source p+16, target tDist toward the player (nav probe 0x00010980 / Nav_SnapPoint), profile + id (vfunc 100/104), count from p+28/+32/+36 (scaled by p+40 or tweaks), pushes 128-byte records onto g_SpawnQueue 0x010C2480 on a circle (Math_Cosf/Sinf, nav snap), ballistic velocity when profile +20 bit 0x20, alternate profile 0x00F65F7C with cooldown 0x00F65F80; decompiled: src/obj/big20_spawn.cpp
+004AED50 SpawnQueue_Burst4AED50          // reads r3 only (already named); decompiled: src/obj/big20_spawn.cpp
 00F65F74 g_ProfileCacheF65F74            // u32 cached Save_Profile0C9FC8(0xF214F06E) (data) (name?)
 00191128 Obj_UpdateOrient191128          // (Obj* o): o+664 set: o+96 matrix rows -> world obj o+160 (+16), WorldObj_MarkDirty; else matrix from yaw o+488 (Math_Cosf/Sinf of axes 0x01164B70 / 0x01164B50), position o+388 +288 (lvx); carrier o+616: WorldObj_UpdateLod(o+624 +256), rows from o+624 +80, position + spin(o+656/2 about 0x01164B60) * quat o+640 * conj; no o+624: smoothed up vector o+464 (4% toward 0x01164B60) and shortest-arc quaternion; result to vfunc 84 (o, f32[4][4]) (name?); decompiled: src/obj/big20_orient.cpp
 002CCFF0 Ledge_Probe2CCFF0               // bool (Obj* o, const f32 pos[3], u8 high, f32 outPt[3], f32 outN[3], u8* grab, u8* kind): two Havok casts (world o+116 vfunc 64, all-hits collector 0x00F1DE58, HkHits_Sort8871E8) from points 0.3 apart along the owner's row 0, forward along row 2; hits on world objects with property 0x418F096F / 0x15E9DC74 (grab flag, kind = 0x2CC3F147), normal within sin(o+36) and facing; edge between the hits, normal (edge x 0x01164B60) within cos(o+28/o+40); Seg2_Intersect of the edge and the forward segment -> outPt (x, base y, z), outN; replaces the old name Obj_Transform2CCFF0; decompiled: src/obj/big20_ledge.cpp
@@ -13570,7 +13569,7 @@
 0014CB70 Obj_OwnerMsg_0014CB70               // message 2 handler: owner flags, def direction, o->432 = 2; decompiled: src/obj/mid29_d.cpp
 0005FE40 Obj_PushCamTarget_0005FE40          // camera target push (vtable 0x00B13B38, camera +816 matrix); decompiled: src/obj/mid29_d.cpp
 000F0298 Obj_AngleTo_000F0298                // (o, f32* out (preset 360), f32 p[3], f32 base[3]) -> angle; guess from use
-0039D32C Volume_Activate39D32C               // (item, u8 arg, 1, u8) third volume kind's refresh; guess from use
+0039D32C Volume_Activate39D32C           // (Volume*, u8 on, u8 force, u8 quiet): bit 0x40000000 of +356, effect hashes, Probe_SetOn39D1D4 / Probe_Prepare39D054; decompiled: src/obj/mid30_a.cpp
 
 # Game code big sweep part 28
 00103AC0 Part_MoveBodyToward_00103AC0     // void (T* o, const f32 target[3], u8 cast): body o->+24 moved toward target (clamped to o->+40, optional ray cast through world o->+272 stopping o->+700 short), turned AxisZ -> p - target, velocities zeroed; decompiled: src/obj/big28_partbody.cpp
@@ -13644,3 +13643,26 @@
 0091AE28 HkBody_SetMotion2_91AE28         // (body, const vec*) used with HkBody_SetMotion91A228 (o + 56 / o + 60) (name?)
 002CA150 Obj_UpdateStep2_002CA150         // (o; dt) part of Obj_UpdateTimers_002CAA90 (name?)
 002C3CD0 Obj_UpdateStep3_002C3CD0         // (o; dt) part of Obj_UpdateTimers_002CAA90 (name?)
+
+# Game code medium sweep part 30
+00070390 XmlTrees_Init_00070390          // void f(T* o, XmlCursor* x): ctor body: vt 0x00B0F3B0, AVL tree +12 + four trees at +116 + 108*i (hash +220), reads 0x8A93973F.. and <0x40795527>/<0xCCEB9AF9> pairs; decompiled: src/obj/mid30_a.cpp
+000624E0 Msg_CapsuleHit_000624E0         // (o, -, Msg* m, f32): kind-4 point vs bone 0x00F9BA28 capsule -> +344++, vt128(0x5640C070) + event; else vt128(0xA0885876); decompiled: src/obj/mid30_a.cpp
+000149E0 State_Switch_000149E0           // (o, s32 s): leave state (vt232), body flags, game-list swap-remove, +4 = s, history slot, returns vt224(o); decompiled: src/obj/mid30_a.cpp
+000530B8 Obj_ResetAll_000530B8           // (o): effect hash 0xB39ED94D, vt8/vt40 of slot tables, handle +6216 release (0x000FBB88), then Obj_ResetBase12928; decompiled: src/obj/mid30_a.cpp
+000143C8 Obj_ReplaceEffect_000143C8      // (o, hash): as 0x00014004 into o->+72 (old deleted), +136 &= ~0x200; decompiled: src/obj/mid30_b.cpp
+00027A00 AiCtrl_Reset_00027A00           // (o, a): AiCtrl_Bind_00011D08 + state reset, scale from WorldObj 0xF857B41A bounds, group 9, returns vt224(o); decompiled: src/obj/mid30_b.cpp
+0003E280 Obj_ApplyMode_0003E280          // (o): mode +716 records (+612, 116 bytes): body +348 clamp, +764, sound map +724, effect hashes per mode; decompiled: src/obj/mid30_b.cpp
+000460A0 Obj_TimerToggle_000460A0        // (o, f32 dt, u8 force): timer +756, anim 0x24A8169A/0x70B11DC9, toggles bit 0x40000000 of +776, spawn burst; decompiled: src/obj/mid30_b.cpp
+0004E728 Obj_HitReact_0004E728           // (o, -, Msg*, f32): attack-count +1764 / state-18 reaction anims 0x27C431A4/AD/B3; decompiled: src/obj/mid30_b.cpp
+0005E6A4 Scene_FinishSwitch_0005E6A4     // (o): pending switch u8 +512: camera +416 detach, player reset, Group_ReleaseById_0042C00C(table 0x00AC034C[+308]); decompiled: src/obj/mid30_b.cpp
+00016218 Obj_SetTarget_00016218          // (o, Obj* t): target +256, direction +272..+280 / length +288 from vt80 points; decompiled: src/obj/mid30_c.cpp
+000DE8D8 Obj_Update_000DE8D8             // (o): after Obj_UpdateBase: +376 effect flags (+352), body +348 into Havok world; decompiled: src/obj/mid30_c.cpp
+000BC7C8 Valve_Turn_000BC7C8             // (o, Obj* t): valves +536 (12 bytes, u16 +544), "Valve%i_Finished" / "%i_Valve(s)_Finished" hashes; decompiled: src/obj/mid30_c.cpp
+00122518 Obj_Kill_00122518               // (o, u8 full): timed callback, Obj_Reset121FA8, piece/effect/child teardown, then 0x000E02F8(o, full); decompiled: src/obj/mid30_c.cpp
+001275B8 Obj_DamageRelay_001275B8        // (o, -, a, kind; f32 dmg): health +348 gate, kill clamp, Obj_ApplyDamage, treasure / event on death; decompiled: src/obj/mid30_c.cpp
+001728F0 Contact_Track_001728F0          // (o, Contact*): per-body contact counts (+508/+512, +520/+524), hkArray 0x007CCD60 growth; decompiled: src/obj/mid30_c.cpp
+00175758 Contact_Count_00175758          // (o, Contact*): kinds 0xCCF83851/0xB94AE51B: untrack, +748, kind-40 comp payout to player +752; decompiled: src/obj/mid30_c.cpp
+0018E0C0 Pickup_OnMessage_0018E0C0       // (o, Msg*): collectible messages (states 2/3/7 via vt376, u8 +1700), contact payout to player +1652; decompiled: src/obj/mid30_d.cpp
+000ED35C Ragdoll_Teardown_000ED35C       // (o, u8 full): event, physics mode 6, skeleton/body release (props 0xA734004D/0x91C7CF5B), then 0x000E02F8; decompiled: src/obj/mid30_d.cpp
+001FAF44 Obj_SetPhysicsOn_001FAF44       // (o, u8 on): Flag_Set172_80, body +416 add/remove, trigger volume +436 rebuild (Shape_InitBody), vt84(o+96); decompiled: src/obj/mid30_d.cpp
+000E9BA0 Obj_SetPhysicsMode_000E9BA0     // (o, s32 mode): +400; 1 -> wake + add bodies (stores 2), 6 -> Hk_RemoveEntity of +388/+548; decompiled: src/obj/mid30_d.cpp
