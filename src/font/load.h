@@ -27,13 +27,6 @@ constexpr u32 kHashPreload = 0x17CFF9E9;  // bool: load the set right away (name
 constexpr u32 kFontSetSize = 296;
 constexpr u32 kFontSetLoadConsts = 0x004D71C8;  // f32 { 1.0, 0.0 }
 
-// The resource on the resource list whose name hashes to `hash`, or 0.
-inline u32 Res_FindByHash(u32 hash) {
-    for (u32 r = load<u32>(kResList); r != 0; r = load<u32>(r + kResNext))
-        if (load<u32>(r + kResHash) == hash) return r;
-    return 0;
-}
-
 }  // namespace font
 }  // namespace sly4
 

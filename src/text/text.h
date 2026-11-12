@@ -4,7 +4,12 @@
 // comment marks a guess from how the code is used.
 #pragma once
 
+#include <cmath>
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
+#include "../font/res.h"
 
 namespace sly4 {
 namespace text {
@@ -110,6 +115,148 @@ inline f64 fadds(f64 a, f64 b) { return static_cast<f64>(static_cast<f32>(a + b)
 inline f64 fmadds(f64 a, f64 c, f64 b) { return static_cast<f64>(static_cast<f32>(std::fma(a, c, b))); }
 inline f64 lfs(u32 ea) { return static_cast<f64>(load<f32>(ea)); }
 inline void stfs(u32 ea, f64 v) { store<f32>(ea, static_cast<f32>(v)); }
+
+// ---------------------------------------------------------------- native structures
+using native::gp;
+using native::pad;
+
+// A glyph (8 bytes, Font::glyphs).
+struct Glyph {
+    u8 top;        // +0
+    u8 rows;       // +1
+    u8 advance;    // +2
+    u8 channel;    // +3 (name?)
+    be_u16 u;      // +4
+    be_u16 v;      // +6
+};
+static_assert(sizeof(Glyph) == kGlyphSize);
+
+struct Font {
+    font::UiRes res;      // +0
+    gp<font::UiTexture> texture;  // +92 the texture resource the pages come from
+    be_u32 first;         // +96 first code point (no map)
+    u8 range;             // +100 number of code points (no map); glyphs allocated when nonzero
+    u8 flags;             // +101 0x80 -> quad bit 19
+    be_u16 line_height;   // +102
+    gp<Glyph> glyphs;     // +104
+    gp<u8> map;           // +108 u8[65536] code point -> glyph, 255 = none; 0 = use first/range
+    be_u32 pages[4];      // +112 by the element's +136 bits 22-23
+};
+static_assert(offsetof(Font, first) == kFontFirst && offsetof(Font, line_height) == kFontLineHeight &&
+              offsetof(Font, glyphs) == kFontGlyphs && offsetof(Font, map) == kFontMap &&
+              offsetof(Font, pages) == 112);
+
+struct FontSet {
+    font::UiRes res;           // +0
+    be_f32 scale;              // +92
+    be_f32 line_scale;         // +96
+    be_u32 font_count;         // +100
+    gp<Font> fonts[16];        // +104
+    be_f32 font_scale[16];     // +168
+    be_f32 font_kerning[16];   // +232
+};
+static_assert(offsetof(FontSet, scale) == kSetScale && offsetof(FontSet, font_count) == kSetFontCount &&
+              offsetof(FontSet, fonts) == kSetFonts && offsetof(FontSet, font_scale) == kSetFontScale &&
+              offsetof(FontSet, font_kerning) == kSetFontKerning);
+
+// A glyph quad (32 bytes, TextElem::quads); see glyph_build.h for the bits.
+struct GlyphQuad {
+    be_f32 x, y, w, h;  // +0
+    be_u64 bits;        // +16
+    be_u32 page;        // +24
+    be_u32 _28;         // +28 set to 0
+};
+static_assert(sizeof(GlyphQuad) == kQuadSize);
+
+// The element base (UiElem) as far as the text code uses it.
+struct UiElem {
+    be_u32 vtable;        // +0
+    pad<76> _4;
+    be_f32 scale[3];      // +80
+    pad<4> _92;
+    char name[40];        // +96
+    be_u32 flags;         // +136: kElemActive; bits 14-15 h-align, 18-19 v-align, 22-23 page
+    pad<8> _140;
+    gp<UiElem> parent;    // +148
+    pad<16> _152;
+};
+static_assert(offsetof(UiElem, scale) == 80 && offsetof(UiElem, name) == kElemName &&
+              offsetof(UiElem, flags) == kElemFlags && offsetof(UiElem, parent) == kElemParent &&
+              sizeof(UiElem) == 168);
+
+// A text element (UiText, vtable 0x00B227D8).
+struct TextElem {
+    UiElem elem;              // +0
+    gp<FontSet> font_set;     // +168
+    be_f32 line_spacing;      // +172
+    be_f32 char_spacing;      // +176
+    be_u32 text_flags;        // +180: kTextMonospace, kTextAutoLayout; bits 6-21 wrap width; 22-25 glyph mode
+    be_u32 buf_cap;           // +184 bytes at buf
+    be_u32 quad_cap;          // +188 glyphs quads can hold
+    gp<char> buf;             // +192 the formatted text
+    be_u32 source_cap;        // +196 bytes at source
+    gp<char> source;          // +200 the text as given
+    be_u32 quad_bytes;        // +204
+    gp<GlyphQuad> quads;      // +208
+    pad<4> _212;
+    be_f32 glyph_count;       // +216
+    be_f32 line_count;        // +220
+    be_f32 f224;              // +224: when > 0 the counts above are zeroed (name?)
+};
+static_assert(offsetof(TextElem, font_set) == kTextFontSet && offsetof(TextElem, text_flags) == kTextFlags &&
+              offsetof(TextElem, buf) == kTextBuf && offsetof(TextElem, source) == kTextSource &&
+              offsetof(TextElem, quads) == kTextQuads && offsetof(TextElem, glyph_count) == kTextGlyphCount &&
+              offsetof(TextElem, f224) == kText224);
+
+struct Vec2f { be_f32 x, y; };
+struct Vec3f { be_f32 x, y, z; };
+
+// The first font of the set with a glyph for `c` (the lookup every text
+// function inlines). The font pointers are read unchecked, as the original
+// does. `index` is (u32)-1 when there is none.
+inline GlyphRef FindGlyph(const FontSet& set, u32 c) {
+    const u32 count = set.font_count;
+    for (u32 i = 0; i < count; ++i) {
+        const Font& font = gref(set.fonts[i]);
+        if (font.glyphs.ea == 0u) continue;
+        if (font.map.ea != 0u) {
+            if (c > 0xFFFF) continue;
+            const u32 g = gref<u8>(font.map.ea + c);
+            if (g == kNoGlyph) continue;
+            return {i, g};
+        }
+        const u32 first = font.first;
+        if (c < first) continue;
+        if (c < first + font.range) return {i, c - first};
+    }
+    return {0xFFFFFFFFu, 0xFFFFFFFFu};
+}
+
+inline f32 f32_mul(f32 a, f32 b) { return static_cast<f32>(static_cast<f64>(a) * b); }
+inline f32 f32_add(f32 a, f32 b) { return static_cast<f32>(static_cast<f64>(a) + b); }
+inline f32 f32_sub(f32 a, f32 b) { return static_cast<f32>(static_cast<f64>(a) - b); }
+inline f32 f32_div(f32 a, f32 b) { return static_cast<f32>(static_cast<f64>(a) / b); }
+inline f32 f32_madd(f32 a, f32 c, f32 b) { return static_cast<f32>(std::fma(static_cast<f64>(a), c, b)); }
+
+// The function descriptor in obj's vtable at byte offset `slot` (for
+// virtual functions that take an sret pointer before `this`).
+inline u32 vslot(const void* obj, u32 slot) {
+    return gref<be_u32>(gref<be_u32>(opentit::native::guest(obj)) + slot);
+}
+
+// Native functions (src/text).
+void Ui_BuildPath(UiElem* e, be_u32* cursor);
+const char* StringTable_Lookup(void* strings, const char* id, const char* fallback, bool quiet);
+u32 Utf8_Next(void*, be_u32* p, be_u32* len, bool advance);
+f32 UiText_SpaceWidth(TextElem* e, const be_f32* scale);
+u32 UiText_MeasureLines(TextElem* e, be_f32* widths, u32, u32, const be_f32* scale, f32 space);
+void UiText_SetText(TextElem* e, const char* text, bool relayout);
+void UiText_Layout(TextElem* e, bool force);
+void UiElem_GetScale(Vec3f* out, UiElem* e);
+void View_ProjectPoint(void* view, be_f32* out, const be_f32* in);
+void UiElem_GetRect(UiElem* e, be_f32* a, be_f32* b, be_f32* m);
+u32 UiText_BuildGlyph(TextElem* e, GlyphQuad* q, u32 c, be_f32* x, be_f32* y, u32, const be_f32* scale, u32 line,
+                      f32 space);
 
 }  // namespace text
 }  // namespace sly4

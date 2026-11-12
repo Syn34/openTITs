@@ -30,14 +30,14 @@ constexpr u32 kProjectInit = 0x01164BC0;   // f32[4]: initial contents of the pr
 constexpr u32 kScreenMatrix = 0x01164BD0;  // f32[16]: rows' xyz copied (update.h kViewMatrix)
 constexpr u32 kViewProjMatrix = 1328;      // View +1328: the matrix points are transformed by
 
-inline f64 fsubs(f64 a, f64 b) { return static_cast<f64>(static_cast<f32>(a - b)); }
-inline f64 fdivs(f64 a, f64 b) { return static_cast<f64>(static_cast<f32>(a / b)); }
-
-// Copy the xyz of the four rows of a 4x4 float matrix (w is left alone).
-inline void Matrix_CopyXyz(u32 dst, u32 src) {
+// Copy the xyz of the four rows of a 4x4 float matrix (raw words; w is left alone).
+inline void Matrix_CopyXyz(be_f32* dst, const be_f32* src) {
+    be_u32* d = reinterpret_cast<be_u32*>(dst);
+    const be_u32* s = reinterpret_cast<const be_u32*>(src);
     for (u32 row = 0; row < 4; ++row)
-        for (u32 k = 0; k < 3; ++k) store<u32>(dst + row * 16 + k * 4, load<u32>(src + row * 16 + k * 4));
+        for (u32 k = 0; k < 3; ++k) d[row * 4 + k] = s[row * 4 + k].get();
 }
+
 
 }  // namespace text
 }  // namespace sly4

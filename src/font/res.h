@@ -3,6 +3,9 @@
 // (0x00F66864, linked by +88) that the loaders search by name hash.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -54,9 +57,62 @@ constexpr u32 String_Assign = 0x00555F80;  // strcpy
 constexpr u32 Mem_FreeFrom = 0x0054EE6C;
 }  // namespace rfn
 
-// Inlined by every UiRes destructor: take r off the resource list.
-// Leaves r4 = the previous entry (0 when r was first), as the original.
-void Res_Unlink(PPUContext& ctx, u32 r);
+// ---------------------------------------------------------------- native structures
+// UiRes (92 bytes): the base of every UI resource.
+struct UiRes {
+    be_u32 vtable;                // +0
+    be_u16 refs;                  // +4, 1 at construction
+    char path[66];                // +6 the path, "$var" expanded
+    be_u32 file_hash;             // +72 String_HashNoCase(file name after the last slash)
+    be_u32 hash;                  // +76 String_HashNoCase(name)
+    be_u16 users;                 // +80 (signed in the tests)
+    be_u16 loaded;                // +82 0 not loaded, 2 loaded (Load's result)
+    be_u32 arg;                   // +84 (name?) the Include* that declared it
+    native::gp<UiRes> next;       // +88
+};
+static_assert(sizeof(UiRes) == 92 && offsetof(UiRes, file_hash) == kResFileHash && offsetof(UiRes, next) == kResNext);
+
+// The texture resource (vtable 0x00B22618, 112 bytes).
+struct UiTexture {
+    UiRes res;          // +0
+    be_u32 flags;       // +92 0x80000000 depth LEQUAL, 0x40000000 depth test (from two bools)
+    be_u32 handle;      // +96 Texture* (a Ref)
+    be_u32 pages[3];    // +100 Material* per blend index
+};
+static_assert(sizeof(UiTexture) == 112);
+
+// Native functions (src/font/res.cpp).
+void Ref_Destruct(UiRes* r);
+void Ref_Delete(UiRes* r);
+void Ref_Release(UiRes* r);
+void UiRes_Construct(UiRes* r, const char* name, const char* path, u32, u32 arg);
+void UiRes_ConstructThunk(UiRes* r, const char* name, const char* path, u32 b, u32 arg);
+void UiRes_Destruct(UiRes* r);
+void UiRes_Delete(UiRes* r);
+void UiRes_Unuse(UiRes* r);
+
+// The resource list's head.
+inline UiRes* Res_First() { return native::host<UiRes>(native::global<be_u32>(kResList)); }
+// The resource on the resource list whose name hashes to `hash`, or 0.
+inline UiRes* Res_Find(u32 hash) {
+    for (UiRes* r = Res_First(); r; r = r->next)
+        if (r->hash == hash) return r;
+    return nullptr;
+}
+// Take r off the resource list (inlined by every UiRes destructor).
+inline void Res_Unlink(UiRes* r) {
+    UiRes* prev = nullptr;
+    for (UiRes* it = Res_First(); it; it = it->next) {
+        if (it == r) {
+            if (prev)
+                prev->next.ea = r->next.ea.get();
+            else
+                native::global<be_u32>(kResList) = r->next.ea.get();
+            break;
+        }
+        prev = it;
+    }
+}
 
 }  // namespace font
 }  // namespace sly4

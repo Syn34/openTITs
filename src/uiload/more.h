@@ -4,7 +4,13 @@
 // file lookup / loading.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
+#include "../xml/xml.h"
+#include "../text/text.h"
+#include "../font/res.h"
 
 namespace sly4 {
 namespace uimore {
@@ -117,6 +123,89 @@ constexpr u32 kWorldClassMapHolder = 0x00F8F12C;  // u32 object; +16: map of nam
 constexpr u32 kStrGuiInst = 0x00AEF56C;           // "%s_GUIInst"
 constexpr u32 kConfig = 0x010C5A20;               // g::config: +4 / +6 u16 width / height, +16 f32
 constexpr u32 kElem8Vtbl = 0x00B22DD0;
+
+// ---------------------------------------------------------------- native structures
+using native::gp;
+using native::pad;
+
+// A reference-counted object (resources, materials, textures): +4 u16 count, vtable +8 Release().
+struct RefObj {
+    be_u32 vtable;     // +0
+    be_u16 refs;       // +4
+};
+inline void AddRef(void* obj) { auto& r = *static_cast<RefObj*>(obj); r.refs = static_cast<u16>(r.refs + 1); }
+inline void Release(void* obj) { native::vcall(obj, kVfnRelease); }
+
+// Material (AglMaterial, 144 bytes) as far as used here.
+struct Material {
+    be_u32 vtable;           // +0
+    be_u16 refs;             // +4
+    pad<10> _6;
+    be_u32 shader;           // +16 Shader*
+    be_u32 textures[6];      // +20 Texture*[]
+    u8 tex_count;            // +44
+    pad<3> _45;
+    be_u16 tex0_word;        // +48 low half of the first texture's +112
+    pad<54> _50;
+    be_u32 blend[3];         // +104 BlendState: +0 enable / src factor, +4 equation, +6 dst factor, +8 depth
+};
+static_assert(offsetof(Material, tex_count) == kMatTexCount && offsetof(Material, blend) == kMatBlend);
+
+// The UI texture resource (src/font/res.h).
+using font::UiTexture;
+
+// The element fields the texture / blend code uses (types 1 / 2 / 6 / 8).
+struct UiElemTex {
+    text::UiElem elem;       // +0
+    be_u32 material;         // +168 types 1 / 6: Material*; type 8: world object
+    be_u32 tex_res;          // +172 UiTexture*
+    be_u32 uv0[2];           // +176 (f32 bits)
+    be_u32 uv1[2];           // +184
+    be_u32 material2;        // +192 type 2: Material*
+};
+static_assert(offsetof(UiElemTex, material2) == kElemMaterial2);
+
+// Sets a material's blend state for a blend mode (inlined twice in the
+// original, with the three stores in different orders).
+inline void Blend_SetMode(be_u32* b, s32 mode) {
+    u32 w = b[0];
+    u16 eq, dst;
+    u32 src;
+    bool enable = true;
+    switch (mode) {
+        case 0: eq = kGlFuncAdd; dst = kGlZero; src = kGlOne; enable = false; break;  // no blending
+        case 1: eq = kGlFuncAdd; dst = kGlZero; src = kGlOne; break;
+        case 2: eq = kGlFuncAdd; dst = kGlOneMinusSrcAlpha; src = kGlSrcAlpha; break;  // "av": alpha
+        case 3: eq = kGlFuncAdd; dst = kGlOne; src = kGlSrcAlpha; break;               // "ad": additive
+        case 4: eq = kGlFuncReverseSubtract; dst = kGlOne; src = kGlSrcAlpha; break;   // "su": subtractive
+        default: return;
+    }
+    w = ((w | kBlendEnable) & ~kBlendFieldMask) | ((src << kBlendFieldShift) & kBlendFieldMask);
+    if (!enable) w &= ~kBlendEnable;
+    be_u16* h = reinterpret_cast<be_u16*>(b);
+    h[2] = eq;
+    h[3] = dst;
+    b[0] = w;
+}
+inline void Blend_SetDepth(be_u32* b, u32 func) {
+    const u32 w = b[2];
+    b[2] = (w & ~kBlendFieldMask) | ((func << kBlendFieldShift) & kBlendFieldMask);
+}
+
+// Native functions (src/uiload/more.cpp).
+xml::XmlCursor* XmlCursor_FirstChildRawAny(xml::XmlCursor* cursor);
+xml::XmlCursor* XmlCursor_FirstChildAny(xml::XmlCursor* cursor);
+xml::XmlCursor* XmlCursor_NextSiblingAny(xml::XmlCursor* cursor);
+const char* XmlCursor_Text(xml::XmlCursor* cursor);
+s32 String_CompareN(const char* a, const char* b, s32 n);
+Material* Tex_Acquire(void* tex);
+void UiElem2_SetBlend(UiElemTex* e, u32 blend);
+void Texture_MakePages(UiTexture* t);
+void UiElem_SetTexture(UiElemTex* e, UiTexture* res, const be_u32* uv0, const be_u32* uv1);
+u32 Tex_FindLoaded(u32 hash);
+void* Tex_LoadFile(const char* path, u32 fallback);
+void* Timeline_FromXml(xml::XmlCursor* doc, xml::XmlCursor* node, void* inc);
+void UiElem8_Construct(UiElemTex* e, const void* d);
 
 }  // namespace uimore
 }  // namespace sly4

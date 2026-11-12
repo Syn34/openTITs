@@ -2,7 +2,11 @@
 // non-trivial kinds TimelineDef_KeyFromXml makes).
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
+#include "../xml/xml.h"
 
 namespace sly4 {
 namespace tlbuild {
@@ -59,6 +63,37 @@ constexpr u32 kAnimModes = 0x00AEF948, kAnimModeCount = 3;
 constexpr u32 kF32Zero = 0x004DF0C8, kF32Max = 0x004DF0CC;
 constexpr u32 kFltMaxBits = 0x7F7FFFFF;
 constexpr u32 kDefaultVec3 = 0x01164B40, kDefaultVec2 = 0x01164AFC, kDefaultColor = 0x01164CA0;
+
+// ---------------------------------------------------------------- native structures
+struct TlKeyEvent {
+    be_u32 vtable;         // +0 kTlKeyEventVtbl
+    be_f32 time;           // +4
+    be_u32 next;           // +8
+    be_u32 index;          // +12 event index (17 = unknown)
+    char target[64];       // +16
+};
+static_assert(sizeof(TlKeyEvent) == kEventKeySize);
+
+struct TlKeyAnim {
+    be_u32 vtable;         // +0 kTlKeyAnimVtbl
+    be_f32 time;           // +4
+    be_u32 next;           // +8
+    be_u32 prop;           // +12 property index (26 = unknown)
+    be_u32 ease;           // +16 index in kAnimEases (name?)
+    be_u32 mode;           // +20 index in kAnimModes (name?)
+    be_f32 f24;            // +24 (name?)
+    char target[64];       // +28
+    native::pad<4> _92;
+    be_u32 from[4];        // +96: FLT_MAX in the first word when absent
+    be_u32 to[4];          // +112
+};
+static_assert(sizeof(TlKeyAnim) == kAnimKeySize && offsetof(TlKeyAnim, from) == kAnimFrom &&
+              offsetof(TlKeyAnim, to) == kAnimTo && offsetof(TlKeyAnim, target) == kAnimTarget);
+
+// Native functions (src/uiload/tlbuild.cpp).
+TlKeyEvent* TlKeyEvent_FromXml(xml::XmlCursor* doc, xml::XmlCursor* node, void* def, f32 time);
+TlKeyAnim* TlKeyAnim_FromXml(xml::XmlCursor* doc, xml::XmlCursor* node, void* def, f32 time);
+void* TimelineDef_KeyFromXml(xml::XmlCursor* doc, xml::XmlCursor* node, void* def);
 
 }  // namespace tlbuild
 }  // namespace sly4

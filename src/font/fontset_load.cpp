@@ -1,97 +1,103 @@
 // FontSet_FromXml.
 #include "load.h"
 
-using namespace sly4;
-using namespace sly4::font;
+#include "../memory/mem.h"
+#include "../string/str.h"
+#include "../text/text.h"
+#include "../uiload/more.h"
+#include "../uiload/uiload.h"
+#include "../xml/xml.h"
+
+namespace sly4::font {
+using namespace opentit::native;
 
 namespace {
 
 // One more user; loads it (vfunc +12) when it isn't loaded yet.
-void Res_Use(PPUContext& ctx, u32 r) {
-    const u16 users = static_cast<u16>(load<u16>(r + kResUsers) + 1);
-    store<u16>(r + kResUsers, users);
-    if (static_cast<s16>(users) > 0 && load<u16>(r + kResLoaded) < 1) {
-        const u32 opd = load<u32>(load<u32>(r) + kVfnLoad);
-        const u32 st = static_cast<u32>(call_ptr(ctx, opd, {r, opd, load<u32>(opd)}));  // r4 / r5 = OPD and entry
-        store<u16>(r + kResLoaded, static_cast<u16>(st));
-    }
+void Res_Use(UiRes& r) {
+    const u16 users = static_cast<u16>(r.users + 1);
+    r.users = users;
+    if (static_cast<s16>(users) > 0 && r.loaded < 1) r.loaded = static_cast<u16>(vcall<u32>(&r, kVfnLoad));
 }
 
 }  // namespace
 
-// FontSet* FontSet_FromXml(XmlCursor* doc, XmlCursor* node, u32 arg)
 // <... name= scale=(x, y) preload=> with <font name= scale= kerning=/>
 // children naming fonts already on the resource list. Fonts added to a
 // loaded set are loaded and scaled to font 0's line height.
-DECOMP(004D71D0, FontSet_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), a = arg<u32>(ctx, 2);
+text::FontSet* FontSet_FromXml(xml::XmlCursor* doc, xml::XmlCursor* node, u32 a) {
+    GuestFrame frame(240 - 112);
+    be_f32* font_scale = frame.as<be_f32>(0);  // sp+112
+    be_f32* font_kern = frame.as<be_f32>(4);   // sp+116
+    be_u32* def = frame.as<be_u32>(8);         // sp+120
+    be_u32* scale = frame.as<be_u32>(16);      // sp+128
+    u8* preload = frame.as<u8>(24);            // sp+136
 
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 240 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 font_scale = sp + 112, font_kern = sp + 116, def = sp + 120, scale = sp + 128, preload = sp + 136;
-
-    const u32 name = static_cast<u32>(call(ctx, lfn::XmlCursor_FindAttrByName, {node, kStrName}));
-    const f64 one = static_cast<f64>(load<f32>(kFontSetLoadConsts));
-    store<u32>(def, 0x3F800000);
-    store<u32>(def + 4, 0x3F800000);
-    call(ctx, lfn::XmlCursor_ReadVec2, {node, kHashScale, scale, def});
-    call(ctx, lfn::XmlCursor_ReadBool, {node, kHashPreload, preload, 0});
-    if (name == 0) {
-        call(ctx, lfn::XmlCursor_DocPath, {doc});
-        return ret(ctx, 0u);
+    const char* name = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrName));
+    const be_f32* consts = host<be_f32>(kFontSetLoadConsts);
+    const f32 one = consts[0];
+    def[0] = 0x3F800000u;
+    def[1] = 0x3F800000u;
+    xml::XmlCursor_ReadVec2(node, kHashScale, scale, def);
+    xml::XmlCursor_ReadBool(node, kHashPreload, preload, 0);
+    if (!name) {
+        uiload::XmlCursor_DocPath(doc);
+        return nullptr;
     }
 
-    u32 set = static_cast<u32>(call(ctx, lfn::Mem_Alloc, {kFontSetSize, 0, 16}));
-    if (set != 0) {
-        const u8 pre = load<u8>(preload);
-        call(ctx, rfn::UiRes_Construct, {set, name, kEmptyPath, pre, a});
-        store<u32>(set + kSetScale, load<u32>(scale));
-        store<u32>(set + kSetCount, 0);
-        store<u32>(set, kFontSetVtbl);
-        store<u32>(set + kSetLineScale, load<u32>(scale + 4));
-        call(ctx, lfn::memset, {set + kSetFonts, 0, 64});
+    const u32 set_ea = guest(memory::Mem_Alloc(kFontSetSize, 0, 16));
+    text::FontSet& set = gref<text::FontSet>(set_ea);
+    if (set_ea != 0) {
+        const u8 pre = *preload;
+        UiRes_Construct(&set.res, name, host<const char>(kEmptyPath), pre, a);
+        reinterpret_cast<be_u32&>(set.scale) = scale[0].get();
+        set.font_count = 0u;
+        set.res.vtable = kFontSetVtbl;
+        reinterpret_cast<be_u32&>(set.line_scale) = scale[1].get();
+        call(lfn::memset, set.fonts, 0u, 64u);
         for (u32 k = 0; k < 16; ++k) {
-            store<u32>(set + kSetFontScale + k * 4, 0x3F800000);
-            store<u32>(set + kSetKerning + k * 4, 0);
+            set.font_scale[k] = 1.0f;
+            reinterpret_cast<be_u32&>(set.font_kerning[k]) = 0u;
         }
-        if (pre != 0) Res_Use(ctx, set);
+        if (pre != 0) Res_Use(set.res);
     }
 
-    for (u32 child = static_cast<u32>(call(ctx, lfn::XmlCursor_FirstChild, {node, kHashFontTag})); child != 0;
-         child = static_cast<u32>(call(ctx, lfn::XmlCursor_NextSibling, {child, kHashFontTag}))) {
-        const u32 fname = static_cast<u32>(call(ctx, lfn::XmlCursor_FindAttrByName, {child, kStrName}));
-        if (fname == 0) {
-            call(ctx, lfn::XmlCursor_DocPath, {doc});
+    for (xml::XmlCursor* child = xml::XmlCursor_FirstChild(node, kHashFontTag); child;
+         child = xml::XmlCursor_NextSibling(child, kHashFontTag)) {
+        const char* fname = xml::XmlCursor_FindAttrByName(child, host<const char>(kStrName));
+        if (!fname) {
+            uiload::XmlCursor_DocPath(doc);
             continue;
         }
-        const u32 font = Res_FindByHash(static_cast<u32>(call(ctx, rfn::String_HashNoCase, {fname})));
-        if (font == 0) {
-            call(ctx, lfn::XmlCursor_DocPath, {doc});
+        UiRes* font = Res_Find(str::String_HashNoCase(fname));
+        if (!font) {
+            uiload::XmlCursor_DocPath(doc);
             continue;
         }
-        ctx.fpr[1] = one;
-        call(ctx, lfn::XmlCursor_ReadF32, {child, kHashScale, font_scale});
-        ctx.fpr[1] = static_cast<f64>(load<f32>(kFontSetLoadConsts + 4));
-        call(ctx, lfn::XmlCursor_ReadF32, {child, kHashKerning, font_kern, kFontSetLoadConsts});  // r6 as in the original
+        xml::XmlCursor_ReadF32(child, kHashScale, font_scale, one);
+        xml::XmlCursor_ReadF32(child, kHashKerning, font_kern, consts[1]);
         // With no set (allocation failed) these go to address 0 + offset, as in the original.
-        const u32 n = load<u32>(set + kSetCount);
-        store<u32>(set + kSetFonts + n * 4, font);
-        store<u16>(font + kRefCount, static_cast<u16>(load<u16>(font + kRefCount) + 1));
-        store<u32>(set + kSetFontScale + n * 4, load<u32>(font_scale));
-        store<u32>(set + kSetKerning + n * 4, load<u32>(font_kern));
-        if (static_cast<s32>(load<u16>(set + kResLoaded)) > 0) {
-            Res_Use(ctx, font);
-            const u32 m = load<u32>(set + kSetCount);
+        const u32 n = set.font_count;
+        gref<be_u32>(set_ea + kSetFonts + n * 4) = guest(font);
+        uimore::AddRef(font);
+        gref<be_u32>(set_ea + kSetFontScale + n * 4) = reinterpret_cast<be_u32*>(font_scale)->get();
+        gref<be_u32>(set_ea + kSetKerning + n * 4) = reinterpret_cast<be_u32*>(font_kern)->get();
+        if (static_cast<s32>(set.res.loaded) > 0) {
+            Res_Use(*font);
+            const u32 m = set.font_count;
             if (m != 0) {
-                const f64 h0 = static_cast<f64>(static_cast<f32>(static_cast<f64>(load<u16>(load<u32>(set + kSetFonts) + kFontLineHeight))));
-                const f64 h = static_cast<f64>(static_cast<f32>(static_cast<f64>(load<u16>(font + kFontLineHeight))));
-                const u32 slot = set + kSetFontScale + m * 4;
-                const f64 k = static_cast<f64>(static_cast<f32>(h0 / h));
-                store<f32>(slot, static_cast<f32>(static_cast<f64>(load<f32>(slot)) * k));
+                const f32 h0 = static_cast<f32>(gref(set.fonts[0]).line_height.get());
+                const f32 h = static_cast<f32>(reinterpret_cast<text::Font*>(font)->line_height.get());
+                be_f32& slot = gref<be_f32>(set_ea + kSetFontScale + m * 4);
+                const f32 k = text::f32_div(h0, h);
+                slot = text::f32_mul(slot, k);
             }
         }
-        store<u32>(set + kSetCount, load<u32>(set + kSetCount) + 1);
+        set.font_count = set.font_count + 1;
     }
-    ret(ctx, set);
+    return host<text::FontSet>(set_ea);
 }
+
+}  // namespace sly4::font
+
+NATIVE(004D71D0, sly4::font::FontSet_FromXml)

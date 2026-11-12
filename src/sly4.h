@@ -161,6 +161,12 @@ inline T& gref(u32 ea) {
     return *reinterpret_cast<T*>(opentit::mem::ptr(ea));
 }
 
+// The object a guest pointer member points at, also when it is 0.
+template <typename T>
+inline T& gref(const opentit::native::gp<T>& p) {
+    return gref<T>(p.ea.get());
+}
+
 // system_state::get(ctx) for native code.
 inline u32 system_state::get_native() {
     using namespace opentit::native;

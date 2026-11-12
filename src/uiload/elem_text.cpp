@@ -1,123 +1,119 @@
 // Text and type-5 elements from a UI file.
 #include "uiload.h"
 
-using namespace sly4;
-using namespace sly4::uiload;
+#include "../memory/mem.h"
+
+namespace sly4::uiload {
+using namespace opentit::native;
 
 namespace {
 
-// The base description (name, matrix rows, colour, the u32 fields) that
-// both builders copy from the loader's.
-void CopyBase(u32 d, u32 base) {
-    store<u32>(d, load<u32>(base));
+// The base description (name, matrix rows, scale, colour, the u32 fields)
+// that both builders copy from the loader's (raw words).
+void CopyBase(ElemDesc* d, const ElemDesc* base) {
+    be_u32* dw = reinterpret_cast<be_u32*>(d);
+    const be_u32* bw = reinterpret_cast<const be_u32*>(base);
+    dw[0] = bw[0].get();
     for (u32 row = 16; row <= 80; row += 16)
-        for (u32 k = 0; k < 12; k += 4) store<u32>(d + row + k, load<u32>(base + row + k));
-    for (u32 k = 0; k < 4; ++k) store<u8>(d + 96 + k, load<u8>(base + 96 + k));
-    for (u32 off = 100; off <= 116; off += 4) store<u32>(d + off, load<u32>(base + off));
+        for (u32 k = 0; k < 12; k += 4) dw[(row + k) / 4] = bw[(row + k) / 4].get();
+    for (u32 k = 0; k < 4; ++k) d->color[k] = base->color[k];
+    for (u32 off = 100; off <= 116; off += 4) dw[off / 4] = bw[off / 4].get();
 }
 
 // The text defaults both builders start from.
-void TextDefaults(u32 d) {
-    store<u32>(d + 128, 0);
-    store<u32>(d + 132, kEmptyString);
-    store<u32>(d + 136, 0x3F800000);  // line spacing 1.0
-    store<u32>(d + 140, 0);
-    store<u32>(d + 144, 0);
-    store<u32>(d + 148, 0);
-    store<u8>(d + 152, 0);
-    store<u32>(d + 156, 0);
-    store<u32>(d + 160, 0x40400000);  // reveal rate 3.0
-    store<u8>(d + 164, 0);
+void TextDefaults(TextDesc* d) {
+    d->font_set = nullptr;
+    d->text = host<const char>(kEmptyString);
+    d->line_spacing = 1.0f;
+    reinterpret_cast<be_u32&>(d->char_spacing) = 0u;
+    d->wrap = 0u;
+    d->f148 = 0u;
+    d->monospace = 0;
+    d->glyph_mode = 0u;
+    d->reveal_rate = 3.0f;
+    d->b164 = 0;
 }
 
 }  // namespace
 
-// TextElem* UiText_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const TextElem* tmpl)
-DECOMP(004DCE7C, UiText_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), base = arg<u32>(ctx, 2), tmpl = arg<u32>(ctx, 3);
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 384 - kFrameBase);
-    const u32 d = frame.addr() - kFrameBase + 112;
-
-    CopyBase(d, base);
-    for (u32 k = 0; k < 7; ++k) store<u8>(d + 120 + k, load<u8>(base + 120 + k));
+text::TextElem* UiText_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::TextElem* tmpl) {
+    GuestFrame frame(384 - 112);  // the original's frame from the description up
+    TextDesc* d = frame.as<TextDesc>();
+    CopyBase(&d->base, base);
+    for (u32 k = 0; k < 7; ++k) d->base.flags[k] = base->flags[k];
     TextDefaults(d);
-    call(ctx, efn::UiTextDesc_FromXml, {doc, node, tmpl, d});
-    if (load<u32>(d + 128) == 0) return ret(ctx, 0u);
-    const u32 e = static_cast<u32>(call(ctx, efn::Mem_Alloc, {240, 0, 16}));
-    if (e == 0) return ret(ctx, 0u);
-    call(ctx, efn::UiText_Construct, {e, d});
-    ret(ctx, e);
+    UiTextDesc_FromXml(doc, node, tmpl, d);
+    if (!d->font_set) return nullptr;
+    text::TextElem* e = static_cast<text::TextElem*>(memory::Mem_Alloc(240, 0, 16));
+    if (!e) return nullptr;
+    call(efn::UiText_Construct, e, d);
+    return e;
 }
 
-// void UiText5Desc_FromXml(XmlCursor* doc, XmlCursor* node, const Element* tmpl, Text5Desc* d)
 // The text attributes, then the type-5 ones (defaults from the template
 // when it is a type-5 element; +180 always defaults to 0). +168, +172 and
 // +176 are raised to at least 0.
-DECOMP(004DCA08, UiText5Desc_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), tmpl = arg<u32>(ctx, 2), d = arg<u32>(ctx, 3);
-    call(ctx, efn::UiTextDesc_FromXml, {doc, node, tmpl, d});
-    if (load<u32>(d + 128) == 0) return;
+void UiText5Desc_FromXml(XmlCursor* doc, XmlCursor* node, const text::UiElem* tmpl, Text5Desc* d) {
+    UiTextDesc_FromXml(doc, node, reinterpret_cast<const text::TextElem*>(tmpl), &d->text);
+    if (!d->text.font_set) return;
 
-    const f64 zero = static_cast<f64>(load<f32>(kText5DescConsts));
-    f64 a = static_cast<f64>(load<f32>(kText5DescConsts + 4)), w = zero, c = zero;
-    u32 flag = 0;
-    if (tmpl != 0) {
-        const u32 opd = load<u32>(load<u32>(tmpl) + kVfnType);
-        const s32 type = static_cast<s32>(call_ptr(ctx, opd, {tmpl, opd, load<u32>(opd)}));  // r4 / r5 = OPD and entry
+    const be_f32* consts = host<be_f32>(kText5DescConsts);
+    const f32 zero = consts[0];
+    f32 a = consts[1], w = zero, c = zero;
+    u8 flag = 0;
+    if (tmpl) {
+        const s32 type = vcall<s32>(tmpl, kVfnType);
         if (type == 5) {
-            flag = (load<u8>(tmpl + 256) & 0x40) != 0 ? 1 : 0;
-            a = static_cast<f64>(load<f32>(tmpl + 236));
-            w = static_cast<f64>(load<f32>(tmpl + 240));
-            c = static_cast<f64>(load<f32>(tmpl + 244));
+            const u32 t = guest(tmpl);
+            flag = (gref<u8>(t + 256) & 0x40) != 0 ? 1 : 0;
+            a = gref<be_f32>(t + 236);
+            w = gref<be_f32>(t + 240);
+            c = gref<be_f32>(t + 244);
         } else {
-            call(ctx, ufn::XmlCursor_DocPath, {doc});
+            XmlCursor_DocPath(doc);
         }
     }
-    ctx.fpr[1] = a;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashT5_168, d + 168});
-    ctx.fpr[1] = w;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashT5Width, d + 172});
-    ctx.fpr[1] = c;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashT5_176, d + 176});
-    ctx.fpr[1] = zero;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashT5Start, d + 180});
-    call(ctx, ufn::XmlCursor_ReadBool, {node, kHashT5Flag, d + 184, flag});
-    for (u32 off : {168u, 172u, 176u}) {
-        const f64 v = static_cast<f64>(load<f32>(d + off));
-        store<f32>(d + off, static_cast<f32>(v < zero ? zero : v));
+    xml::XmlCursor_ReadF32(node, kHashT5_168, &d->f168, a);
+    xml::XmlCursor_ReadF32(node, kHashT5Width, &d->width, w);
+    xml::XmlCursor_ReadF32(node, kHashT5_176, &d->f176, c);
+    xml::XmlCursor_ReadF32(node, kHashT5Start, &d->start, zero);
+    xml::XmlCursor_ReadBool(node, kHashT5Flag, &d->flag, flag);
+    for (be_f32* f : {&d->f168, &d->width, &d->f176}) {
+        const f32 v = *f;
+        *f = v < zero ? zero : v;
     }
-    ctx.fpr[1] = static_cast<f64>(load<f32>(d + 176));  // f1 as the original leaves it
 }
 
-// Text5* UiText5_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const Element* tmpl)
 // The description's flag bytes are taken shifted, as in the type-5 clone:
 // +120..+124 = base +122..+126, +125 = 1, +126 = 0, +156 = base +120 and
 // +160 = (float)base +121.
-DECOMP(004DCC04, UiText5_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), base = arg<u32>(ctx, 2), tmpl = arg<u32>(ctx, 3);
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 464 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 d = sp + 112;
-
-    CopyBase(d, base);
-    for (u32 k = 0; k < 5; ++k) store<u8>(d + 120 + k, load<u8>(base + 122 + k));
-    store<u8>(d + 125, 1);
-    store<u8>(d + 126, 0);
-    TextDefaults(d);
-    store<u32>(d + 156, load<u8>(base + 120));
-    store<u64>(sp + 304, load<u8>(base + 121));  // the fcfid scratch
-    store<f32>(d + 160, static_cast<f32>(static_cast<f64>(load<u8>(base + 121))));
-    store<u32>(d + 168, 0x3F800000);
-    store<u32>(d + 172, 0);
-    store<u32>(d + 176, 0);
-    store<u32>(d + 180, 0);
-    store<u8>(d + 184, 0);
-    call(ctx, efn::UiText5Desc_FromXml, {doc, node, tmpl, d});
-    if (load<u32>(d + 128) == 0) return ret(ctx, 0u);
-    const u32 e = static_cast<u32>(call(ctx, efn::Mem_Alloc, {272, 0, 16}));
-    if (e == 0) return ret(ctx, 0u);
-    call(ctx, efn::UiText5_Construct, {e, d});
-    ret(ctx, e);
+text::UiElem* UiText5_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl) {
+    // The original's frame from the description up (its fcfid scratch at +192 of it).
+    GuestFrame frame(464 - 112);
+    Text5Desc* d = frame.as<Text5Desc>();
+    CopyBase(&d->text.base, base);
+    for (u32 k = 0; k < 5; ++k) d->text.base.flags[k] = base->flags[2 + k];
+    d->text.base.flags[5] = 1;
+    d->text.base.flags[6] = 0;
+    TextDefaults(&d->text);
+    d->text.glyph_mode = base->flags[0];
+    *frame.as<be_u64>(304 - 112) = base->flags[1];  // the fcfid scratch
+    d->text.reveal_rate = static_cast<f32>(static_cast<f64>(base->flags[1]));
+    d->f168 = 1.0f;
+    reinterpret_cast<be_u32&>(d->width) = 0u;
+    reinterpret_cast<be_u32&>(d->f176) = 0u;
+    reinterpret_cast<be_u32&>(d->start) = 0u;
+    d->flag = 0;
+    UiText5Desc_FromXml(doc, node, tmpl, d);
+    if (!d->text.font_set) return nullptr;
+    text::UiElem* e = static_cast<text::UiElem*>(memory::Mem_Alloc(272, 0, 16));
+    if (!e) return nullptr;
+    call(efn::UiText5_Construct, e, d);
+    return e;
 }
+
+}  // namespace sly4::uiload
+
+NATIVE(004DCE7C, sly4::uiload::UiText_FromXml)
+NATIVE(004DCA08, sly4::uiload::UiText5Desc_FromXml)
+NATIVE(004DCC04, sly4::uiload::UiText5_FromXml)

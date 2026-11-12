@@ -2,32 +2,35 @@
 // <timeline> definition.
 #include "tlbuild.h"
 
-using namespace sly4;
-using namespace sly4::tlbuild;
+#include "../memory/mem.h"
+#include "../uiload/uiload.h"
+
+namespace sly4::tlbuild {
+using namespace opentit::native;
+using xml::XmlCursor;
 
 namespace {
 
 // The index of `hash` in a table of `n` u32 hashes, or n.
 u32 IndexOf(u32 table, u32 n, u32 hash) {
+    const be_u32* t = host<be_u32>(table);
     u32 i = 0;
-    while (i < n && load<u32>(table + i * 4) != hash) ++i;
+    while (i < n && t[i] != hash) ++i;
     return i;
 }
 
 // Reads the enum attribute `attr` into an index of `table`; reports a
 // value that isn't in it (index n). A failed read gives 0, reported only
 // when `report_fail`.
-u32 ReadEnum(PPUContext& ctx, u32 doc, u32 node, u32 attr, u32 out, u32 table, u32 n, bool report_fail) {
-    if (static_cast<u32>(call(ctx, bfn::XmlCursor_ReadHash, {node, attr, out, 0})) != 0) {
-        if (report_fail) call(ctx, bfn::XmlCursor_DocPath, {doc});
+u32 ReadEnum(XmlCursor* doc, XmlCursor* node, u32 attr, be_u32* out, u32 table, u32 n, bool report_fail) {
+    if (xml::XmlCursor_ReadHash(node, attr, out, 0) != 0) {
+        if (report_fail) uiload::XmlCursor_DocPath(doc);
         return 0;
     }
-    const u32 i = IndexOf(table, n, load<u32>(out));
-    if (i == n) call(ctx, bfn::XmlCursor_DocPath, {doc});
+    const u32 i = IndexOf(table, n, *out);
+    if (i == n) uiload::XmlCursor_DocPath(doc);
     return i;
 }
-
-inline f64 lfs(u32 ea) { return static_cast<f64>(load<f32>(ea)); }
 
 enum class Kind { None, F32, Vec2, Vec3, S32, Color, Flags };
 
@@ -44,18 +47,18 @@ Kind PropKind(u32 p) {
 
 // Flag letters (either case): T / M / B set bits 4-5 to 0 / 1 / 2, L / C /
 // R set bits 0-1 to 0 / 1 / 2.
-void ParseFlags(u32 s, u32 word) {
+void ParseFlags(u32 s, be_u32& word) {
     for (u32 p = s;;) {
-        const s32 c = static_cast<s8>(load<u8>(p));
+        const s32 c = static_cast<s8>(gref<u8>(p));
         if (c == 0) return;
-        const u32 w = load<u32>(word);
+        const u32 w = word;
         switch (c) {
-            case 'T': case 't': store<u32>(word, w & ~0x30u); break;
-            case 'M': case 'm': store<u32>(word, (w & ~0x30u) | 0x10); break;
-            case 'B': case 'b': store<u32>(word, (w & ~0x30u) | 0x20); break;
-            case 'L': case 'l': store<u32>(word, w & ~0x3u); break;
-            case 'C': case 'c': store<u32>(word, (w & ~0x3u) | 1); break;
-            case 'R': case 'r': store<u32>(word, (w & ~0x3u) | 2); break;
+            case 'T': case 't': word = w & ~0x30u; break;
+            case 'M': case 'm': word = (w & ~0x30u) | 0x10; break;
+            case 'B': case 'b': word = (w & ~0x30u) | 0x20; break;
+            case 'L': case 'l': word = w & ~0x3u; break;
+            case 'C': case 'c': word = (w & ~0x3u) | 1; break;
+            case 'R': case 'r': word = (w & ~0x3u) | 2; break;
             default: break;
         }
         ++p;
@@ -65,109 +68,114 @@ void ParseFlags(u32 s, u32 word) {
 
 }  // namespace
 
-// TlKey* TlKeyEvent_FromXml(XmlCursor* doc, XmlCursor* node, TimelineDef* def; f32 time in f1)
 // An 80-byte event key: the target name and the event (index in a table
 // of 17 hashes; 17 when unknown, which is reported, 0 when unreadable).
 // As in the original, the fields are still written when the allocation
 // fails (at guest address 0).
-DECOMP(004DEF50, TlKeyEvent_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1);
-    const f64 time = farg(ctx, 0);
-    Stack frame(ctx, 176 - 112);
-    const u32 hash = frame.addr();  // sp+112
-    u32 key = static_cast<u32>(call(ctx, bfn::Mem_Alloc, {kEventKeySize, 0, 16}));
+TlKeyEvent* TlKeyEvent_FromXml(XmlCursor* doc, XmlCursor* node, void*, f32 time) {
+    GuestFrame frame(16);
+    be_u32* hash = frame.as<be_u32>();
+    const u32 key = guest(memory::Mem_Alloc(kEventKeySize, 0, 16));
+    TlKeyEvent& k = gref<TlKeyEvent>(key);
     if (key != 0) {
-        store<u32>(key + kKeyNext, 0);
-        store<f32>(key + kKeyTime, static_cast<f32>(time));
-        store<u32>(key + kEventIndex, 0);
-        store<u32>(key, kTlKeyEventVtbl);
-        store<u8>(key + kEventTarget, 0);
+        k.next = 0u;
+        k.time = time;
+        k.index = 0u;
+        k.vtable = kTlKeyEventVtbl;
+        k.target[0] = 0;
     }
-    const u32 target = static_cast<u32>(call(ctx, bfn::XmlCursor_FindAttrByName, {node, kStrTarget}));
-    if (target != 0) call(ctx, bfn::String_CopyN, {key + kEventTarget, target, 63});
+    if (const char* target = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrTarget)))
+        call(bfn::String_CopyN, k.target, target, 63u);
     u32 index = 0;
-    if (static_cast<u32>(call(ctx, bfn::XmlCursor_ReadHash, {node, kHashEvent, hash, 0})) != 0) {
-        call(ctx, bfn::XmlCursor_DocPath, {doc});
+    if (xml::XmlCursor_ReadHash(node, kHashEvent, hash, 0) != 0) {
+        uiload::XmlCursor_DocPath(doc);
     } else {
-        index = IndexOf(kEventNames, kEventCount, load<u32>(hash));
+        index = IndexOf(kEventNames, kEventCount, *hash);
         if (index == kEventCount) {
-            call(ctx, bfn::XmlCursor_DocPath, {doc});
-            call(ctx, bfn::XmlCursor_FindAttr, {node, kHashEvent});  // result unused
+            uiload::XmlCursor_DocPath(doc);
+            xml::XmlCursor_FindAttr(node, kHashEvent);  // result unused
         }
     }
-    store<u32>(key + kEventIndex, index);
-    ret(ctx, key);
+    k.index = index;
+    return host<TlKeyEvent>(key);
 }
 
-// TlKey* TlKeyAnim_FromXml(XmlCursor* doc, XmlCursor* node, TimelineDef* def; f32 time in f1)
 // A 128-byte animation key: an f32 at +24, the target name, the animated
 // property (index in a table of 26), its "from" / "to" values read as the
 // property's type (the "to" attribute's hash depends on the tag), and two
 // enums (+16 of 4, +20 of 3). Unknown enum values are reported. As in the
 // original, the fields are still written when the allocation fails.
-DECOMP(004DF0D0, TlKeyAnim_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1);
-    const f64 time = farg(ctx, 0);
-    Stack frame(ctx, 208 - 112);
-    const u32 sp = frame.addr() - 112;
-    u32 key = static_cast<u32>(call(ctx, bfn::Mem_Alloc, {kAnimKeySize, 0, 16}));
+TlKeyAnim* TlKeyAnim_FromXml(XmlCursor* doc, XmlCursor* node, void*, f32 time) {
+    GuestFrame frame(208 - 112);
+    be_u32* fallback3 = frame.as<be_u32>(0);    // sp+112
+    be_u32* prop_hash = frame.as<be_u32>(16);   // sp+128
+    be_u32* ease_hash = frame.as<be_u32>(20);   // sp+132
+    be_u32* mode_hash = frame.as<be_u32>(24);   // sp+136
+    be_u32* fallback2 = frame.as<be_u32>(28);   // sp+140
+    const u32 key = guest(memory::Mem_Alloc(kAnimKeySize, 0, 16));
+    TlKeyAnim& k = gref<TlKeyAnim>(key);
     if (key != 0) {
-        store<u32>(key + kKeyNext, 0);
-        store<f32>(key + kKeyTime, static_cast<f32>(time));
-        store<u32>(key + kAnimProp, 0);
-        store<u32>(key, kTlKeyAnimVtbl);
-        store<u32>(key + kAnimEase, 0);
-        store<u32>(key + kAnimMode, 0);
-        store<u32>(key + kAnimF24, 0);
-        store<u8>(key + kAnimTarget, 0);
-        call(ctx, bfn::memset, {key + kAnimFrom, 0, 32});
+        k.next = 0u;
+        k.time = time;
+        k.prop = 0u;
+        k.vtable = kTlKeyAnimVtbl;
+        k.ease = 0u;
+        k.mode = 0u;
+        reinterpret_cast<be_u32&>(k.f24) = 0u;
+        k.target[0] = 0;
+        call(bfn::memset, k.from, 0u, 32u);
     }
-    const u32 tag = (load<u8>(node + 24) & 0x80) != 0 ? load<u32>(node + 20) : 0;
-    const f64 zero = lfs(kF32Zero);  // f31 from here on
-    callf(ctx, bfn::XmlCursor_ReadF32, {node, kHashAnimF24, key + kAnimF24}, {zero});
-    const u32 target = static_cast<u32>(call(ctx, bfn::XmlCursor_FindAttrByName, {node, kStrTarget}));
-    if (target != 0) call(ctx, bfn::String_CopyN, {key + kAnimTarget, target, 63});
+    const u32 tag = (node->flags & 0x80) != 0 ? node->hash.get() : 0u;
+    const f32 zero = gref<be_f32>(kF32Zero);
+    xml::XmlCursor_ReadF32(node, kHashAnimF24, &k.f24, zero);
+    if (const char* target = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrTarget)))
+        call(bfn::String_CopyN, k.target, target, 63u);
 
-    const u32 prop = ReadEnum(ctx, doc, node, kHashProp, sp + 128, kAnimProps, kAnimPropCount, true);
-    store<u32>(key + kAnimProp, prop);
+    const u32 prop = ReadEnum(doc, node, kHashProp, prop_hash, kAnimProps, kAnimPropCount, true);
+    k.prop = prop;
     const u32 to = tag == kTagAnimA ? kHashToA : kHashToB;
-    const u32 from_out = key + kAnimFrom, to_out = key + kAnimTo;
+    be_u32* from_out = k.from;
+    be_u32* to_out = k.to;
 
     switch (PropKind(prop)) {
         case Kind::None: break;
         case Kind::F32:
-            callf(ctx, bfn::XmlCursor_ReadF32, {node, kHashFrom, from_out}, {lfs(kF32Max)});
-            callf(ctx, bfn::XmlCursor_ReadF32, {node, to, to_out}, {zero});
+            xml::XmlCursor_ReadF32(node, kHashFrom, reinterpret_cast<be_f32*>(from_out), gref<be_f32>(kF32Max));
+            xml::XmlCursor_ReadF32(node, to, reinterpret_cast<be_f32*>(to_out), zero);
             break;
         case Kind::Vec3:
-            for (u32 k = 0; k < 12; k += 4) store<u32>(sp + 112 + k, kFltMaxBits);
-            call(ctx, bfn::XmlCursor_ReadVec3, {node, kHashFrom, from_out, sp + 112, kFltMaxBits});  // r7 as in the original (not read)
-            call(ctx, bfn::XmlCursor_ReadVec3, {node, to, to_out, kDefaultVec3});
+            for (u32 j = 0; j < 3; ++j) fallback3[j] = kFltMaxBits;
+            xml::XmlCursor_ReadVec3(node, kHashFrom, from_out, fallback3);
+            xml::XmlCursor_ReadVec3(node, to, to_out, host<be_u32>(kDefaultVec3));
             break;
         case Kind::Vec2:
-            store<u32>(sp + 140, kFltMaxBits);
-            store<u32>(sp + 144, kFltMaxBits);
-            call(ctx, bfn::XmlCursor_ReadVec2, {node, kHashFrom, from_out, sp + 140, kFltMaxBits});  // r7 as in the original (not read)
-            call(ctx, bfn::XmlCursor_ReadVec2, {node, to, to_out, kDefaultVec2});
+            fallback2[0] = kFltMaxBits;
+            fallback2[1] = kFltMaxBits;
+            xml::XmlCursor_ReadVec2(node, kHashFrom, from_out, fallback2);
+            xml::XmlCursor_ReadVec2(node, to, to_out, host<be_u32>(kDefaultVec2));
             break;
         case Kind::S32:
-            if (static_cast<u32>(call(ctx, bfn::XmlCursor_ReadS32, {node, kHashFrom, from_out, 0})) != 0)
-                store<u32>(from_out, kFltMaxBits);
-            call(ctx, bfn::XmlCursor_ReadS32, {node, to, to_out, 0});
+            if (xml::XmlCursor_ReadS32(node, kHashFrom, from_out, 0) != 0) *from_out = kFltMaxBits;
+            xml::XmlCursor_ReadS32(node, to, to_out, 0);
             break;
         case Kind::Color:
-            if (static_cast<u32>(call(ctx, bfn::XmlCursor_ReadColor, {node, kHashFrom, from_out, kDefaultColor})) != 0)
-                store<u32>(from_out, kFltMaxBits);
-            call(ctx, bfn::XmlCursor_ReadColor, {node, to, to_out, kDefaultColor});
+            if (xml::XmlCursor_ReadColor(node, kHashFrom, reinterpret_cast<u8*>(from_out), host<u8>(kDefaultColor)) != 0)
+                *from_out = kFltMaxBits;
+            xml::XmlCursor_ReadColor(node, to, reinterpret_cast<u8*>(to_out), host<u8>(kDefaultColor));
             break;
         case Kind::Flags:
             for (u32 j = 0; j < 2; ++j) {
-                const u32 s = static_cast<u32>(call(ctx, bfn::XmlCursor_FindAttr, {node, j == 0 ? kHashFrom : to}));
-                if (s != 0) ParseFlags(s, j == 0 ? from_out : to_out);
+                const u32 s = guest(xml::XmlCursor_FindAttr(node, j == 0 ? kHashFrom : to));
+                if (s != 0) ParseFlags(s, j == 0 ? *from_out : *to_out);
             }
             break;
     }
-    store<u32>(key + kAnimEase, ReadEnum(ctx, doc, node, kHashEase, sp + 132, kAnimEases, kAnimEaseCount, false));
-    store<u32>(key + kAnimMode, ReadEnum(ctx, doc, node, kHashMode, sp + 136, kAnimModes, kAnimModeCount, false));
-    ret(ctx, key);
+    k.ease = ReadEnum(doc, node, kHashEase, ease_hash, kAnimEases, kAnimEaseCount, false);
+    k.mode = ReadEnum(doc, node, kHashMode, mode_hash, kAnimModes, kAnimModeCount, false);
+    return host<TlKeyAnim>(key);
 }
+
+}  // namespace sly4::tlbuild
+
+NATIVE(004DEF50, sly4::tlbuild::TlKeyEvent_FromXml)
+NATIVE(004DF0D0, sly4::tlbuild::TlKeyAnim_FromXml)

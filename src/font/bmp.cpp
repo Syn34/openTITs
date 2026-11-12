@@ -1,128 +1,116 @@
 // Font_Load and the BMP pixel reader it scans with (see bmp.h).
 #include "bmp.h"
 
+#include "../memory/mem.h"
+#include "../text/text.h"
 #include "../uiload/more.h"
+#include "../uiload/uiload.h"
 
-using namespace sly4;
-using namespace sly4::bmpfont;
+namespace sly4::bmpfont {
+using namespace opentit::native;
 
 namespace {
 
-inline u32 vcall1(PPUContext& ctx, u32 obj, u32 off) {
-    const u32 opd = load<u32>(load<u32>(obj) + off);
-    return static_cast<u32>(call_ptr(ctx, opd, {obj, opd, load<u32>(opd)}));  // r4 / r5 = OPD and entry
-}
-
 inline u32 le32(u32 p) {
-    return load<u8>(p) | (load<u8>(p + 1) << 8) | (load<u8>(p + 2) << 16) | (static_cast<u32>(load<u8>(p + 3)) << 24);
+    return gref<u8>(p) | (gref<u8>(p + 1) << 8) | (gref<u8>(p + 2) << 16) | (static_cast<u32>(gref<u8>(p + 3)) << 24);
 }
 
 inline s32 s16x(s32 v) { return static_cast<s16>(v); }  // extsh after each step, as the original
 
 }  // namespace
 
-// void Bmp_GetPixel(u8 out[4], const u8* pixels, const u8* palette, s32 x, s32 y,
-//                   s32 stride, s32 height, s32 bpp, bool top_down)
 // Pixel (x, y) of a BMP's pixel data as R, G, B, 255. `stride` is the row
-// length in pixels; rows are stored bottom-up unless `top_down`. 1, 4 and
-// 8 bits per pixel go through the BGRA palette (1-bit pixels are taken
-// from the low bit of each byte up); other depths than 24 give black.
-DECOMP(004D65EC, Bmp_GetPixel) {
-    const u32 out = arg<u32>(ctx, 0), pixels = arg<u32>(ctx, 1), palette = arg<u32>(ctx, 2);
-    const u32 x = arg<u32>(ctx, 3), y = arg<u32>(ctx, 4), stride = arg<u32>(ctx, 5), height = arg<u32>(ctx, 6);
-    const s32 bpp = arg<s32>(ctx, 7);
-    // The 9th argument, in the caller's parameter save area (low byte of the word at 116).
-    const u8 top_down = static_cast<u8>(load<u32>(static_cast<u32>(ctx.gpr[1]) + 116));
-    const u32 row = top_down != 0 ? y : height - y - 1;
+// length in pixels; rows are stored bottom-up unless `top_down` (the 9th
+// argument, on the stack). 1, 4 and 8 bits per pixel go through the BGRA
+// palette (1-bit pixels are taken from the low bit of each byte up); other
+// depths than 24 give black.
+void Bmp_GetPixel(u8* out, const u8* pixels_p, const u8* palette_p, u32 x, u32 y, u32 stride, u32 height, s32 bpp,
+                  bool top_down) {
+    const u32 pixels = guest(pixels_p), palette = guest(palette_p);
+    const u32 row = top_down ? y : height - y - 1;
     const u32 line = row * stride;
 
     u32 src;  // the B, G, R bytes
     switch (bpp) {
         case 24: src = pixels + (line + x) * 3; break;
-        case 8: src = palette + load<u8>(pixels + line + x) * 4u; break;
+        case 8: src = palette + gref<u8>(pixels + line + x) * 4u; break;
         case 4: {
-            const u32 b = load<u8>(pixels + (line >> 1) + (x >> 1));
+            const u32 b = gref<u8>(pixels + (line >> 1) + (x >> 1));
             src = palette + ((b >> ((x & 1) == 0 ? 4 : 0)) & 0xF) * 4;
             break;
         }
         case 1: {
-            const u32 b = load<u8>(pixels + (line >> 3) + (x >> 3));
+            const u32 b = gref<u8>(pixels + (line >> 3) + (x >> 3));
             src = palette + ((b & (1u << (x & 7))) != 0 ? 4 : 0);
             break;
         }
         default:
-            for (u32 k = 0; k < 3; ++k) store<u8>(out + k, 0);
-            store<u8>(out + 3, 0xFF);
+            for (u32 k = 0; k < 3; ++k) out[k] = 0;
+            out[3] = 0xFF;
             return;
     }
-    const u8 r = load<u8>(src + 2), g = load<u8>(src + 1), b = load<u8>(src);
-    store<u8>(out + 0, r);
-    store<u8>(out + 1, g);
-    store<u8>(out + 2, b);
-    store<u8>(out + 3, 0xFF);
+    const u8 r = gref<u8>(src + 2), g = gref<u8>(src + 1), b = gref<u8>(src);
+    out[0] = r;
+    out[1] = g;
+    out[2] = b;
+    out[3] = 0xFF;
 }
 
-// u16 Font_Load(Font* f)  [vtable 0x00B22638 +12]
+// [vtable 0x00B22638 +12]
 // Uses the font's texture resource (loading it if needed) and, when it is
 // loaded, makes a page material per blend index. Then reads the glyph
 // cells from the BMP at the font's path (see bmp.h) into a new glyph
 // table, the line height being the smallest distance between baseline
 // rows (at most the picture's height). 2 if the font has glyphs, else 3.
-DECOMP(004D6768, Font_Load) {
+u32 Font_Load(text::Font* font) {
     using namespace sly4::uimore;
-    const u32 f = arg<u32>(ctx, 0);
 
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 2432 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 records = sp + 140;  // Glyph[256]
-    const u32 px0 = sp + 2188, px1 = sp + 2192, px2 = sp + 2196, px3 = sp + 2200, px4 = sp + 2204,
-              px5 = sp + 2208, px6 = sp + 2212;  // one pixel buffer per call site
+    // The original's frame: the glyph records at +140 (copied out with memmove).
+    GuestFrame frame(2432 - 112);
+    const u32 records = guest(frame.as<u8>(140 - 112));  // Glyph[256]
+    u8 px0[4], px1[4], px2[4], px3[4], px4[4], px5[4], px6[4];  // one pixel buffer per call site
 
     {
-        const u32 tex = load<u32>(f + kFontTexture);
-        const u16 users = static_cast<u16>(load<u16>(tex + kResUsers) + 1);
-        store<u16>(tex + kResUsers, users);
-        if (static_cast<s16>(users) > 0 && load<u16>(tex + kResLoaded) < 1)
-            store<u16>(tex + kResLoaded, static_cast<u16>(vcall1(ctx, tex, kResVfnLoad)));
+        font::UiTexture& tex = gref(font->texture);
+        const u16 users = static_cast<u16>(tex.res.users + 1);
+        tex.res.users = users;
+        if (static_cast<s16>(users) > 0 && tex.res.loaded < 1)
+            tex.res.loaded = static_cast<u16>(vcall<u32>(font->texture.get(), kResVfnLoad));
     }
-    if (load<u16>(load<u32>(f + kFontTexture) + kResLoaded) == 2) {
+    if (gref(font->texture).res.loaded == 2) {
         static constexpr s32 kModes[3] = {2, 3, 4};  // also stored at sp+128 in the original
         for (u32 k = 0; k < 3; ++k) {
-            const u32 tex = load<u32>(f + kFontTexture);
-            const u32 src = load<u16>(tex + kResLoaded) == 2 ? load<u32>(tex + kTexHandle)
-                                                              : static_cast<u32>(call(ctx, bfn::Tex_GetDefault, {0}));
-            const u32 m = static_cast<u32>(call(ctx, bfn::Tex_Acquire, {src}));
-            const u32 slot = f + kFontPages + k * 4;
-            store<u32>(slot, m);
-            Blend_SetMode(m + kMatBlend, kModes[k]);
-            Blend_SetDepth(load<u32>(slot) + kMatBlend, (load<u8>(f + kFontFlags) & 0x40) != 0 ? kGlLequal : kGlAlways);
-            const u32 test = (load<u8>(f + kFontFlags) & 0x20) != 0 ? 1 : 0;
-            const u32 b = load<u32>(slot) + kMatBlend;
-            store<u32>(b + 8, (load<u32>(b + 8) & 0x7FFFFFFF) | (test << 31));
+            const font::UiTexture& tex = gref(font->texture);
+            const u32 src = tex.res.loaded == 2 ? tex.handle.get() : uiload::Tex_GetDefault(0);
+            Material* m = Tex_Acquire(host<void>(src));
+            font->pages[k] = guest(m);
+            Blend_SetMode(gref<Material>(guest(m)).blend, kModes[k]);
+            Blend_SetDepth(gref<Material>(font->pages[k]).blend, (font->flags & 0x40) != 0 ? kGlLequal : kGlAlways);
+            const u32 test = (font->flags & 0x20) != 0 ? 1 : 0;
+            be_u32* b = gref<Material>(font->pages[k]).blend;
+            b[2] = (b[2] & 0x7FFFFFFFu) | (test << 31);
         }
     }
 
-    const u32 buf = static_cast<u32>(call(ctx, bfn::File_LoadWhole, {f + kFontPath, 0}));
+    const u32 buf = call<u32>(bfn::File_LoadWhole, font->res.path, 0u);
     if (buf != 0) {
-        if (load<u8>(buf) == 'B' && load<u8>(buf + 1) == 'M') {
+        if (gref<u8>(buf) == 'B' && gref<u8>(buf + 1) == 'M') {
             const u32 pixels = buf + le32(buf + kBmpDataOffset);
             const u32 palette = buf + le32(buf + kBmpHeaderSize) + 14;
             const s32 width = static_cast<s32>(le32(buf + kBmpWidth));
             s32 height = static_cast<s32>(le32(buf + kBmpHeight));
-            const s32 bpp = static_cast<s16>(load<u8>(buf + kBmpBpp) | (load<u8>(buf + kBmpBpp + 1) << 8));
+            const s32 bpp = static_cast<s16>(gref<u8>(buf + kBmpBpp) | (gref<u8>(buf + kBmpBpp + 1) << 8));
             const u32 top_down = height < 0 ? 1 : 0;  // a negative height: rows stored top-down
             if (top_down) height = -height;
 
-            auto pixel = [&](u32 out, s32 x, s32 y) -> u32 {
-                call(ctx, bfn::Bmp_GetPixel,
-                     {out, pixels, palette, static_cast<u32>(x), static_cast<u32>(y), static_cast<u32>(width),
-                      static_cast<u32>(height), static_cast<u32>(bpp), top_down});
+            auto pixel = [&](u8* out, s32 x, s32 y) -> const u8* {
+                Bmp_GetPixel(out, host<u8>(pixels), host<u8>(palette), static_cast<u32>(x), static_cast<u32>(y),
+                             static_cast<u32>(width), static_cast<u32>(height), bpp, top_down != 0);
                 return out;
             };
-            auto red = [](u32 p) { return load<u8>(p + 0); };
-            auto green = [](u32 p) { return load<u8>(p + 1); };
-            auto blue = [](u32 p) { return load<u8>(p + 2); };
+            auto red = [](const u8* p) { return p[0]; };
+            auto green = [](const u8* p) { return p[1]; };
+            auto blue = [](const u8* p) { return p[2]; };
 
             // The scan, block for block as the original (its loops step
             // their s16 counters and re-test the bounds where it does).
@@ -195,12 +183,13 @@ DECOMP(004D6768, Font_Load) {
                 }
             }
             if (count < kMaxGlyphs) {
-                store<u8>(rec + kGlyphWidth, static_cast<u8>(right - left + 1));
-                store<u8>(rec + kGlyphAbove, static_cast<u8>(base - top));
-                store<u8>(rec + kGlyphBelow, static_cast<u8>(bottom - base));
-                store<u8>(rec + kGlyphCells, 1);
-                store<u16>(rec + kGlyphX, static_cast<u16>(left));
-                store<u16>(rec + kGlyphY, static_cast<u16>(top));
+                text::Glyph& g = gref<text::Glyph>(rec);
+                g.advance = static_cast<u8>(right - left + 1);
+                g.top = static_cast<u8>(base - top);
+                g.rows = static_cast<u8>(bottom - base);
+                g.channel = 1;
+                g.u = static_cast<u16>(left);
+                g.v = static_cast<u16>(top);
                 ++rowcount;
                 ++count;
                 rec += kGlyphSize;
@@ -221,8 +210,8 @@ DECOMP(004D6768, Font_Load) {
                 goto cell_next;
             }
             {
-                const u32 last = rec - kGlyphSize;
-                if (x != static_cast<s32>(load<u16>(last + kGlyphX) + load<u8>(last + kGlyphWidth))) {
+                text::Glyph& last = gref<text::Glyph>(rec - kGlyphSize);
+                if (x != static_cast<s32>(last.u + last.advance)) {
                     done = 1;
                     goto cell_next;
                 }
@@ -246,9 +235,9 @@ DECOMP(004D6768, Font_Load) {
                     }
                 }
                 x = r28;
-                const s32 w = load<u8>(last + kGlyphWidth);
+                const s32 w = last.advance;
                 const s32 extra = static_cast<s32>(rt::divw(static_cast<u32>(r28 - start + w), static_cast<u32>(w)));
-                store<u8>(last + kGlyphCells, static_cast<u8>(load<u8>(last + kGlyphCells) + extra));
+                last.channel = static_cast<u8>(last.channel + extra);
                 y = base;
             }
             goto cell_next;
@@ -261,18 +250,24 @@ DECOMP(004D6768, Font_Load) {
             goto next_row;
 
         finish:  // 705C
-            store<u8>(f + kFontGlyphCount, static_cast<u8>(r14));
+            font->range = static_cast<u8>(r14);
             if (static_cast<u8>(r14) != 0) {
                 const u32 size = (r14 << 3) & ~7u;
-                const u32 table = static_cast<u32>(call(ctx, bfn::Mem_Alloc, {size, 0, 16}));
-                store<u32>(f + kFontGlyphs, table);
-                if (table != 0) {
-                    store<u16>(f + kFontLineHeight, line_height);
-                    call(ctx, bfn::memmove, {table, records, size});
+                text::Glyph* table = static_cast<text::Glyph*>(memory::Mem_Alloc(size, 0, 16));
+                font->glyphs = table;
+                if (table) {
+                    font->line_height = line_height;
+                    call(bfn::memmove, table, records, size);
                 }
             }
         }
-        call(ctx, bfn::Mem_Free, {buf});
+        memory::Mem_Free(host<void>(buf));
     }
-    ret(ctx, load<u8>(f + kFontGlyphCount) != 0 ? 2u : 3u);
+    return font->range != 0 ? 2u : 3u;
 }
+
+}  // namespace sly4::bmpfont
+
+NATIVE(004D65EC, sly4::bmpfont::Bmp_GetPixel)
+NATIVE(004D6768, sly4::bmpfont::Font_Load)
+

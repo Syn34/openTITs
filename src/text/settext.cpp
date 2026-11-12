@@ -1,12 +1,14 @@
 // Setting a text element's text and laying out its glyphs.
-#include "text.h"
+#include "format.h"
 
-using namespace sly4;
-using namespace sly4::text;
+#include "../common/common.h"
+#include "../string/str.h"
+
+namespace sly4::text {
+using namespace opentit::native;
 
 namespace {
 constexpr u32 kFormatBufSize = 4096;
-constexpr u32 kFormatOutCount = 8;
 constexpr u32 kMaxLines = 256;      // widths[] in Layout (MeasureLines doesn't check it)
 constexpr u32 kMaxLineIndex = 255;
 constexpr f32 kHalfUp = -0.5f;      // 0x004DB36C
@@ -17,174 +19,172 @@ constexpr f32 kZero = 0.0f;         // 0x004DB374
 u32 TextBuf_Size(u32 n) { return (n + 32) & ~31u; }
 }  // namespace
 
-// void UiText_SetText(TextElem* e, const char* text, bool relayout)
 // Keeps a copy of `text`, has UiText_Format expand it into a 4 KiB stack
 // buffer (reporting the space it needs for the formatted text and for its
 // glyph quads), grows those buffers when they are too small (they are
 // reallocated when the needed size is 0, too), copies the formatted text
 // in, tells the element (vfunc +148) and lays it out again when asked and
 // the element lays out automatically.
-DECOMP(004DC1B8, UiText_SetText) {
-    const u32 e = arg<u32>(ctx, 0);
-    const u32 text = arg<u32>(ctx, 1);
-    const u8 relayout = arg<u8>(ctx, 2);
-
-    if (field<u32>(e, kTextSource) != 0) {
-        call(ctx, tfn::SmallFree, {field<u32>(e, kTextSource), field<u32>(e, kTextSourceCap)});
-        field<u32>(e, kTextSource) = 0;
+void UiText_SetText(TextElem* e, const char* text, bool relayout) {
+    if (e->source) {
+        common::SmallFree(e->source, e->source_cap);
+        e->source = nullptr;
     }
-    field<u32>(e, kTextSourceCap) = 0;
-    if (text != 0) {
-        const u32 n = call32(ctx, tfn::String_Length, {text});
-        field<u32>(e, kTextSourceCap) = n;
+    e->source_cap = 0u;
+    if (text) {
+        const u32 n = static_cast<u32>(str::String_Length(text));
+        e->source_cap = n;
         if (n != 0) {
-            field<u32>(e, kTextSourceCap) = TextBuf_Size(n);
-            field<u32>(e, kTextSource) = call32(ctx, tfn::SmallAlloc, {TextBuf_Size(n)});
-            call(ctx, tfn::String_Assign, {field<u32>(e, kTextSource), text});
+            e->source_cap = TextBuf_Size(n);
+            e->source = static_cast<char*>(common::SmallAlloc(TextBuf_Size(n)));
+            common::String_Assign(e->source, text);
         }
     }
 
-    // The original's frame: eight u32 results at +144 (the first starts as
-    // the buffer pointer) and the buffer at +176.
-    constexpr u32 kFrameBase = 144;
-    Stack frame(ctx, 176 + kFormatBufSize - kFrameBase);
-    const u32 outs = frame.addr();
-    const u32 buf = outs + 32;
-    store<u32>(outs, buf);
-    for (u32 k = 1; k < kFormatOutCount; ++k) store<u32>(outs + k * 4, 0);
-    call(ctx, tfn::UiText_Format,
-         {e, text, buf, kFormatBufSize, outs, outs + 4, outs + 8, outs + 12, outs + 16, outs + 20, outs + 24,
-          outs + 28});
+    // The original's frame: the eight state words at +144 (the first starts
+    // as the buffer pointer) and the buffer at +176.
+    GuestFrame frame(sizeof(FormatState) + kFormatBufSize);
+    FormatState* st = frame.as<FormatState>();
+    char* buf = frame.as<char>(sizeof(FormatState));
+    st->out = buf;
+    st->bytes = 0u;
+    st->glyphs = 0u;
+    st->on_line = 0u;
+    reinterpret_cast<be_u32&>(st->width) = 0u;
+    st->brk = nullptr;
+    reinterpret_cast<be_u32&>(st->brk_width) = 0u;
+    st->last = 0u;
+    UiText_Format(e, text, buf, kFormatBufSize, &st->out.ea, &st->bytes, &st->glyphs, &st->on_line, &st->width,
+                  &st->brk.ea, &st->brk_width, &st->last);
 
-    const u32 need_text = load<u32>(outs + 4);
-    if (!(field<u32>(e, kTextBufCap) > need_text && need_text != 0)) {
-        if (field<u32>(e, kTextBuf) != 0) {
-            call(ctx, tfn::SmallFree, {field<u32>(e, kTextBuf), field<u32>(e, kTextBufCap)});
-            field<u32>(e, kTextBuf) = 0;
+    const u32 need_text = st->bytes;
+    if (!(e->buf_cap > need_text && need_text != 0)) {
+        if (e->buf) {
+            common::SmallFree(e->buf, e->buf_cap);
+            e->buf = nullptr;
         }
         if (need_text != 0) {
-            field<u32>(e, kTextBufCap) = TextBuf_Size(need_text);
-            field<u32>(e, kTextBuf) = call32(ctx, tfn::SmallAlloc, {TextBuf_Size(need_text)});
+            e->buf_cap = TextBuf_Size(need_text);
+            e->buf = static_cast<char*>(common::SmallAlloc(TextBuf_Size(need_text)));
         } else {
-            field<u32>(e, kTextBufCap) = 0;
+            e->buf_cap = 0u;
         }
     }
 
-    const u32 need_glyphs = load<u32>(outs + 8);
-    if (field<u32>(e, kTextQuadCap) < need_glyphs || need_glyphs == 0) {
-        if (field<u32>(e, kTextQuads) != 0) {
-            call(ctx, tfn::SmallFree, {field<u32>(e, kTextQuads), field<u32>(e, kTextQuadBytes)});
-            field<u32>(e, kTextQuads) = 0;
-            field<u32>(e, kTextQuadBytes) = 0;
+    const u32 need_glyphs = st->glyphs;
+    if (e->quad_cap < need_glyphs || need_glyphs == 0) {
+        if (e->quads) {
+            common::SmallFree(e->quads, e->quad_bytes);
+            e->quads = nullptr;
+            e->quad_bytes = 0u;
         }
         if (need_glyphs != 0) {
             const u32 t = need_glyphs + 31;
-            field<u32>(e, kTextQuadCap) = t & ~31u;
+            e->quad_cap = t & ~31u;
             const u32 bytes = (t << 5) & 0xFFFFFC00u;  // (t & ~31) * kQuadSize
-            field<u32>(e, kTextQuadBytes) = bytes;
-            const u32 quads = call32(ctx, tfn::SmallAlloc, {bytes});
-            field<u32>(e, kTextQuads) = quads;
-            call(ctx, fn::memset, {quads, 0, field<u32>(e, kTextQuadBytes)});
+            e->quad_bytes = bytes;
+            GlyphQuad* quads = static_cast<GlyphQuad*>(common::SmallAlloc(bytes));
+            e->quads = quads;
+            call(fn::memset, quads, 0u, e->quad_bytes);
         } else {
-            field<u32>(e, kTextQuadCap) = 0;
+            e->quad_cap = 0u;
         }
     }
 
-    if (field<u32>(e, kTextBufCap) != 0) call(ctx, tfn::String_Assign, {field<u32>(e, kTextBuf), buf});
-    call_ptr(ctx, vfunc(e, kVfnTextChanged), {e});
-    if (relayout != 0 && (field<u32>(e, kTextFlags) & kTextAutoLayout) != 0) call(ctx, tfn::UiText_Layout, {e, 1});
+    if (e->buf_cap != 0u) common::String_Assign(e->buf, buf);
+    vcall(e, kVfnTextChanged);
+    if (relayout && (e->text_flags & kTextAutoLayout) != 0) UiText_Layout(e, true);
 }
 
-// void UiText_Layout(TextElem* e, bool force)
 // Builds the glyph quads for the formatted text: lines start at their
 // alignment offset (UiText_MeasureLines), the block is offset vertically
 // by -0.5 * lines * line height * v-align, spaces and glyphs without a
 // quad advance by the space width, and the glyph and line counts end up in
 // +216 / +220. Without `force` it only runs for an active element with a
 // font set and a text buffer.
-DECOMP(004DB378, UiText_Layout) {
-    const u32 e = arg<u32>(ctx, 0);
-    const u8 force = arg<u8>(ctx, 1);
-    if (force == 0) {
-        if ((field<u32>(e, kElemFlags) & kElemActive) == 0) return;
-        if (field<u32>(e, kTextFontSet) == 0) return;
-        if (field<u32>(e, kTextBufCap) == 0) return;
+void UiText_Layout(TextElem* e, bool force) {
+    if (!force) {
+        if ((e->elem.flags & kElemActive) == 0) return;
+        if (!e->font_set) return;
+        if (e->buf_cap == 0u) return;
     }
 
-    // The original's frame: scale (sret) at +112, the text cursor at +128,
-    // x and y at +132 / +136, widths[256] at +140, up to its saved
-    // registers at +1192 (so that more than 256 lines overrun this frame
-    // only, rather than the caller's).
+    // The original's frame: scale (sret) at +112, widths[256] at +140, up
+    // to its saved registers at +1192 (so that more than 256 lines overrun
+    // this frame only, rather than the caller's).
     constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 1192 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 scale = sp + 112, pp = sp + 128, px = sp + 132, py = sp + 136, widths = sp + 140;
+    GuestFrame frame(1192 - kFrameBase);
+    Vec3f* scale = frame.as<Vec3f>(112 - kFrameBase);
+    be_f32* widths = frame.as<be_f32>(140 - kFrameBase);
+    be_u32 pp{};
+    be_f32 px{}, py{};
 
     u32 line = 0, glyphs = 0;
-    if (field<u32>(e, kTextQuadCap) != 0) {
-        call_ptr(ctx, vfunc(e, kVfnGetScale), {scale, e});
-        const f64 space = callf(ctx, tfn::UiText_SpaceWidth, {e, scale}, {});
-        ctx.fpr[1] = space;
-        const u32 lines = call32(ctx, tfn::UiText_MeasureLines, {e, widths, kMaxLines, 0, scale});
+    if (e->quad_cap != 0u) {
+        call_ptr(vslot(e, kVfnGetScale), scale, e);
+        const be_f32* sc = &scale->x;
+        const f32 space = UiText_SpaceWidth(e, sc);
+        const u32 lines = UiText_MeasureLines(e, widths, kMaxLines, 0, sc, space);
 
-        const u32 set = field<u32>(e, kTextFontSet);
-        f64 line_h = lfs(e + kTextLineSpacing);
-        const u32 flags = field<u32>(e, kElemFlags);
-        const f64 x0 = lfs(widths);
-        const u32 quads = field<u32>(e, kTextQuads);
-        const u32 quad_bytes = field<u32>(e, kTextQuadBytes);
-        f64 h = kZero;
-        if (field<u32>(set, kSetFontCount) != 0) {
-            const u32 font0 = load<u32>(set + kSetFonts);
-            if (font0 != 0)
-                h = fmuls(static_cast<f64>(field<u16>(font0, kFontLineHeight).get()), lfs(set + kSetLineScale));
+        const FontSet& set = gref(e->font_set);
+        f32 line_h = e->line_spacing;
+        const u32 flags = e->elem.flags;
+        const f32 x0 = widths[0];
+        GlyphQuad* quads = e->quads;
+        const u32 quad_bytes = e->quad_bytes;
+        f32 h = kZero;
+        if (set.font_count != 0u) {
+            const Font* font0 = set.fonts[0];
+            if (font0) h = f32_mul(static_cast<f32>(font0->line_height.get()), set.line_scale);
         }
-        h = fmuls(h, lfs(scale + 4));
-        line_h = fmuls(h, line_h);
+        h = f32_mul(h, scale->y);
+        line_h = f32_mul(h, line_h);
         const s32 valign = static_cast<s32>((flags >> 18) & 3);
-        stfs(px, x0);
+        px = x0;
         // fcfid + frsp: the count is rounded to single precision first.
-        f64 y = fmuls(fmuls(line_h, kHalfUp), static_cast<f64>(static_cast<f32>(lines)));
-        stfs(py, fmuls(y, static_cast<f64>(valign)));
-        call(ctx, fn::memset, {quads, 0, quad_bytes});
+        const f32 y = f32_mul(f32_mul(line_h, kHalfUp), static_cast<f32>(lines));
+        py = f32_mul(y, static_cast<f32>(valign));
+        call(fn::memset, quads, 0u, quad_bytes);
 
-        store<u32>(pp, field<u32>(e, kTextBuf));
+        pp = e->buf.ea;
         u32 index = 0, quad_off = 0;
-        while (load<u8>(load<u32>(pp)) != 0 && index < field<u32>(e, kTextQuadCap)) {
-            const u32 c = call32(ctx, tfn::Utf8_Next, {e, pp, 0, 1});
+        while (gref<u8>(pp) != 0 && index < e->quad_cap) {
+            const u32 c = Utf8_Next(e, &pp, nullptr, true);
             bool advance_space = false;
             if (c == '\n' || c == '\r') {
                 if (line < kMaxLineIndex) ++line;
-                const f64 ny = fadds(lfs(py), line_h);
-                stfs(px, lfs(widths + line * 4));
-                stfs(py, ny);
+                const f32 ny = f32_add(py, line_h);
+                px = widths[line].get();
+                py = ny;
                 continue;
             }
             if (c == ' ') {
                 advance_space = true;
             } else {
-                const u32 quad = field<u32>(e, kTextQuads) + quad_off;
+                GlyphQuad* quad = host<GlyphQuad>(e->quads.ea + quad_off);
                 quad_off += kQuadSize;
                 ++index;
-                ctx.fpr[1] = space;
-                // r8 is a leftover the glyph builder doesn't read.
-                const u32 ok = call32(ctx, tfn::UiText_BuildGlyph, {e, quad, c, px, py, 0, scale, line});
+                const u32 ok = UiText_BuildGlyph(e, quad, c, &px, &py, 0, sc, line, space);
                 if (ok == 0)
                     advance_space = true;
                 else
                     ++glyphs;
             }
-            if (advance_space)
-                stfs(px, fmadds(space, fadds(lfs(e + kTextCharSpacing), kOne), lfs(px)));
+            if (advance_space) px = f32_madd(space, f32_add(e->char_spacing, kOne), px);
         }
     }
 
-    field<u32>(e, kTextFlags) &= ~kTextAutoLayout;
-    if (lfs(e + kText224) > static_cast<f64>(kZero)) {
-        stfs(e + kTextGlyphCount, lfs(kZeroVec2));
-        stfs(e + kTextLineCount, lfs(kZeroVec2 + 4));
+    e->text_flags &= ~kTextAutoLayout;
+    if (e->f224 > kZero) {
+        reinterpret_cast<be_u32&>(e->glyph_count) = gref<be_u32>(kZeroVec2).get();
+        reinterpret_cast<be_u32&>(e->line_count) = gref<be_u32>(kZeroVec2 + 4).get();
     } else {
-        stfs(e + kTextGlyphCount, static_cast<f64>(glyphs));
-        stfs(e + kTextLineCount, static_cast<f64>(line + 1));
+        e->glyph_count = static_cast<f32>(glyphs);
+        e->line_count = static_cast<f32>(line + 1);
     }
 }
+
+}  // namespace sly4::text
+
+NATIVE(004DC1B8, sly4::text::UiText_SetText)
+NATIVE(004DB378, sly4::text::UiText_Layout)

@@ -10,15 +10,16 @@ namespace text {
 // The state UiText_Format keeps through pointers, so that the recursion for
 // $variables carries on where the outer call is (SetText passes 8 u32s).
 struct FormatState {
-    gptr out;        // o0: write cursor in the buffer (starts as the buffer)
-    be_u32 bytes;    // o1: bytes written
-    be_u32 glyphs;   // o2: characters written (glyph quads needed)
-    be_u32 on_line;  // o3: characters on the current line
-    be_f32 width;    // o4: width of the current line
-    gptr brk;        // o5: where the last break opportunity is in the buffer, or 0
-    be_f32 brk_width;  // o6: line width at that break
-    be_u32 last;     // o7: last character handled
+    gp<char> out;      // +0 o0: write cursor in the buffer (starts as the buffer)
+    be_u32 bytes;      // +4 o1: bytes written
+    be_u32 glyphs;     // +8 o2: characters written (glyph quads needed)
+    be_u32 on_line;    // +12 o3: characters on the current line
+    be_f32 width;      // +16 o4: width of the current line
+    gp<char> brk;      // +20 o5: where the last break opportunity is in the buffer, or 0
+    be_f32 brk_width;  // +24 o6: line width at that break
+    be_u32 last;       // +28 o7: last character handled
 };
+static_assert(sizeof(FormatState) == 32);
 
 constexpr u32 kStrings = 0x00F6687C;      // Strings*: the string table $variables come from (0 = none)
 constexpr u32 kFormatDepth = 0x00F668CC;  // s32: recursion depth, at most 10
@@ -32,6 +33,9 @@ constexpr u32 kNoBreakBefore = 0x00AEF6C8;  // u32[49] sorted: closing punctuati
 constexpr u32 kNoBreakBeforeCount = 49;
 constexpr u32 kDepthMessage = 0x00AEF4A0;   // "" (a stripped message: the element path is appended)
 constexpr u32 kVarNameSize = 64;            // the original's buffer (not bounds-checked)
+
+void UiText_Format(TextElem* e, const char* text, char* buf, u32 size, be_u32* out, be_u32* bytes, be_u32* glyphs,
+                   be_u32* on_line, be_f32* width, be_u32* brk, be_f32* brk_width, be_u32* last);
 
 }  // namespace text
 }  // namespace sly4

@@ -5,6 +5,9 @@
 // comment marks a guess from how the code is used.
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
 
 namespace sly4 {
@@ -176,6 +179,68 @@ struct RtCallback {
 };
 static_assert(sizeof(RtCallback) == 16);
 constexpr u32 kRtCallbackListSize = 68, kRtCallbackCount = 64;
+
+// ---------------------------------------------------------------- native structures (load_ui.cpp)
+struct RtSurface {
+    native::pad<56> _0;
+    be_s32 width;    // +56
+    be_s32 height;   // +60
+};
+struct RtCallbackList {
+    RtCallback entries[4];  // +0
+    u8 count;               // +64
+    native::pad<3> _65;
+};
+static_assert(sizeof(RtCallbackList) == kRtCallbackListSize);
+struct RenderTarget {
+    be_u32 vtable;                   // +0
+    native::pad<12> _4;
+    char name[32];                   // +16
+    u8 tag;                          // +48 copied into each callback entry
+    u8 byte49;                       // +49
+    native::pad<2> _50;
+    u8 flags;                        // +52 0x40 = viewport covers the whole screen
+    native::pad<43> _53;
+    ViewRect viewport;               // +96 clamped to the surface
+    ViewRect viewport2;              // +104 clamped again
+    native::pad<400> _112;
+    native::gp<RtSurface> surface;   // +512
+    native::pad<4> _516;
+    RtCallbackList lists[3];         // +520
+    native::pad<1052> _724;
+    u8 flags2;                       // +1776 0x80 = RenderTarget_Create's flag
+    native::pad<7> _1777;
+    u8 params[20];                   // +1784 RenderTarget_SetParams block
+    native::pad<4> _1804;
+    be_u64 u1808;                    // +1808
+    u8 b1816;                        // +1816
+    native::pad<7> _1817;
+    be_f32 f1824;                    // +1824
+    be_f32 f1828;                    // +1828
+    native::pad<8> _1832;
+};
+static_assert(sizeof(RenderTarget) == kRtSize && offsetof(RenderTarget, surface) == kRtSurface &&
+              offsetof(RenderTarget, lists) == kRtCallbacks && offsetof(RenderTarget, flags2) == kRtFlags2 &&
+              offsetof(RenderTarget, params) == kRtParams && offsetof(RenderTarget, f1828) == kRtF1828);
+
+// A UI element as Ui_Find sees it.
+struct FindElem {
+    native::pad<128> _0;
+    be_u32 name_hash;                // +128 String_HashNoCase of the name
+    native::pad<16> _132;
+    native::gp<FindElem> parent;     // +148
+    native::gp<FindElem> first_child;  // +152
+    native::gp<FindElem> next;       // +156
+};
+static_assert(offsetof(FindElem, name_hash) == kElemNameHash && offsetof(FindElem, next) == kElemNext);
+
+// Native functions (src/game/load_ui.cpp).
+u32 Ui_Init(const ViewRect* viewport);
+FindElem* Ui_Find(const char* path, FindElem* parent);
+RenderTarget* RenderTarget_Create(u32 type, u32 flag);
+void RenderTarget_SetByte49(RenderTarget* rt, u8 value);
+void RenderTarget_AddCallback(RenderTarget* rt, u32 list, u32 opd, u32 user, u8 priority);
+void RenderTarget_SetViewport(RenderTarget* rt, const ViewRect* rect);
 
 // ApeTFreeList<T> (60 bytes). vtable +12: Alloc() -> T* or 0.
 constexpr u32 kFreeListHeap = 40, kFreeListElemSize = 44, kFreeList48 = 48;

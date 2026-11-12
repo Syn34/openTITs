@@ -2,7 +2,11 @@
 // into (Texture_FromImage / Texture_FromGtf).
 #pragma once
 
+#include <cstddef>
+
+#include "opentit/native.h"
 #include "../sly4.h"
+#include "image2.h"
 
 namespace sly4 {
 namespace image {
@@ -41,6 +45,43 @@ constexpr u32 kTexWord68 = 68;     // u32: top nibble = 1
 constexpr u32 kTexGcm = 72;        // CellGcmTexture (24 bytes): +8 width, +10 height, +14 location, +20 offset
 constexpr u32 kTex116 = 116, kTex118 = 118, kTex120 = 120, kTexFlags128 = 128;  // u16
 constexpr u32 kTextureUploaded = 0x011DE4BD;  // u8: set by the first image upload (name?)
+
+// ---------------------------------------------------------------- native structures
+struct Image {
+    native::gp<u8> pixels;    // +0 32-bit pixels, from the default memory stack
+    be_u16 width;             // +4
+    be_u16 height;            // +6
+    be_u16 bpp;               // +8 the file's bits per pixel (32 for 24-bit BMPs)
+    native::pad<2> _10;
+    native::gp<u8> palette;   // +12 4 bytes per entry (palettised BMPs)
+    be_u16 pal_count;         // +16
+    be_u16 flags;             // +18 0x1 keep palette alpha, 0x2 buffers not owned
+};
+static_assert(sizeof(Image) == 20);
+
+struct AglTexture {
+    be_u32 vtable;                 // +0
+    native::pad<48> _4;
+    be_u16 width;                  // +52
+    be_u16 height;                 // +54
+    image2::TexLayout layout;      // +56 (CellGcmTexture at +72)
+    native::pad<12> _104;
+    be_u16 f116, f118, f120;       // +116
+    native::pad<6> _122;
+    be_u16 flags128;               // +128
+    native::pad<2> _130;
+};
+static_assert(sizeof(AglTexture) == 132 && offsetof(AglTexture, layout) == kTexData && offsetof(AglTexture, flags128) == kTexFlags128);
+
+// Native functions (src/font/image.cpp).
+s32 String_CompareNoCase2(const char* a, const char* b);
+void Texture_Construct(AglTexture* t);
+u32 Texture_FromImage(AglTexture* t, const Image* img, const char* path);
+u32 Texture_FromGtf(AglTexture* t, void* data, u32 size, u32 in_place);
+u32 Image_FromTga(const u8* data, u32 size, Image* img, const char* path);
+u32 Image_FromBmp(const u8* data, u32 size, Image* img, const char* path);
+AglTexture* Texture_Alloc();
+u32 Texture_Init(AglTexture* t, const u8* data, u32 size, const char* ext, const char* path);
 
 }  // namespace image
 }  // namespace sly4

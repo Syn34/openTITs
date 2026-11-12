@@ -1,145 +1,141 @@
 // Font_FromXml.
 #include "load.h"
 
-using namespace sly4;
-using namespace sly4::font;
+#include "../heap/heap.h"
+#include "../memory/mem.h"
+#include "../string/str.h"
+#include "../text/text.h"
+#include "../uiload/more.h"
+#include "../uiload/uiload.h"
+#include "../xml/xml.h"
+
+namespace sly4::font {
+using namespace opentit::native;
 
 namespace {
-
-constexpr u32 kFontTexture = 92, kFontFirst = 96, kFontGlyphCount = 100, kFontFlags = 101;
-constexpr u32 kFontGlyphs = 104, kFontMap = 108, kFontPages = 112;
-
-inline u32 Scan(PPUContext& ctx, u32 str, u32 out) {
-    return static_cast<u32>(call(ctx, lfn2::sscanf, {str, kStrHexFormat, out}));
-}
-
+inline u32 Scan(const char* str, be_u32* out) { return call<u32>(lfn2::sscanf, str, kStrHexFormat, out); }
 }  // namespace
 
-// Font* Font_FromXml(XmlCursor* doc, XmlCursor* node, u32 arg)
 // <... name= texture= mapfilename= firstchar= + four bools>. firstchar is
 // a character or "\u<hex>" (default ' '). A child element's text, if any,
 // lists the characters glyph by glyph (separated by spaces, tabs, newlines
 // or commas, each a character or "\u<hex>"), giving the code point ->
 // glyph map (up to 255 glyphs; 0xFF = none).
-DECOMP(004D601C, Font_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), a = arg<u32>(ctx, 2);
+text::Font* Font_FromXml(xml::XmlCursor* doc, xml::XmlCursor* node, u32 a) {
+    GuestFrame frame(256 - 112);
+    be_u32* first = frame.as<be_u32>(0);   // sp+112
+    be_u32* value = frame.as<be_u32>(4);   // sp+116
+    u8* bools = frame.as<u8>(8);           // sp+120
+    char* token = frame.as<char>(16);      // sp+128 (no length limit, as in the original)
 
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 256 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 first = sp + 112, value = sp + 116, bools = sp + 120, token = sp + 128;
-
-    const u32 name = static_cast<u32>(call(ctx, lfn::XmlCursor_FindAttrByName, {node, kStrName}));
-    u32 tex_name = static_cast<u32>(call(ctx, lfn::XmlCursor_FindAttrByName, {node, kStrTexture}));
-    const u32 map_file = static_cast<u32>(call(ctx, lfn::XmlCursor_FindAttrByName, {node, kStrMapFile}));
-    const u32 first_attr = static_cast<u32>(call(ctx, lfn::XmlCursor_FindAttrByName, {node, kStrFirstChar}));
-    call(ctx, lfn::XmlCursor_ReadBool, {node, kHashPreload, bools + 0, 0});
-    call(ctx, lfn::XmlCursor_ReadBool, {node, kHashFontFlag80, bools + 1, 0});
-    call(ctx, lfn::XmlCursor_ReadBool, {node, kHashFontFlag40, bools + 2, 0});
-    call(ctx, lfn::XmlCursor_ReadBool, {node, kHashFontFlag20, bools + 3, 0});
-    if (name == 0 || tex_name == 0) {
-        call(ctx, lfn::XmlCursor_DocPath, {doc});
-        return ret(ctx, 0u);
+    const char* name = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrName));
+    const char* tex_name = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrTexture));
+    const char* map_file = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrMapFile));
+    const char* first_attr = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrFirstChar));
+    xml::XmlCursor_ReadBool(node, kHashPreload, bools + 0, 0);
+    xml::XmlCursor_ReadBool(node, kHashFontFlag80, bools + 1, 0);
+    xml::XmlCursor_ReadBool(node, kHashFontFlag40, bools + 2, 0);
+    xml::XmlCursor_ReadBool(node, kHashFontFlag20, bools + 3, 0);
+    if (!name || !tex_name) {
+        uiload::XmlCursor_DocPath(doc);
+        return nullptr;
     }
-    const u32 tex = Res_FindByHash(static_cast<u32>(call(ctx, rfn::String_HashNoCase, {tex_name})));
-    if (tex == 0 || map_file == 0) {
-        call(ctx, lfn::XmlCursor_DocPath, {doc});
-        return ret(ctx, 0u);
+    UiRes* tex = Res_Find(str::String_HashNoCase(tex_name));
+    if (!tex || !map_file) {
+        uiload::XmlCursor_DocPath(doc);
+        return nullptr;
     }
 
-    store<u32>(first, ' ');
-    if (first_attr != 0) {
-        const u8 c0 = load<u8>(first_attr);
-        if (c0 == '\\' && load<u8>(first_attr + 1) == 'u') {
-            if (Scan(ctx, first_attr + 2, first) == 0) {
-                call(ctx, lfn::XmlCursor_DocPath, {doc});
-                store<u32>(first, ' ');
+    *first = static_cast<u32>(' ');
+    if (first_attr) {
+        const u32 fa = guest(first_attr);
+        const u8 c0 = gref<u8>(fa);
+        if (c0 == '\\' && gref<u8>(fa + 1) == 'u') {
+            if (Scan(host<const char>(fa + 2), first) == 0) {
+                uiload::XmlCursor_DocPath(doc);
+                *first = static_cast<u32>(' ');
             }
         } else if ((c0 & 0x80) == 0) {
-            store<u32>(first, static_cast<u32>(static_cast<s32>(static_cast<s8>(c0))));
-        } else if (load<u8>(first_attr + 1) != 0) {
-            call(ctx, lfn::XmlCursor_DocPath, {doc});
+            *first = static_cast<u32>(static_cast<s32>(static_cast<s8>(c0)));
+        } else if (gref<u8>(fa + 1) != 0) {
+            uiload::XmlCursor_DocPath(doc);
         } else {
-            store<u32>(first, c0);
+            *first = c0;
         }
     }
 
-    u32 map = 0;
-    const u32 child = static_cast<u32>(call(ctx, lfn::XmlCursor_FirstChild, {node, kHashFontMapTag}));
-    u32 text = child != 0 ? static_cast<u32>(call(ctx, lfn2::XmlCursor_Text, {child})) : 0;
-    if (text != 0) {
-        const u32 stack = static_cast<u32>(call(ctx, lfn2::Mem_GetDefaultStack, {}));
-        map = static_cast<u32>(call(ctx, lfn2::MemStack_Alloc, {stack, kFontMapSize}));
-        call(ctx, lfn::memset, {map, 0xFF, kFontMapSize});
-        u32 out = token, glyph = 0;
-        store<u8>(token, 0);
+    u8* map = nullptr;
+    xml::XmlCursor* child = xml::XmlCursor_FirstChild(node, kHashFontMapTag);
+    const char* text = child ? uimore::XmlCursor_Text(child) : nullptr;
+    if (text) {
+        map = static_cast<u8*>(heap::MemStack_Alloc(memory::Mem_GetDefaultStack(), kFontMapSize));
+        call(lfn::memset, map, 0xFFu, kFontMapSize);
+        u32 p = guest(text);
+        char* out = token;
+        u32 glyph = 0;
+        token[0] = 0;
         while (glyph < kFontMapMaxGlyphs) {
-            const s8 c = static_cast<s8>(load<u8>(text));
+            const s8 c = static_cast<s8>(gref<u8>(p));
             const bool sep = c == 0 || c == 9 || c == 10 || c == ' ' || c == ',';
-            if (!sep) {  // part of a token (no length limit, as in the original)
-                store<u8>(out++, load<u8>(text++));
+            if (!sep) {  // part of a token
+                *out++ = static_cast<char>(gref<u8>(p++));
                 continue;
             }
-            if (load<u8>(token) != 0) {
-                store<u8>(out, 0);
-                store<u32>(value, 0);
-                if (load<u8>(token) == '\\' && load<u8>(token + 1) == 'u')
-                    Scan(ctx, token + 2, value);
+            if (token[0] != 0) {
+                *out = 0;
+                *value = 0u;
+                if (token[0] == '\\' && token[1] == 'u')
+                    Scan(token + 2, value);
                 else
-                    Scan(ctx, token, value);
-                const u32 v = load<u32>(value);
+                    Scan(token, value);
+                const u32 v = *value;
                 if (v == 0 || v > 0xFFFF)
-                    call(ctx, lfn::XmlCursor_DocPath, {doc});
+                    uiload::XmlCursor_DocPath(doc);
                 else
-                    store<u8>(map + v, static_cast<u8>(glyph++));
+                    gref<u8>(guest(map) + v) = static_cast<u8>(glyph++);
                 out = token;
-                store<u8>(token, 0);
+                token[0] = 0;
             }
-            const u8 consumed = load<u8>(text++);
+            const u8 consumed = gref<u8>(p++);
             if (consumed == 0) break;
         }
     }
 
-    u32 result = 0;
-    const u32 font = static_cast<u32>(call(ctx, lfn::Mem_Alloc, {kFontSize, 0, 16}));
-    if (font != 0) {
-        const u8 preload = load<u8>(bools + 0);
-        call(ctx, rfn::UiRes_Construct, {font, name, map_file, preload, a});
-        store<u32>(font + kFontTexture, tex);
-        u8 flags = load<u8>(font + kFontFlags);
-        store<u32>(font + kFontFirst, load<u32>(first));
-        store<u32>(font, kFontVtbl);
-        flags = static_cast<u8>((flags & ~0x80) | ((load<u8>(bools + 1) << 7) & 0x80));
-        flags = static_cast<u8>((flags & ~0x40) | ((load<u8>(bools + 2) << 6) & 0x40));
-        flags = static_cast<u8>((flags & ~0x20) | ((load<u8>(bools + 3) << 5) & 0x20));
-        store<u8>(font + kFontGlyphCount, 0);
-        store<u16>(font + 102, 0);
-        store<u32>(font + kFontGlyphs, 0);
-        store<u8>(font + kFontFlags, flags);
-        store<u32>(font + kFontMap, 0);
-        for (u32 k = 0; k < 12; ++k) store<u8>(font + kFontPages + k, 0);
-        const u32 t = load<u32>(font + kFontTexture);
-        store<u16>(t + kRefCount, static_cast<u16>(load<u16>(t + kRefCount) + 1));
+    text::Font* result = nullptr;
+    text::Font* font = static_cast<text::Font*>(memory::Mem_Alloc(kFontSize, 0, 16));
+    if (font) {
+        const u8 preload = bools[0];
+        UiRes_Construct(&font->res, name, map_file, preload, a);
+        font->texture = reinterpret_cast<UiTexture*>(tex);
+        u8 flags = font->flags;
+        font->first = first->get();
+        font->res.vtable = kFontVtbl;
+        flags = static_cast<u8>((flags & ~0x80) | ((bools[1] << 7) & 0x80));
+        flags = static_cast<u8>((flags & ~0x40) | ((bools[2] << 6) & 0x40));
+        flags = static_cast<u8>((flags & ~0x20) | ((bools[3] << 5) & 0x20));
+        font->range = 0;
+        font->line_height = 0;
+        font->glyphs = nullptr;
+        font->flags = flags;
+        font->map = nullptr;
+        for (u32 k = 0; k < 3; ++k) font->pages[k] = 0u;
+        uimore::AddRef(font->texture.get());
         if (preload != 0) {
-            const u16 users = static_cast<u16>(load<u16>(font + kResUsers) + 1);
-            store<u16>(font + kResUsers, users);
-            if (static_cast<s16>(users) > 0 && load<u16>(font + kResLoaded) < 1) {
-                const u32 opd = load<u32>(load<u32>(font) + kVfnLoad);
-                const u32 st = static_cast<u32>(call_ptr(ctx, opd, {font, opd, load<u32>(opd)}));
-                store<u16>(font + kResLoaded, static_cast<u16>(st));
-            }
+            const u16 users = static_cast<u16>(font->res.users + 1);
+            font->res.users = users;
+            if (static_cast<s16>(users) > 0 && font->res.loaded < 1) font->res.loaded = static_cast<u16>(vcall<u32>(font, kVfnLoad));
         }
-        if (map != 0) {
-            const u32 copy = static_cast<u32>(call(ctx, lfn::Mem_Alloc, {kFontMapSize, 0, 16}));
-            store<u32>(font + kFontMap, copy);
-            call(ctx, lfn2::memmove, {copy, map, kFontMapSize});
+        if (map) {
+            u8* copy = static_cast<u8*>(memory::Mem_Alloc(kFontMapSize, 0, 16));
+            font->map = copy;
+            call(lfn2::memmove, copy, map, kFontMapSize);
         }
         result = font;
     }
-    if (map != 0) {
-        const u32 stack = static_cast<u32>(call(ctx, lfn2::Mem_GetDefaultStack, {}));
-        const u32 opd = load<u32>(load<u32>(stack) + 8);  // free
-        call_ptr(ctx, opd, {stack, map, opd, load<u32>(opd)});  // r5 / r6 = OPD and entry
-    }
-    ret(ctx, result);
+    if (map) vcall(memory::Mem_GetDefaultStack(), 8, map);  // free
+    return result;
 }
+
+}  // namespace sly4::font
+
+NATIVE(004D601C, sly4::font::Font_FromXml)

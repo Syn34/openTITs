@@ -300,6 +300,17 @@ XmlCursor* XmlCursor_NextSiblingRaw(XmlCursor* cursor, u32 hash);
 XmlCursor* XmlCursor_FirstChild(XmlCursor* cursor, u32 hash);
 XmlCursor* XmlCursor_NextSibling(XmlCursor* cursor, u32 hash);
 const char* XmlCursor_FindAttr(XmlCursor* cursor, u32 hash);
+const char* XmlCursor_FindAttrByName(XmlCursor* cursor, const char* name);
+u32 XmlCursor_ReadBool(XmlCursor* cursor, u32 hash, u8* out, u8 fallback);
+u32 XmlCursor_ReadS32(XmlCursor* cursor, u32 hash, be_u32* out, u32 fallback);
+u32 XmlCursor_ReadF32(XmlCursor* cursor, u32 hash, be_f32* out, f32 fallback);
+u32 XmlCursor_ReadVec2(XmlCursor* c, u32 hash, be_u32* out, const be_u32* fallback);
+u32 XmlCursor_ReadVec3(XmlCursor* c, u32 hash, be_u32* out, const be_u32* fallback);
+u32 XmlCursor_ReadColor(XmlCursor* cursor, u32 hash, u8* out, const u8* fallback);
+u32 XmlCursor_ReadHash(XmlCursor* cursor, u32 hash, be_u32* out, u32 fallback);
+void XmlDoc_Construct(XmlDoc* doc, const char* path);
+void XmlDoc_Destruct(XmlDoc* doc);
+u32 XmlDoc_Parse(XmlDoc* doc, u32 unused);
 u32 XmlDoc_LoadXmlb(XmlDoc* doc, void* file, u32 unused);
 void XmlElement_Relocate(XmlbElement* elem, u32 base);
 

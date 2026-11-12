@@ -56,5 +56,16 @@ constexpr u32 kTagResources = 0x73A36783, kTagTexture = 0xD64960FB, kTagFont = 0
 constexpr u32 kTagTimelines = 0x9D9FD4E8, kTagTimeline = 0x9178C4CB, kTagElements = 0xA7D40E5E;
 constexpr u32 kIncludeBank = 92;              // Include +92: Bank_Create's object
 
+// Native functions (src/uiload/ctor_elem.cpp, loader.cpp).
+text::UiElem* UiElem9_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* UiElem8_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* UiElem7_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* UiElem6_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* UiElem2_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* UiElem1_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* UiElem0_FromXml(XmlCursor* doc, XmlCursor* node, const ElemDesc* base, const text::UiElem* tmpl);
+text::UiElem* Ui_LoadElement(XmlCursor* doc, XmlCursor* node, text::UiElem* parent, u32 arg);
+u32 Ui_LoadFile(void* inc, XmlCursor* doc, XmlCursor* root);
+
 }  // namespace uiload
 }  // namespace sly4

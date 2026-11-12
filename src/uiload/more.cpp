@@ -1,31 +1,24 @@
 // Small callees of the UI loader (see more.h).
 #include "more.h"
 
-using namespace sly4;
-using namespace sly4::uimore;
+#include "../memory/mem.h"
+#include "../string/str.h"
+#include "tlbuild.h"
+#include "uiload.h"
+
+namespace sly4::uimore {
+using namespace opentit::native;
+using xml::XmlCursor;
+using xml::XmlDoc;
 
 namespace {
 
-// XmlCursor / XmlDoc / XMLB element fields (src/xml/xml.h).
-constexpr u32 kCurType = 4, kCurDoc = 16, kCurHash = 20, kCurFlags = 24, kCurDepth = 25, kCurIndex = 26, kCurParent = 28;
-constexpr u8 kCurValid = 0x80;
-constexpr u32 kDocData = 44, kDocRing = 176, kDocCursors = 192;
-constexpr u32 kXmlbTopCount = 16, kXmlbTop = 20;
-constexpr u32 kElemName = 4, kElemChildCount = 12, kElemChildren = 16;
-constexpr u32 kCurVfnAsElement = 12;
-
-inline u32 vslot(u32 obj, u32 off) { return load<u32>(load<u32>(obj) + off); }
-// A virtual call with one argument; r4 / r5 = OPD and entry, as in the original.
-inline u32 vcall1(PPUContext& ctx, u32 obj, u32 off) {
-    const u32 opd = vslot(obj, off);
-    return static_cast<u32>(call_ptr(ctx, opd, {obj, opd, load<u32>(opd)}));
-}
-
-// The next of the 4 pool cursors for `depth` (inlined in the original).
-u32 XmlDoc_NextCursor(u32 doc, u32 depth) {
-    auto& ring = ref<u8>(doc + depth + kDocRing);
+// The next of the 4 pool cursors for `depth` (inlined in the original;
+// 32-bit address arithmetic as there).
+XmlCursor* XmlDoc_NextCursor(u32 doc, u32 depth) {
+    u8& ring = gref<u8>(doc + depth + xml::kDocRing);
     const u32 slot = ring;
-    const u32 cursor = doc + ((depth << 7) & 0xFFFFFF80) + slot * 32 + kDocCursors;
+    XmlCursor* cursor = host<XmlCursor>(doc + ((depth << 7) & 0xFFFFFF80) + slot * 32 + xml::kDocCursors);
     const u32 next = slot + 1;
     ring = static_cast<u8>((next & 0xFF) >= 4 ? 0 : next);
     return cursor;
@@ -33,448 +26,417 @@ u32 XmlDoc_NextCursor(u32 doc, u32 depth) {
 
 // The next element after this one under the same parent, whatever its tag
 // (inlined into both walkers below).
-u32 XmlCursor_NextSiblingRawAny(u32 cursor) {
-    if ((ref<u8>(cursor + kCurFlags) & kCurValid) == 0) return 0;
-    const u32 parent = field<u32>(cursor, kCurParent);
-    const u32 doc = field<u32>(cursor, kCurDoc);
+XmlCursor* XmlCursor_NextSiblingRawAny(XmlCursor* cursor) {
+    if ((cursor->flags & xml::kCurValid) == 0) return nullptr;
+    const u32 parent = cursor->parent.ea;
+    const u32 doc = cursor->doc.ea;
     u32 list, count;
     if (parent != 0) {
-        list = field<u32>(parent, kElemChildren);
-        count = field<u16>(parent, kElemChildCount);
+        list = gref<be_u32>(parent + xml::kElemChildren);
+        count = gref<be_u16>(parent + xml::kElemChildCount);
     } else {
-        const u32 data = field<u32>(doc, kDocData);
-        list = data + kXmlbTop;
-        count = field<u16>(data, kXmlbTopCount);
+        const u32 data = gref<be_u32>(doc + xml::kDocData);
+        list = data + xml::kXmlbTop;
+        count = gref<be_u16>(data + xml::kXmlbTopCount);
     }
-    const u32 i = field<u16>(cursor, kCurIndex) + 1u;
-    if (i >= count) return 0;
-    const u32 child = load<u32>(list + i * 4);
-    const u32 out = XmlDoc_NextCursor(doc, ref<u8>(cursor + kCurDepth));
+    const u32 i = cursor->index + 1u;
+    if (i >= count) return nullptr;
+    const u32 child = gref<be_u32>(list + i * 4);
+    XmlCursor* out = XmlDoc_NextCursor(doc, cursor->depth);
     // `out` can be `cursor` itself once the ring has gone round; this is
     // the original's order of reads and writes.
-    ref<u8>(out + kCurFlags) |= kCurValid;
-    ref<u8>(out + kCurDepth) = ref<u8>(cursor + kCurDepth);
-    const u32 parent2 = field<u32>(cursor, kCurParent);
-    const u32 hash = load<u32>(child);
-    field<u32>(out, kCurParent) = parent2;
-    field<u16>(out, kCurIndex) = static_cast<u16>(i);
-    const u32 doc2 = field<u32>(cursor, kCurDoc);
-    field<u32>(out, kCurHash) = hash;
-    field<u32>(out, kCurDoc) = doc2;
+    out->flags |= xml::kCurValid;
+    out->depth = cursor->depth;
+    const u32 parent2 = cursor->parent.ea;
+    const u32 hash = gref<be_u32>(child);
+    out->parent.ea = parent2;
+    out->index = static_cast<u16>(i);
+    const u32 doc2 = cursor->doc.ea;
+    out->hash = hash;
+    out->doc.ea = doc2;
     return out;
 }
 
 // From c on, the first cursor whose AsElement() isn't 0 (in practice c).
-u32 FirstElementFrom(PPUContext& ctx, u32 c) {
-    for (; c != 0; c = XmlCursor_NextSiblingRawAny(c))
-        if (vcall1(ctx, c, kCurVfnAsElement) != 0) return vcall1(ctx, c, kCurVfnAsElement);
-    return 0;
+XmlCursor* FirstElementFrom(XmlCursor* c) {
+    for (; c; c = XmlCursor_NextSiblingRawAny(c))
+        if (vcall<u32>(c, xml::kCurVfnAsElement) != 0) return vcall<XmlCursor*>(c, xml::kCurVfnAsElement);
+    return nullptr;
 }
-
-inline void Release(PPUContext& ctx, u32 obj) { vcall1(ctx, obj, kVfnRelease); }
-inline void AddRef(u32 obj) { field<u16>(obj, kResRefCount) += 1; }
 
 }  // namespace
 
-// XmlCursor* XmlCursor_FirstChildRawAny(XmlCursor* cursor)
 // The first child element whatever its tag (for the document: the first
 // top-level element), in the next pool cursor one level deeper.
-DECOMP(004F899C, XmlCursor_FirstChildRawAny) {
-    const u32 cursor = arg<u32>(ctx, 0);
-    u32 doc = field<u32>(cursor, kCurDoc);
-    if ((ref<u8>(cursor + kCurFlags) & kCurValid) == 0) return ret(ctx, 0u);
-    const u32 parent = field<u32>(cursor, kCurParent);
-    const u32 type = field<u32>(cursor, kCurType);
-    if (parent == 0 && type == 0) doc = cursor;  // the document itself
+XmlCursor* XmlCursor_FirstChildRawAny(XmlCursor* cursor) {
+    u32 doc = cursor->doc.ea;
+    if ((cursor->flags & xml::kCurValid) == 0) return nullptr;
+    const u32 parent = cursor->parent.ea;
+    const u32 type = cursor->type;
+    if (parent == 0 && type == 0) doc = guest(cursor);  // the document itself
 
     u32 list, count, depth, elem;
     if (parent != 0) {
-        depth = ref<u8>(cursor + kCurDepth) + 1u;
-        elem = load<u32>(field<u32>(parent, kElemChildren) + field<u16>(cursor, kCurIndex) * 4u);
-        list = field<u32>(elem, kElemChildren);
-        count = field<u16>(elem, kElemChildCount);
+        depth = cursor->depth + 1u;
+        elem = gref<be_u32>(gref<be_u32>(parent + xml::kElemChildren) + cursor->index * 4u);
+        list = gref<be_u32>(elem + xml::kElemChildren);
+        count = gref<be_u16>(elem + xml::kElemChildCount);
     } else {
-        const u32 data = field<u32>(doc, kDocData);
+        const u32 data = gref<be_u32>(doc + xml::kDocData);
         if (type != 0) {  // a top-level element
             depth = 1;
-            elem = load<u32>(data + field<u16>(cursor, kCurIndex) * 4u + kXmlbTop);
-            list = field<u32>(elem, kElemChildren);
-            count = field<u16>(elem, kElemChildCount);
+            elem = gref<be_u32>(data + cursor->index * 4u + xml::kXmlbTop);
+            list = gref<be_u32>(elem + xml::kElemChildren);
+            count = gref<be_u16>(elem + xml::kElemChildCount);
         } else {
             depth = 0;
             elem = 0;
-            list = data + kXmlbTop;
-            count = field<u16>(data, kXmlbTopCount);
+            list = data + xml::kXmlbTop;
+            count = gref<be_u16>(data + xml::kXmlbTopCount);
         }
     }
-    if (count == 0) return ret(ctx, 0u);
+    if (count == 0) return nullptr;
 
-    const u32 child = load<u32>(list);
-    const u32 out = XmlDoc_NextCursor(doc, depth);
-    const u8 flags = ref<u8>(out + kCurFlags);
-    ref<u8>(out + kCurDepth) = static_cast<u8>(depth);
-    field<u32>(out, kCurParent) = elem;
-    field<u16>(out, kCurIndex) = 0;
-    ref<u8>(out + kCurFlags) = static_cast<u8>(flags | kCurValid);
-    field<u32>(out, kCurDoc) = doc;
-    field<u32>(out, kCurHash) = load<u32>(child);
-    ret(ctx, out);
+    const u32 child = gref<be_u32>(list);
+    XmlCursor* out = XmlDoc_NextCursor(doc, depth);
+    const u8 flags = out->flags;
+    out->depth = static_cast<u8>(depth);
+    out->parent.ea = elem;
+    out->index = 0;
+    out->flags = static_cast<u8>(flags | xml::kCurValid);
+    out->doc.ea = doc;
+    out->hash = gref<be_u32>(child).get();
+    return out;
 }
 
-// XmlCursor* XmlCursor_FirstChildAny(XmlCursor* cursor)
 // The first child element, whatever its tag (XmlCursor_FirstChild without
 // the tag filter).
-DECOMP(004F9140, XmlCursor_FirstChildAny) {
-    const u32 cursor = arg<u32>(ctx, 0);
-    const u32 c = static_cast<u32>(call(ctx, mfn::XmlCursor_FirstChildRawAny, {cursor}));
-    ret(ctx, FirstElementFrom(ctx, c));
-}
+XmlCursor* XmlCursor_FirstChildAny(XmlCursor* cursor) { return FirstElementFrom(XmlCursor_FirstChildRawAny(cursor)); }
 
-// XmlCursor* XmlCursor_NextSiblingAny(XmlCursor* cursor)
 // The next element under the same parent, whatever its tag.
-DECOMP(004F8D74, XmlCursor_NextSiblingAny) {
-    const u32 cursor = arg<u32>(ctx, 0);
-    ret(ctx, FirstElementFrom(ctx, XmlCursor_NextSiblingRawAny(cursor)));
-}
+XmlCursor* XmlCursor_NextSiblingAny(XmlCursor* cursor) { return FirstElementFrom(XmlCursor_NextSiblingRawAny(cursor)); }
 
-// const char* XmlCursor_Text(XmlCursor* cursor)
 // The element's +4 string (0 for an invalid cursor).
-DECOMP(004FA744, XmlCursor_Text) {
-    const u32 cursor = arg<u32>(ctx, 0);
-    if ((ref<u8>(cursor + kCurFlags) & kCurValid) == 0) return ret(ctx, 0u);
-    const u32 parent = field<u32>(cursor, kCurParent);
-    const u32 index = field<u16>(cursor, kCurIndex);
+const char* XmlCursor_Text(XmlCursor* cursor) {
+    if ((cursor->flags & xml::kCurValid) == 0) return nullptr;
+    const u32 parent = cursor->parent.ea;
+    const u32 index = cursor->index;
     u32 elem;
     if (parent != 0)
-        elem = load<u32>(field<u32>(parent, kElemChildren) + index * 4);
+        elem = gref<be_u32>(gref<be_u32>(parent + xml::kElemChildren) + index * 4);
     else
-        elem = load<u32>(field<u32>(field<u32>(cursor, kCurDoc), kDocData) + index * 4 + kXmlbTop);
-    ret(ctx, load<u32>(elem + kElemName));
+        elem = gref<be_u32>(gref<be_u32>(cursor->doc.ea + xml::kDocData) + index * 4 + xml::kXmlbTop);
+    return host<const char>(gref<be_u32>(elem + xml::kElemName));
 }
 
-// int String_CompareN(const char* a, const char* b, s32 n)
 // strncasecmp for ASCII: -1, 0 or 1. Characters are signed; only A-Z fold.
-DECOMP(00555EB0, String_CompareN) {
-    const u32 a = arg<u32>(ctx, 0), b = arg<u32>(ctx, 1);
-    const s32 n = arg<s32>(ctx, 2);
+s32 String_CompareN(const char* a, const char* b, s32 n) {
     auto lower = [](s32 c) -> s32 { return (c >= 'A' && c <= 'Z') ? static_cast<s8>(c + 32) : c; };
+    const u32 pa = guest(a), pb = guest(b);
     for (s32 i = 0;; ++i) {
-        const u8 ca = load<u8>(a + static_cast<u32>(i));
-        if (ca == 0 && load<u8>(b + static_cast<u32>(i)) == 0) return ret(ctx, s32{0});
-        if (i >= n) return ret(ctx, s32{0});
+        const u8 ca = gref<u8>(pa + static_cast<u32>(i));
+        if (ca == 0 && gref<u8>(pb + static_cast<u32>(i)) == 0) return 0;
+        if (i >= n) return 0;
         const s32 la = lower(static_cast<s8>(ca));
-        const s32 lb = lower(static_cast<s8>(load<u8>(b + static_cast<u32>(i))));
-        if (la < lb) return ret(ctx, s32{-1});
-        if (la > lb) return ret(ctx, s32{1});
+        const s32 lb = lower(static_cast<s8>(gref<u8>(pb + static_cast<u32>(i))));
+        if (la < lb) return -1;
+        if (la > lb) return 1;
     }
 }
 
-// Material* Tex_Acquire(Texture* tex)
 // A new material for drawing with `tex` (one more reference to it); for a
 // null texture, an untextured one.
-DECOMP(00523B7C, Tex_Acquire) {
-    const u32 tex = arg<u32>(ctx, 0);
-    if (tex == 0) {
-        const u32 shader = static_cast<u32>(call(ctx, mfn::Shader_FindByHash, {kShaderUntextured}));
-        const u32 m = static_cast<u32>(call(ctx, mfn::Material_Alloc));
-        store<u32>(m + kMatShader, shader);  // no null check, as in the original
-        return ret(ctx, m);
+Material* Tex_Acquire(void* tex) {
+    if (!tex) {
+        const u32 shader = call<u32>(mfn::Shader_FindByHash, kShaderUntextured);
+        const u32 m = call<u32>(mfn::Material_Alloc);
+        gref<Material>(m).shader = shader;  // no null check, as in the original
+        return host<Material>(m);
     }
-    const u32 shader = static_cast<u32>(call(ctx, mfn::Shader_FindByHash, {kShaderTextured}));
-    const u32 m = static_cast<u32>(call(ctx, mfn::Material_Alloc));
-    const u8 n = static_cast<u8>(load<u8>(m + kMatTexCount) + 1);
-    store<u32>(m + kMatShader, shader);
+    const u32 shader = call<u32>(mfn::Shader_FindByHash, kShaderTextured);
+    const u32 ma = call<u32>(mfn::Material_Alloc);
+    Material& m = gref<Material>(ma);
+    const u8 n = static_cast<u8>(m.tex_count + 1);
+    m.shader = shader;
     const u32 index = static_cast<u32>(n) - 1;  // -1 when the count wrapped to 0
-    store<u8>(m + kMatTexCount, n);
-    const u32 slot = m + kMatTextures + index * 4;
-    const u32 old = load<u32>(slot);
-    if (old != tex) {
-        store<u32>(slot, tex);
+    m.tex_count = n;
+    be_u32& slot = gref<be_u32>(ma + kMatTextures + index * 4);
+    const u32 old = slot;
+    if (old != guest(tex)) {
+        slot = guest(tex);
         AddRef(tex);
-        if (old != 0) Release(ctx, old);
+        if (old != 0) Release(host<void>(old));
     }
-    if (index == 0) store<u16>(m + kMatTex0Word, static_cast<u16>(load<u32>(tex + 112)));
-    ret(ctx, m);
+    if (index == 0) m.tex0_word = static_cast<u16>(gref<be_u32>(guest(tex) + 112).get());
+    return host<Material>(ma);
 }
 
-// void UiElem2_SetBlend(Element* e, u32 blend)  [type 2]
-// Stores the blend index in the flags and sets the material's blend
-// state; depth test off, depth func ALWAYS.
-DECOMP(004DD08C, UiElem2_SetBlend) {
-    const u32 e = arg<u32>(ctx, 0), blend = arg<u32>(ctx, 1);
-    const u32 flags = field<u32>(e, kElemFlags);
-    const u32 m = field<u32>(e, kElemMaterial2);
-    field<u32>(e, kElemFlags) = (flags & ~0x00C00000u) | ((blend << 22) & 0x00C00000u);
+// [type 2] Stores the blend index in the flags and sets the material's
+// blend state; depth test off, depth func ALWAYS.
+void UiElem2_SetBlend(UiElemTex* e, u32 blend) {
+    const u32 flags = e->elem.flags;
+    const u32 m = e->material2;
+    e->elem.flags = (flags & ~0x00C00000u) | ((blend << 22) & 0x00C00000u);
     if (m == 0) return;
-    Blend_SetMode(m + kMatBlend, load<s32>(kBlendModes + blend * 4));
-    Blend_SetDepth(load<u32>(e + kElemMaterial2) + kMatBlend, kGlAlways);
-    const u32 b = load<u32>(e + kElemMaterial2) + kMatBlend;
-    store<u32>(b + 8, load<u32>(b + 8) & 0x7FFFFFFF);
+    Blend_SetMode(gref<Material>(m).blend, gref<be_s32>(kBlendModes + blend * 4));
+    Blend_SetDepth(gref<Material>(e->material2).blend, kGlAlways);
+    be_u32* b = gref<Material>(e->material2).blend;
+    b[2] = b[2] & 0x7FFFFFFFu;
 }
 
-// void Texture_MakePages(UiTexture* t)
 // Three materials on the loaded texture, one per blend index ("av",
 // "ad", "su"), with depth func LEQUAL (flag 0x80000000) or ALWAYS and
 // depth test from flag 0x40000000.
-DECOMP(004D5C64, Texture_MakePages) {
-    const u32 t = arg<u32>(ctx, 0);
+void Texture_MakePages(UiTexture* t) {
     static constexpr s32 kModes[3] = {2, 3, 4};  // also stored at sp+112 in the original
-    u32 h = load<u32>(t + kTexHandle);
+    u32 h = t->handle;
     if (h == 0) return;
     for (u32 k = 0; k < 3; ++k) {
-        const u32 slot = t + kTexPages + k * 4;
-        const u32 m = static_cast<u32>(call(ctx, mfn::Tex_Acquire, {h}));
-        store<u32>(slot, m);
-        Blend_SetMode(m + kMatBlend, kModes[k]);
-        const u32 b = load<u32>(slot) + kMatBlend;
-        Blend_SetDepth(b, (load<u32>(t + kTexFlags) & 0x80000000) != 0 ? kGlLequal : kGlAlways);
-        const u32 test = (load<u32>(t + kTexFlags) & 0x40000000) != 0 ? 1 : 0;
-        const u32 b2 = load<u32>(slot) + kMatBlend;
-        store<u32>(b2 + 8, (load<u32>(b2 + 8) & 0x7FFFFFFF) | (test << 31));
-        h = load<u32>(t + kTexHandle);
+        Material* m = Tex_Acquire(host<void>(h));
+        t->pages[k] = guest(m);
+        Blend_SetMode(gref<Material>(guest(m)).blend, kModes[k]);
+        Blend_SetDepth(gref<Material>(t->pages[k]).blend, (t->flags & 0x80000000) != 0 ? kGlLequal : kGlAlways);
+        const u32 test = (t->flags & 0x40000000) != 0 ? 1 : 0;
+        be_u32* b2 = gref<Material>(t->pages[k]).blend;
+        b2[2] = (b2[2] & 0x7FFFFFFFu) | (test << 31);
+        h = t->handle;
     }
 }
 
-// void UiElem_SetTexture(Element* e, UiTexture* res, const f32 uv0[2], const f32 uv1[2])
 // Points the element at a texture resource. Its material is kept when it
 // already draws the same texture; otherwise the old material and resource
 // are released and the material becomes the resource's page for the
 // element's blend index (or a new one on the texture, or on the default
 // texture when the resource isn't loaded or is null). Sets 0x02000000.
-DECOMP(004D8A80, UiElem_SetTexture) {
-    const u32 e = arg<u32>(ctx, 0), res = arg<u32>(ctx, 1), uv0 = arg<u32>(ctx, 2), uv1 = arg<u32>(ctx, 3);
-
-    const u32 cur = field<u32>(e, kElemMaterial);
+void UiElem_SetTexture(UiElemTex* e, UiTexture* res, const be_u32* uv0, const be_u32* uv1) {
+    const u32 cur = e->material;
     bool keep = false;
     if (cur != 0) {
-        if (res != 0) {
-            const u32 bound = load<u32>(cur + kMatTextures);
-            const u32 want = load<u16>(res + kResLoaded) != 2
-                                 ? static_cast<u32>(call(ctx, mfn::Tex_GetDefault, {0}))
-                                 : load<u32>(res + kTexHandle);
+        if (res) {
+            const u32 bound = gref<Material>(cur).textures[0];
+            const u32 want = res->res.loaded != 2 ? uiload::Tex_GetDefault(0) : res->handle.get();
             keep = bound == want;
         }
         if (!keep) {
-            const u32 old = field<u32>(e, kElemTexRes);
-            if (old != 0) {
-                Release(ctx, old);
-                field<u32>(e, kElemTexRes) = 0;
+            if (const u32 old = e->tex_res) {
+                Release(host<void>(old));
+                e->tex_res = 0u;
             }
-            Release(ctx, field<u32>(e, kElemMaterial));
-            field<u32>(e, kElemMaterial) = 0;
+            Release(host<void>(e->material));
+            e->material = 0u;
         }
     }
 
-    field<u32>(e, kElemTexRes) = res;
-    const u32 u0 = res != 0 ? uv0 : kZeroVec2, u1 = res != 0 ? uv1 : kOneVec2;
-    for (u32 k = 0; k < 8; k += 4) store<u32>(e + kElemUv0 + k, load<u32>(u0 + k));  // lfs / stfs pairs
-    for (u32 k = 0; k < 8; k += 4) store<u32>(e + kElemUv1 + k, load<u32>(u1 + k));
+    e->tex_res = guest(res);
+    const be_u32* u0 = res ? uv0 : host<be_u32>(kZeroVec2);
+    const be_u32* u1 = res ? uv1 : host<be_u32>(kOneVec2);
+    for (u32 k = 0; k < 2; ++k) e->uv0[k] = u0[k].get();  // lfs / stfs pairs
+    for (u32 k = 0; k < 2; ++k) e->uv1[k] = u1[k].get();
 
     if (!keep) {
-        auto set_blend = [&] {
-            const u32 opd = vslot(e, kVfnSetBlend);
-            const u32 blend = (field<u32>(e, kElemFlags) >> 22) & 3;
-            call_ptr(ctx, opd, {e, blend, opd, load<u32>(opd)});  // r5 / r6 = OPD and entry
-        };
-        if (res == 0) {
-            const u32 def = static_cast<u32>(call(ctx, mfn::Tex_GetDefault, {1}));
-            field<u32>(e, kElemMaterial) = static_cast<u32>(call(ctx, mfn::Tex_Acquire, {def}));
+        auto set_blend = [&] { vcall(e, kVfnSetBlend, (e->elem.flags >> 22) & 3); };
+        if (!res) {
+            const u32 def = uiload::Tex_GetDefault(1);
+            e->material = guest(Tex_Acquire(host<void>(def)));
             set_blend();
         } else {
-            const u16 refs = static_cast<u16>(load<u16>(res + kResRefCount) + 1);
-            const u16 users = static_cast<u16>(load<u16>(res + kResUsers) + 1);
-            store<u16>(res + kResRefCount, refs);
-            store<u16>(res + kResUsers, users);
-            if (static_cast<s16>(users) > 0 && load<u16>(res + kResLoaded) < 1)
-                store<u16>(res + kResLoaded, static_cast<u16>(vcall1(ctx, res, kResVfnLoad)));
+            const u16 refs = static_cast<u16>(res->res.refs + 1);
+            const u16 users = static_cast<u16>(res->res.users + 1);
+            res->res.refs = refs;
+            res->res.users = users;
+            if (static_cast<s16>(users) > 0 && res->res.loaded < 1) res->res.loaded = static_cast<u16>(vcall<u32>(res, kResVfnLoad));
             // Blend index 3 reads the word after the three pages, as in the original.
-            const u32 page = load<u32>(res + kTexPages + ((field<u32>(e, kElemFlags) >> 22) & 3) * 4);
-            field<u32>(e, kElemMaterial) = page;
+            const u32 page = gref<be_u32>(guest(res) + kTexPages + ((e->elem.flags >> 22) & 3) * 4);
+            e->material = page;
             if (page != 0) {
-                AddRef(page);
+                AddRef(host<void>(page));
             } else {
-                const u32 tex = load<u16>(res + kResLoaded) == 2
-                                    ? load<u32>(res + kTexHandle)
-                                    : static_cast<u32>(call(ctx, mfn::Tex_GetDefault, {0}));
-                field<u32>(e, kElemMaterial) = static_cast<u32>(call(ctx, mfn::Tex_Acquire, {tex}));
+                const u32 tex = res->res.loaded == 2 ? res->handle.get() : uiload::Tex_GetDefault(0);
+                e->material = guest(Tex_Acquire(host<void>(tex)));
                 set_blend();
             }
         }
     }
-    field<u32>(e, kElemFlags) |= 0x02000000;
+    e->elem.flags |= 0x02000000u;
 }
 
-// Texture* Tex_FindLoaded(u32 file_hash)
 // The texture already loaded from a file of that name, or 0.
-DECOMP(0050C398, Tex_FindLoaded) {
-    const u32 hash = arg<u32>(ctx, 0);
-    Stack frame(ctx, 16);
-    store<u32>(frame.addr(), hash);
-    const u32 map = load<u32>(kTexDefaults + 24);
-    // r5 = kTexDefaults here in the original; the callee doesn't read it.
-    const u32 slot = static_cast<u32>(call(ctx, mfn::Map_Find, {map, frame.addr()}));
-    ret(ctx, load<u32>(slot));
+u32 Tex_FindLoaded(u32 hash) {
+    GuestFrame frame(16);
+    be_u32* key = frame.as<be_u32>();
+    *key = hash;
+    const u32 map = gref<be_u32>(kTexDefaults + 24);
+    return gref<be_u32>(call<u32>(mfn::Map_Find, map, key));
 }
 
-// Texture* Tex_LoadFile(const char* path, bool fallback)
 // Loads a texture file (any format the texture code knows by extension).
-// On failure, with `fallback`, the default texture 0 (one more reference)
-// or 0.
-DECOMP(0051E68C, Tex_LoadFile) {
-    const u32 path = arg<u32>(ctx, 0);
-    const u8 fallback = static_cast<u8>(arg<u32>(ctx, 1));
-    Stack frame(ctx, 16);
-    const u32 size_out = frame.addr();
+// On failure, with `fallback` (low byte), the default texture 0 (one more
+// reference) or 0.
+void* Tex_LoadFile(const char* path, u32 fallback) {
+    GuestFrame frame(16);
+    be_u32* size_out = frame.as<be_u32>();
     u32 tex = 0;
-    const u32 data = static_cast<u32>(call(ctx, mfn::File_LoadWhole, {path, size_out}));
+    const u32 data = call<u32>(mfn::File_LoadWhole, path, size_out);
     if (data != 0) {
-        const u32 ext = static_cast<u32>(call(ctx, mfn::Path_GetExtension, {path}));
-        const u32 size = load<u32>(size_out);
-        const u32 t = static_cast<u32>(call(ctx, mfn::Texture_Alloc));
-        const u32 name = t + 16;
-        call(ctx, mfn::String_CopyN, {name, path, 32});
-        store<u8>(t + 47, 0);
-        store<u32>(t + 48, static_cast<u32>(call(ctx, mfn::String_HashNoCase, {name})));
+        const u32 ext = call<u32>(mfn::Path_GetExtension, path);
+        const u32 size = *size_out;
+        const u32 t = call<u32>(mfn::Texture_Alloc);
+        char* name = &gref<char>(t + 16);
+        call(mfn::String_CopyN, name, path, 32u);
+        gref<u8>(t + 47) = 0;
+        gref<be_u32>(t + 48) = str::String_HashNoCase(name);
         tex = t;
-        if (static_cast<u32>(call(ctx, mfn::Texture_Init, {t, data, size, ext, path})) == 0) {
-            Release(ctx, t);
+        if (call<u32>(mfn::Texture_Init, t, data, size, ext, path) == 0) {
+            Release(host<void>(t));
             tex = 0;
         }
-        call(ctx, mfn::Mem_Free, {data});
-        if (tex != 0) return ret(ctx, tex);
+        memory::Mem_Free(host<void>(data));
+        if (tex != 0) return host<void>(tex);
     }
-    if (fallback != 0) {
-        tex = load<u32>(kTexDefaults);
-        if (tex != 0) AddRef(tex);
+    if (static_cast<u8>(fallback) != 0) {
+        tex = global<be_u32>(kTexDefaults);
+        if (tex != 0) AddRef(host<void>(tex));
     }
-    ret(ctx, tex);
+    return host<void>(tex);
 }
 
-// TimelineDef* Timeline_FromXml(XmlCursor* doc, XmlCursor* node, Include* inc)
+namespace {
+struct TimelineDef {
+    be_u32 vtable;        // +0 kTimelineDefVtbl
+    char name[32];        // +4
+    be_u32 hash;          // +36
+    be_u32 inc;           // +40 Include*
+    u8 flag;              // +44 (name?)
+    pad<3> _45;
+    be_u32 keys;          // +48 first key (chained by key +8)
+    be_u32 next;          // +52
+};
+static_assert(sizeof(TimelineDef) == kTimelineDefSize);
+}  // namespace
+
 // <timeline name=...>: a 56-byte definition appended to the list at
 // 0x00F6689C, with its keys (each child element) chained from +48 by +8.
-DECOMP(004DF88C, Timeline_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), inc = arg<u32>(ctx, 2);
-    const u32 name = static_cast<u32>(call(ctx, mfn::XmlCursor_FindAttrByName, {node, kStrName}));
-    if (name == 0) {
-        call(ctx, mfn::XmlCursor_DocPath, {doc});
-        return ret(ctx, 0u);
+void* Timeline_FromXml(XmlCursor* doc, XmlCursor* node, void* inc) {
+    const char* name = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrName));
+    if (!name) {
+        uiload::XmlCursor_DocPath(doc);
+        return nullptr;
     }
-    const u32 t = static_cast<u32>(call(ctx, mfn::Mem_Alloc, {kTimelineDefSize, 0, 16}));
+    const u32 t = guest(memory::Mem_Alloc(kTimelineDefSize, 0, 16));
+    TimelineDef& d = gref<TimelineDef>(t);
     if (t != 0) {
-        store<u32>(t, kTimelineDefVtbl);
-        store<u32>(t + 36, static_cast<u32>(call(ctx, mfn::String_HashNoCase, {name})));
-        store<u32>(t + 40, inc);
-        store<u8>(t + 44, 0);
-        store<u32>(t + 48, 0);
-        store<u32>(t + 52, 0);
-        call(ctx, mfn::String_CopyN, {t + 4, name, 31});
-        u32 last = load<u32>(kTimelineDefs);
+        d.vtable = kTimelineDefVtbl;
+        d.hash = str::String_HashNoCase(name);
+        d.inc = guest(inc);
+        d.flag = 0;
+        d.keys = 0u;
+        d.next = 0u;
+        call(mfn::String_CopyN, d.name, name, 31u);
+        u32 last = global<be_u32>(kTimelineDefs);
         if (last == 0) {
-            store<u32>(kTimelineDefs, t);
+            global<be_u32>(kTimelineDefs) = t;
         } else {
-            while (load<u32>(last + 52) != 0) last = load<u32>(last + 52);
-            store<u32>(last + 52, t);
+            while (gref<TimelineDef>(last).next != 0u) last = gref<TimelineDef>(last).next;
+            gref<TimelineDef>(last).next = t;
         }
     }
     // With a failed allocation these touch guest addresses 44 and 48, as in the original.
-    call(ctx, mfn::XmlCursor_ReadBool, {node, kHashTimelineFlag, t + 44, 0});
-    u32 prev = load<u32>(t + 48);
-    for (u32 c = static_cast<u32>(call(ctx, mfn::XmlCursor_FirstChildAny, {node})); c != 0;
-         c = static_cast<u32>(call(ctx, mfn::XmlCursor_NextSiblingAny, {c}))) {
-        const u32 key = static_cast<u32>(call(ctx, mfn::TimelineDef_KeyFromXml, {doc, c, t}));
+    xml::XmlCursor_ReadBool(node, kHashTimelineFlag, &d.flag, 0);
+    u32 prev = d.keys;
+    for (XmlCursor* c = XmlCursor_FirstChildAny(node); c; c = XmlCursor_NextSiblingAny(c)) {
+        const u32 key = guest(tlbuild::TimelineDef_KeyFromXml(doc, c, host<void>(t)));
         if (key == 0) continue;
         if (prev != 0)
-            store<u32>(prev + 8, key);
+            gref<be_u32>(prev + 8) = key;
         else
-            store<u32>(t + 48, key);
+            d.keys = key;
         prev = key;
     }
-    ret(ctx, t);
+    return host<void>(t);
 }
 
-// void UiElem8_Construct(Element* e, const Elem8Desc* d)  [type 8, vtable 0x00B22DD0]
-// An element showing a world object: d +132 (an object to use), d +136 (a
-// class to instance) or else the object named d +128 (looked up, then
-// instanced from the class of that name). d +140 set: the object itself
-// is used (one more reference); otherwise a copy named "<name>_GUIInst".
-// The object is scaled by the element's scale (times the parent's if flag
-// 0x10000000) with x corrected for the screen's aspect ratio.
-DECOMP(004D7F24, UiElem8_Construct) {
-    const u32 e = arg<u32>(ctx, 0), d = arg<u32>(ctx, 1);
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 208 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 scale = sp + 112, pscale = sp + 128, key = sp + 144;
+// [type 8, vtable 0x00B22DD0] An element showing a world object: d +132
+// (an object to use), d +136 (a class to instance) or else the object
+// named d +128 (looked up, then instanced from the class of that name).
+// d +140 set: the object itself is used (one more reference); otherwise a
+// copy named "<name>_GUIInst". The object is scaled by the element's
+// scale (times the parent's if flag 0x10000000) with x corrected for the
+// screen's aspect ratio.
+void UiElem8_Construct(UiElemTex* e, const void* desc) {
+    const uiload::Elem8Desc* d = static_cast<const uiload::Elem8Desc*>(desc);
+    GuestFrame frame(208 - 112);
+    be_f32* scale = frame.as<be_f32>(0);    // sp+112
+    be_f32* pscale = frame.as<be_f32>(16);  // sp+128
+    be_u32* key = frame.as<be_u32>(32);     // sp+144
 
-    call(ctx, mfn::UiElem_Construct, {e, d});
-    field<u32>(e, kElemMaterial) = 0;
-    store<u32>(e, kElem8Vtbl);
-    u32 obj = load<u32>(d + 132);
-    u32 cls = load<u32>(d + 136);
-    u64 r3 = 0;  // what r3 holds if the function returns early (no caller reads it)
+    call(mfn::UiElem_Construct, e, d);
+    e->material = 0u;
+    e->elem.vtable = kElem8Vtbl;
+    u32 obj = d->obj;
+    u32 cls = d->cls;
     if (obj == 0 && cls == 0) {
-        obj = static_cast<u32>(call(ctx, mfn::WorldObj_FindByHash,
-                                    {call(ctx, mfn::String_HashNoCase, {load<u32>(d + 128)}), 0}));
+        obj = call<u32>(mfn::WorldObj_FindByHash, str::String_HashNoCase(d->name), 0u);
         if (obj == 0) {
-            store<u32>(key, static_cast<u32>(call(ctx, mfn::String_HashNoCase, {load<u32>(d + 128)})));
-            const u32 map = load<u32>(load<u32>(kWorldClassMapHolder) + 16);
-            const u32 slot = static_cast<u32>(call(ctx, mfn::HashMap_Find, {map, key}));
-            cls = load<u32>(slot);
-            r3 = slot;
+            *key = str::String_HashNoCase(d->name);
+            const u32 map = gref<be_u32>(global<be_u32>(kWorldClassMapHolder) + 16);
+            cls = gref<be_u32>(call<u32>(mfn::HashMap_Find, map, key));
         }
     }
     if (obj != 0) {
-        if (load<u8>(d + 140) != 0) {
-            field<u32>(e, kElemMaterial) = obj;
-            AddRef(obj);
+        if (d->use_obj != 0) {
+            e->material = obj;
+            AddRef(host<void>(obj));
         } else {
-            const u32 opd = vslot(obj, 56);
-            r3 = call_ptr(ctx, opd, {obj, 5, opd, load<u32>(opd)});  // r5 / r6 = OPD and entry
-            field<u32>(e, kElemMaterial) = static_cast<u32>(r3);
+            e->material = vcall<u32>(host<void>(obj), 56, 5u);
         }
     } else if (cls != 0) {
-        r3 = call(ctx, mfn::WorldObj_Instance, {cls, 0});
-        field<u32>(e, kElemMaterial) = static_cast<u32>(r3);
+        e->material = call<u32>(mfn::WorldObj_Instance, cls, 0u);
     }
 
-    u32 o = field<u32>(e, kElemMaterial);
-    if (o == 0) {
-        ctx.gpr[3] = r3;
-        return;
+    u32 o = e->material;
+    if (o == 0) return;
+    if (d->use_obj == 0) {
+        const u32 src_name = vcall<u32>(host<void>(gref<be_u32>(o + 208)), 12);
+        const u32 inst_name = call<u32>(mfn::String_Format, kStrGuiInst, src_name);
+        call(mfn::WorldObj_SetName, o, inst_name, 1u);
+        o = e->material;
     }
-    if (load<u8>(d + 140) == 0) {
-        const u32 src_name = vcall1(ctx, load<u32>(o + 208), 12);
-        const u32 inst_name = static_cast<u32>(call(ctx, mfn::String_Format, {kStrGuiInst, src_name}));
-        call(ctx, mfn::WorldObj_SetName, {o, inst_name, 1});
-        o = field<u32>(e, kElemMaterial);
-    }
-    call(ctx, mfn::WorldObj_Func583E54, {o, 12});
+    call(mfn::WorldObj_Func583E54, o, 12u);
 
-    for (u32 k = 0; k < 12; k += 4) store<u32>(scale + k, load<u32>(e + 80 + k));  // lfs / stfs pairs
-    f64 sx = static_cast<f64>(load<f32>(scale));
-    const u32 parent = load<u32>(e + 148);
-    if ((field<u32>(e, kElemFlags) & 0x10000000) != 0 && parent != 0) {
-        const u32 opd = vslot(parent, 168);
-        call_ptr(ctx, opd, {pscale, parent, opd, load<u32>(opd)});  // r5 / r6 = OPD and entry
-        auto fmuls = [](f64 a, f64 b) { return static_cast<f64>(static_cast<f32>(a * b)); };
-        sx = fmuls(load<f32>(scale), load<f32>(pscale));
-        const f64 sy = fmuls(load<f32>(scale + 4), load<f32>(pscale + 4));
-        const f64 sz = fmuls(load<f32>(scale + 8), load<f32>(pscale + 8));
-        store<f32>(scale, static_cast<f32>(sx));
-        store<f32>(scale + 4, static_cast<f32>(sy));
-        store<f32>(scale + 8, static_cast<f32>(sz));
+    for (u32 k = 0; k < 3; ++k) reinterpret_cast<be_u32*>(scale)[k] = reinterpret_cast<const be_u32*>(e->elem.scale)[k].get();
+    f32 sx = scale[0];
+    text::UiElem* parent = e->elem.parent;
+    if ((e->elem.flags & 0x10000000) != 0 && parent) {
+        call_ptr(text::vslot(parent, 168), pscale, parent);
+        sx = text::f32_mul(scale[0], pscale[0]);
+        const f32 sy = text::f32_mul(scale[1], pscale[1]);
+        const f32 sz = text::f32_mul(scale[2], pscale[2]);
+        scale[0] = sx;
+        scale[1] = sy;
+        scale[2] = sz;
     }
-    const f64 w = static_cast<f64>(static_cast<f32>(static_cast<f64>(load<u16>(kConfig + 4))));
-    const f64 h = static_cast<f64>(static_cast<f32>(static_cast<f64>(load<u16>(kConfig + 6))));
-    const f64 aspect = static_cast<f64>(static_cast<f32>(w / h));
-    const f64 k = static_cast<f64>(static_cast<f32>(static_cast<f64>(load<f32>(kConfig + 16)) / aspect));
-    store<f32>(scale, static_cast<f32>(sx * k));
-    call(ctx, mfn::WorldObj_SetScale, {field<u32>(e, kElemMaterial), scale, 0});
-    {
-        const u32 obj2 = field<u32>(e, kElemMaterial);
-        const u32 opd = vslot(obj2, 40);
-        call_ptr(ctx, opd, {obj2, 0, 0, opd, load<u32>(opd)});  // r6 / r7 = OPD and entry
-    }
-    call(ctx, mfn::UiElem8_Attach, {e, field<u32>(e, kElemMaterial), 1});
+    const f32 w = static_cast<f32>(static_cast<f64>(gref<be_u16>(kConfig + 4).get()));
+    const f32 h = static_cast<f32>(static_cast<f64>(gref<be_u16>(kConfig + 6).get()));
+    const f32 aspect = text::f32_div(w, h);
+    const f32 k = text::f32_div(gref<be_f32>(kConfig + 16), aspect);
+    scale[0] = text::f32_mul(sx, k);
+    call(mfn::WorldObj_SetScale, e->material.get(), scale, 0u);
+    vcall(host<void>(e->material), 40, 0u, 0u);
+    call(mfn::UiElem8_Attach, e, e->material.get(), 1u);
 }
+
+}  // namespace sly4::uimore
+
+NATIVE(004F899C, sly4::uimore::XmlCursor_FirstChildRawAny)
+NATIVE(004F9140, sly4::uimore::XmlCursor_FirstChildAny)
+NATIVE(004F8D74, sly4::uimore::XmlCursor_NextSiblingAny)
+NATIVE(004FA744, sly4::uimore::XmlCursor_Text)
+NATIVE(00555EB0, sly4::uimore::String_CompareN)
+NATIVE(00523B7C, sly4::uimore::Tex_Acquire)
+NATIVE(004DD08C, sly4::uimore::UiElem2_SetBlend)
+NATIVE(004D5C64, sly4::uimore::Texture_MakePages)
+NATIVE(004D8A80, sly4::uimore::UiElem_SetTexture)
+NATIVE(0050C398, sly4::uimore::Tex_FindLoaded)
+NATIVE(0051E68C, sly4::uimore::Tex_LoadFile)
+NATIVE(004DF88C, sly4::uimore::Timeline_FromXml)
+NATIVE(004D7F24, sly4::uimore::UiElem8_Construct)

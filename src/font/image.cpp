@@ -2,35 +2,38 @@
 // decoded image into an AglTexture.
 #include "image.h"
 
-using namespace sly4;
-using namespace sly4::image;
+#include "../heap/heap.h"
+#include "../memory/mem.h"
+
+namespace sly4::image {
+using namespace opentit::native;
 
 namespace {
 
 constexpr u32 kHeaderTga = 18, kHeaderBmp = 54, kBmpInfoSize = 40;
 
 // Magenta (bytes FF 00 FF) is the colour key: such pixels become 0.
-inline bool IsKey(u32 src) { return load<u8>(src) == 0xFF && load<u8>(src + 1) == 0 && load<u8>(src + 2) == 0xFF; }
+inline bool IsKey(u32 src) { return gref<u8>(src) == 0xFF && gref<u8>(src + 1) == 0 && gref<u8>(src + 2) == 0xFF; }
 
 inline void Zero4(u32 dst) {
-    for (u32 k = 0; k < 4; ++k) store<u8>(dst + k, 0);
+    for (u32 k = 0; k < 4; ++k) gref<u8>(dst + k) = 0;
 }
 
 // One row of 32-bit pixels, BGRA -> ARGB; the width is re-read per pixel.
 // Returns the source bytes consumed (as the original computes it).
-u32 Row32(u32 img, u32 dst, u32 src) {
-    u32 w = load<u16>(img + kImgWidth);
+u32 Row32(const Image* img, u32 dst, u32 src) {
+    u32 w = img->width;
     for (u32 col = 0; static_cast<s32>(col) < static_cast<s32>(w);) {
         if (IsKey(src)) {
             Zero4(dst);
         } else {
-            store<u8>(dst + 0, load<u8>(src + 3));
-            store<u8>(dst + 1, load<u8>(src + 2));
-            store<u8>(dst + 2, load<u8>(src + 1));
-            store<u8>(dst + 3, load<u8>(src + 0));
+            gref<u8>(dst + 0) = gref<u8>(src + 3);
+            gref<u8>(dst + 1) = gref<u8>(src + 2);
+            gref<u8>(dst + 2) = gref<u8>(src + 1);
+            gref<u8>(dst + 3) = gref<u8>(src + 0);
         }
         col = (col + 1) & 0xFFFF;
-        w = load<u16>(img + kImgWidth);
+        w = img->width;
         dst += 4;
         src += 4;
     }
@@ -38,247 +41,242 @@ u32 Row32(u32 img, u32 dst, u32 src) {
 }
 
 // One row of 24-bit pixels, BGR -> ARGB with alpha 255.
-u32 Row24(u32 img, u32 dst, u32 src) {
-    u32 w = load<u16>(img + kImgWidth);
+u32 Row24(const Image* img, u32 dst, u32 src) {
+    u32 w = img->width;
     for (u32 col = 0; static_cast<s32>(col) < static_cast<s32>(w);) {
         if (IsKey(src)) {
             Zero4(dst);
         } else {
-            store<u8>(dst + 0, 0xFF);
-            store<u8>(dst + 1, load<u8>(src + 2));
-            store<u8>(dst + 2, load<u8>(src + 1));
-            store<u8>(dst + 3, load<u8>(src + 0));
+            gref<u8>(dst + 0) = 0xFF;
+            gref<u8>(dst + 1) = gref<u8>(src + 2);
+            gref<u8>(dst + 2) = gref<u8>(src + 1);
+            gref<u8>(dst + 3) = gref<u8>(src + 0);
         }
         col = (col + 1) & 0xFFFF;
-        w = load<u16>(img + kImgWidth);
+        w = img->width;
         dst += 4;
         src += 3;
     }
     return w * 3;
 }
 
-u32 StackAlloc(PPUContext& ctx, u32 size) {
-    const u32 st = static_cast<u32>(call(ctx, ifn::Mem_GetDefaultStack));
-    return static_cast<u32>(call(ctx, ifn::MemStack_Alloc, {st, size}));
-}
+u32 StackAlloc(u32 size) { return guest(heap::MemStack_Alloc(memory::Mem_GetDefaultStack(), size)); }
 
-inline u32 Le16(u32 p) { return load<u8>(p) | (static_cast<u32>(load<u8>(p + 1)) << 8); }
+inline u32 Le16(u32 p) { return gref<u8>(p) | (static_cast<u32>(gref<u8>(p + 1)) << 8); }
 
 }  // namespace
 
-// s32 String_CompareNoCase2(const char* a, const char* b)
 // strcasecmp (libc) under another name.
-DECOMP(00555D70, String_CompareNoCase2) {
-    ret(ctx, call(ctx, ifn::strcasecmp, {arg<u32>(ctx, 0), arg<u32>(ctx, 1)}));
+s32 String_CompareNoCase2(const char* a, const char* b) { return call<s32>(ifn::strcasecmp, a, b); }
+
+// The base constructor, then the AglTexture vtable.
+void Texture_Construct(AglTexture* t) {
+    image2::Texture_ConstructBase(t);
+    t->vtable = kTexVtbl;
 }
 
-// void Texture_Construct(AglTexture* t)
-// The base constructor, then the AglTexture vtable. r3 is left holding the
-// vtable address, as in the original.
-DECOMP(0053A284, Texture_Construct) {
-    const u32 t = arg<u32>(ctx, 0);
-    call(ctx, ifn::Texture_ConstructBase, {t});
-    store<u32>(t, kTexVtbl);
-    ret(ctx, kTexVtbl);
-}
-
-// bool Texture_FromImage(AglTexture* t, const Image* img, const char* path)
 // Both sides must be multiples of 8. Sets up a w x h, 32-bit layout, then
 // copies the pixels into it (when the layout got memory) and notes that
 // an image was uploaded. 1 on success.
-DECOMP(0053A34C, Texture_FromImage) {
-    const u32 t = arg<u32>(ctx, 0), img = arg<u32>(ctx, 1);
-    const u32 w = load<u16>(img + kImgWidth);
-    if ((w & 7) != 0) return ret(ctx, 0u);
-    const u32 h = load<u16>(img + kImgHeight);
-    if ((h & 7) != 0) return ret(ctx, 0u);
-    store<u16>(t + kTexWidth, static_cast<u16>(w));
-    store<u16>(t + kTexHeight, static_cast<u16>(h));
-    call(ctx, ifn::Texture_InitLayout, {t + kTexData, w, h, 1, 3, 0, 0, 0});
-    const u16 f = load<u16>(t + kTexFlags128);
-    const u32 data = load<u32>(t + kTexData);
-    store<u16>(t + kTex116, 1);
-    store<u16>(t + kTex118, 1);
-    store<u16>(t + kTexFlags128, static_cast<u16>(f | 1));
-    store<u16>(t + kTex120, 0);
-    if (data == 0) return ret(ctx, 0u);
-    const u32 size = (static_cast<u32>(load<u16>(t + kTexWidth)) * load<u16>(t + kTexHeight)) << 2;
-    call(ctx, ifn::Rsx_Copy, {load<u32>(img + kImgPixels), data, size, 1});
-    if (load<u8>(kTextureUploaded) == 0) store<u8>(kTextureUploaded, 1);
-    ret(ctx, 1u);
+u32 Texture_FromImage(AglTexture* t, const Image* img, const char*) {
+    const u32 w = img->width;
+    if ((w & 7) != 0) return 0;
+    const u32 h = img->height;
+    if ((h & 7) != 0) return 0;
+    t->width = static_cast<u16>(w);
+    t->height = static_cast<u16>(h);
+    image2::Texture_InitLayout(&t->layout, w, h, 1, 3, 0, nullptr, 0);
+    const u16 f = t->flags128;
+    const u32 data = t->layout.data;
+    t->f116 = 1;
+    t->f118 = 1;
+    t->flags128 = static_cast<u16>(f | 1);
+    t->f120 = 0;
+    if (data == 0) return 0;
+    const u32 size = (static_cast<u32>(t->width) * t->height) << 2;
+    call(ifn::Rsx_Copy, img->pixels.ea.get(), data, size, 1u);
+    if (global<u8>(kTextureUploaded) == 0) global<u8>(kTextureUploaded) = 1;
+    return 1;
 }
 
-// bool Texture_FromGtf(AglTexture* t, void* data, u32 size, bool in_place)
-// Uses the GTF file where it is (in_place) or copies it into pool-128
-// memory first, records its size and RSX offset, then, when the file is
-// big enough for its first texture, copies that texture's CellGcmTexture
-// into +72 (location from the offset's bit 0, i.e. 0) with the RSX offset
-// of its pixels. Width / height come from +72 either way. Always 1.
-DECOMP(0053A448, Texture_FromGtf) {
-    const u32 t = arg<u32>(ctx, 0), data = arg<u32>(ctx, 1), size = arg<u32>(ctx, 2);
-    const u8 in_place = static_cast<u8>(arg<u32>(ctx, 3));
-    Stack frame(ctx, 144 - 112);
-    const u32 sp = frame.addr() - 112;
+// Uses the GTF file where it is (in_place, low byte) or copies it into
+// pool-128 memory first, records its size and RSX offset, then, when the
+// file is big enough for its first texture, copies that texture's
+// CellGcmTexture into +72 (location from the offset's bit 0, i.e. 0) with
+// the RSX offset of its pixels. Width / height come from +72 either way.
+// Always 1.
+u32 Texture_FromGtf(AglTexture* t, void* data_p, u32 size, u32 in_place) {
+    const u32 data = guest(data_p);
+    GuestFrame frame(144 - 112);
+    be_u32* off_copy = frame.as<be_u32>(0);   // sp+112
+    be_u32* off_place = frame.as<be_u32>(4);  // sp+116
+    image2::TexLayout& l = t->layout;
     u32 off2;
-    const u32 w68 = (load<u32>(t + kTexWord68) & 0x0FFFFFFFu) | 0x10000000u;
-    const u32 w64 = (load<u32>(t + kTexWord64) & 0xFu) | (size << 4);
-    if (in_place != 0) {
-        store<u32>(t + kTexData, data);
-        store<u32>(t + kTexWord68, w68);
-        store<u32>(t + kTexWord64, w64);
-        store<u32>(sp + 116, 0);
-        call(ctx, ifn::cellGcmAddressToOffset, {data, sp + 116});
-        off2 = load<u32>(sp + 116) << 1;
-        const u32 w = load<u32>(t + kTexWord64) | 1;
-        store<u32>(t + kTexDataOffset, off2);
-        store<u32>(t + kTexWord64, w);
+    const u32 w68 = (l.word12 & 0x0FFFFFFFu) | 0x10000000u;
+    const u32 w64 = (l.size & 0xFu) | (size << 4);
+    if (static_cast<u8>(in_place) != 0) {
+        l.data = data;
+        l.word12 = w68;
+        l.size = w64;
+        *off_place = 0u;
+        call(ifn::cellGcmAddressToOffset, data, off_place);
+        off2 = off_place->get() << 1;
+        const u32 w = l.size | 1;
+        l.offset = off2;
+        l.size = w;
     } else {
-        store<u32>(t + kTexWord68, w68);
-        store<u32>(t + kTexWord64, w64);
-        const u32 copy = static_cast<u32>(call(ctx, ifn::Mem_AllocPool, {128, size & 0x0FFFFFFFu, 4, 1}));
-        store<u32>(t + kTexData, copy);
-        store<u32>(sp + 112, 0);
-        call(ctx, ifn::cellGcmAddressToOffset, {copy, sp + 112});
-        store<u32>(t + kTexDataOffset, load<u32>(sp + 112) << 1);
-        call(ctx, ifn::Rsx_Copy, {data, load<u32>(t + kTexData), size, 1});
-        off2 = load<u32>(t + kTexDataOffset);
+        l.word12 = w68;
+        l.size = w64;
+        const u32 copy = guest(memory::Mem_AllocPool(128, size & 0x0FFFFFFFu, 4, 1));
+        l.data = copy;
+        *off_copy = 0u;
+        call(ifn::cellGcmAddressToOffset, copy, off_copy);
+        l.offset = off_copy->get() << 1;
+        call(ifn::Rsx_Copy, data, l.data.get(), size, 1u);
+        off2 = l.offset;
     }
-    const u32 file = load<u32>(t + kTexData);
+    const u32 file = l.data;
     const u32 location = off2 & 1;
-    if (file != 0 && size >= 12 && size >= load<u32>(file + 4)) {
+    if (file != 0 && size >= 12 && size >= gref<be_u32>(file + 4)) {
         const u32 attr = file + 12;  // CellGtfTextureAttribute: +4 offset to the pixels, +8 their size
-        const u32 gcm = t + kTexGcm;
         // (attr / gcm null checks and a location 0 / 1 check in the original can't fail)
-        if (attr != 0 && gcm != 0 && (location == 0 || location == 1) &&
-            size >= load<u32>(attr + 4) + load<u32>(attr + 8)) {
-            for (u32 k = 0; k < 24; k += 4) store<u32>(gcm + k, load<u32>(attr + 12 + k));
-            store<u8>(t + kTexGcm + 14, static_cast<u8>(location));
-            call(ctx, ifn::cellGcmAddressToOffset, {file + load<u32>(attr + 4), t + kTexGcm + 20});
+        if ((location == 0 || location == 1) && size >= gref<be_u32>(attr + 4) + gref<be_u32>(attr + 8)) {
+            be_u32* gcm = reinterpret_cast<be_u32*>(&l.format);
+            for (u32 k = 0; k < 6; ++k) gcm[k] = gref<be_u32>(attr + 12 + k * 4).get();
+            l.location = static_cast<u8>(location);
+            call(ifn::cellGcmAddressToOffset, file + gref<be_u32>(attr + 4), &l.gcm_offset);
         }
     }
-    store<u16>(t + kTexWidth, load<u16>(t + kTexGcm + 8));
-    store<u16>(t + kTexHeight, load<u16>(t + kTexGcm + 10));
-    ret(ctx, 1u);
+    t->width = l.width.get();
+    t->height = l.height.get();
+    return 1;
 }
 
-// bool Image_FromTga(const u8* data, u32 size, Image* img, const char* path)
 // Uncompressed true-colour TGAs only: 24-bit without alpha bits or 32-bit
 // with 8. Converts to 32-bit ARGB (magenta keyed to 0), flipping
 // bottom-up files. The pixel data isn't checked against `size`.
-DECOMP(0050ACAC, Image_FromTga) {
-    const u32 data = arg<u32>(ctx, 0), size = arg<u32>(ctx, 1), img = arg<u32>(ctx, 2);
-    if (size < kHeaderTga) return ret(ctx, 0u);
-    const u32 id_len = load<u8>(data);
-    if (load<u8>(data + 1) != 0 || load<u8>(data + 2) != 2) return ret(ctx, 0u);
+u32 Image_FromTga(const u8* data_p, u32 size, Image* img, const char*) {
+    const u32 data = guest(data_p);
+    if (size < kHeaderTga) return 0;
+    const u32 id_len = gref<u8>(data);
+    if (gref<u8>(data + 1) != 0 || gref<u8>(data + 2) != 2) return 0;
     const u32 w = Le16(data + 12);
-    store<u16>(img + kImgWidth, static_cast<u16>(w));
+    img->width = static_cast<u16>(w);
     const u32 h = Le16(data + 14);
-    store<u16>(img + kImgHeight, static_cast<u16>(h));
-    const u32 bpp = load<u8>(data + 16);
-    store<u16>(img + kImgBpp, static_cast<u16>(bpp));
-    if (bpp != 32 && bpp != 24) return ret(ctx, 0u);
-    const u32 desc = load<u8>(data + 17);
+    img->height = static_cast<u16>(h);
+    const u32 bpp = gref<u8>(data + 16);
+    img->bpp = static_cast<u16>(bpp);
+    if (bpp != 32 && bpp != 24) return 0;
+    const u32 desc = gref<u8>(data + 17);
     const u32 alpha_bits = desc & 0xF;
-    if (!(bpp == 24 && alpha_bits == 0) && !(bpp == 32 && alpha_bits == 8)) return ret(ctx, 0u);
+    if (!(bpp == 24 && alpha_bits == 0) && !(bpp == 32 && alpha_bits == 8)) return 0;
     const u32 top_down = desc & 0x20;
     u32 off = id_len + kHeaderTga;
-    const u32 pixels = StackAlloc(ctx, (h * w) << 2);
-    store<u32>(img + kImgPixels, pixels);
-    if (pixels == 0) return ret(ctx, 0u);
-    for (u32 row = 0; static_cast<s32>(row) < static_cast<s32>(load<u16>(img + kImgHeight));) {
-        const u32 iw = load<u16>(img + kImgWidth);
-        const u32 line = top_down != 0 ? row : load<u16>(img + kImgHeight) - row - 1;
-        const u32 dst = load<u32>(img + kImgPixels) + ((line * iw) << 2);
+    const u32 pixels = StackAlloc((h * w) << 2);
+    img->pixels.ea = pixels;
+    if (pixels == 0) return 0;
+    for (u32 row = 0; static_cast<s32>(row) < static_cast<s32>(img->height.get());) {
+        const u32 iw = img->width;
+        const u32 line = top_down != 0 ? row : img->height - row - 1;
+        const u32 dst = img->pixels.ea + ((line * iw) << 2);
         off += bpp == 32 ? Row32(img, dst, off + data) : Row24(img, dst, off + data);
         row = (row + 1) & 0xFFFF;
     }
-    ret(ctx, 1u);
+    return 1;
 }
 
-// bool Image_FromBmp(const u8* data, u32 size, Image* img, const char* path)
 // BITMAPINFOHEADER BMPs, one plane: 24 / 32-bit are converted to 32-bit
 // ARGB (magenta keyed to 0, rows flipped; 24-bit rows are assumed to need
 // no padding), 4 / 8-bit keep their indices (4-bit nibbles swapped, rows
 // flipped, source rows 4-byte aligned) with the palette converted
 // alongside (alpha 255 unless flag 0x1 is set). `size` isn't checked.
-DECOMP(0050A6C8, Image_FromBmp) {
-    const u32 data = arg<u32>(ctx, 0), img = arg<u32>(ctx, 2);
-    if (load<u8>(data) != 'B' || load<u8>(data + 1) != 'M') return ret(ctx, 0u);
-    u32 pix_off = Le16(data + 10) | (static_cast<u32>(load<u8>(data + 12)) << 16);
-    const u32 pix_off_hi = load<u8>(data + 13);
-    if (static_cast<s16>(Le16(data + 14)) != static_cast<s32>(kBmpInfoSize)) return ret(ctx, 0u);
+u32 Image_FromBmp(const u8* data_p, u32, Image* img, const char*) {
+    const u32 data = guest(data_p);
+    if (gref<u8>(data) != 'B' || gref<u8>(data + 1) != 'M') return 0;
+    u32 pix_off = Le16(data + 10) | (static_cast<u32>(gref<u8>(data + 12)) << 16);
+    const u32 pix_off_hi = gref<u8>(data + 13);
+    if (static_cast<s16>(Le16(data + 14)) != static_cast<s32>(kBmpInfoSize)) return 0;
     const u32 w = Le16(data + 18);
-    store<u16>(img + kImgWidth, static_cast<u16>(w));
+    img->width = static_cast<u16>(w);
     const u32 h = Le16(data + 22);
-    store<u16>(img + kImgHeight, static_cast<u16>(h));
-    if (static_cast<s16>(Le16(data + 26)) != 1) return ret(ctx, 0u);
+    img->height = static_cast<u16>(h);
+    if (static_cast<s16>(Le16(data + 26)) != 1) return 0;
     const u32 bpp16 = Le16(data + 28);
     const s32 bpp = static_cast<s16>(bpp16);
-    u32 colors = Le16(data + 46) | (static_cast<u32>(load<u8>(data + 48)) << 16) |
-                 (static_cast<u32>(load<u8>(data + 49)) << 24);
-    if (((w * static_cast<u32>(bpp)) >> 3) == 0) return ret(ctx, 0u);
-    store<u16>(img + kImgBpp, static_cast<u16>(bpp16));
+    u32 colors = Le16(data + 46) | (static_cast<u32>(gref<u8>(data + 48)) << 16) |
+                 (static_cast<u32>(gref<u8>(data + 49)) << 24);
+    if (((w * static_cast<u32>(bpp)) >> 3) == 0) return 0;
+    img->bpp = static_cast<u16>(bpp16);
 
     if (bpp == 32 || bpp == 24) {
-        const u32 pixels = StackAlloc(ctx, (h * w) << 2);
-        store<u32>(img + kImgPixels, pixels);
-        if (pixels == 0) return ret(ctx, 0u);
-        if (bpp == 24) store<u16>(img + kImgBpp, 32);
+        const u32 pixels = StackAlloc((h * w) << 2);
+        img->pixels.ea = pixels;
+        if (pixels == 0) return 0;
+        if (bpp == 24) img->bpp = 32;
         pix_off |= pix_off_hi << 24;
-        for (u32 row = 0; static_cast<s32>(row) < static_cast<s32>(load<u16>(img + kImgHeight));) {
-            const u32 iw = load<u16>(img + kImgWidth);
-            const u32 dst = load<u32>(img + kImgPixels) + (((load<u16>(img + kImgHeight) - row) * iw - iw) << 2);
+        for (u32 row = 0; static_cast<s32>(row) < static_cast<s32>(img->height.get());) {
+            const u32 iw = img->width;
+            const u32 dst = img->pixels.ea + (((img->height - row) * iw - iw) << 2);
             pix_off += bpp == 24 ? Row24(img, dst, pix_off + data) : Row32(img, dst, pix_off + data);
             row = (row + 1) & 0xFFFF;
         }
-        return ret(ctx, 1u);
+        return 1;
     }
-    if (bpp != 8 && bpp != 4) return ret(ctx, 0u);
+    if (bpp != 8 && bpp != 4) return 0;
 
     if (colors == 0) colors = 1u << (bpp & 63);
     const u32 entries = 1u << (bpp & 63);
     const u32 pal_size = (entries << 2) & 0x3FFFC;
-    store<u16>(img + kImgPalCount, static_cast<u16>(entries));
-    const u32 pal = StackAlloc(ctx, pal_size);
-    store<u32>(img + kImgPalette, pal);
-    if (pal == 0) return ret(ctx, 0u);
-    call(ctx, ifn::memset, {pal, 0, pal_size});
+    img->pal_count = static_cast<u16>(entries);
+    const u32 pal = StackAlloc(pal_size);
+    img->palette.ea = pal;
+    if (pal == 0) return 0;
+    call(ifn::memset, pal, 0u, pal_size);
     u32 src = data + kHeaderBmp;
     {
-        u32 d = load<u32>(img + kImgPalette);
+        u32 d = img->palette.ea;
         for (u32 k = 0; k < colors; ++k, d += 4, src += 4) {
             if (IsKey(src)) {
-                store<u8>(d + 2, 0);
-                store<u8>(d + 1, 0);
-                store<u8>(d + 0, 0);
-                store<u8>(d + 3, 0);
+                gref<u8>(d + 2) = 0;
+                gref<u8>(d + 1) = 0;
+                gref<u8>(d + 0) = 0;
+                gref<u8>(d + 3) = 0;
                 continue;
             }
-            store<u8>(d + 2, load<u8>(src));
-            store<u8>(d + 1, load<u8>(src + 1));
-            store<u8>(d + 0, load<u8>(src + 2));
-            store<u8>(d + 3, (load<u16>(img + kImgFlags) & 1) != 0 ? load<u8>(src + 3) : 0xFF);
+            gref<u8>(d + 2) = gref<u8>(src);
+            gref<u8>(d + 1) = gref<u8>(src + 1);
+            gref<u8>(d + 0) = gref<u8>(src + 2);
+            gref<u8>(d + 3) = (img->flags & 1) != 0 ? gref<u8>(src + 3) : u8{0xFF};
         }
     }
-    const u32 total = ((load<u16>(img + kImgWidth) * static_cast<u32>(bpp)) >> 3) * load<u16>(img + kImgHeight);
-    const u32 pixels = StackAlloc(ctx, total);
-    store<u32>(img + kImgPixels, pixels);
-    if (pixels == 0) return ret(ctx, 0u);
-    const s32 bits = static_cast<s32>(load<u16>(img + kImgWidth) * static_cast<u32>(load<u16>(img + kImgBpp)));
-    const u32 rows = load<u16>(img + kImgHeight);
+    const u32 total = ((img->width * static_cast<u32>(bpp)) >> 3) * img->height;
+    const u32 pixels = StackAlloc(total);
+    img->pixels.ea = pixels;
+    if (pixels == 0) return 0;
+    const s32 bits = static_cast<s32>(img->width * static_cast<u32>(img->bpp));
+    const u32 rows = img->height;
     const u32 row_bytes = static_cast<u32>(bits / 8);  // srawi / addze: rounds toward zero
     const u32 stride = (row_bytes + 3) & ~3u;
     if (bpp != 4) {
         for (u32 r = 0; r < rows; ++r, src += stride)
-            call(ctx, ifn::memmove, {pixels + (rows - r) * row_bytes - row_bytes, src, row_bytes});
-        return ret(ctx, 1u);
+            call(ifn::memmove, pixels + (rows - r) * row_bytes - row_bytes, src, row_bytes);
+        return 1;
     }
     for (u32 r = 0; r < rows; ++r, src += stride) {
         const u32 dst = pixels + ((rows - r) * row_bytes - row_bytes);
         for (u32 k = 0; k < row_bytes; ++k) {
-            const u32 b = load<u8>(src + k);
-            store<u8>(dst + k, static_cast<u8>(((b >> 4) & 0xF) | ((b << 4) & 0xF0)));
+            const u32 b = gref<u8>(src + k);
+            gref<u8>(dst + k) = static_cast<u8>(((b >> 4) & 0xF) | ((b << 4) & 0xF0));
         }
     }
-    ret(ctx, 1u);
+    return 1;
 }
+
+}  // namespace sly4::image
+
+NATIVE(00555D70, sly4::image::String_CompareNoCase2)
+NATIVE(0053A284, sly4::image::Texture_Construct)
+NATIVE(0053A34C, sly4::image::Texture_FromImage)
+NATIVE(0053A448, sly4::image::Texture_FromGtf)
+NATIVE(0050ACAC, sly4::image::Image_FromTga)
+NATIVE(0050A6C8, sly4::image::Image_FromBmp)

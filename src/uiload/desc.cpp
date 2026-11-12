@@ -1,103 +1,91 @@
 // Small loader helpers and the text description reader.
 #include "uiload.h"
 
-using namespace sly4;
-using namespace sly4::uiload;
+#include "../string/str.h"
+
+namespace sly4::uiload {
+using namespace opentit::native;
 
 namespace {
-
-constexpr u32 kCurType = 4;  // XmlCursor: 0 document, 1 element
-constexpr u32 kDocPath = 48;
-
-// Element / text fields read from the template element.
-constexpr u32 kTextFontSet = 168, kTextLineSpacing = 172, kTextCharSpacing = 176, kTextFlags = 180;
-constexpr u32 kTextBufCap = 184, kTextBuf = 192, kTextPeriod = 232;
-// Description fields written (see uielem/slots.h kDesc*).
-constexpr u32 kDescFontSet = 128, kDescText = 132, kDescLineSpacing = 136, kDescCharSpacing = 140;
-constexpr u32 kDescWrap = 144, kDescMonospace = 152, kDescGlyphMode = 156, kDescRevealRate = 160;
-
+constexpr u32 kTextPeriod = 232;  // TextElem +232 f32: 1 / reveal rate
 }  // namespace
 
-// char* XmlCursor_DocPath(XmlCursor* c)
 // For a document cursor (type 0), its document's path (AsDocument() +48);
 // 0 for an element cursor. The loaders call it where they report errors.
-DECOMP(004F8944, XmlCursor_DocPath) {
-    const u32 c = arg<u32>(ctx, 0);
-    if (load<u32>(c + kCurType) != 0) return ret(ctx, 0u);
-    const u32 opd = load<u32>(load<u32>(c) + 8);
-    // r4 / r5 = OPD and entry, as in the original.
-    const u32 d = static_cast<u32>(call_ptr(ctx, opd, {c, opd, load<u32>(opd)}));
-    ret(ctx, d + kDocPath);
+const char* XmlCursor_DocPath(XmlCursor* c) {
+    if (c->type != 0u) return nullptr;
+    xml::XmlDoc* d = vcall<xml::XmlDoc*>(c, xml::kDocVfnAsDocument);
+    return host<const char>(guest(d) + xml::kDocPath);
 }
 
-// Texture* Tex_GetDefault(s32 n)  (name?)
-DECOMP(004FEF30, Tex_GetDefault) {
-    const s32 n = static_cast<s32>(static_cast<u32>(ctx.gpr[3]) << 2);  // (s32)(n << 2), as extsw of the shift
-    ctx.gpr[4] = kTexDefaults;
-    ret(ctx, load<u32>(kTexDefaults + static_cast<u32>(n)));
+// (name?) The default texture n: kTexDefaults[n] (the index is (s32)(n << 2)
+// bytes, as the original's extsw of the shift).
+u32 Tex_GetDefault(s32 n) {
+    const s32 off = static_cast<s32>(static_cast<u32>(n) << 2);
+    return gref<be_u32>(kTexDefaults + static_cast<u32>(off));
 }
 
-// void UiTextDesc_FromXml(XmlCursor* doc, XmlCursor* node, const TextElem* tmpl, TextDesc* d)
 // Reads font=, string=, the spacings, wrap, monospace, reveal rate and
 // glyph mode into the description, with the template element's values
 // (if any) as defaults. Stops (leaving the rest as it was) when there is
 // no font, and before the glyph mode when that attribute isn't there.
-DECOMP(004DC720, UiTextDesc_FromXml) {
-    const u32 doc = arg<u32>(ctx, 0), node = arg<u32>(ctx, 1), tmpl = arg<u32>(ctx, 2), d = arg<u32>(ctx, 3);
+void UiTextDesc_FromXml(XmlCursor* doc, XmlCursor* node, const text::TextElem* tmpl, TextDesc* d) {
+    GuestFrame frame(16);
+    be_u32* mode_hash = frame.as<be_u32>();
 
-    constexpr u32 kFrameBase = 112;
-    Stack frame(ctx, 208 - kFrameBase);
-    const u32 sp = frame.addr() - kFrameBase;
-    const u32 mode_hash = sp + 112;
-
-    const f64 one = static_cast<f64>(load<f32>(kTextDescDefaults));
-    u32 font = 0, text = kEmptyString, wrap = 0, mono = 0;
-    f64 line = one, chr = static_cast<f64>(load<f32>(kTextDescDefaults + 4));
-    f64 rate = static_cast<f64>(load<f32>(kTextDescDefaults + 8));
-    if (tmpl != 0) {
-        font = load<u32>(tmpl + kTextFontSet);
-        if (load<u32>(tmpl + kTextBufCap) != 0) text = load<u32>(tmpl + kTextBuf);
-        const u32 tf = load<u32>(tmpl + kTextFlags);
-        line = static_cast<f64>(load<f32>(tmpl + kTextLineSpacing));
-        chr = static_cast<f64>(load<f32>(tmpl + kTextCharSpacing));
-        rate = static_cast<f64>(static_cast<f32>(one / static_cast<f64>(load<f32>(tmpl + kTextPeriod))));
+    const be_f32* defaults = host<be_f32>(kTextDescDefaults);
+    const f32 one = defaults[0];
+    u32 font = 0, wrap = 0;
+    u8 mono = 0;
+    const char* text = host<const char>(kEmptyString);
+    f32 line = one, chr = defaults[1], rate = defaults[2];
+    if (tmpl) {
+        font = tmpl->font_set.ea;
+        if (tmpl->buf_cap != 0u) text = tmpl->buf;
+        const u32 tf = tmpl->text_flags;
+        line = tmpl->line_spacing;
+        chr = tmpl->char_spacing;
+        rate = text::f32_div(one, gref<be_f32>(guest(tmpl) + kTextPeriod));
         wrap = (tf >> 6) & 0xFFFF;
         mono = (tf & 0x80000000) != 0 ? 1 : 0;
     }
 
-    const u32 font_attr = static_cast<u32>(call(ctx, ufn::XmlCursor_FindAttrByName, {node, kStrFont}));
-    if (font_attr != 0) {
-        const u32 hash = static_cast<u32>(call(ctx, ufn::String_HashNoCase, {font_attr}));
-        u32 set = 0;
-        for (u32 r = load<u32>(kResList); r != 0; r = load<u32>(r + 88))
-            if (load<u32>(r + 76) == hash) {
+    if (const char* font_attr = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrFont))) {
+        const u32 hash = str::String_HashNoCase(font_attr);
+        UiRes* set = nullptr;
+        for (UiRes* r = host<UiRes>(global<be_u32>(kResList)); r; r = r->next)
+            if (r->hash == hash) {
                 set = r;
                 break;
             }
-        store<u32>(d + kDescFontSet, set);
-        if (set == 0) call(ctx, ufn::XmlCursor_DocPath, {doc});
+        d->font_set.ea = guest(set);
+        if (!set) XmlCursor_DocPath(doc);
     }
-    if (load<u32>(d + kDescFontSet) == 0) {
-        store<u32>(d + kDescFontSet, font);
-        if (font == 0) call(ctx, ufn::XmlCursor_DocPath, {doc});
+    if (!d->font_set) {
+        d->font_set.ea = font;
+        if (font == 0) XmlCursor_DocPath(doc);
     }
-    if (load<u32>(d + kDescFontSet) == 0) return;
+    if (!d->font_set) return;
 
-    const u32 str = static_cast<u32>(call(ctx, ufn::XmlCursor_FindAttrByName, {node, kStrString}));
-    store<u32>(d + kDescText, str != 0 ? str : text);
-    ctx.fpr[1] = line;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashLineSpacing, d + kDescLineSpacing});
-    ctx.fpr[1] = chr;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashCharSpacing, d + kDescCharSpacing});
-    call(ctx, ufn::XmlCursor_ReadS32, {node, kHashWrap, d + kDescWrap, wrap});
-    call(ctx, ufn::XmlCursor_ReadBool, {node, kHashMonospace, d + kDescMonospace, mono});
-    ctx.fpr[1] = rate;
-    call(ctx, ufn::XmlCursor_ReadF32, {node, kHashRevealRate, d + kDescRevealRate});
-    if (static_cast<u32>(call(ctx, ufn::XmlCursor_ReadHash, {node, kHashGlyphMode, mode_hash, 0})) != 0) return;
+    const char* str = xml::XmlCursor_FindAttrByName(node, host<const char>(kStrString));
+    d->text = str ? str : text;
+    xml::XmlCursor_ReadF32(node, kHashLineSpacing, &d->line_spacing, line);
+    xml::XmlCursor_ReadF32(node, kHashCharSpacing, &d->char_spacing, chr);
+    xml::XmlCursor_ReadS32(node, kHashWrap, &d->wrap, wrap);
+    xml::XmlCursor_ReadBool(node, kHashMonospace, &d->monospace, mono);
+    xml::XmlCursor_ReadF32(node, kHashRevealRate, &d->reveal_rate, rate);
+    if (xml::XmlCursor_ReadHash(node, kHashGlyphMode, mode_hash, 0) != 0) return;
+    const be_u32* modes = host<be_u32>(kGlyphModeHashes);
     u32 k = 0;
-    while (k < kGlyphModeCount && load<u32>(kGlyphModeHashes + k * 4) != load<u32>(mode_hash)) ++k;
+    while (k < kGlyphModeCount && modes[k] != *mode_hash) ++k;
     if (k < kGlyphModeCount)
-        store<u32>(d + kDescGlyphMode, k);
+        d->glyph_mode = k;
     else
-        call(ctx, ufn::XmlCursor_DocPath, {doc});
+        XmlCursor_DocPath(doc);
 }
+
+}  // namespace sly4::uiload
+
+NATIVE(004F8944, sly4::uiload::XmlCursor_DocPath)
+NATIVE(004FEF30, sly4::uiload::Tex_GetDefault)
+NATIVE(004DC720, sly4::uiload::UiTextDesc_FromXml)
