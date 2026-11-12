@@ -1,4 +1,4 @@
-# Build-time check: the DECOMP() functions in DECOMP_DIR must be exactly the
+# Build-time check: the DECOMP() / NATIVE() functions in DECOMP_DIR must be exactly the
 # ones the generated code (GENERATED_DIR/decomp.list) left out. Otherwise the
 # link fails with duplicate or missing f_XXXXXXXX symbols.
 #   cmake -DDECOMP_DIR=... -DGENERATED_DIR=... -P check_decomp.cmake
@@ -8,7 +8,7 @@ if(DECOMP_DIR)
   file(GLOB_RECURSE srcs "${DECOMP_DIR}/*.cpp" "${DECOMP_DIR}/*.cc")
 endif()
 foreach(src IN LISTS srcs)
-  file(STRINGS "${src}" lines REGEX "^DECOMP\\([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]")
+  file(STRINGS "${src}" lines REGEX "^(DECOMP|NATIVE)\\([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]")
   foreach(l IN LISTS lines)
     string(SUBSTRING "${l}" 7 8 a)
     string(TOUPPER "${a}" a)

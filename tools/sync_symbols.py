@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Add every DECOMP() in src/ to symbols.txt that it doesn't list yet, and
+"""Add every DECOMP() / NATIVE() in src/ to symbols.txt that it doesn't list yet, and
 mark listed ones as decompiled.  Usage: tools/sync_symbols.py [src dir]"""
 import os, re, sys
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-pat = re.compile(r'^DECOMP\(([0-9A-Fa-f]{8}),\s*([A-Za-z0-9_]+)\)', re.M)
+pat = re.compile(r'^(?:DECOMP|NATIVE)\(([0-9A-Fa-f]{8}),\s*(?:[A-Za-z0-9_]+::)*([A-Za-z0-9_]+)\)', re.M)
 found = {}
 src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(root, 'src')
 for d, _, files in os.walk(src):

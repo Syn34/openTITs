@@ -910,8 +910,9 @@ std::set<u32> scan_decomp_sources(const std::string& dir, std::string* error) {
         std::stringstream ss;
         ss << in.rdbuf();
         const std::string t = ss.str();
-        // DECOMP(XXXXXXXX, name) at the start of a line
-        for (std::size_t p = t.find("DECOMP("); p != std::string::npos; p = t.find("DECOMP(", p + 7)) {
+        // DECOMP(XXXXXXXX, name) or NATIVE(XXXXXXXX, fn) at the start of a line
+        for (const char* key : {"DECOMP(", "NATIVE("})
+        for (std::size_t p = t.find(key); p != std::string::npos; p = t.find(key, p + 7)) {
             if (p > 0 && t[p - 1] != '\n') continue;
             std::size_t q = p + 7;
             while (q < t.size() && t[q] == ' ') ++q;
