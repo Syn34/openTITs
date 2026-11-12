@@ -11523,7 +11523,6 @@
 001F5BA8 XmlDef_NewF5BA8                  // factory of XmlDef_Read_001F5938, 368 B, vtable 0x00B188C0; decompiled: src/obj/mid11_dmg2.cpp
 002F8EE0 XmlDef_New2F8EE0                 // factory of 002F8CF0 + 80 B child items (0x002F8AFC), 336 B, vtable 0x00B1D5C8; decompiled: src/obj/mid11_misc.cpp
 00307A78 XmlDef_New307A78                 // factory of 003078D8, 368 B, vtable 0x00B1DA78, then 0x0030743C(p, c); decompiled: src/obj/mid11_misc.cpp
-002F8AFC XmlItem_Read2F8AFC               // (item or 0, XmlCursor* child) (not decompiled)
 
 # Game code large functions part 12
 00232B60 Player_TunePart232B60          // (Player*, tier, part) -> u32: tuning +1072.. vectors/floats to part +16..+136, 40-byte link table +140 and per-group counts +152; decompiled: src/obj/big13_player.cpp (name?)
@@ -11665,7 +11664,6 @@
 00236DB8 Player_DriveLink236DB8         // u16 f(Player*, Link*, const Mat44*, -, bool r7; f32 rate): 20-byte entries {def, driver, obj, f32, f32}: rate blend into driver +112 (+16, +108->+8), obj rows = Quat_ToMatrix(def) x m, MarkDirty, UpdateLod(obj, -, 0); returns the count (name?); decompiled: src/obj/big14_game.cpp
 000D87CC Obj_SetMatrixD87CC             // u32 f(Obj* o, const Mat44* m): o->160 world object rows +16..+72 = m's xyz rows, WorldObj_MarkDirty when any differ; o->172 |= 0x800 (returns it; m without a world object) (name?); decompiled: src/obj/big14_game.cpp
 007CEBD8 Hk_ToMatrix7CEBD8              // (Mat44* out, const in[16 bytes]) (name?)
-0075D154 Mat44_MulInPlace75D154         // (Mat44* m, const Mat44* by) (name?)
 0078FD34 Avl_RemoveF32_0078FD34           // void (AVL*, Node** slot, -, u8* changed; f32 key): AVL<float, ApeAnimScriptEvent*> recursive delete (float twin of Map_Erase78D670; NaN keys delete; free list 0x00F8F0FC, vtable 0x00B22530); r5 passed through to the recursion; decompiled: src/obj/big23_avl.cpp
 00F34C30 LinkCallback_F34C30            // OPD queued by Player_SetRate2371F8 via World_AddTimedCallback(world, 1, opd, p, p) (data; name?)
 
@@ -11983,7 +11981,6 @@
 004A44C8 Seg_DistSq4A44C8                 // (p0, p1, q0, q1) -> f1: squared segment-segment distance (eps 1e-5); leaves r3 0x004A44B0; decompiled: src/obj/mid14_math.cpp
 0017FCE8 Trail_AddPoint17FCE8             // (vec, o): last point = o+144, append when > 1.0 away, drop inner points <= 0.01 apart; decompiled: src/obj/mid14_math.cpp
 007EE08C Hk_SetF32At_007EE08C             // (f32* field, const f32*) (Havok; name?)
-0012BD94 Cb_Apply_0012BD94                // (o, bool, u32) (reads r3..r5; name?)
 
 # Game code large functions part 19
 002464F0 Owner_StartEffects_002464F0    // (Obj* o): owner o+216; o+1376 from o+356; fills empty effect slots +1364 / +1352 / +1360 from the global effect set entries named by owner +880 / +872 / +876 (inlined TreeSelect), component 0x0027469E gets o+160, +1368/+1372 = sub-set values 2527 / 0x10CBB, Effect_Start, Effect_SetTime(.text 0x002464EC) (name?); decompiled: src/obj/big19_fx.cpp
@@ -13070,7 +13067,6 @@
 0041D158 Obj_GesturePick41D158            // u32 (Obj* o; f32 dt): cooldown u8 +484 / f32 +488; else picks mode 0..3 from the local player's record flags (0x010B19E0 + 11968*idx, +184/+188), scans list +104 (u16 +112) with f_0041B200, restarts one of 8 clips via Anim_Restart2775A8, 0.3 cooldown when ready; decompiled: src/obj/big22_gesture.cpp
 00043BC0 Obj_RespawnSlots43BC0            // u32 (Obj* o): re-arms the 112-byte slots (+308, u16 +316), toggles +700/+704 (vfn[76]), hash 0x8C0A3A7E on +624, +648 = 4, spawns world objects + effects (0x4838D5DC) for one random set of the +612 table record +716 group +688, places +656/+660 at +664/+668, then Obj_LaunchSlots43784(o, n); decompiled: src/obj/big22_slots.cpp
 002FBF00 Dragon_AttackSpawn2FBF00         // u32 (Dragon* o, Emitter* s, u32 msg, Def* def): msgs 0x952A45AC/AD/AE and 0x0969AF51 spawn projectiles with Obj_SpawnAt2FBCC8 from s's frame toward o+480 (clamped x/z for AE; 0969AF51 focuses the player and returns the object); decompiled: src/obj/big22_dragon.cpp
-002696E0 Obj_Push2696E0                   // (Obj*, const Vec3*; f32) (reads r3 r4 f1; callee of Player_Launch309440) (name?)
 
 # Game code sweep part 44
 00430A64 Obj_InitPoints_00430A64          // void f(T* o, u32 k1, u32 k2, f32 a, f32 b, f32 c, f32 d, f32 e, (r10) u32 k3, stack u8 m): Obj_InitVt_B20CC8(o, m, k2, 332), vtable 0x00B20F98, +40/+48/+56/+64  (name?); decompiled: src/obj/obj44.cpp
@@ -13955,3 +13951,55 @@
 00051B5C PathFollow_OnEvent_00051B5C      // u32 f(T* o) (pointer): state o+412+20*o->1796, event hash o->1800: next / step / random walk / closest-to-focus / clear over the 20-byte nodes of *0x00F557F4 (name?); decompiled: src/obj/big34_pathev.cpp
 007379FC Tuning_CopyDefaults_007379FC     // void f(T* o) (pointer): ~100 global tuning values (0x01036ACC..0x0103847C) copied raw into o+4..+476; f1 = the last (name?); decompiled: src/obj/big34_tuning.cpp
 00236348 Drive_UpdateInput_00236348       // void f(T* o, f32 dt) (called by f_00238F78): steer/throttle/brake from o->952 vt[12] input into o+932..988 and (o->612)->156 out block (name?); decompiled: src/obj/big34_drive.cpp
+
+# Game code sweep part 53
+0012BD94 Obj_StepQueryState_0012BD94      // u32 f(Obj* o, a, b): when bit 0x8 of the u64 o->+184 is set and Ptr_DerefNonZero(o->+944): Query_Run_000DB94C(&tmp (sp+128), o, o->+944, b, 0, 1, 1, 127 * o->+4 (name?); decompiled: src/obj/obj53.cpp
+001B55C8 PointsDef_New_001B55C8           // T* f(a, b, c, Src* d): a 272-byte object (SmallAlloc; 0 when that fails): Wrapper_0CC4D4(p, c, d, 0, 0x01164BD0, 0x01164B30, 1, 0, 0, -, 0) with f1 = the f32 at (name?); decompiled: src/obj/obj53.cpp
+0021D3CC JumpDef_New_0021D3CC             // Def* f(a0, XmlCursor* c, Src* x, tmpl): a default record on the stack (sp+116: 0x00400000, +4 = 16, +12 = x->+12, +16 / +20 = 0x00AD366C, +32 = 1, f32 +36 / +40 (name?); decompiled: src/obj/obj53.cpp
+0022DD9C AnimSet_Dtor_0022DD9C            // void f(T* o) (destructor body): vtable 0x00B1B710; AnimSkel_Release7D4EA8 of +980 (then 0) when set; for each of the u16 +1212 32-byte groups at +1204, each of  (name?); decompiled: src/obj/obj53.cpp
+002C4E9C Obj_TryReleaseCharge_002C4E9C    // u32 f(T* o): when the component at +24 reports state 1 or 2 (+24->vt[32](+24, 0), asked twice when not 1) and the handle at (+276->vt[60]())->+32 resolves (Hand (name?); decompiled: src/obj/obj53.cpp
+002F8AFC ItemGroup_Read_002F8AFC          // void f(T* o, XmlCursor* c): o (a String at +0) = attribute 0x0024728B when present (String_Assign), s32s +32 = 0x0489115B and +36 = 0xBE8976CD (default 0); for  (name?); decompiled: src/obj/obj53.cpp
+00313FA0 State_Enter_00313FA0             // u32 f(State* s) (state enter): s->+28 += 1, +36 = 0, byte +64 = 0; on the actor a = s->+32, unless its animation +668 is already 0xE8534CE4: f1 = the f32 0x0031 (name?); decompiled: src/obj/obj53.cpp
+003196D4 State_ResetParts_003196D4        // u32 f(State* s): each of the objects 0x7001C018..+4 that exists (Obj_FindById) gets o->vt[88](o, 0, 1, 1, 1) and o->vt[40](o, 1); on the actor a = s->+32 Field_ (name?); decompiled: src/obj/obj53.cpp
+0037DC70 Obj_ResetRegister_0037DC70       // u32 f(Obj* o) (reset): o->vt[20](o, 0), Obj_Place3626E8(o, 0x01164B40, 1); +248 / +244 = 0, +160 &= 1, f32 +240 = -1, byte +164 = 0, +252 &= ~0x6D800000 (bits 0 (name?); decompiled: src/obj/obj53.cpp
+00380A8C Obj_ResetRegister_00380A8C       // u32 f(Obj* o): Obj_ResetRegister_0037DC70 (the same code). (name?); decompiled: src/obj/obj53.cpp
+0036C160 UiSet_Flip_0036C160              // u32 f(T* o): UiFlip53 over the entries at +328 (f1 = the f32 0x0036C158). (name?); decompiled: src/obj/obj53.cpp
+00389368 UiSet_Flip_00389368              // u32 f(T* o): UiFlip53 over the entries at +236 (f1 = the f32 0x00389360). (name?); decompiled: src/obj/obj53.cpp
+003919A4 Set_SelectHandle_003919A4        // u32 f(Rec* a, Set* b): the handle h = the word at +4 past u16 0x0106CF80 in the 132-byte slot b + 152 + 132 * (s16 a->+6) when that index is below u16 b->+144 a (name?); decompiled: src/obj/obj53.cpp
+0042D288 Cam_ApplyTarget_0042D288         // u32 f(T* o): when o->+12 (an object) or o->+16 (a node) is set, the world object w = *(*0x00F65CA0 + 0x001281E0) gets Obj_ResetMatrix_000FCD1C(w) and Obj_ApplyD (name?); decompiled: src/obj/obj53.cpp
+001A98B4 Obj_QueryKey_001A98B4            // u32 f(Obj* o, u32* key): Query_Run_000DB94C(&tmp (sp+128), *key, (o->+216)->+176, 0, 0, 0, 0, 0, 0); r3 = its result. (name?); decompiled: src/obj/obj53.cpp
+004270C8 Net_RecvFrom_004270C8            // s32 f(Net* n, u32 i, void* buf, u32 len): sys_net recvfrom (the import stub 0x00ABDC44) on the socket n->+4 + 4 * i (sign-extended) into buf / len, flags 0, the (name?); decompiled: src/obj/obj53.cpp
+0074BC04 Vec3_MulRows3_0074BC04           // void f(V4* out, const f32 v[3], const f32 m[3][4]): out (stvx) = v * m (MulRows3_53: the three rows weighted by x / y / z). (name?); decompiled: src/obj/obj53b.cpp
+0074C3D8 Vec3_MulRows3InPlace_0074C3D8    // void f(V4* v, const f32 m[3][4]): v = v * m in place (MulRows3_53). (name?); decompiled: src/obj/obj53b.cpp
+00748B54 Vec3_XformPoint_00748B54         // void f(V4* v, const f32 m[4][4]): v = m3 + v * m (the point transform, in place; vaddfp m3 + the MulRows3_53 sum). (name?); decompiled: src/obj/obj53b.cpp
+0074C49C Vec3_XformPointTo_0074C49C       // void f(V4* out, const f32 v[3], const f32 m[4][4]): out = m3 + v * m. (name?); decompiled: src/obj/obj53b.cpp
+00760D58 Vec3_XformPoint_00760D58         // void f(V4* v, const f32 m[4][4]): Vec3_XformPoint_00748B54 (the same code). (name?); decompiled: src/obj/obj53b.cpp
+002BCD10 Vec4_FromFloats_002BCD10         // void f(V4* out, const f32 s[4]): out (stvx) = the four f32s of s merged into one vector with the three lane masks at 0x002BCCE0 (splat s0, vsel s1 / s2 / s3). (name?); decompiled: src/obj/obj53b.cpp
+00760360 Obj_InitVec_00760360             // void f(T* o) (init): +0 = 2, +48 = 0, byte +52 = 0, the quadword at +32 = 0 and the one at +16 = the f32 at 0x00760330 splatted, masked with the pool masks at 0 (name?); decompiled: src/obj/obj53b.cpp
+0074D828 Vec3_Length4_0074D828            // void f(V4* out, const V4* v): out (all four lanes) = |v.xyz| by the compiler's rsqrte + Newton step (SqrtNewton4 with the pool f32s 0x0074D820 (0.5) / 0x0074D82 (name?); decompiled: src/obj/obj53b.cpp
+007341E0 Mat4_InvertRigid_007341E0        // void f(f32 m[4][4]): m = its rigid inverse in place (InvRigidTo53: the transposed 3x3 from vmrghw / vmrglw / vperm with the masks at 0x007341C0, translation -t  (name?); decompiled: src/obj/obj53b.cpp
+0074D290 Mat4_InvertRigidTo_0074D290      // void f(f32 out[4][4], const f32 m[4][4]): out = m's rigid inverse (InvRigidTo53, masks at 0x0074D270). (name?); decompiled: src/obj/obj53b.cpp
+00771BF0 RayCollector_AddHit_00771BF0     // u32 f(Collector* a, Collidable* b, const Hit* c) (ray hit callback): when f32 c->+16 < a->+40: the root of b (followed along +12) goes to HkFilter_TestCollidabl (name?); decompiled: src/obj/obj53b.cpp
+000ED680 Body_SetVec68_000ED680           // u32 f(T* o, const f32 v[3]): with the rigid body o->+388: HkSetVec53 (masks 0x000ED650, vt[68]: the linear velocity?). None: r3 = v. (name?); decompiled: src/obj/obj53b.cpp
+00243FF0 Body_SetVec68_00243FF0           // u32 f(T* o, const f32 v[3]): with the rigid body o->+396: HkSetVec53 (masks 0x00243FC0, vt[68]). None: r3 = v. (name?); decompiled: src/obj/obj53b.cpp
+002441E0 Body_SetVec72_002441E0           // u32 f(T* o, const f32 v[3]): with the rigid body o->+396: HkSetVec53 (masks 0x002441B0, vt[72]: the angular velocity?). None: r3 = v. (name?); decompiled: src/obj/obj53b.cpp
+0023C710 Body_SetVec68_0023C710           // u32 f(T* o, const f32 v[3]): with the rigid body (o->+612)->+24: HkSetVec53 (masks 0x0023C6E0, vt[68]). None: r3 = v. (name?); decompiled: src/obj/obj53b.cpp
+0023C850 Body_SetVec72_0023C850           // u32 f(T* o, const f32 v[3]): with the rigid body (o->+612)->+24: HkSetVec53 (masks 0x0023C820, vt[72]). None: r3 = v. (name?); decompiled: src/obj/obj53b.cpp
+007557C4 Mat4_MulInPlace_007557C4         // void f(f32 a[4][4], const f32 b[4][4]): a = a * b (MulMat4To53). (name?); decompiled: src/obj/obj53b.cpp
+0075D154 Mat4_MulInPlace_0075D154         // void f(f32 a[4][4], const f32 b[4][4]): a = a * b (MulMat4To53). (name?); decompiled: src/obj/obj53b.cpp
+00175C00 Obj_SetVelocityTo_00175C00       // u32 f(Obj* o, const f32 v[3]; f32 t): with the rigid body o->+388 and t not <= the f32 0x00175BF8: o->vt[136](o, &d) with d (sp+128) = (v - the body's position  (name?); decompiled: src/obj/obj53b.cpp
+00228FA0 Obj_GetFootPos_00228FA0          // void f(f32 out[3], Obj* a, const T* b): out = b's position (+48) when b is set, else a's foot point ((a->+216)->+704) through a's matrix (+96) (XformPt53; the v (name?); decompiled: src/obj/obj53b.cpp
+00761308 Mat4_Mul_00761308                // void f(f32 out[4][4], const f32 a[4][4], const f32 b[4][4]): out = a * b (MulMat4To53). (name?); decompiled: src/obj/obj53b.cpp
+001B18A0 Obj_GetAttachPos_001B18A0        // void f(Obj* o, f32 out[3]): out = the zero vector 0x01164B40 first; with the attachment o->+524: its node's (+8) position (+48) copied to out, then out (stvx) = (name?); decompiled: src/obj/obj53b.cpp
+001B8F20 Obj_PushVelocity_001B8F20        // u32 f(Obj* o): Obj_Refresh_000E158C(o); with the rigid body o->+576 (its +8 set): HkSetVec53 of the three f32s at o + 560 (masks 0x001B8EF0, vt[68]). Otherwise  (name?); decompiled: src/obj/obj53b.cpp
+00206E80 Body_SetVec68_00206E80           // u32 f(T* o, const f32 v[3]): the rigid body o->+388 (not checked for 0): unless its +8 is 0 or its u8 +232 (motion type?) is 4 or 5, HkSetVec53 (masks 0x00206E5 (name?); decompiled: src/obj/obj53b.cpp
+00206FF0 Body_SetVec72_00206FF0           // u32 f(T* o, const f32 v[3]): Body_SetVec68_00206E80 with the masks 0x00206FC0 and vt[72]. (name?); decompiled: src/obj/obj53b.cpp
+001FB510 Body_SetVec72_001FB510           // u32 f(T* o, const f32 v[3]): with the rigid body o->+416, its u8 +232 not 4 / 5 and its +8 set: HkSetVec53 (masks 0x001FB4E0, vt[72]). Otherwise r3 = v. (name?); decompiled: src/obj/obj53b.cpp
+00748880 Body_ApplyAt_00748880            // u32 f(Link* a, const Arg* b): with a's rigid body a->+24 (its +8 set): 0x000EF750(&p (sp+128), a->+16) gives a point, its {x, y, z, 0} row (masks 0x00748850) at (name?); decompiled: src/obj/obj53b.cpp
+00290084 Obj_UpdateAimDir_00290084        // u32 f(T* o): with the owner o->+8 and its matrix holder m = owner->+160: unless bit 0x80000000 of o->+248 is set, o->+224..+232 = the position (+112) of o->+240 (name?); decompiled: src/obj/obj53b.cpp
+0024D8A0 Obj_SetVelocity_0024D8A0         // u32 f(T* o, const f32 v[3]): +1168..+1176 = v and +1184..+1192 = those (raw words; f1 = the last); with the rigid body o->+416 (its +8 set): HkSetVec53 of o + 1 (name?); decompiled: src/obj/obj53b.cpp
+002696E0 Obj_SetVelocityT_002696E0        // u32 f(T* o, const f32 v[3]; f32 t): +592..+600 and +688..+696 = v (raw words); Hk_GetBody9D19C8(o->+32) (f1 = v.z); when its +8 is set and t >= the f32 0x002696 (name?); decompiled: src/obj/obj53b.cpp
+004E03F0 Obj_GetMidPoint_004E03F0         // u32 f(V4* out, T* b): b->vt[160](b, &u (sp+176), &w (sp+184), &m (sp+112)) gives a 4x4 matrix and two 2-vectors; out->+8 = 0, f32 +0 = s = (u.x + w.x) * k and + (name?); decompiled: src/obj/obj53b.cpp
+001FB640 Body_SetVecPair_001FB640         // u32 f(T* o, const f32 a[3], const f32 b[3]): with the rigid body o->+416 and its u8 +232 not 4 / 5: HkSetVec2_53 (masks 0x001FB610). Otherwise r3 = b. (name?); decompiled: src/obj/obj53b.cpp
+002442E0 Body_SetVecPair_002442E0         // u32 f(T* o, const f32 a[3], const f32 b[3]): with the rigid body o->+396, its u8 +232 not 4 / 5 and its +8 set: HkSetVec2_53 (masks 0x002442B0). Otherwise r3 =  (name?); decompiled: src/obj/obj53b.cpp
+00215ACC Def_CopyDesc_00215ACC            // u32 f(const Def* a, Desc* d): Obj_CopyQuery_000CDB28(a, d); d->+144 = a->+180; bytes d->+148..+153 = bits 0x80 / 0x40 / 0x20 / 0x10 / 0x08 / 0x02 of u8 a->+184  (name?); decompiled: src/obj/obj53b.cpp
