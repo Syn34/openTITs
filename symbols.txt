@@ -11708,7 +11708,6 @@
 0022DFD8 XmlDef_Read22DFD8                // reader of 0022F630
 0022D44C XmlDef_FromRec22D44C             // (p, B) ctor of 0022F630
 00244CF8 XmlDef_Read244CF8                // reader of 00245A30
-00244980 XmlDef_FromRec244980             // (p, B) ctor of 00245A30
 0023E590 XmlDef_Read23E590                // reader of 0023FA28
 00226A28 XmlDef_FromRec226A28             // (p, B) base ctor used by 0023FA28
 
@@ -12369,7 +12368,7 @@
 0036ABF8 Obj_BaseDtor_0036ABF8           // base dtor part (vt 0x00B1F6B0 -> 0x00B1F678 tail): unlist (8, 0x00F37878), +328 record notify / "Scale" Obj_Set4E3168 / vt[4], frees +328; decompiled: src/obj/mid25_a.cpp
 00440AC4 SpawnRec_Dtor_00440AC4          // (rec, 0): first destructor of the 68-byte spawn record of 0x0042EF6C (name?)
 00440A40 SpawnRec_Dtor2_00440A40         // (rec, 0): second destructor of that record (name?)
-0021F4E8 Area_OnEnter_0021F4E8           // (o, x): the action of 0x0021F9E8 after Area_Enter (name?)
+0021F4E8 Area_OnEnter_0021F4E8            // (area, x): record +460, link x into effect components, one-shot hashes, enter delay, child modes; decompiled: src/obj/mid33_b.cpp
 003742E0 View_UpdateMarker_003742E0      // (o, u16 idx): called by 0x00374590 (name?)
 00489328 Spawn_FromCmd_00489328          // (world, c + 140, c + 9, c + 74, +160, +164, bool) from 0x004337D0 (name?)
 004D3798 Game_ShutdownStep_004D3798      // () from 0x004D39B0 (name?)
@@ -13912,3 +13911,39 @@
 000650B0 KList_ReadEntry_000650B0         // s32 f(XmlCursor* x, T* o, Msg* m) (resolves o's list handle, then reads x's first child into its entry): with no handle (low half of o->+40 0) KListLib_Add_0039 (name?); decompiled: src/obj/obj52b.cpp
 000E7B0C Obj_EnableMotion_000E7B0C        // u32 f(Obj* o, u8 on) (enables / disables the motion): bit 0x20000 of o->+172 = !on; with u8 *0x01022014 set, o->vt[68]() gives r -> r->vt[44](r, on); without co (name?); decompiled: src/obj/obj52b.cpp
 000F4200 Obj_ChargeUpdate_000F4200        // u32 f(Obj* o, f32 dt) (charge update): the pending part o->+432 (unless bit 0x40000 of its +172) gets vt[40](p, 0) and +432 = 0. With bit 0x20000 of o->+376 and (name?); decompiled: src/obj/obj52b.cpp
+
+# Game code medium sweep part 33
+000B0D4C TusUpload_Thread_000B0D4C        // NP TUS upload thread: online id + 50 trophy bits -> blob 0x010127A0, slot 1; state 0x00F9D1AC; decompiled: src/obj/mid33_a.cpp
+000B0FF8 TusDownload_Thread_000B0FF8      // NP TUS download thread: slot 1 -> blob, unlock stored trophies; no-data codes -> 0x00F9D1B8/BC; decompiled: src/obj/mid33_a.cpp
+000B17C8 SaveList_Cb_000B17C8             // cellSaveData list callback: next "BCUS98247_SAVE_SLOT_nnnnn" slot -> ctx +7320, new-save entry; decompiled: src/obj/mid33_a.cpp
+000B1A88 SaveStat_Cb_000B1A88             // cellSaveData stat callback: space check, PARAM.SFO title/subtitle/detail; decompiled: src/obj/mid33_a.cpp
+0021FB38 Area_OnLeave_0021FB38            // (area, x): mirror of Area_OnEnter (unlink/link swapped), leave delay, +468 bit 30; decompiled: src/obj/mid33_b.cpp
+0021612C Area_InteractKind_0021612C       // (-, x, u32* out) -> bool: interaction kind from x's state / flags; decompiled: src/obj/mid33_b.cpp
+0027D6E8 Launch_OnMsg_0027D6E8            // msg 2 handler: solve launch velocity to target (Vec3_SolveAccel), anim 0x22EC2E, landing reset; decompiled: src/obj/mid33_c.cpp
+0027EE70 Launch_OnMsg_0027EE70            // variant of Launch_OnMsg_0027D6E8 without the target flag; decompiled: src/obj/mid33_c.cpp
+001E57E8 Rig_BindBone_001E57E8            // (rig, bone) recursive: bind bones by description id, spin/reset; decompiled: src/obj/mid33_d.cpp
+001E70D0 Rig_Spin_001E70D0                // (rig): 3 inlined random steps pick spin angles, rotate spun bones, reset others; decompiled: src/obj/mid33_d.cpp
+001DA010 Charge_Step_001DA010             // (o; f1 dt): charge meter fill/drain, effect hash switches, meter +576; decompiled: src/obj/mid33_d.cpp
+001B2A48 Path_Presence_001B2A48           // (o; f1 dt): player-on-path detection (Obj_GetPathPose12919C seg 2..15), timer +564, hashes; decompiled: src/obj/mid33_d.cpp
+001E3A90 Grab_Start_001E3A90              // (o, x) -> 1: grab start, Obj_Reset121FA8, 3 anims, yaw/pitch, +740; decompiled: src/obj/mid33_d.cpp
+0028EBB8 Attach_Sync_0028EBB8             // (o): attachments +2912 copy source matrix + bone matrices, visibility; decompiled: src/obj/mid33_d.cpp
+002ABF18 Mirror_Update_002ABF18           // (o): reflected matrix (rows 0/1 negated) to +948 / +952, colour copy; decompiled: src/obj/mid33_d.cpp
+001E7588 Input_Steer_001E7588             // (o, f32* yaw): steer from input channel 0 / 2 or ring-buffer mean; decompiled: src/obj/mid33_d.cpp
+000545E0 Prox_Step_000545E0               // (o; f1 dt): proximity push / message 0x34F5E34C to the player (slot 344); decompiled: src/obj/mid33_e.cpp
+000560A0 Contact_Step_000560A0            // (o; f1 dt): contact list +5144 prune / message 0x34F5E34C (slot 336); decompiled: src/obj/mid33_e.cpp
+0023B628 Boost_Step_0023B628              // (player; f1 dt): boost flag +1088 bit 28, meter drain at world slot +108; decompiled: src/obj/mid33_f.cpp
+0023B9D8 Boost_SelectAnim_0023B9D8        // (player): animator +736 layer 1 state select; decompiled: src/obj/mid33_f.cpp
+00246080 Obj_Reset_00246080               // (o): field reset used by Obj_Ctor_00247AB8; decompiled: src/obj/mid33_f.cpp
+002CB8A0 Rate_OnMsg_002CB8A0              // (o, msg) -> 1/0: rate counter message handler; decompiled: src/obj/mid33_f.cpp
+002F24D0 Trail_Flush_002F24D0             // (o): transform dirty ring of point pairs, release refs, done bit; decompiled: src/obj/mid33_f.cpp
+002BA230 Waypoint_Step_002BA230           // (o; f1 dt): move owner along waypoints +64, wait timer with inlined random; decompiled: src/obj/mid33_f.cpp
+00244980 XmlDef_Copy_00244980             // (o, src): XmlDef copy constructor (vtable 0x00B1BC00); decompiled: src/obj/mid33_f.cpp
+002CB098 Rate_Reset_002CB098              // (o): rate counter reset (called by Rate_OnMsg_002CB8A0) (name?)
+00ABE804 sceNpTusSetData                  // import stub
+00ABE824 sceNpTusGetData                  // import stub
+00ABE7E4 sceNpTusCreateTitleCtx           // import stub
+00ABE7A4 sceNpTusDestroyTitleCtx          // import stub
+00ABE764 sceNpTusCreateTransactionCtx     // import stub
+00ABE7C4 sceNpTusDestroyTransactionCtx    // import stub
+00ABE4A4 sceNpManagerGetNpId              // import stub
+00ABE444 sceNpManagerGetOnlineId          // import stub
