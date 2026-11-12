@@ -9087,7 +9087,7 @@
 009F6BB0 HkShape_Construct9F6BB0              // (Shape*) in-place ctor (Havok side, name?)
 009F6A74 HkShapeDesc_Construct9F6A74          // (Desc* 144 bytes) (name?)
 009F63EC HkShape_Init9F63EC                   // (Shape*, const Desc*) (name?)
-00F1DE80 Vt_RayAllHitsCollector               // vtable of the 8-inline-hit all-hits ray collector (data, name?)
+00F1DE80 VtRayHitCol80                    // data: Havok ray hit collector vtable with 8 inline 80-byte hits (used on the stack by 0x00304FD0 / 0x004A4780; stored again before the heap array is freed)
 00F325E0 Opd_GrindFilter                      // OPD given to SplineInstances_CollectNear by 0x0012C968 (data, name?)
 
 # Renderer sweep part 13
@@ -11717,8 +11717,6 @@
 0017C918 XmlDef_FromRec17C918             // (p, rec) ctor of 0017D640
 001B3BDC XmlDef_Read1B3BDC                // reader of 001B4394
 001B37E8 XmlDef_FromRec1B37E8             // (p, rec) ctor of 001B4394
-0075CBEC Obj_Construct75CBEC              // (o, a, b, c, params, A, -, 0; f1..f4; stack args 10..15/18) stack-object ctor (346; reads r3..r8, r10, f1, f2)
-0075C364 Obj_Construct75C364              // (o, a, b, c, params, A, -, 0; f1..f4; stack args) (356)
 002266C0 Obj_Init2266C0                   // (A) (reads r3 only)
 0022DFD8 XmlDef_Read22DFD8                // reader of 0022F630
 0022D44C XmlDef_FromRec22D44C             // (p, B) ctor of 0022F630
@@ -12929,7 +12927,6 @@
 0043807C Cmd_CameraSplit43807C             // (Cmd* c): subject c->28 / id c->24 / world slot, camera Obj_Notify26: 0x0042C328 posts, split styles c->16/20, Coach_SetMode2A8AE0, p->244 bit 0x1000; decompiled: src/obj/mid22_c.cpp
 002D1F0C Track_Follow2D1F0C                // (Track* t): bit 0x8000 of t->28: pose rows t->32+240, reference t->8->vfn[64] distance vs *0x0105B5E8: follower t->36 vfn[84] + World_AddTimedCallback(0x00F35980), else 0x002D0BA0(t, 0); decompiled: src/obj/mid22_c.cpp
 00074E70 Obj_EndScene74E70                 // (Cmd* c, Effect* e): target from component c->12 (kind 5 / 15) or id c->16 -> Obj_SceneEnd(c->20, c->21) (+ vfn[304]), with c->22 also every child of x->340; decompiled: src/obj/mid22_c.cpp
-0026FD90 Targets_Consider_0026FD90        // (o, a1, x, table, u32* count, 1, 0) (callee of Targets_Collect270258): uses VMX (vmaddfp transform), skipped (not decompiled) (name?)
 01067AF8 g_TargetTable_01067AF8            // 32 {u32 0, f32 FLT_MAX} pairs, init flag u8 0x01067AF0 (Targets_Collect270258) (name?)
 01056EE0 g_SinCache_01056EE0               // f32 sin(K) cache, valid flag u8 0x01056ED8 (Player_RateCheck23B3E8) (name?)
 
@@ -13666,3 +13663,18 @@
 000ED35C Ragdoll_Teardown_000ED35C       // (o, u8 full): event, physics mode 6, skeleton/body release (props 0xA734004D/0x91C7CF5B), then 0x000E02F8; decompiled: src/obj/mid30_d.cpp
 001FAF44 Obj_SetPhysicsOn_001FAF44       // (o, u8 on): Flag_Set172_80, body +416 add/remove, trigger volume +436 rebuild (Shape_InitBody), vt84(o+96); decompiled: src/obj/mid30_d.cpp
 000E9BA0 Obj_SetPhysicsMode_000E9BA0     // (o, s32 mode): +400; 1 -> wake + add bodies (stores 2), 6 -> Hk_RemoveEntity of +388/+548; decompiled: src/obj/mid30_d.cpp
+
+# Game code big sweep part 29
+000DB348 Obj_StartSound_000DB348          // Handle f(Handle* out, Obj* o, Sound* snd, Params* prm, u32 kind, u32 bone, bool r9, bool r10, u32 tag (stack arg 8)): mute 0x01021FC8 / o+176 bit 0x10 / no snd/prm -> 0; r9: prm+44 voice byte (+56 |= 0x10000); r10: prm+47 (+56 |= 0x80000); kind 0xF59E7E78 Audio_Start, 0x411D6991 Obj_PlaySound(o->vfn[60]()), 0x7641A763 one of 4 bone slots (+256, 12 B each; counter o+172 bits 19..21), else at o+144 / the bone's matrix translation; decompiled: src/obj/big29_sound.cpp
+0026FD90 Targets_Consider_0026FD90        // void f(Collector* o, Frame* eye, Obj* x, Entry table[], s32* count, bool keep, bool unique): height window T+12..T+16, range T+4, cone T+8/2 (acosf), score |e|/T4*(1-T20) + angle/(T8/2)*T20, optional x->vfn[304] veto, sorted insert into {obj, f32} table (capacity T+0); decompiled: src/obj/big29_target.cpp
+002B21D8 Score_SpawnPopup_002B21D8        // u32 f(Scorer* o, s32 n, u32 mult): "Scoring%u" popup (++0x00F64C1C) via Map_LookupThen(0xC07487EC, hash): placed at 0.3 of the way from the camera to o->8->160 +80 (two VMX matrix transforms), random drift (inlined RNG 0x01164888), Obj_SetAnim(p, "%d" of n*mult, ...; -1.0); decompiled: src/obj/big29_score.cpp
+00304FD0 Cam_UpdateFollow_00304FD0        // u32 f(Cam* o; f32 dt): Obj_Blend x4 (+48/+84/+120/+156), eye = t+144 + o+184 * norm(t+128) (y + o+148), Havok ray (80-byte collector) pulls the start in, y >= *0x0106A268, look-at matrix (up 0x01164B60) into o->0 +16..+72; decompiled: src/obj/big29_camray.cpp
+0042C328 PairTable_Add_0042C328           // void f(a, Obj* o, u32 handle, bool top, bool r7, bool b28, bool b29, bool r10; stack 8..11 bools): appends {a, o, handle, flags} to *0x00F65858 (count 0x010AA690) or (stack 11) re-owns the entries of a matching object; vfn[96]/[60]/[176]/[180] follow-ups; counterpart of PairTable_Remove_0042C7DC; decompiled: src/obj/big29_pair.cpp
+004A4780 Obj_LineOfSight_004A4780         // u32 f(Obj* a, Obj* b, Opd* cb): Havok ray a+144 -> b+144; ignores shape types 5/6/>=16 and hits owned by a/b; first other hit: no owner -> 0, owner -> cb(owner) or 0; clear -> 1; decompiled: src/obj/big29_los.cpp
+0075C364 DefRec_Construct_0075C364        // u32 f(Rec* o, a, b, c, params[8], src, -, r10; f1, f2; stack args 9, 10, 18..21): XML def defaults record base (src 0..476 -> o+176.., name String_Alloc/String_CopyN into +672); decompiled: src/obj/big29_defrec.cpp
+0075CBEC DefRec_ConstructFull_0075CBEC    // u32 f(Rec* o, ...; f1..f4; stack args 9..14, 17): DefRec_Construct_0075C364 (name 0x00AD3C14, arg 20 = 2) + defaults +684..+1540 (3 PtrVectors), +8 |= 0x800; decompiled: src/obj/big29_defrec.cpp
+000DC314 Obj_Release_000DC314             // (Obj*, 0, 0) called by PairTable_Add_0042C328 when o->vfn[60]() is 0 (name?)
+01021FC8 g_SoundMute                      // data: u8, no object sounds start while set (Obj_StartSound_000DB348)
+00F64C1C g_ScorePopupSerial               // data: u32, "Scoring%u" popup counter (Score_SpawnPopup_002B21D8)
+0106A268 g_CamMinEyeY                     // data: f32, the follow camera's lowest eye y (Cam_UpdateFollow_00304FD0)
+01164C90 QuatIdentity_01164C90            // data: the global vector Slot_BuildMatrix callers pass with ZeroVec (name?)
