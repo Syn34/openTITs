@@ -13947,3 +13947,11 @@
 00ABE7C4 sceNpTusDestroyTransactionCtx    // import stub
 00ABE4A4 sceNpManagerGetNpId              // import stub
 00ABE444 sceNpManagerGetOnlineId          // import stub
+
+# Game code big sweep part 34
+004D10C8 UiScreen_AllocB8Textures         // bool f(T* o): up to 2 layers x 4 B8 linear CellGcmTextures carved from Cursor_Alloc(0x01163FC8, 64, n*stride) into +160, offsets via cellGcmAddressToOffset; +164 = stride; decompiled: src/obj/big34_uitex.cpp
+003A96F8 ContactListener_OnPair_003A96F8  // bool f(T* o, Pair* p) (via AdjThunk_003A9C1C): owners of the two body roots (component 0x91C7CF5B +12); exactly one in group +224 -> PairVec_AddUnique or record {+168 key, obj} in the sorted u16 vector +116; p+32 = 1 (name?); decompiled: src/obj/big34_contact.cpp
+003958C8 Action_CamShake_003958C8         // u32 f(Node* n, Ctx* c) (pointer): shake descriptor from node params 0..11 (+ c->12's +144 position) -> CamShake_Add_002F2140(*0x00F64C38, &d); returns 0 (name?); decompiled: src/obj/big34_camshake.cpp
+00051B5C PathFollow_OnEvent_00051B5C      // u32 f(T* o) (pointer): state o+412+20*o->1796, event hash o->1800: next / step / random walk / closest-to-focus / clear over the 20-byte nodes of *0x00F557F4 (name?); decompiled: src/obj/big34_pathev.cpp
+007379FC Tuning_CopyDefaults_007379FC     // void f(T* o) (pointer): ~100 global tuning values (0x01036ACC..0x0103847C) copied raw into o+4..+476; f1 = the last (name?); decompiled: src/obj/big34_tuning.cpp
+00236348 Drive_UpdateInput_00236348       // void f(T* o, f32 dt) (called by f_00238F78): steer/throttle/brake from o->952 vt[12] input into o+932..988 and (o->612)->156 out block (name?); decompiled: src/obj/big34_drive.cpp
