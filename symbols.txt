@@ -12399,7 +12399,7 @@
 006F9CA8 VoiceItem_ReadParam_006F9CA8    // (item, f32* v, ? w) from 0x0044C888 (name?)
 
 # Game code medium sweep part 17
-002C5140 Obj_SetFacing2C5140                // u32 (Obj* o, const Vec3* facing): o->208 = facing, Cam_RotateToward1007D0 by o->168 when o->276 vfn[64]() +416 kind 3, align to o->224's z (y=0) and Vec_TurnToward106770 at rate o->256, Obj_SetRange_00101958(o->124, o->128); replaces Obj_Fn2C5140; decompiled: src/obj/mid17_a.cpp
+002C5140 Obj_SetFacing2C5140              // (already named) reads r3/r4; decompiled: src/obj/mid17_a.cpp
 003EC3A0 Ring_ComputeProfile3EC3A0          // u32 (-, Ring* o): 25-sample profile o->4[] from neighbour links +232..+260 (hidden bit 0x40000000 in +268), cosine wobble o->212/216, smoothed copy o->104[]; decompiled: src/obj/mid17_a.cpp
 002025B0 Obj_ForwardEulerPose2025B0         // u32 (Obj* o, Obj* x): quat from Euler angles (x->216 +1552 when x flag 0x8, else zero) + pos -> World_Forward12847C_00489DF8(..., 0x010549D0; f1 o->216->440); decompiled: src/obj/mid17_a.cpp
 0005A388 Obj_SwayTick5A388                  // u32 (Obj*): tuning T(a)=f32 a+72 driven sway; timer o->5136, rotated frame from 0x01164BD0 + o->176, 00058488(o, &frame); decompiled: src/obj/mid17_a.cpp
@@ -13240,7 +13240,7 @@
 002C3B20 Obj_StanceValue_002C3B20         // u32 f(T* o): for the stance s = Obj_Stance_002C39A0(o) in 0..8, r3 = *SortedMap_Find75E260(0x0105ABB8, &key) with key = o->+76[s]; else 0. (name?); decompiled: src/obj/obj45b.cpp
 002F63E0 Obj_RestartAnims_002F63E0        // u32 f(T* o, u32 key, u8 b, f32 t): Anim_Restart2775A8(o->vt[60](), key, 0, b, -1, -, 0, 0, -, -, 0, -1; k0, t, k1, k1) with k0 / k1 = *0x002F63D8 / *0x002F63DC; (name?); decompiled: src/obj/obj45b.cpp
 0033BEA4 SpawnDef_Read_0033BEA4           // u32 f(Def* d, XmlCursor* x): reads hash 0x0024728B into +0, s32 0xC8B3AFB8 / 0x9AA8994A / 0x4810FC97 into +4 / +8 / +12, f32 0xC0C3EAED / 0xC0C3E9FF into +16 /  (name?); decompiled: src/obj/obj45b.cpp
-0033C130 Pool_Acquire_0033C130            // u32 f(Pool* p, Slot* s): fills an empty slot (s set, s->+0 == 0) while fewer than +52 (0 = no limit) are active (+36): a random entry of the free list +132 (u16 (name?); decompiled: src/obj/obj45b.cpp
+0033C130 Pool_Acquire_0033C130            // (already named) (pool, slot) reads r3/r4 only; decompiled: src/obj/obj45b.cpp
 003772C0 Obj_StartSpeech_003772C0         // u32 f(T* o): StartSpeech45 with *0x003772B8, the hash table 0x00F64FC4 and the owner's entries +184 (count +188). (name?); decompiled: src/obj/obj45b.cpp
 0037AC70 Obj_StartSpeech_0037AC70         // u32 f(T* o): StartSpeech45 with *0x0037AC68, the hash table 0x00F64FE0 and the owner's entries +180 (count +184). (name?); decompiled: src/obj/obj45b.cpp
 0037F1A0 Obj_StartSpeech_0037F1A0         // u32 f(T* o): StartSpeech45 with *0x0037F198, the hash table 0x00F64FFC and the owner's entries +180 (count +184). (name?); decompiled: src/obj/obj45b.cpp
@@ -13384,10 +13384,8 @@
 002C9E28 Obj_Reset_B1D070_002C9E28        // u32 f(T*) vtable method of the 0x002C9910 object: state bytes reset, 12-byte records +356 stopped/released, flag words +64/+52 and defaults 0x01164AFC, base +24 vt28, f_002C96A8 (f1 = *0x002C9E20); decompiled: src/obj/mid27_f.cpp
 002E9FE0 World_RegisterKey_002E9FE0       // (key, a, b, c) from World_Construct: key added with a/b/c to sorted maps 0x010686C4/0x010686DC (Find766DCC)/0x010686F4 (Find766F54) if absent; decompiled: src/obj/mid27_f.cpp
 002B99C0 Attach_Release_002B99C0          // u32 f(T* o, x): release x from attachment table +24 (quirk: only entry 0 compared), FLT_MAX via Hk_SetF32At, effects hash 0x3E5C25CD, Body_SetMass (f1 = entry +128), Obj_Detach0D72C0; decompiled: src/obj/mid27_f.cpp
-00440CD8 Bank_ReadRecord_00440CD8         // (Array*, rec, Iff*, s32 *0x00F65B3C): reads one 112-byte bank record (reads r4-r6 only) (name?)
-0033C5B4 Section_RecordReset_0033C5B4     // (rec) from Section_Reset mode 4 (name?)
-002C96A8 Obj_Fn2C96A8                     // (o; f1 unread per regflow) (name?)
-002C2420 Obj_Fn2C2420                     // (o, 0): may set u8 +320 (name?)
+00440CD8 Bank_ReadRecord_00440CD8         // u32 f(-, Rec* rec, IffReader* r, s32 ver): one 112-byte bank record (nameHash, radii, box, fade bytes; ver-dependent fields); lengths scaled by *0x010AC930, +40 = max extent (x +20 when > 1); decompiled: src/obj/mid28_a.cpp
+0033C5B4 Section_RecordReset_0033C5B4     // u32 f(Rec* o): Obj_ClearLists, +68 = group under key +32 (map *0x00F65BE8 + 28), sets off, callbacks 0x00F37068/70, nodes -> vector +132, +96 zeroed 12-byte slots -> vector +92, Pool_SetMode(o, 2); decompiled: src/obj/mid28_a.cpp
 
 # Game code sweep part 47
 00074354 SeqCmd_SpawnAt_00074354          // u32 f(Cmd* c) (sequence command, like SeqCmd_Spawn_0042EF6C): when Ptr_DerefNonZero(c->+20) fails, String_Format(0x00AC4B08, Hash_ToString(c->+12), Hash_ToStrin (name?); decompiled: src/obj/obj47.cpp
@@ -13404,7 +13402,7 @@
 002F7BC4 Obj2F6578_Spawn_002F7BC4         // T* f(A* a, B* b): SpawnFromRecord47 with rec->+4 |= 0x00080000, a 1136-byte 0x002F6578 object. (name?); decompiled: src/obj/obj47.cpp
 003072A8 Obj305A44_Spawn_003072A8         // T* f(A* a, B* b): SpawnFromRecord47 with rec->+4 |= 0x00040000, a 1088-byte 0x00305A44 object. (name?); decompiled: src/obj/obj47.cpp
 002AD2A4 VtB1CAB0_Dtor_002AD2A4           // T::~T(T* o): vtables 0x00B1CAB0 / +24 0x00B1CB10, Obj_ResetBody_002AD030(o), PtrVector_Clear / Nop of +280, +260, +240; then the base part: vtables 0x00B1BE30 / (name?); decompiled: src/obj/obj47.cpp
-0033DE30 Fader_Update_0033DE30            // void f(T* o, f32 dt): when u8 o->+2812 is set, for each element e of the u16-counted pointer array o->+2772 (count +2780): +88 += +92, +68 += +88 * dt (fmadds), (name?); decompiled: src/obj/obj47.cpp
+0033DE30 Section_Fn33DE30                 // (o; f32 dt) from Section_Update_0033DFC8 (reads r3, f1) (name?); decompiled: src/obj/obj47.cpp
 003A01E4 PoolOwner_Dtor_003A01E4          // T::~T(T* o): the global *(0x00F657FC) = 0; PtrVector_Clear / Nop(o + 92); when o->+76 is set, o->+80 ->vslot 8(.., o->+76, u16 +68 * (u16 +74 >> 1)); Array_Dest (name?); decompiled: src/obj/obj47.cpp
 003B0360 Actor_TryReact_003B0360          // u32 f(Actor* o): k = o->vslot 32(o, 0); with k 7 and u8 o->+159 clear, or with k 1 / 2 and the f32 o->+172 at least the threshold, o->vslot 28(o, 0, 8) and u8 + (name?); decompiled: src/obj/obj47.cpp
 00435978 AnimSet_Restart_00435978         // u32 f(T* o): for each 16-byte entry of the u16-counted array o->+80 (count +88) with an animator a (+0) and a key k (+8): when a->vslot 60(a) gives a track t, A (name?); decompiled: src/obj/obj47.cpp
@@ -13462,3 +13460,23 @@
 0024B1E8 Player_SwitchDef_0024B1E8        // T* (Player* o, Def* nd): tears down body/children/effects of the old def, Player%02d_Controllable query, Char_CreateRigidBody, user name; decompiled: src/obj/big26_switchdef.cpp (name?)
 001D1170 PathObj_Ctor_001D1170           // u32 (PathObj* o, const Rec* d): ctor of Spawner1D1B18's 976-byte object (record vector o+556, frames o+576/640/720 from bones/objects, camera fov/step), ends in Obj_ResetPath1D0F68; decompiled: src/obj/big26_pathobj.cpp (was Obj_Ctor_001D1170)
 00B13CCC kVtCrbCinfo                      // data: hkpCharacterRigidBodyCinfo vtable (name?)
+
+# Game code medium sweep part 28
+002C96A8 Obj_Update_B1D070_002C96A8       // u32 f(T* o) (0x00B1D070 object): target +156 lock-on effect (hashes 0xF7BC9E12 / 0xD66F128B), Obj_SetAnim first time, Obj_LineOfSight toggles u8 +291; decompiled: src/obj/mid28_a.cpp
+002C2420 Obj_ChargeShotFx_002C2420        // u32 f(T* o, u8 on): "%s_ChargeShotLifetime" effect +328 created from the Set_Find(0) binding tree / released (0x00010CBB, 0xBE54C60E); decompiled: src/obj/mid28_a.cpp
+002C53E0 Obj_FindTarget_002C53E0          // Obj* f(T* o; f32 maxAngle): first candidate of o->+292->+372 passing flags, distance, Obj_LineOfSight(o,e,4,2;-1) and the camera-forward angle (acosf); decompiled: src/obj/mid28_a.cpp
+002C5780 Obj_AimStart_002C5780            // u32 f(T* o, u8 track): once (+336): facing, probe +280 (Probe_Construct), Camera_PushTarget, target +296 = Obj_FindTarget, 2x probe vt48 query + turn, aim state cleared, charge shot cancelled; decompiled: src/obj/mid28_a.cpp
+0033C2C0 Pool_SetMode_0033C2C0            // u32 f(Pool* o, s32 mode): +64 = mode, +152 = 0; mode 1: slots from free vector +92 to +72 (limit +48), Pool_Acquire up to +44 active, random delays [+56,+60] (RNG 0x01164888/90); decompiled: src/obj/mid28_b.cpp
+0033C7A0 Pool_Tick_0033C7A0               // u32 f(Pool* o; f32 dt): +152 += dt; mode 1: delays count down, acquire at 0 (< +48 active), refill to +44, u8 +8 cleared; mode 2: free slots back to +92 with random delays; decompiled: src/obj/mid28_b.cpp
+0033DFC8 Section_Update_0033DFC8          // u32 f(Section* o, a, Msg* m) (vtable entry): update msg (u8 +18 == 4, m->+0 == 6): wait +2616, f_0033DE30, group commands +2592 (type 1 Pool_SetMode / "can't find group %u", type 2 wait), pools tick; Loader_Step_003252D8; decompiled: src/obj/mid28_b.cpp
+00072974 AnimCmd_EnableComponent_00072974 // u32 f(Cmd* c, Effect* x): AnimScriptCommandEnableComponent: target component c->+24 vt[44](comp, u8 c->+28); decompiled: src/obj/mid28_c.cpp
+00088494 AnimCmd_SetComponentVisible_00088494 // u32 f(Cmd* c, Effect* x): AnimScriptCommandSetComponentVisible: player slot c->+24 or component target; comp c->+28 vt[52](comp, u8 c->+32, 1); decompiled: src/obj/mid28_c.cpp
+000725E0 AnimCmd_SetPhysics_000725E0      // u32 f(Cmd* c, Effect* x): named object (c->+12) leaves / joins the physics world (Hk_RemoveEntity / Hk_AddEntity), else target vt[92](t, u8 c->+92 == 0, c->+88); decompiled: src/obj/mid28_c.cpp
+00088ABC AnimCmd_SetDisplay_00088ABC      // u32 f(Cmd* c, Effect* x): target entry c->+20 (or 0x000D1288(t,15,0)) gets the fields selected by mask c->+24 (+32 bits, +36..+48, +64/+80 vectors); decompiled: src/obj/mid28_c.cpp
+0006C370 AnimCmd_BlendSign_0006C370       // u32 f(Cmd* c, Effect* x, Ctx* s): value c->+32 blended toward +28 by s->+32/range -> Obj_AnimCall3541E0 (animator vt60) or Node_SetSignRec; decompiled: src/obj/mid28_c.cpp
+0006FA40 AnimCmd_SetSetting_0006FA40      // u32 f(Cmd* c, Effect* x): target settings record (CallK2_000D95C4) fields by hash c->+20 (0x76A67631 / 0x66B98D77 / 0x09AED71D), 0xC15C9D78 vt[28](t,0,6) + flag bit; decompiled: src/obj/mid28_c.cpp
+00085024 AnimCmd_ForgetRecord_00085024    // u32 f(Cmd* c, Effect* x): Records_RemoveKey_0029F7A0(Obj_Notify24(holder), target); holder = player slot c->+12 / component / id; decompiled: src/obj/mid28_c.cpp
+00089678 AnimCmd_AddRecord_00089678       // u32 f(Cmd* c, Effect* x): Rec128_Alloc_0029F760(Obj_Notify24(holder)) filled with target, f32s, flag bits, 4 bytes; decompiled: src/obj/mid28_c.cpp
+000749C0 AnimCmd_ApplyDefValues_000749C0  // u32 f(Cmd* c, Effect* x): target (flag 0x8) def +216 values -> kind-2 components c->+20/24/28 (+20 = def +1464/68/72), kind-3 c->+32/36 (+32 vec = def +1488/+1504); decompiled: src/obj/mid28_c.cpp
+00096F40 AnimCmd_BindSkeleton_00096F40    // u32 f(Cmd* c, Effect* x): target animator +160 vt[44](a, skeleton c->+20 via Effect_Bind4BB7E0 or map *0x00F8F12C->+16) when bone-count fields match; kind-16 entries Comp_SetLook287318(e, 0); decompiled: src/obj/mid28_c.cpp
+0006C800 AnimCmd_SetTrackTime_0006C800    // u32 f(Cmd* c, Effect* x): track c->+24 time (c->+20 or kind-1 comp vt20) on the linked object's animator (Anim_SetTrackTime_00276A20 / _000DC550) or the component's anim (Obj_SetF32Via_00354150, x Track_Length when relative); decompiled: src/obj/mid28_c.cpp
