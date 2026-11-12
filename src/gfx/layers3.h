@@ -58,8 +58,8 @@ constexpr u8 kFlagsKeep = 0x3F;  // the constructor clears bits 7 (skip) and 6
 namespace fn {
 constexpr u32 PtrVector_Construct = 0x005516E0;  // (PtrVector*) (name?)
 constexpr u32 PtrVector_Init = 0x00551598;       // (PtrVector*, capacity, heap, flags) (name?)
-constexpr u32 Slot_Construct = 0x005485B4;       // (slot*) one of the 16 176-byte slots (name?)
-constexpr u32 Pool_Construct = 0x00526D18;       // (pool*) (name?)
+constexpr u32 Slot_Construct = 0x005485B4;  // native (rsx.h) (slot*) one of the 16 176-byte slots (name?)
+constexpr u32 Pool_Construct = 0x00526D18;  // native (rsx.h) (pool*) (name?)
 }  // namespace fn
 
 namespace g {
@@ -98,9 +98,9 @@ namespace layers3 {
 // Derived-layer slot functions (decompiled in layers3.cpp) and their callees.
 namespace fn {
 constexpr u32 Mem_FreeFrom = 0x0054EE6C;            // (p, pool)
-constexpr u32 ZLayer_DrawBody = 0x00513B78;          // (RenderLayer*) ZTranslucent's item pass (name?)
-constexpr u32 ResolveLayer_Pass1 = 0x00514200;       // (RenderLayer*) WaterResolve / ScreenWarp (name?)
-constexpr u32 ResolveLayer_Pass2 = 0x00514838;       // (RenderLayer*) (name?)
+constexpr u32 ZLayer_DrawBody = 0x00513B78;  // native (rsx.h) (RenderLayer*) ZTranslucent's item pass (name?)
+constexpr u32 ResolveLayer_Pass1 = 0x00514200;  // native (rsx.h) (RenderLayer*) WaterResolve / ScreenWarp (name?)
+constexpr u32 ResolveLayer_Pass2 = 0x00514838;  // native (rsx.h) (RenderLayer*) (name?)
 }  // namespace fn
 
 namespace g {

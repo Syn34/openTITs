@@ -1,134 +1,92 @@
 // The shader Draw slots (Shader vtable slot 12):
-// void <Shader>_Draw(Shader* s, DrawItem* item)
+// void <Shader>_Draw(ShaderPrograms* s, DrawItem* item)
 //
 // The simple ones upload the item's transform (its 4 x 4 rows times
 // layers4::g::view_proj, transposed, as vertex constants 0..3) and hand
 // the item to its mesh (Mesh vtable slot 16 draws (mesh, item)).
 #include "shader2.h"
+#include "rsx.h"
 
-#include <cmath>
-
-using namespace sly4;
+namespace sly4::gfx {
 
 namespace {
 
 namespace d3 = sly4::render::draw3;
-namespace l4 = sly4::render::layers4;
 namespace s2 = sly4::render::shader2;
 
 constexpr u32 kMeshDraw = 16;  // Mesh vtable slot 16: Draw(mesh, item)
+constexpr u32 kCamera = 0x010DD780 + 304;  // f32[3]: layers3::g::block_dd780 +304
 
-f64 as_f64(u32 word) { return static_cast<f64>(std::bit_cast<f32>(word)); }
+// The mesh's draw (item +12, slot 16).
+void draw_mesh(DrawItem* item) { vcall(or_zero_page(item->mesh.get()), kMeshDraw, item); }
 
-// transpose(item rows * view_proj) as vertex constants 0..3 (one
-// SET_TRANSFORM_CONSTANT_LOAD of 17 words): rows read with lvx (address
-// rounded down to 16), fused per lane in vmaddfp order, row 3 adding
-// view_proj's row 3. (draw3.cpp's Slot_DrawProxy inlines the same.)
-void upload_item_transform(u32 item) {
-    const u32 m = l4::g::view_proj;
-    f32 r[4][4];
-    for (u32 i = 0; i < 4; ++i) {
-        const u32 row = (item & ~15u) + 16 * i;
-        const f32 x = load<f32>(row), y = load<f32>(row + 4), z = load<f32>(row + 8);
-        for (u32 k = 0; k < 4; ++k) {
-            f32 v = std::fmaf(load<f32>(m + 4 * k), x, i == 3 ? load<f32>(m + 48 + 4 * k) : 0.0f);
-            v = std::fmaf(load<f32>(m + 16 + 4 * k), y, v);
-            r[i][k] = std::fmaf(load<f32>(m + 32 + 4 * k), z, v);
-        }
-    }
-    const u32 c = load<u32>(fx::g::state);
-    const u32 cur = load<u32>(c + 8);
-    store<u32>(c + 8, cur + 72);
-    store<u32>(cur, l4::kVertexConst17);
-    store<u32>(cur + 4, 0);  // first constant
-    for (u32 k = 0; k < 4; ++k) {
-        for (u32 i = 0; i < 4; ++i) store<f32>(cur + 8 + 16 * k + 4 * i, r[i][k]);  // stvlx / stvrx pairs
-    }
-}
-
-// The mesh's draw (item +12, slot 16); r3 is left as it returns.
-void draw_mesh(PPUContext& ctx, u32 item) {
-    const u32 mesh = load<u32>(item + d3::kItemMesh);
-    ctx.gpr[3] = fx::vcall(ctx, mesh, kMeshDraw, {mesh, item});
-}
+// The item's colour (+64: a pointer to u8[4]; +4 of it an f32 width for Outline).
+const u8* item_colour(const DrawItem* item) { return host<u8>(item->w64); }
 
 }  // namespace
 
 // The item transform, then the mesh's draw.
-DECOMP(005ADD54, PrimTxr_Draw) {
-    const u32 item = arg<u32>(ctx, 1);
-    upload_item_transform(item);
-    draw_mesh(ctx, item);
+void PrimTxr_Draw(ShaderPrograms*, DrawItem* item) {
+    upload_item_matrix(item);
+    draw_mesh(item);
 }
-DECOMP(005B1830, ProjTxr_Deferred_Draw) {
-    const u32 item = arg<u32>(ctx, 1);
-    upload_item_transform(item);
-    draw_mesh(ctx, item);
+void ProjTxr_Deferred_Draw(ShaderPrograms*, DrawItem* item) {
+    upload_item_matrix(item);
+    draw_mesh(item);
 }
-DECOMP(005B1AE8, ZPass_Draw) {
-    const u32 item = arg<u32>(ctx, 1);
-    upload_item_transform(item);
-    draw_mesh(ctx, item);
+void ZPass_Draw(ShaderPrograms*, DrawItem* item) {
+    upload_item_matrix(item);
+    draw_mesh(item);
 }
-DECOMP(005B095C, SprParticle_Draw) {
-    const u32 item = arg<u32>(ctx, 1);
-    upload_item_transform(item);
-    draw_mesh(ctx, item);
+void SprParticle_Draw(ShaderPrograms*, DrawItem* item) {
+    upload_item_matrix(item);
+    draw_mesh(item);
 }
 
 // SimpleColorTxr: the item transform, the item's material +64 (a vec4
 // colour) as vertex constant 4, then the mesh's draw.
-DECOMP(005ADEE4, SimpleColorTxr_Draw) {
-    const u32 item = arg<u32>(ctx, 1);
-    upload_item_transform(item);
-    call(ctx, fx::fn::cellGcmSetVertexProgramConstants,
-         {load<u32>(fx::g::state), 4, 4, load<u32>(item + d3::kItemMaterial) + 64});
-    draw_mesh(ctx, item);
+void SimpleColorTxr_Draw(ShaderPrograms*, DrawItem* item) {
+    upload_item_matrix(item);
+    call(fn::cellGcmSetVertexProgramConstants, gcm(), 4u, 4u, at<u8>(item->mat.get(), 64));
+    draw_mesh(item);
 }
 
 // GeoParticle: nothing without a colour (item +64, u8[4]); else the item
 // transform, the colour * k (1/255) as vertex constant 4, then the mesh's
 // draw.
-DECOMP(005B0440, GeoParticle_Draw) {
+void GeoParticle_Draw(ShaderPrograms*, DrawItem* item) {
     constexpr u32 k = 0x005B043C;  // f32 in .text
-    const u32 item = arg<u32>(ctx, 1);
-    const u32 colour = load<u32>(item + 64);
-    if (colour == 0) {
-        ctx.gpr[3] = 0;  // left in r3
-        return;
-    }
-    upload_item_transform(item);
-    const f64 scale = static_cast<f64>(load<f32>(k));
-    Stack frame(ctx, 16);
-    const u32 v = frame.addr();
-    for (u32 i = 0; i < 4; ++i) {
-        store<f32>(v + 4 * i, static_cast<f32>(static_cast<f64>(ref<u8>(load<u32>(item + 64) + i)) * scale));  // fcfid, frsp, fmuls
-    }
-    call(ctx, fx::fn::cellGcmSetVertexProgramConstants, {load<u32>(fx::g::state), 4, 4, v});
-    draw_mesh(ctx, item);
+    if (item->w64 == 0) return;
+    upload_item_matrix(item);
+    const f32 scale = global<be_f32>(k);
+    GuestFrame f(16);
+    be_f32* v = f.as<be_f32>();
+    for (u32 i = 0; i < 4; ++i) v[i] = static_cast<f32>(*at<u8>(item_colour(item), i)) * scale;  // fcfid, frsp, fmuls
+    call(fn::cellGcmSetVertexProgramConstants, gcm(), 4u, 4u, v);
+    draw_mesh(item);
 }
 
 // Debug: the item transform; vertex constant 4 = the item's colour (item
 // +64, u8[4] / 255; {1, 1, 0, 0.5} without one), with alpha blending on
 // (SRC_ALPHA, ONE_MINUS_SRC_ALPHA, FUNC_ADD) when its alpha is below 1;
 // then the mesh's draw.
-DECOMP(005ADA18, Debug_Draw) {
+void Debug_Draw(ShaderPrograms*, DrawItem* item) {
     constexpr u32 k = 0x005ADA0C;  // f32 pair in .text (1.0, 1/255)
-    const u32 item = arg<u32>(ctx, 1);
-    upload_item_transform(item);
-    Stack frame(ctx, 16);
-    const u32 v = frame.addr();
-    store<u32>(v, s2::kOne);
-    store<u32>(v + 4, s2::kOne);
-    store<u32>(v + 8, 0);
-    store<u32>(v + 12, 0x3F000000);  // 0.5
-    if (const u32 colour = load<u32>(item + 64); colour != 0) {
-        const f64 scale = static_cast<f64>(load<f32>(k + 4));
-        for (u32 i = 0; i < 4; ++i) store<f32>(v + 4 * i, static_cast<f32>(static_cast<f64>(ref<u8>(colour + i)) * scale));  // fcfid, frsp, fmuls
-        if (load<f32>(v + 12) < load<f32>(k)) fx::blend_on(fx::kSrcAlpha2, fx::kOneMinusSrcAlpha2);  // fcmpu / blt
+    upload_item_matrix(item);
+    GuestFrame f(16);
+    be_f32* v = f.as<be_f32>();
+    be_u32* w = f.as<be_u32>();
+    w[0] = s2::kOne;
+    w[1] = s2::kOne;
+    w[2] = 0u;
+    w[3] = 0x3F000000u;  // 0.5
+    if (const u8* colour = item_colour(item)) {
+        const f32 scale = *host<be_f32>(k + 4);
+        for (u32 i = 0; i < 4; ++i) v[i] = static_cast<f32>(*at<u8>(colour, i)) * scale;  // fcfid, frsp, fmuls
+        if (v[3] < global<be_f32>(k)) blend_on(kSrcAlpha2, kOneMinusSrcAlpha2);  // fcmpu / blt
     }
-    call(ctx, fx::fn::cellGcmSetVertexProgramConstants, {load<u32>(fx::g::state), 4, 4, v});
-    draw_mesh(ctx, item);
+    call(fn::cellGcmSetVertexProgramConstants, gcm(), 4u, 4u, v);
+    draw_mesh(item);
 }
 
 // Outline: nothing for an item farther (squared, from the camera at
@@ -137,39 +95,38 @@ DECOMP(005ADA18, Debug_Draw) {
 // 0, 0, width} (the colour record's f32 +4; 1.0 without one), fragment
 // constant 0 = {the colour (item +64, u8[4] / 255; 0 without), item +71 /
 // 255 as alpha}, then the mesh's draw.
-DECOMP(005AFBF8, Outline_Draw) {
-    namespace sp = render::pool;
+void Outline_Draw(ShaderPrograms*, DrawItem* item) {
     constexpr u32 k = 0x005AFBEC;  // f32[3] in .text (0.0, 1/255, 255.0)
-    const u32 cam = render::layers3::g::block_dd780;
-    const u32 item = arg<u32>(ctx, 1);
-    const u32 k0 = load<u32>(k);
-    const f64 limit = as_f64(s2::param_or(load<u32>(load<u32>(item + d3::kItemMaterial) + d3::kMatParams), 0, k0));
-    const f64 dy = sp::sgl(sp::lfs(cam + 308) - sp::lfs(item + 52));  // fsubs
-    const f64 dx = sp::sgl(sp::lfs(cam + 304) - sp::lfs(item + 48));
-    const f64 dz = sp::sgl(sp::lfs(cam + 312) - sp::lfs(item + 56));
-    const f64 d2 = sp::fmadds(dz, dz, sp::fmadds(dx, dx, sp::sgl(dy * dy)));
-    if (limit < d2) {  // fcmpu / blt
-        ctx.gpr[3] = cam;  // left in r3
-        return;
-    }
-    upload_item_transform(item);
+    const be_f32* kc = host<be_f32>(k);
+    const be_f32* cam = host<be_f32>(kCamera);
+    const u32 k0 = *reinterpret_cast<const be_u32*>(kc);
+    const be_u32* params = host<be_u32>(or_zero_page(item->mat.get())->w124);
+    const f32 limit = as_f32(params ? params[0].get() : k0);
+    const f32 dy = cam[1] - item->pos[1];  // fsubs
+    const f32 dx = cam[0] - item->pos[0];
+    const f32 dz = cam[2] - item->pos[2];
+    const f32 d2 = fmadds(dz, dz, fmadds(dx, dx, dy * dy));
+    if (limit < d2) return;  // fcmpu / blt
+    upload_item_matrix(item);
     // The original's sp+112 (fragment constant 0) and sp+128 (vertex constant 4).
-    Stack frame(ctx, 32);
-    const u32 f = frame.addr(), v = f + 16;
-    for (u32 i = 0; i < 12; i += 4) {
-        store<u32>(f + i, k0);
-        store<u32>(v + i, k0);
+    GuestFrame frame(32);
+    be_u32* fw = frame.as<be_u32>(0);
+    be_u32* vw = frame.as<be_u32>(16);
+    be_f32* fc = frame.as<be_f32>(0);
+    for (u32 i = 0; i < 3; ++i) {
+        fw[i] = k0;
+        vw[i] = k0;
     }
-    store<u32>(v + 12, s2::kOne);
-    if (const u32 colour = load<u32>(item + 64); colour != 0) {
-        const f64 scale = sp::lfs(k + 4);
-        for (u32 i = 0; i < 4; ++i) store<f32>(f + 4 * i, static_cast<f32>(static_cast<f64>(ref<u8>(colour + i)) * scale));  // fcfid, frsp, fmuls
-        store<u32>(v + 12, load<u32>(colour + 4));
+    vw[3] = s2::kOne;
+    if (const u8* colour = item_colour(item)) {
+        const f32 scale = kc[1];
+        for (u32 i = 0; i < 4; ++i) fc[i] = static_cast<f32>(*at<u8>(colour, i)) * scale;  // fcfid, frsp, fmuls
+        vw[3] = at<be_u32>(colour, 4)->get();
     }
-    sp::stfs(f + 12, sp::sgl(static_cast<f64>(ref<u8>(item + 71)) / sp::lfs(k + 8)));  // fdivs
-    call(ctx, fx::fn::cellGcmSetVertexProgramConstants, {load<u32>(fx::g::state), 4, 4, v});
-    call(ctx, d3::fn::FProgram_SetConstant, {0, f});
-    draw_mesh(ctx, item);
+    fc[3] = static_cast<f32>(*at<u8>(item, 71)) / kc[2];  // fdivs
+    call(fn::cellGcmSetVertexProgramConstants, gcm(), 4u, 4u, vw);
+    FProgram_SetConstant(0, reinterpret_cast<const be_u32*>(fc));
+    draw_mesh(item);
 }
 
 namespace {
@@ -180,54 +137,64 @@ namespace {
 // 16..: {+16 * colour, +32 * colour, +48} and per layer entry (+0 u32
 // count, 48-byte entries from +64) {+0, +16 * colour, +32}, with colour
 // the material's f32[4] at +64; then the mesh's draw.
-void draw_layered(PPUContext& ctx, u32 item) {
-    namespace sp = render::pool;
-    upload_item_transform(item);
-    call(ctx, s2::fn::DrawItem_SetParticleState, {item, 32});
-    const u32 mat = load<u32>(item + d3::kItemMaterial);
-    if (((ref<u8>(mat + d3::kMatFlags) >> 7) & 1) != 0) {  // rlwinm 25,31,31
-        if (const u32 list = load<u32>(item + d3::kItemLayers); list != 0) {
-            const u32 colour = mat + 64;
-            const auto tinted = [&](u32 dst, u32 src) {
-                for (u32 i = 0; i < 16; i += 4) sp::stfs(dst + i, sp::sgl(sp::lfs(src + i) * sp::lfs(colour + i)));  // fmuls
+void draw_layered(DrawItem* item) {
+    upload_item_matrix(item);
+    DrawItem_SetParticleState(item, 32);
+    Material* mat = or_zero_page(item->mat.get());
+    if (((mat->b100 >> 7) & 1) != 0) {  // rlwinm 25,31,31
+        if (const be_u32* list = item->layers) {
+            const be_f32* colour = at<be_f32>(mat, 64);
+            const auto tinted = [&](be_f32* dst, const be_f32* src) {
+                for (u32 i = 0; i < 4; ++i) dst[i] = src[i] * colour[i];  // fmuls
             };
-            const auto raw = [](u32 dst, u32 src) {
-                for (u32 i = 0; i < 16; i += 4) sp::copy_word(dst + i, src + i);
+            const auto raw = [](void* dst, const void* src) {
+                for (u32 i = 0; i < 4; ++i) copy_word(static_cast<be_u32*>(dst) + i, static_cast<const be_u32*>(src) + i);
             };
+            const auto field = [&](u32 off) { return at<be_f32>(list, off); };
             // The original builds this at sp+112 of a 320-byte frame
             // without a bound: more than 3 entries overrun its saved
             // registers. Here the frame is sized for the entry count.
-            Stack frame(ctx, 48 + 48 * load<u32>(list));
-            const u32 v = frame.addr();
-            tinted(v, list + 16);
-            tinted(v + 16, list + 32);
-            raw(v + 32, list + 48);
-            u32 dst = v + 48;
-            if (load<u32>(list) != 0) {
-                u32 src = list + 64;
-                for (u32 n = 0; n < load<u32>(list); ++n, src += 48, dst += 48) {  // cmplw
-                    raw(dst, src);
-                    tinted(dst + 16, src + 16);
-                    raw(dst + 32, src + 32);
+            GuestFrame f(48 + 48 * list[0]);
+            be_f32* v = f.as<be_f32>();
+            tinted(v, field(16));
+            tinted(v + 4, field(32));
+            raw(v + 8, field(48));
+            be_f32* dst = v + 12;
+            if (list[0] != 0) {
+                u32 src = 64;
+                for (u32 n = 0; n < list[0]; ++n, src += 48, dst += 12) {  // cmplw
+                    raw(dst, field(src));
+                    tinted(dst + 4, field(src + 16));
+                    raw(dst + 8, field(src + 32));
                 }
             }
-            const u32 floats = static_cast<u32>(static_cast<s32>(dst - v) / 16) << 2;  // srawi / addze, rlwinm 2,0,29
-            call(ctx, fx::fn::cellGcmSetVertexProgramConstants, {load<u32>(fx::g::state), 16, floats, v});
+            const u32 floats = static_cast<u32>(static_cast<s32>(guest(dst) - guest(v)) / 16) << 2;  // srawi / addze, rlwinm 2,0,29
+            call(fn::cellGcmSetVertexProgramConstants, gcm(), 16u, floats, v);
         }
     }
-    draw_mesh(ctx, item);
+    draw_mesh(item);
 }
 
 }  // namespace
 
-DECOMP(005B3148, Decal_Draw) { draw_layered(ctx, arg<u32>(ctx, 1)); }
+void Decal_Draw(ShaderPrograms*, DrawItem* item) { draw_layered(item); }
 
 // ScreenWarp: nothing when g::config +152 bit 2 is set (as its Bind);
 // else Decal_Draw's body.
-DECOMP(005AF730, ScreenWarp_Draw) {
-    if (((ref<u8>(sly4::g::config + 152) >> 2) & 1) != 0) {  // rlwinm 30,31,31
-        ctx.gpr[3] = 1;  // left in r3
-        return;
-    }
-    draw_layered(ctx, arg<u32>(ctx, 1));
+void ScreenWarp_Draw(ShaderPrograms*, DrawItem* item) {
+    if (((config_u8(152) >> 2) & 1) != 0) return;  // rlwinm 30,31,31
+    draw_layered(item);
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(005ADD54, sly4::gfx::PrimTxr_Draw)
+NATIVE(005B1830, sly4::gfx::ProjTxr_Deferred_Draw)
+NATIVE(005B1AE8, sly4::gfx::ZPass_Draw)
+NATIVE(005B095C, sly4::gfx::SprParticle_Draw)
+NATIVE(005ADEE4, sly4::gfx::SimpleColorTxr_Draw)
+NATIVE(005B0440, sly4::gfx::GeoParticle_Draw)
+NATIVE(005ADA18, sly4::gfx::Debug_Draw)
+NATIVE(005AFBF8, sly4::gfx::Outline_Draw)
+NATIVE(005B3148, sly4::gfx::Decal_Draw)
+NATIVE(005AF730, sly4::gfx::ScreenWarp_Draw)

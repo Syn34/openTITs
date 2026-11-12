@@ -2,8 +2,11 @@
 // static initialiser / exit lists), with the static matrices the
 // constructor sets up between them.
 #include "shader3.h"
+#include "rsx.h"
 
-using namespace sly4;
+#include <iterator>
+
+namespace sly4::gfx {
 
 namespace {
 
@@ -113,36 +116,43 @@ constexpr u32 kDestroyOrder[] = {
 // ShaderType::ShaderType(name), then the derived vtable: +0 base vtable,
 // +4 name, +8 String_HashNoCase(name), +12 PtrVector (+18 u16 = 4,
 // initial capacity 2).
-void construct(PPUContext& ctx, const TypeInit& t) {
-    store<u32>(t.obj, ty::kBaseVtable);
-    store<u32>(t.obj + 4, t.name);
-    store<u32>(t.obj + 8, static_cast<u32>(call(ctx, sly4::fn::String_HashNoCase, {t.name})));
-    call(ctx, ty::fn::PtrVector_Construct, {t.obj + ty::kShaders});
-    store<u16>(t.obj + 18, 4);
-    call(ctx, ty::fn::PtrVector_Init, {t.obj + ty::kShaders, 2, 0, 0});
-    store<u32>(t.obj, t.vtable);
+void construct(const TypeInit& t) {
+    ShaderType* obj = host<ShaderType>(t.obj);
+    obj->vtable = ty::kBaseVtable;
+    obj->name = host<const char>(t.name);
+    obj->hash = call<u32>(sly4::fn::String_HashNoCase, t.name);
+    call(ty::fn::PtrVector_Construct, &obj->shaders);
+    *at<be_u16>(obj, 18) = 4;
+    container::PtrVector_Init(reinterpret_cast<PtrVector*>(&obj->shaders), 2, nullptr, 0);
+    obj->vtable = t.vtable;
 }
-
 }  // namespace
 
 // void ShaderTypes_Construct()
-DECOMP(005D9810, ShaderTypes_Construct) {
+void ShaderTypes_Construct() {
     u32 next = 0;
     for (u32 i = 0; i < std::size(kTypes); ++i) {
-        construct(ctx, kTypes[i]);
+        construct(kTypes[i]);
         if (next < std::size(kData) && kData[next].after == i + 1) {
             const DataInit& d = kData[next++];
-            for (u32 k = 0; k < d.count; ++k) store<u32>(d.addr + 4 * k, d.words[k]);
+            be_u32* dst = host<be_u32>(d.addr);
+            for (u32 k = 0; k < d.count; ++k) dst[k] = d.words[k];
         }
     }
 }
 
 // void ShaderTypes_Destruct(): each static's base destructor (base
 // vtable, shader list cleared).
-DECOMP(005D8E50, ShaderTypes_Destruct) {
-    for (const u32 t : kDestroyOrder) {
-        store<u32>(t, ty::kBaseVtable);
-        call(ctx, ty::fn::PtrVector_Clear, {t + ty::kShaders});
-        call(ctx, ty::fn::Nop, {t + ty::kShaders});
+void ShaderTypes_Destruct() {
+    for (const u32 ea : kDestroyOrder) {
+        ShaderType* t = host<ShaderType>(ea);
+        t->vtable = ty::kBaseVtable;
+        call(ty::fn::PtrVector_Clear, &t->shaders);
+        call(ty::fn::Nop, &t->shaders);
     }
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(005D9810, sly4::gfx::ShaderTypes_Construct)
+NATIVE(005D8E50, sly4::gfx::ShaderTypes_Destruct)

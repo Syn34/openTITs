@@ -39,7 +39,7 @@ void VProgram_Load(gp<VProgram>* v, const char* name, u32) {
     GuestFrame frame(272);
     LoadFrame* f = frame.as<LoadFrame>();
     f->key = call<u32>(sly4::fn::String_HashNoCase, name);
-    VProgram* found = *VMap_Find(host<ProgramMap>(kVMap), &f->key);
+    VProgram* found = *or_zero_page(VMap_Find(host<ProgramMap>(kVMap), &f->key));  // (a null slot reads page 0, as the original)
     *v = found;
     if (found) return;
     call(String_Printf, f->path, kFmtVpo, name);
@@ -57,7 +57,7 @@ void FProgram_Load(gp<FProgram>* out, const char* name, const Binding* bindings)
     GuestFrame frame(272);
     LoadFrame* f = frame.as<LoadFrame>();
     f->key = call<u32>(sly4::fn::String_HashNoCase, name);
-    FProgram* found = *FMap_Find(host<ProgramMap>(kFMap), &f->key);
+    FProgram* found = *or_zero_page(FMap_Find(host<ProgramMap>(kFMap), &f->key));  // (a null slot reads page 0, as the original)
     *out = found;
     if (found) return;
     call(String_Printf, f->path, kFmtFpo, name);

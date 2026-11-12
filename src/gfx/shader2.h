@@ -19,15 +19,15 @@ namespace shader2 {
 
 namespace fn {
 // Still recompiled.
-constexpr u32 TextureWarp_BuildMatrices = 0x005AE648;  // (Material*, f32 m1[16], f32 m2[16], f32 v[4]) two UV warp matrices and a vec4 (name?)
-constexpr u32 Display_GetDepthTexture = 0x00537BB8;    // (g::mem_stats) the scene depth texture for the current buffer set (name?)
-constexpr u32 SlyHeightFog_UploadFog = 0x005C6B20;     // (Material*) fog vertex constants (name?)
-constexpr u32 SlyTextureWarp_BuildMatrices = 0x005D12C8;  // TextureWarp_BuildMatrices' twin for SlyTextureWarp (name?)
-constexpr u32 Draw_GetScreenCopy = 0x00512940;            // () Draw_CopyScreen once per frame (layers4::g::copy_stamp / copy_texture) (name?)
-constexpr u32 MaterialAnim_UploadUVAlt = 0x0050D1E0;      // (anim block or 0, u32 first constant, f32 su [f1], f32 sv [f2]) Water's variant of MaterialAnim_UploadUV (name?)
-constexpr u32 DrawItem_SetParticleState = 0x0050D0E0;    // (DrawItem*, u32) Draw_SetParticleState(item +68 bit 5, material +100 bit 5, arg) (name?)
-constexpr u32 SlyWater2_UploadWaves = 0x005D3180;         // (Material*) vertex constants (name?)
-constexpr u32 SlyWater3_UploadWaves = 0x005D4A38;         // (Material*) vertex constants (name?)
+constexpr u32 TextureWarp_BuildMatrices = 0x005AE648;  // native (rsx.h) (Material*, f32 m1[16], f32 m2[16], f32 v[4]) two UV warp matrices and a vec4 (name?)
+constexpr u32 Display_GetDepthTexture = 0x00537BB8;  // native (rsx.h) (g::mem_stats) the scene depth texture for the current buffer set (name?)
+constexpr u32 SlyHeightFog_UploadFog = 0x005C6B20;  // native (rsx.h) (Material*) fog vertex constants (name?)
+constexpr u32 SlyTextureWarp_BuildMatrices = 0x005D12C8;  // native (rsx.h) TextureWarp_BuildMatrices' twin for SlyTextureWarp (name?)
+constexpr u32 Draw_GetScreenCopy = 0x00512940;  // native (rsx.h) () Draw_CopyScreen once per frame (layers4::g::copy_stamp / copy_texture) (name?)
+constexpr u32 MaterialAnim_UploadUVAlt = 0x0050D1E0;  // native (rsx.h) (anim block or 0, u32 first constant, f32 su [f1], f32 sv [f2]) Water's variant of MaterialAnim_UploadUV (name?)
+constexpr u32 DrawItem_SetParticleState = 0x0050D0E0;  // native (rsx.h) (DrawItem*, u32) Draw_SetParticleState(item +68 bit 5, material +100 bit 5, arg) (name?)
+constexpr u32 SlyWater2_UploadWaves = 0x005D3180;  // native (rsx.h) (Material*) vertex constants (name?)
+constexpr u32 SlyWater3_UploadWaves = 0x005D4A38;  // native (rsx.h) (Material*) vertex constants (name?)
 // libgcm.
 constexpr u32 cellGcmSetMethod1FF8 = 0x005E3F80;          // (context, u32 value) one-word NV4097 method 0x1FF8 (render state +88 caches it) (name?)
 constexpr u32 cellGcmSetVertexProgramParameterBlock = 0x005E4124;  // (context, first constant, vec4 count, const f32*) method 0x1EFC (name?)

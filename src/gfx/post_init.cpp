@@ -95,9 +95,15 @@ void StencilShadow_Init() {
 // The other post effects' initialisers, then (unless config +158 is
 // set) the Sly_PostProc_DarkScreen pair with at least 32 registers.
 void PostProc_InitEffects() {
-    for (u32 f : {0x00546334u, 0x0053D800u, 0x00540824u, 0x0053EC4Cu, 0x0053ECE0u, 0x0054588Cu, 0x00543774u,
-                  0x005447F4u, 0x005420CCu})
-        call(f);
+    ThermalVision_Init();
+    Bloom_Init();
+    Dof_Init();
+    Effect_InitNone();
+    Monochrome_Init();
+    Warp_Init();
+    GodRays_Init();
+    MotionTrail_Init();
+    BloomNoise_Init();
     if (config_u8(158) != 0) return;
     constexpr u32 kDarkV = 0x010F0B50, kDarkF = 0x010F0B54;
     ProgramPair_Load(host<gp<VProgram>>(kDarkV), host<gp<FProgram>>(kDarkF),

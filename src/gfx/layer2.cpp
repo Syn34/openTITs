@@ -1,79 +1,82 @@
 // Render layer draw and sort internals: DrawItem_Draw, RenderLayer_End,
-// RenderLayer_RadixSort and SortEntries.
+// RenderLayer_RadixSort and SortEntries; the render module's static
+// destructor.
 #include "layer2.h"
+#include "rsx.h"
 
-using namespace sly4;
+#include <utility>
+
+namespace sly4::gfx {
 
 namespace {
 
-namespace rl = sly4::render::layer;
 namespace l2 = sly4::render::layer2;
-namespace rg = sly4::render::g;
+constexpr u32 kBinding = 0x010DC840;
+constexpr u32 kCurrentSurface = 0x010DDA74;  // object whose +672 is the current view (+664 a forced shader)
+constexpr u32 kStencilBytes = 0x010DDA60;    // u8[2]
+constexpr u32 memmove = 0x0071C3F0;
+constexpr u32 kGlAlways = 0x0207;
 
-constexpr u32 kStencilOp = 0x000C033C, kStencilMask = 0x0004032C, kStencilFunc = 0x000C0330;
-constexpr u32 kKeep = 0x1E00, kAlways = 0x0207;
+DrawBinding& binding() { return global<DrawBinding>(kBinding); }
 
-// Ends the bound shader (slot 16 with 0), OPD / entry left in r5 / r6.
-void end_shader(PPUContext& ctx, u32 shader) { fx::vcall(ctx, shader, l2::kShaderEnd, {shader, 0}); }
+// Ends a shader (slot 16 with 0).
+void end_shader(ShaderPrograms* shader) { vcall(shader, l2::kShaderEnd, 0u); }
 
 }  // namespace
 
 // void DrawItem_Draw(DrawItem* item)   (name?)
-// Picks the shader for the item's material (the material's +16 object,
-// slot 16; the current view's +664 overrides it when set). A new shader
-// ends the old one and clears the binding; a new material ends the shader
-// and binds the material to it (Material_Bind). Then shader slot 12 draws
-// the item. Returns what the draw returns.
-DECOMP(00512C30, DrawItem_Draw) {
-    const u32 item = arg<u32>(ctx, 0);
-    const u32 mat = load<u32>(item + 28);
-    const u32 picker = load<u32>(mat + 16);
-    u32 shader = static_cast<u32>(fx::vcall(ctx, picker, l2::kPickShader, {picker, mat, item}));
-    const u32 view = load<u32>(load<u32>(draw::g::current_surface) + 672);
-    if (const u32 forced = load<u32>(view + 664); forced != 0) shader = forced;
+// Picks the shader for the item's material (+28; the material's +16
+// object, slot 16; the current view's +664 overrides it when set). A new
+// shader ends the old one and clears the binding; a new material ends the
+// shader and binds the material to it (Material_Bind). Then shader slot 12
+// draws the item.
+void DrawItem_Draw(DrawItem* item) {
+    Material* mat = item->mat;
+    u8* picker = host<u8>(or_zero_page(mat)->w16);
+    ShaderPrograms* shader = vcall<ShaderPrograms*>(picker, l2::kPickShader, mat, item);
+    u8* view = *at<gp<u8>>(global<gp<u8>>(kCurrentSurface).get(), 672);
+    if (ShaderPrograms* forced = *at<gp<ShaderPrograms>>(view, 664)) shader = forced;
 
-    const u32 b = l2::g::binding;
-    if (const u32 cur = load<u32>(b + 4); cur != shader) {
-        if (cur != 0) end_shader(ctx, cur);
-        store<u32>(b + 4, shader);
-        store<u32>(b, 0);
-        store<u32>(b + 8, 0);
+    DrawBinding& b = binding();
+    if (ShaderPrograms* cur = b.shader; cur != shader) {
+        if (cur) end_shader(cur);
+        b.shader = shader;
+        b.material = nullptr;
+        b.w8 = 0u;
     }
-    if (const u32 bound = load<u32>(b); bound != mat) {
+    if (Material* bound = b.material; bound != mat) {
         // The original ends the *new* shader here (r3 still holds it).
-        if (bound != 0) end_shader(ctx, shader);
-        store<u32>(b, mat);
-        call(ctx, l2::fn::Material_Bind, {mat, shader});
+        if (bound) end_shader(shader);
+        b.material = mat;
+        Material_Bind(mat, shader);
     }
-    ctx.gpr[3] = fx::vcall(ctx, shader, l2::kShaderDraw, {shader, item});
+    vcall(shader, l2::kShaderDraw, item);
 }
 
 // void RenderLayer_End()   (name?)
 // Ends the bound shader, clears the binding and turns the stencil test
 // off (ops KEEP / KEEP / KEEP, mask 0, func ALWAYS 0 0, cached at render
 // state +160..+184), clearing render::g::stencil_bytes.
-DECOMP(00512DA0, RenderLayer_End) {
-    const u32 b = l2::g::binding;
-    if (const u32 shader = load<u32>(b + 4); shader != 0) end_shader(ctx, shader);
-    store<u32>(b, 0);
-    store<u32>(b + 4, 0);
-    store<u32>(b + 8, 0);
-    const u32 st = fx::g::state;
-    fx::emit({fx::kStencilTestEnable, 0});
-    store<u32>(st + 160, kAlways);
-    store<u32>(st + 164, 0);
-    store<u32>(st + 172, 0);
-    store<u32>(st + 176, kKeep);
-    store<u32>(st + 180, kKeep);
-    store<u32>(st + 184, kKeep);
-    store<u32>(st + 168, 0);
-    fx::emit({kStencilOp, kKeep, kKeep, kKeep});
-    fx::emit({kStencilMask, 0});
-    fx::emit({kStencilFunc, load<u32>(st + 160), load<u32>(st + 164), load<u32>(st + 172)});
-    ref<u8>(rg::stencil_bytes) = 0;
-    ref<u8>(rg::stencil_bytes + 1) = 0;
-    ctx.gpr[3] = rg::stencil_bytes - 736;  // 0x010DD780, left in r3
-    ctx.gpr[4] = 0;
+void RenderLayer_End() {
+    DrawBinding& b = binding();
+    if (ShaderPrograms* shader = b.shader) end_shader(shader);
+    b.material = nullptr;
+    b.shader = nullptr;
+    b.w8 = 0u;
+    RenderState& st = rs();
+    emit({kStencilTestEnable, 0});
+    st.stencil_func = kGlAlways;
+    st.stencil_ref = 0u;
+    st.stencil_func_mask = 0u;
+    st.stencil_op[0] = kGlKeep;
+    st.stencil_op[1] = kGlKeep;
+    st.stencil_op[2] = kGlKeep;
+    st.stencil_mask = 0u;
+    emit({kStencilOp, kGlKeep, kGlKeep, kGlKeep});
+    emit({kStencilMask, 0});
+    front_func();
+    global<u8>(kStencilBytes) = 0;
+    global<u8>(kStencilBytes + 1) = 0;
 }
 
 // void RenderLayer_RadixSort(RenderLayer* l)   (name?)
@@ -89,29 +92,30 @@ DECOMP(00512DA0, RenderLayer_End) {
 //  - nothing checks the 4200-entry limit;
 //  - after the four passes the result is back in the layer, so the final
 //    memmove never runs.
-DECOMP(00513394, RenderLayer_RadixSort) {
-    const u32 l = arg<u32>(ctx, 0);
-    Stack frame(ctx, 0x8A10 - 112);  // the original's 35344-byte frame
-    const u32 sp = frame.addr() - 112;
-    const u32 hist = sp + 112, tmp = sp + 624, offs = sp + 0x85B0;  // u16[256], Entry[4200], u32[256]
-    const u32 base = load<u32>(l + rl::kBase);
-    const u32 count = static_cast<u32>(static_cast<s32>(load<u32>(l + rl::kCursor) - base) / 8);  // srawi + addze
-    for (u32 i = 0; i < 4200; ++i) store<u32>(tmp + 8 * i, 0);
+void RenderLayer_RadixSort(RenderLayer* l) {
+    GuestFrame f(0x8A10 - 112);  // the original's 35344-byte frame, from sp+112
+    be_u16* hist = f.as<be_u16>(0);           // u16[256]
+    u8* tmp = f.as<u8>(512);                  // Entry[4200]
+    be_u32* offs = f.as<be_u32>(0x85B0 - 112);  // u32[256]
+    u8* const base = reinterpret_cast<u8*>(l->base.get());
+    const u32 count = static_cast<u32>(static_cast<s32>(l->cursor.ea - l->base.ea) / 8);  // srawi + addze
+    for (u32 i = 0; i < 4200; ++i) *reinterpret_cast<be_u32*>(tmp + 8 * i) = 0u;
 
-    u32 src = base, dst = tmp;
+    u8* src = base;
+    u8* dst = tmp;
     for (s32 pass = 0; pass < 4; ++pass) {
-        call(ctx, sly4::fn::memset, {hist, 0, 512});
+        call(sly4::fn::memset, hist, 0u, 512u);
         const u32 byte = static_cast<u32>(3 - pass);
-        const auto bucket = [&](u32 k) -> u32 { return ref<u8>(src + 8 * k + byte); };
+        const auto bucket = [&](u32 k) -> u32 { return *at<u8>(src, 8 * k + byte); };
         const auto count_one = [&](u32 k) {
-            const u32 h = hist + 2 * bucket(k);
-            store<u16>(h, static_cast<u16>(load<u16>(h) + 1));
+            be_u16& h = hist[bucket(k)];
+            h = static_cast<u16>(h + 1);
         };
         const auto put = [&](u32 k) {
-            const u32 o = offs + 4 * bucket(k);
-            const u32 slot = load<u32>(o);
-            store<u64>(dst + (slot << 3), load<u64>(src + 8 * k));
-            store<u32>(o, slot + 1);
+            be_u32& o = offs[bucket(k)];
+            const u32 slot = o;
+            *at<be_u64>(dst, slot << 3) = at<be_u64>(src, 8 * k)->get();
+            o = slot + 1;
         };
         const u32 rem = count & 3;
 
@@ -128,8 +132,8 @@ DECOMP(00513394, RenderLayer_RadixSort) {
             count_one(n + 3);
         } while (n != 0);
 
-        store<u32>(offs, 0);
-        for (u32 i = 1; i < 256; ++i) store<u32>(offs + 4 * i, load<u32>(offs + 4 * (i - 1)) + load<u16>(hist + 2 * (i - 1)));
+        offs[0] = 0u;
+        for (u32 i = 1; i < 256; ++i) offs[i] = offs[i - 1] + hist[i - 1];
 
         n = count;
         if (rem != 0) {
@@ -146,14 +150,10 @@ DECOMP(00513394, RenderLayer_RadixSort) {
 
         std::swap(src, dst);
     }
-    if (src != base) {
-        ctx.gpr[3] = call(ctx, l2::fn::memmove, {src, dst, count << 3});
-        return;
-    }
-    ctx.gpr[3] = src;  // the last pass's output (the layer's entries), left in r3
+    if (src != base) call(memmove, src, dst, count << 3);
 }
 
-// u32 SortEntries(Entry* e, u32 count, u32 size)   (name?)
+// void SortEntries(LayerEntry* e, s32 count, u32 size)   (name?)
 // In-place quicksort of 8-byte {u32 key, u32 value} entries by unsigned
 // key (size is ignored), with an explicit stack of {lo, hi} ranges at
 // sp+56 in its 608-byte frame. Partition: the pivot starts at hi; i and
@@ -161,23 +161,22 @@ DECOMP(00513394, RenderLayer_RadixSort) {
 // pushed when it has two or more entries, the left one taken next.
 // Quirks kept: the partition loop runs once even for an empty range (so
 // count 0 compares and may swap e[0] with e[-1]); the range stack isn't
-// bounds checked. Returns 1.
-DECOMP(0056A81C, SortEntries) {
-    const u32 e = arg<u32>(ctx, 0);
-    const s32 count = arg<s32>(ctx, 1);
-    Stack frame(ctx, 608 - 112);
-    const u32 sp = frame.addr() - 112;
-    const auto at = [&](s32 k) { return e + static_cast<u32>(k) * 8; };
+// bounds checked (it lives in guest stack memory, as the original's).
+void SortEntries(LayerEntry* e, s32 count, u32) {
+    GuestFrame f(608);
+    const auto entry = [&](s32 k) { return at<be_u64>(e, static_cast<u32>(k) * 8); };
+    const auto key = [&](s32 k) -> u32 { return *at<be_u32>(e, static_cast<u32>(k) * 8); };
+    const auto range = [&](s32 d) { return host<be_s32>(f.addr() + 48 + 8 * static_cast<u32>(d)); };
 
     s32 depth = 0, lo = 0, hi = count - 1;
     for (;;) {
         s32 i = lo, j = hi;
         bool move_j = true;
         do {
-            if (load<u32>(at(i)) > load<u32>(at(j))) {
-                const u64 a = load<u64>(at(j)), b = load<u64>(at(i));
-                store<u64>(at(i), a);
-                store<u64>(at(j), b);
+            if (key(i) > key(j)) {
+                const u64 a = entry(j)->get(), b = entry(i)->get();
+                *entry(i) = a;
+                *entry(j) = b;
                 move_j = !move_j;
             }
             if (move_j) --j;
@@ -185,19 +184,18 @@ DECOMP(0056A81C, SortEntries) {
         } while (i < j);
         if (i + 1 < hi) {
             ++depth;
-            const u32 p = sp + 48 + 8 * static_cast<u32>(depth);
-            store<s32>(p, i + 1);
-            store<s32>(p + 4, hi);
+            be_s32* p = range(depth);
+            p[0] = i + 1;
+            p[1] = hi;
         }
         hi = i - 1;
         if (lo < hi) continue;
         if (depth == 0) break;
-        const u32 p = sp + 48 + 8 * static_cast<u32>(depth);
+        const be_s32* p = range(depth);
         --depth;
-        lo = load<s32>(p);
-        hi = load<s32>(p + 4);
+        lo = p[0];
+        hi = p[1];
     }
-    ctx.gpr[3] = 1;
 }
 
 namespace {
@@ -207,21 +205,19 @@ constexpr u32 kHandle0B58 = 0x010F0B58;    // u64, zeroed if set (name?)
 constexpr u32 kVecLive = 0x011DE480;       // u64: nonzero while kVecA is built (name?)
 constexpr u32 kVecA = 0x011DE304;          // PtrVector (name?)
 constexpr u32 kVecB = 0x010DFA24;          // PtrVector (name?)
-constexpr u32 kPool = 0x010DF8B0;          // object: +4 and +304 buffers, +12 sub-object (name?)
+constexpr u32 kPool = 0x010DF8B0;          // StencilShadow: +4 and +304 buffers, +12 sub-object
 constexpr u32 kPoolBaseVtable = 0x00B236E8;
-constexpr u32 kSlots = 0x010DFAD0;         // 16 objects of 176 bytes (name?)
+constexpr u32 kSlots = 0x010DFAD0;         // 16 QuerySlots of 176 bytes
 constexpr u32 kSlotBaseVtable = 0x00B23720;
 constexpr u32 kSlotCount = 16, kSlotSize = 176;
+constexpr u32 kLayerBaseVtable = 0x00B233E8;
 // The 17 RenderLayer statics, Opaque (0x010DC84C) first; most are 172
 // bytes, the two at 0x010DCD00 / 0x010DCDC0 192.
 constexpr u32 kLayers[17] = {0x010DC84C, 0x010DC8F8, 0x010DC9A4, 0x010DCA50, 0x010DCAFC, 0x010DCBA8,
                              0x010DCC54, 0x010DCD00, 0x010DCDC0, 0x010DCE80, 0x010DCF2C, 0x010DCFD8,
                              0x010DD084, 0x010DD130, 0x010DD1DC, 0x010DD288, 0x010DD334};
 
-namespace dfn {
 constexpr u32 PtrVector_Clear = 0x0054EC1C, Nop = 0x0054EC18, Mem_FreeFrom = 0x0054EE6C;
-constexpr u32 Pool_DestructPart = 0x0052EFE0;  // (object +12) (name?)
-}  // namespace dfn
 
 }  // namespace
 
@@ -232,27 +228,37 @@ constexpr u32 Pool_DestructPart = 0x0052EFE0;  // (object +12) (name?)
 // vtable, then destroys the 17 render layers from the last to the first
 // (base vtable, entry buffer freed and cleared), as RenderLayer's
 // destructor does.
-DECOMP(0052DD00, RenderLayers_Destroy) {
-    if (load<u64>(kHandle0B58) != 0) store<u64>(kHandle0B58, 0);
-    if (load<u64>(kVecLive) != 0) {
-        call(ctx, dfn::PtrVector_Clear, {kVecA});
-        call(ctx, dfn::Nop, {kVecA});
-        store<u64>(kVecLive, 0);
+void RenderLayers_Destroy() {
+    be_u64& handle = global<be_u64>(kHandle0B58);
+    if (handle != 0) handle = 0;
+    be_u64& live = global<be_u64>(kVecLive);
+    if (live != 0) {
+        call(PtrVector_Clear, kVecA);
+        call(Nop, kVecA);
+        live = 0;
     }
-    call(ctx, dfn::PtrVector_Clear, {kVecB});
-    call(ctx, dfn::Nop, {kVecB});
-    store<u32>(kPool, kPoolBaseVtable);
-    call(ctx, dfn::Mem_FreeFrom, {load<u32>(kPool + 4), 0});
-    call(ctx, dfn::Mem_FreeFrom, {load<u32>(kPool + 304), 0});
-    call(ctx, dfn::Pool_DestructPart, {kPool + 12});
-    for (u32 i = 0; i < kSlotCount; ++i) store<u32>(kSlots + kSlotSize * i, kSlotBaseVtable);
+    call(PtrVector_Clear, kVecB);
+    call(Nop, kVecB);
+    StencilShadow& pool = global<StencilShadow>(kPool);
+    pool.vtable = kPoolBaseVtable;
+    call(Mem_FreeFrom, pool.cursor.ea.get(), 0u);
+    call(Mem_FreeFrom, pool.face_sign.ea.get(), 0u);
+    Pool_DestructPart(&pool.quad);
+    for (u32 i = 0; i < kSlotCount; ++i) global<be_u32>(kSlots + kSlotSize * i) = kSlotBaseVtable;
     for (u32 i = 17; i-- > 0;) {
-        const u32 l = kLayers[i];
-        store<u32>(l, rl::kBaseVtable);
-        if (load<u32>(l + rl::kBase) != 0) {
-            call(ctx, dfn::Mem_FreeFrom, {load<u32>(l + rl::kBase), 0});
-            store<u32>(l + rl::kBase, 0);
+        RenderLayer& l = global<RenderLayer>(kLayers[i]);
+        l.vtable = kLayerBaseVtable;
+        if (l.base) {
+            call(Mem_FreeFrom, l.base.ea.get(), 0u);
+            l.base = nullptr;
         }
     }
-    ctx.gpr[3] = 0;
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(00512C30, sly4::gfx::DrawItem_Draw)
+NATIVE(00512DA0, sly4::gfx::RenderLayer_End)
+NATIVE(00513394, sly4::gfx::RenderLayer_RadixSort)
+NATIVE(0056A81C, sly4::gfx::SortEntries)
+NATIVE(0052DD00, sly4::gfx::RenderLayers_Destroy)

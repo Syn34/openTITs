@@ -22,7 +22,6 @@ constexpr u32 Archive_MountFile = 0x0055D684;    // (const char* path, const cha
 constexpr u32 Archive_Unmount = 0x0055E350;      // (u16 archive index)
 constexpr u32 Shader_RegisterAll = 0x0050B138;   // () -> bool (src/gfx/shader3_registry.cpp)
 constexpr u32 Shaders_Init54CDB0 = 0x0054CDB0;   // () once (unknown)
-constexpr u32 Shader_LoadGroup = 0x0050F0F0;     // (s32 group 0..5) (name?)
 
 struct ShaderPool {
     be_u32 w0;     // +0
@@ -78,7 +77,7 @@ bool Shaders_Init() {
         call(Shaders_Init54CDB0);
     }
     call(Archive_Unmount, archive);
-    for (s32 group = 0; group < static_cast<s32>(kShaderGroups); ++group) call(Shader_LoadGroup, group);
+    for (s32 group = 0; group < static_cast<s32>(kShaderGroups); ++group) Shader_LoadGroup(group);
     return true;
 }
 

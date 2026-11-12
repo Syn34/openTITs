@@ -10,9 +10,6 @@ namespace {
 
 constexpr u32 kAaTable = 0x00F6741C;  // 28-byte entries; +8 width factor, +12 height factor
 constexpr u32 cellGcmGetTiledPitchSize = 0x00ABD584;
-constexpr u32 Display_CreateTargets = 0x0051B228;  // (w, h, 29, max w, max h) (name?)
-constexpr u32 Display_Finish = 0x0053074C;         // (display) (name?)
-constexpr u32 Display_SetSize = 0x00533054;        // (display, Target** frame)
 constexpr u32 Mem_AllocPool = 0x0056C514;
 
 // g::mem_stats fields used here (beyond MemStats).
@@ -81,13 +78,13 @@ void Display_InitSurfaces() {
     const u16 scr_w = stats_u16(180), scr_h = stats_u16(182);
     const u32 max_w = scr_w > buf_w ? scr_w : buf_w;
     const u32 max_h = scr_h > buf_h ? scr_h : buf_h;
-    call(Display_CreateTargets, static_cast<u32>(stats_u16(20)), static_cast<u32>(stats_u16(22)), 29u, max_w, max_h);
+    Display_CreateTargets(static_cast<u32>(stats_u16(20)), static_cast<u32>(stats_u16(22)), 29u, max_w, max_h);
     Display* d = display();
     *at<be_u32>(d, 56) = static_cast<u32>(global<be_u16>(sly4::g::config + 4));
     *at<be_u32>(d, 60) = static_cast<u32>(global<be_u16>(sly4::g::config + 6));
     const u32 w = stats_u16(16), h = stats_u16(18);
     for (u32 i = 0; i < 3; ++i) Surface_Create(at<gp<Target>>(d, 64 + 4 * i), at<gp<Target>>(d, 16 + 4 * i), w, h, 0, 0, 1);
-    call(Display_Finish, d);
+    Display_Finish(d);
 }
 
 // void Gfx_InitFrameSurfaces()
@@ -164,7 +161,7 @@ void Gfx_InitFrameSurfaces() {
         stats_u32(92 + 4 * i) = guest(s);
     }
     // The original passes r31 = the attached-target slot (0x011647B0), not the width.
-    call(Display_SetSize, d, attached);
+    Display_SetSize(d, attached);
 }
 
 // void RsxHeap_Init(RsxHeap* heap)

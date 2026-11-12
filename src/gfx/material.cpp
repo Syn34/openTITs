@@ -17,49 +17,6 @@ constexpr u32 kDefaultColour = 0x01164BB0;      // 4 x f32, copied to +64 and +8
 constexpr u32 kRegistryMade = 0x010F0BA0;       // u8  (see shadergroup.h)
 constexpr u32 kRegistry = 0x010F0BA8;           // PtrVector* of shaders
 
-// A growable pointer array.
-struct PtrVector {
-    gp<be_u32> data;   // +0
-    be_u16 capacity;   // +4
-    be_u16 h6;         // +6
-    be_u16 count;      // +8
-    be_u16 high;       // +10: high-water count
-};
-
-struct Material {
-    be_u32 vtable;       // +0
-    be_u32 w4;           // +4 (u16 +4 written first)
-    be_u32 serial;       // +8: serial << 11 | flags
-    be_u32 w12;          // +12
-    be_u32 w16;          // +16
-    gp<u8> textures[5];  // +20: released through their vtable slot 2
-    pad<4> _40;
-    u8 b44;              // +44
-    pad<1> _45;
-    be_u16 id;           // +46
-    pad<16> _48;
-    be_u32 colour[4];    // +64
-    be_u32 colour2[4];   // +80
-    be_u32 alpha;        // +96: f32
-    u8 b100;             // +100
-    pad<3> _101;
-    be_u32 blend;        // +104
-    be_u16 blend_eq;     // +108
-    be_u16 blend_dst;    // +110
-    be_u32 blend2;       // +112
-    be_u16 state;        // +116
-    pad<2> _118;
-    be_u32 w120;         // +120 (byte +121 cleared after)
-    be_u32 w124;         // +124
-    be_u32 w128;         // +128
-};
-static_assert(offsetof(Material, id) == 46 && offsetof(Material, blend) == 104 && offsetof(Material, w128) == 128);
-
-struct Shader {
-    pad<24> _0;
-    be_u32 flags;  // +24: 2 = registered
-};
-
 }  // namespace
 
 // void Material_Construct(AglMaterial* m)
@@ -127,7 +84,7 @@ bool Shader_Register(Shader* s) {
         PtrVector* v = call<PtrVector*>(sly4::fn::Mem_Alloc, 20u, 0u, 16u);
         if (v) {
             call(PtrVector_Construct, v);
-            v->h6 = 4;
+            v->elem_size = 4;
             call(PtrVector_Init, v, 512u, 0u, 0u);
         }
         global<gp<PtrVector>>(kRegistry) = v;
@@ -141,9 +98,9 @@ bool Shader_Register(Shader* s) {
     }
     *at<be_u32>(v->data.get(), 4 * count) = guest(s);
     const u32 n = v->count + 1u;
-    const u16 high = v->high;
+    const u16 high = v->high_water;
     v->count = static_cast<u16>(n);
-    v->high = static_cast<s32>(high) > static_cast<s32>(n & 0xFFFF) ? high : static_cast<u16>(n);
+    v->high_water = static_cast<s32>(high) > static_cast<s32>(n & 0xFFFF) ? high : static_cast<u16>(n);
     s->flags = s->flags | 2;
     return true;
 }

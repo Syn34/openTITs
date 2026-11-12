@@ -10,61 +10,10 @@ namespace sly4::gfx {
 
 namespace {
 
-constexpr u32 Mem_FreeFrom = 0x0054EE6C;  // (p, pool)
-constexpr u32 RenderLayer_RadixSort = 0x00513394;  // (RenderLayer*) sort for > 512 entries (name?)
-constexpr u32 SortEntries = 0x0056A81C;            // (Entry*, u32 count, u32 size 8) (name?)
-constexpr u32 DrawItem_Draw = 0x00512C30;          // (DrawItem*) (name?)
-constexpr u32 RenderLayer_End = 0x00512DA0;        // () (name?)
-constexpr u32 kBaseVtable = 0x00B233E8;
 constexpr u32 kAddConsts = 0x007A10F8;  // f64 0.5, f64 0x1FF8000000000000 as a value, f32 1e-5, f64 0.0, f32 2.0
 constexpr u32 kCameraPos = 0x010DD8B0;  // f32[3]: eye position RenderLayer_Add measures from (name?)
 constexpr u32 kStencilBytes = 0x010DDA60;  // u8[2]: Draw_SetStencilRef writes {0, ref} (name?)
-constexpr u32 kStateCacheA = 0x010DD598, kStateCacheB = 0x010DD5A0;  // u64, reset to -1
-constexpr u32 kCurrentSurface = 0x010DDA74;  // object whose +672 is the current view (+48 u8 id)
 
-struct LayerEntry {
-    be_u32 key;
-    gp<DrawItem> item;
-};
-// {OPD fn, u32 arg, u32 view id, -}
-struct LayerCallback {
-    be_u32 fn;
-    be_u32 arg;
-    be_s32 view;
-    pad<4> _12;
-};
-
-// RenderLayer (vtable 0x00B23410; base class 0x00B233E8).
-// Slots: 0 Reset, 1 AddKeyed, 2 Add, 3 Sort, 4 Draw, 5 ~, 6 delete.
-struct RenderLayer {
-    be_u32 vtable;              // +0
-    gp<LayerEntry> base;        // +4
-    gp<LayerEntry> cursor;      // +8
-    u8 flags;                   // +12: bit 7 skip
-    u8 stencil_ref;             // +13
-    pad<2> _14;
-    be_u32 name;                // +16
-    LayerCallback pre[4];       // +20 (indexed by a u8 count, at computed offsets)
-    u8 pre_count;               // +84
-    pad<3> _85;
-    LayerCallback post[4];      // +88
-    u8 post_count;              // +152
-    pad<3> _153;
-    be_u32 capacity;            // +156
-    be_u32 high;                // +160: high-water count
-};
-static_assert(offsetof(RenderLayer, pre_count) == 84 && offsetof(RenderLayer, post_count) == 152 &&
-              offsetof(RenderLayer, high) == 160);
-
-// Frees the entry buffer and drops back to the base vtable (the
-// destructor body both layer classes share).
-void destruct(RenderLayer* layer) {
-    const u32 buf = layer->base.ea;
-    layer->vtable = kBaseVtable;
-    if (buf == 0) return;
-    call(Mem_FreeFrom, buf, 0u);
-    layer->base = nullptr;
-}
 
 // Appends {key, item} at the cursor.
 void append(RenderLayer* layer, u32 key, DrawItem* item) {
@@ -72,24 +21,6 @@ void append(RenderLayer* layer, u32 key, DrawItem* item) {
     LayerEntry* entry = layer->cursor;
     entry->item = item;
     layer->cursor = entry + 1;
-}
-
-// Runs the callbacks of a list (count byte re-read after each call) whose
-// view id matches the current view's +48 byte.
-void run_callbacks(RenderLayer* layer, u32 list, const u8& count_ref) {
-    u32 count = count_ref;
-    if (static_cast<s32>(count) <= 0) return;
-    for (u32 i = 0; i < count; i = (i + 1) & 0xFF) {
-        const LayerCallback* cb = at<LayerCallback>(layer, list + 16 * i);
-        const u32 fn = cb->fn;
-        if (fn == 0) continue;
-        const u8* view = *at<gp<u8>>(global<gp<u8>>(kCurrentSurface).get(), 672);
-        if (static_cast<s32>(*at<u8>(view, 48)) != cb->view) continue;
-        call_ptr(fn, cb->arg.get());
-        global<be_u64>(kStateCacheA) = ~u64{0};
-        global<be_u64>(kStateCacheB) = ~u64{0};
-        count = count_ref;
-    }
 }
 
 }  // namespace
@@ -127,8 +58,8 @@ void RenderLayer_Add(RenderLayer* l, DrawItem* item) {
     const f64 asint = rt::fcfid(std::bit_cast<u64>(static_cast<f64>(d2)));
     const f64 est = std::fma(asint, at<be_f64>(k, 0)->get(), at<be_f64>(k, 8)->get());
     const f32 max_depth = global<be_f32>(sly4::g::config + 48);
-    const u8* obj = item->object;
-    const u8* mat = item->material;
+    const u8* obj = reinterpret_cast<const u8*>(item->mat.get());
+    const u8* mat = reinterpret_cast<const u8*>(item->mesh.get());
     const u64 root_bits = rt::fctid(est, false);
     u32 key = (static_cast<u32>(at<be_u16>(obj, 46)->get()) << 14) & 0x03FFC000u;
     key |= (static_cast<u32>(at<be_u16>(obj, 48)->get()) << 6) & 0x00003FC0u;
@@ -154,8 +85,8 @@ void RenderLayer_Sort(RenderLayer* l) {
     l->high = high > count ? high : count;
     if (count > l->capacity) l->cursor.ea = base;  // overflow: drop everything
     if (count == 0) return;
-    if (count > 512) call(RenderLayer_RadixSort, l);
-    else call(SortEntries, base, count, 8u);
+    if (count > 512) RenderLayer_RadixSort(l);
+    else SortEntries(host<LayerEntry>(base), static_cast<s32>(count), 8);
 }
 
 // void RenderLayer_Draw(RenderLayer* l)   (slot 4)
@@ -165,14 +96,14 @@ void RenderLayer_Sort(RenderLayer* l) {
 // post-draw callbacks.
 void RenderLayer_Draw(RenderLayer* l) {
     if ((l->flags >> 7) != 0) return;
-    run_callbacks(l, 20, l->pre_count);
+    run_layer_callbacks(l, 20, l->pre_count);
     if (l->base->item) {
         global<be_u32>(sly4::g::config + 76) += 1;
         Draw_SetStencilRef(l->stencil_ref);
-        for (LayerEntry* e = l->base; e->item; ++e) call(DrawItem_Draw, e->item.get());
-        call(RenderLayer_End);
+        for (LayerEntry* e = l->base; e->item; ++e) DrawItem_Draw(e->item);
+        RenderLayer_End();
     }
-    run_callbacks(l, 88, l->post_count);
+    run_layer_callbacks(l, 88, l->post_count);
 }
 
 // void Draw_SetStencilRef(u8 ref)
@@ -200,20 +131,20 @@ void Draw_SetStencilRef(u8 value) {
 }
 
 // RenderLayer::~RenderLayer (slot 5; the base class's 0x0079ECC4 is the same)
-void RenderLayer_Destruct(RenderLayer* l) { destruct(l); }
-void RenderLayerBase_Destruct(RenderLayer* l) { destruct(l); }
+void RenderLayer_Destruct(RenderLayer* l) { layer_destruct(l); }
+void RenderLayerBase_Destruct(RenderLayer* l) { layer_destruct(l); }
 
 // Deleting destructors (slot 6; base class 0x007A108C): destruct, then
 // free the object itself.
 void RenderLayer_Delete(RenderLayer* l) {
     if (!l) return;
-    destruct(l);
-    call(Mem_FreeFrom, l, 0u);
+    layer_destruct(l);
+    call(kMemFreeFrom, l, 0u);
 }
 void RenderLayerBase_Delete(RenderLayer* l) {
     if (!l) return;
-    destruct(l);
-    call(Mem_FreeFrom, l, 0u);
+    layer_destruct(l);
+    call(kMemFreeFrom, l, 0u);
 }
 
 }  // namespace sly4::gfx

@@ -26,8 +26,8 @@ namespace fn {
 // Decompiled in draw3*.cpp.
 // (pool.h: pool::fn::DrawItem_DrawDepthSkinned 0x005382C0, pool::query::fn::Slot_DrawProxy 0x00527708.)
 // Still recompiled.
-constexpr u32 DrawItem_Create = 0x0079D6F8;  // (Mesh*, Material*, const ItemDesc*) -> 80-byte DrawItem from the frame arena (name?)
-constexpr u32 Skin_BuildJob = 0x00537824;    // (job record, desc*, part record, bones, flags) (name?)
+constexpr u32 DrawItem_Create = 0x0079D6F8;  // native (rsx.h) (Mesh*, Material*, const ItemDesc*) -> 80-byte DrawItem from the frame arena (name?)
+constexpr u32 Skin_BuildJob = 0x00537824;  // native (rsx.h) (job record, desc*, part record, bones, flags) (name?)
 // libgcm.
 constexpr u32 cellGcmSetVertexDataArray = 0x005E0BA4;        // (context, index, frequency, stride, size, type, location, offset) (name?)
 constexpr u32 cellGcmSetVertexDataArrayUnsafe = 0x005E4394;  // the same without the buffer check (name?)

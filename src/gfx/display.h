@@ -18,16 +18,8 @@
 namespace sly4::disp {
 
 namespace fn {
-constexpr u32 Display_CreateTargets = 0x0051B228;  // decompiled: src/gfx/display.cpp
-constexpr u32 Display_Finish = 0x0053074C;         // decompiled: src/gfx/display.cpp
-constexpr u32 Display_SetSize = 0x00533054;        // decompiled: src/gfx/display.cpp
-// Still recompiled.
-constexpr u32 RenderSurface_Alloc = 0x0051AF28;  // () -> AglRenderSurface* from the free list (name?)
-constexpr u32 Target_InitDepth = 0x00530A9C;     // (Target** out, w, h, 7, 0) depth target with tile + zcull (name?)
-constexpr u32 Surface_Create = 0x005304D4;       // decompiled: src/gfx/target.cpp
-constexpr u32 Target_Init = 0x00530DB4;          // decompiled: src/gfx/target.cpp
-constexpr u32 Target_Attach = 0x00532E70;        // decompiled: src/gfx/target.cpp
-constexpr u32 Surface_SetBuffer = 0x00532D5C;    // decompiled: src/gfx/target.cpp
+// Display_CreateTargets 0x0051B228, Display_Finish 0x0053074C, Display_SetSize
+// 0x00533054: native, src/gfx/display.cpp (declared in rsx.h).
 }  // namespace fn
 
 namespace g {

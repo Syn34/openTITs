@@ -2,73 +2,78 @@
 // clear, an item's per-axis scale, the screen rect of a view-space sphere
 // and the material animation tracks Material_Bind steps.
 #include "pool.h"
+#include "rsx.h"
 
-using namespace sly4;
+namespace sly4::gfx {
 
 namespace {
 
-namespace l4 = sly4::render::layers4;
-namespace sp = sly4::render::pool;
+// Constant pools next to the functions (read-only data in the EBOOT).
+struct ClearConsts {
+    be_f32 far_plane;    // +0: 1.0
+    be_f32 depth_scale;  // +4: 16777215.0 (24-bit depth)
+};
+struct SphereConsts {
+    be_f32 neg_one;   // +0: -1.0
+    be_f32 one;       // +4: 1.0
+    be_f32 zero;      // +8: 0.0
+    pad<4> _12;
+    be_f64 neg_one_d;  // +16: -1.0
+    be_f64 one_d;     // +24: 1.0
+    be_f32 half;      // +32: 0.5
+    be_f32 neg_half;  // +36: -0.5
+};
+struct AnimConsts {
+    be_f32 zero;      // +0: 0.0
+    be_f32 two_pi;    // +4
+    be_f64 pi;        // +8
+    be_f64 neg_pi;    // +16
+    be_f32 b;         // +24: 4/pi
+    be_f32 c;         // +28: -4/pi^2
+    be_f32 p;         // +32: 0.225
+    be_f32 eps;       // +36: 1e-5
+};
+static_assert(offsetof(SphereConsts, half) == 32 && offsetof(AnimConsts, eps) == 36);
+const ClearConsts& clear_consts() { return global<ClearConsts>(0x00531F60); }
+const SphereConsts& sphere_consts() { return global<SphereConsts>(0x00557A68); }
+const AnimConsts& anim_consts() { return global<AnimConsts>(0x005014F8); }
+constexpr u32 kRandomScale = 0x00501408;  // f32 1/65535
 
-using sp::fmadds;
-using sp::fnmsubs;
-using sp::fmsubs;
-using sp::lfs;
-using sp::sgl;
-using sp::stfs;
+// The random generator MaterialAnim_SetState steps.
+struct AnimRandom {
+    be_u64 last;  // +0: 0..0xFFFF
+    be_u32 seed;  // +8
+};
 
-constexpr u32 kClearConsts = 0x00531F60;    // f32 1.0 (the far plane), f32 16777215.0 (24-bit depth scale)
-constexpr u32 kSphereConsts = 0x00557A68;   // f32 -1.0, 1.0, 0.0; f64 -1.0, 1.0; f32 0.5, -0.5 at +32
-constexpr u32 kAnimConsts = 0x005014F8;     // f32 0.0, 2pi; f64 pi, -pi; f32 4/pi, -4/pi^2, 0.225, 1e-5
-constexpr u32 kRandomScale = 0x00501408;    // f32 1/65535
-
-// MaterialAnim track: +0 f32 rate, +8 f32 period, +12 / +16 f32 delay range,
-// +20 f32 hold time, +32 u32 flags (bits 12..19 state: 0 delay, 1 run, 2
-// stopped; bits 20..27 mode: 0 loop, 1 oscillate, 3 frozen; bit 28 sine
-// oscillation), +36 f32 value, +40 f32 countdown, +44 f32 phase.
 constexpr u32 kStateMask = 0x000FF000;
 
 u32 rotl32(u32 v, u32 n) { return (v << n) | (v >> (32 - n)); }
 
 }  // namespace
 
-// void Draw_Clear(u32 mask, u32 colour, f32 depth, u32 unused, u32 stencil, u32 stencil_mask)   (name?)
+// void Draw_Clear(u32 mask, u32 colour, f32 depth, u32 stencil, u32 stencil_mask)   (name?)
 // Clears the surface: clear colour, depth (24 bits, 0xFFFFFF for 1.0)
 // and stencil, the stencil write mask for the clear, then back to the
 // render state's mask (+168).
-DECOMP(00531F80, Draw_Clear) {
-    const u64 mask = ctx.gpr[3], colour = ctx.gpr[4], stencil = ctx.gpr[6], stencil_mask = ctx.gpr[7];
-    const f64 depth = farg(ctx, 0);
-    const u32 st = fx::g::state;
-    call(ctx, fx::fn::cellGcmSetClearColor, {load<u32>(st), colour});
+void Draw_Clear(u32 mask, u32 colour, f32 depth, u32 stencil, u32 stencil_mask) {
+    const ClearConsts& c = clear_consts();
+    call(fn::cellGcmSetClearColor, gcm(), colour);
     u32 z = 0x00FFFFFF;
-    if (!(depth == lfs(kClearConsts))) z = static_cast<u32>(rt::fctid(sgl(depth * lfs(kClearConsts + 4)), true));
-    call(ctx, fx::fn::cellGcmSetClearDepthStencil, {load<u32>(st), static_cast<u32>((z << 8) | stencil)});
-    call(ctx, fx::fn::cellGcmSetStencilMask, {load<u32>(st), stencil_mask});
-    call(ctx, fx::fn::cellGcmSetClearSurface, {load<u32>(st), static_cast<u32>(mask)});
-    ctx.gpr[3] = call(ctx, fx::fn::cellGcmSetStencilMask, {load<u32>(st), load<u32>(st + 168)});
+    if (!(depth == c.far_plane)) z = static_cast<u32>(fctidz(depth * c.depth_scale));
+    call(fn::cellGcmSetClearDepthStencil, gcm(), (z << 8) | stencil);
+    call(fn::cellGcmSetStencilMask, gcm(), stencil_mask);
+    call(fn::cellGcmSetClearSurface, gcm(), mask);
+    call(fn::cellGcmSetStencilMask, gcm(), rs().stencil_mask.get());
 }
 
-// f32* DrawItem_GetScale(const f32 m[3][4], f32 out[3])   (name?)
-// The lengths of the matrix's first three rows. Returns out (f1 the last
-// length; r5 / r6 left at out + 4 / + 8).
-DECOMP(00554484, DrawItem_GetScale) {
-    const u32 m = arg<u32>(ctx, 0), out = arg<u32>(ctx, 1);
-    f64 x = 0, z = 0, len = 0;
+// void DrawItem_GetScale(const f32 m[3][4], f32 out[3])   (name?)
+// The lengths of the matrix's first three rows.
+void DrawItem_GetScale(const be_f32* m, be_f32* out) {
     for (u32 i = 0; i < 3; ++i) {
-        const u32 row = m + 16 * i;
-        const f64 y = lfs(row + 4);
-        x = lfs(row);
-        z = lfs(row + 8);
-        len = sgl(std::sqrt(fmadds(z, z, fmadds(x, x, sgl(y * y)))));
-        stfs(out + 4 * i, len);
+        const be_f32* row = m + 4 * i;
+        const f32 y = row[1], x = row[0], z = row[2];
+        out[i] = std::sqrt(fmadds(z, z, fmadds(x, x, y * y)));
     }
-    ctx.gpr[3] = out;
-    ctx.gpr[5] = out + 4;
-    ctx.gpr[6] = out + 8;
-    ctx.fpr[1] = len;
-    ctx.fpr[2] = x;
-    ctx.fpr[3] = z;
 }
 
 // void View_ProjectSphere(const f32 sphere[4], const f32 m[4][4], const f32 proj[], f32* x0, f32* y0, f32* x1, f32* y1)   (name?)
@@ -76,92 +81,85 @@ DECOMP(00554484, DrawItem_GetScale) {
 // in vmaddfp order); for x and y the tangent planes through the eye give
 // the bounds in clip units (start -1 / 1, clamped there), with proj[0] /
 // proj[5] as the scales. The rect is returned in 0..1 screen units (y
-// flipped). Leaves f1 = *y1.
-DECOMP(00557A90, View_ProjectSphere) {
-    const u32 sphere = arg<u32>(ctx, 0), m = arg<u32>(ctx, 1) & ~15u, proj = arg<u32>(ctx, 2);
-    const f32 sx = load<f32>(sphere), sy = load<f32>(sphere + 4), sz = load<f32>(sphere + 8);
+// flipped).
+void View_ProjectSphere(const be_f32* sphere, const be_f32* matrix, const be_f32* proj, be_f32* out_x0, be_f32* out_y0,
+                        be_f32* out_x1, be_f32* out_y1) {
+    const be_f32* m = aligned16(matrix);  // lvx
+    const f32 sx = sphere[0], sy = sphere[1], sz = sphere[2];
     f32 p[4];
     for (u32 k = 0; k < 4; ++k) {
-        f32 v = std::fmaf(load<f32>(m + 4 * k), sx, 0.0f);
-        v = std::fmaf(load<f32>(m + 16 + 4 * k), sy, v);
-        v = std::fmaf(load<f32>(m + 32 + 4 * k), sz, v);
-        p[k] = load<f32>(m + 48 + 4 * k) + v;
+        f32 v = std::fmaf(m[k], sx, 0.0f);
+        v = std::fmaf(m[4 + k], sy, v);
+        v = std::fmaf(m[8 + k], sz, v);
+        p[k] = m[12 + k] + v;
     }
-    const f64 scale[2] = {lfs(proj), lfs(proj + 20)};
-    const u32 c = kSphereConsts;
-    f64 lo[2] = {-1.0, -1.0}, hi[2] = {1.0, 1.0};  // the stack slots, stored as -1.0f / 1.0f
-    const f64 r = lfs(sphere + 12);
-    const f64 nz = -static_cast<f64>(p[2]);
-    const f64 z2 = sgl(nz * nz);
+    const SphereConsts& c = sphere_consts();
+    const f32 scale[2] = {proj[0], proj[5]};
+    f32 lo[2] = {-1.0f, -1.0f}, hi[2] = {1.0f, 1.0f};  // stack slots, stored as -1.0f / 1.0f
+    const f32 r = sphere[3];
+    const f32 nz = -p[2];
+    const f32 z2 = nz * nz;
     for (u32 i = 0; i < 2; ++i) {
-        const f64 pi = p[i];
-        const f64 d2 = fmadds(pi, pi, z2);
-        const f64 t2 = fnmsubs(r, r, d2);  // d^2 - r^2
-        if (!(t2 > lfs(c + 8))) continue;
-        f64 t = sgl(std::sqrt(t2));
-        const f64 dz = sgl(d2 * nz);
-        f64 tp = sgl(t * pi);
-        t = sgl(t * nz);
-        f64 n0 = fnmsubs(r, nz, tp);
-        const f64 d0 = fmadds(r, pi, t);
-        if (dz > -sgl(r * n0)) {
-            n0 = sgl(n0 * scale[i]);
-            const f64 q = sgl(n0 / d0);
-            lo[i] = sgl(sp::sel_ge(sgl(lfs(c) - q), load<f64>(c + 16), q));
+        const f32 pi = p[i];
+        const f32 d2 = fmadds(pi, pi, z2);
+        const f32 t2 = fnmsubs(r, r, d2);  // d^2 - r^2
+        if (!(t2 > c.zero)) continue;
+        f32 t = std::sqrt(t2);
+        const f32 dz = d2 * nz;
+        f32 tp = t * pi;
+        t = t * nz;
+        f32 n0 = fnmsubs(r, nz, tp);
+        const f32 d0 = fmadds(r, pi, t);
+        if (dz > -(r * n0)) {
+            n0 = n0 * scale[i];
+            const f32 q = n0 / d0;
+            lo[i] = static_cast<f32>(fsel(c.neg_one - q, c.neg_one_d, q));
         }
         tp = fmadds(r, nz, tp);
-        const f64 d1 = fnmsubs(r, pi, t);
-        if (dz > sgl(r * tp)) {
-            const f64 q = sgl(sgl(tp * scale[i]) / d1);
-            hi[i] = sgl(sp::sel_ge(sgl(q - lfs(c + 4)), load<f64>(c + 24), q));
+        const f32 d1 = fnmsubs(r, pi, t);
+        if (dz > r * tp) {
+            const f32 q = (tp * scale[i]) / d1;
+            hi[i] = static_cast<f32>(fsel(q - c.one, c.one_d, q));
         }
     }
-    const f64 one = lfs(c + 4), half = lfs(c + 32), nhalf = lfs(c + 36);
-    const f64 x0 = sgl(sgl(lo[0] + one) * half);
-    const f64 y0 = sgl(sgl(hi[1] - one) * nhalf);
-    const f64 x1 = sgl(sgl(hi[0] + one) * half);
-    const f64 y1 = sgl(sgl(lo[1] - one) * nhalf);
-    stfs(arg<u32>(ctx, 3), x0);
-    stfs(arg<u32>(ctx, 4), y0);
-    stfs(arg<u32>(ctx, 5), x1);
-    stfs(arg<u32>(ctx, 6), y1);
-    ctx.fpr[1] = y1;
+    const f32 one = c.one, half = c.half, nhalf = c.neg_half;
+    *out_x0 = (lo[0] + one) * half;
+    *out_y0 = (hi[1] - one) * nhalf;
+    *out_x1 = (hi[0] + one) * half;
+    *out_y1 = (lo[1] - one) * nhalf;
 }
 
-// void MaterialAnim_SetState(Track* t, s32 state)   (name?)
+// void MaterialAnim_SetState(AnimTrack* t, s32 state)   (name?)
 // 0: a random delay in [+12, +16) (the previous random value times
 // 1/65535; the generator steps); 1: the hold time (+20) as the countdown;
 // 2: stopped. Other states only clear the phase (+44), which every state
 // clears.
-DECOMP(00501410, MaterialAnim_SetState) {
-    const u32 t = arg<u32>(ctx, 0);
-    const s32 state = arg<s32>(ctx, 1);
-    const u32 rnd = sp::g::anim_random;
+void MaterialAnim_SetState(AnimTrack* t, s32 state) {
+    AnimRandom& rnd = global<AnimRandom>(sly4::render::pool::g::anim_random);
     if (state == 0) {
-        const u64 prev = load<u64>(rnd);
-        const f64 lo = lfs(t + 12);
-        const f64 range = sgl(lfs(t + 16) - lo);
-        const u32 seed = load<u32>(rnd + 8);
+        const u64 prev = rnd.last;
+        const f32 lo = t->delay_lo;
+        const f32 range = t->delay_hi - lo;
+        const u32 seed = rnd.seed;
         const u32 x = (rotl32(seed, 4) + rotl32(seed, 16)) ^ 0x87654321u;
-        const f64 f = sgl(rt::fcfid(prev));
-        store<u32>(rnd + 8, rotl32(x, 16));
-        store<u64>(rnd, x & 0xFFFF);
-        const u32 w = load<u32>(t + 32) & ~kStateMask;  // rlwimi 0,12,19 with 0
-        const f64 scaled = sgl(f * lfs(kRandomScale));
-        store<u32>(t + 32, w);
-        stfs(t + 40, fmadds(range, scaled, lo));
+        const f32 f = static_cast<f32>(static_cast<s64>(prev));  // fcfid + frsp
+        rnd.seed = rotl32(x, 16);
+        rnd.last = x & 0xFFFF;
+        const u32 w = t->flags & ~kStateMask;
+        const f32 scaled = f * global<be_f32>(kRandomScale);
+        t->flags = w;
+        t->countdown = fmadds(range, scaled, lo);
     } else if (state == 1) {
-        const u32 w = load<u32>(t + 32);
-        sp::copy_word(t + 40, t + 20);
-        store<u32>(t + 32, (w & ~kStateMask) | (1u << 12));
+        const u32 w = t->flags;
+        *at<be_u32>(t, 40) = at<be_u32>(t, 20)->get();  // countdown = hold (raw word)
+        t->flags = (w & ~kStateMask) | (1u << 12);
     } else if (state == 2) {
-        store<u32>(t + 32, (load<u32>(t + 32) & ~kStateMask) | (2u << 12));
+        t->flags = (t->flags & ~kStateMask) | (2u << 12);
     }
-    store<u32>(t + 44, 0);
-    ctx.gpr[4] = 0;
+    *at<be_u32>(t, 44) = 0u;  // phase
 }
 
-// void MaterialAnim_Update(Track* t, f32 dt)   (name?)
+// void MaterialAnim_Update(AnimTrack* t, f32 dt)   (name?)
 // Mode 3 is frozen. State 0 counts the delay down and then runs; state 1
 // counts the hold time down (when there is one) and then re-enters the
 // delay with the overshoot added to dt, and animates the value: mode 0
@@ -169,78 +167,84 @@ DECOMP(00501410, MaterialAnim_SetState) {
 // as period * sin(2pi * phase / (period / rate)) (bit 28; a parabolic sine
 // approximation) or ping-pongs it between 0 and period - 1e-5 by flipping
 // the rate.
-DECOMP(00501520, MaterialAnim_Update) {
-    const u32 t = arg<u32>(ctx, 0);
-    f64 dt = farg(ctx, 0);
-    const u32 c = kAnimConsts;
-    u32 w = load<u32>(t + 32);
+void MaterialAnim_Update(AnimTrack* t, f32 dt) {
+    const AnimConsts& c = anim_consts();
+    u32 w = t->flags;
     if (((w >> 20) & 0xFF) == 3) return;  // rlwinm 12,24,31
     const u32 state = (w >> 12) & 0xFF;   // rlwinm 20,24,31
     if (state == 0) {
-        const f64 v = sgl(lfs(t + 40) - dt);
-        stfs(t + 40, v);
-        if (v <= lfs(c)) call(ctx, sp::fn::MaterialAnim_SetState, {t, 1});
+        const f32 v = t->countdown - dt;
+        t->countdown = v;
+        if (v <= c.zero) MaterialAnim_SetState(t, 1);
         return;
     }
     if (state != 1) return;
-    const f64 zero = lfs(c);
-    if (lfs(t + 20) > zero) {
-        const f64 v = sgl(lfs(t + 40) - dt);
-        stfs(t + 40, v);
+    const f32 zero = c.zero;
+    if (t->hold > zero) {
+        const f32 v = t->countdown - dt;
+        t->countdown = v;
         if (v <= zero) {
-            dt = sgl(dt + v);
-            call(ctx, sp::fn::MaterialAnim_SetState, {t, 0});
-            w = load<u32>(t + 32);
+            dt = dt + v;
+            MaterialAnim_SetState(t, 0);
+            w = t->flags;
         }
     }
     const u32 mode = (w >> 20) & 0xFF;
     if (mode == 0) {
-        f64 v = fmadds(lfs(t), dt, lfs(t + 36));
-        stfs(t + 36, v);
+        f32 v = fmadds(t->rate, dt, t->value);
+        t->value = v;
         if (v < zero) {
-            v = sgl(v + lfs(t + 8));
-            stfs(t + 36, v);
+            v = v + t->period;
+            t->value = v;
         }
-        const f64 period = lfs(t + 8);
-        if (v >= period) stfs(t + 36, sgl(v - period));
+        const f32 period = t->period;
+        if (v >= period) t->value = v - period;
         return;
     }
     if (mode != 1) return;
     if (((w >> 28) & 1) != 0) {  // rlwinm 4,31,31
-        const f64 period = lfs(t + 8);
-        const f64 cycle = sgl(period / lfs(t));
-        f64 phase = sgl(lfs(t + 44) + dt);
-        stfs(t + 44, phase);
+        const f32 period = t->period;
+        const f32 cycle = period / t->rate;
+        f32 phase = t->phase + dt;
+        t->phase = phase;
         if (phase > cycle) {
-            phase = sgl(phase - cycle);
-            stfs(t + 44, phase);
+            phase = phase - cycle;
+            t->phase = phase;
         }
-        const f64 two_pi = lfs(c + 4);
-        const f64 a = sgl(sgl(phase / cycle) * two_pi);
-        const f64 half = sgl(sp::sel_ge(a, load<f64>(c + 8), load<f64>(c + 16)));  // +-pi
-        f64 x = sgl(half + a);
-        const f64 turns = sgl(rt::fcfid(rt::fctid(sgl(x / two_pi), true)));
+        const f32 two_pi = c.two_pi;
+        const f32 a = (phase / cycle) * two_pi;
+        const f32 half = static_cast<f32>(fsel(a, c.pi, c.neg_pi));  // +-pi
+        f32 x = half + a;
+        const f32 turns = static_cast<f32>(static_cast<f64>(fctidz(x / two_pi)));  // fctidz, fcfid, frsp
         x = fnmsubs(turns, two_pi, x);
-        x = sgl(x - half);  // wrapped to [-pi, pi]
-        f64 y = sgl(sgl(x * lfs(c + 28)) * std::fabs(x));
-        y = fmadds(x, lfs(c + 24), y);
-        y = fmadds(fmsubs(y, std::fabs(y), y), lfs(c + 32), y);
-        stfs(t + 36, sgl(period * y));
+        x = x - half;  // wrapped to [-pi, pi]
+        f32 y = (x * c.c) * std::fabs(x);
+        y = fmadds(x, c.b, y);
+        y = fmadds(fmsubs(y, std::fabs(y), y), c.p, y);
+        t->value = period * y;
         return;
     }
-    const f64 rate = lfs(t);
-    f64 neg = rate;
-    f64 v = fmadds(rate, dt, lfs(t + 36));
-    stfs(t + 36, v);
+    const f32 rate = t->rate;
+    f32 neg = rate;
+    f32 v = fmadds(rate, dt, t->value);
+    t->value = v;
     if (v < zero) {
         neg = -neg;
         v = zero;
-        store<u32>(t + 36, 0);
-        stfs(t, neg);
+        *at<be_u32>(t, 36) = 0u;
+        t->rate = neg;
     }
-    const f64 period = lfs(t + 8);
+    const f32 period = t->period;
     if (v >= period) {
-        stfs(t, -neg);
-        stfs(t + 36, sgl(period - lfs(c + 36)));
+        t->rate = -neg;
+        t->value = period - c.eps;
     }
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(00531F80, sly4::gfx::Draw_Clear)
+NATIVE(00554484, sly4::gfx::DrawItem_GetScale)
+NATIVE(00557A90, sly4::gfx::View_ProjectSphere)
+NATIVE(00501410, sly4::gfx::MaterialAnim_SetState)
+NATIVE(00501520, sly4::gfx::MaterialAnim_Update)

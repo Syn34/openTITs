@@ -3,18 +3,15 @@
 // 576) and Video_Configure configures the output, the flip mode and the
 // two display buffers. See setup.h for the fields they fill.
 #include "setup.h"
+#include "rsx.h"
 
-using namespace sly4;
+namespace sly4::gfx {
 
 namespace {
 
 namespace vfn = sly4::vsetup::fn;
 namespace vimp = sly4::vsetup::imp;
 namespace vg = sly4::vsetup::g;
-
-constexpr u32 kStats = g::mem_stats;
-constexpr u32 kConfig = g::config;
-constexpr u32 kDisplay = 0x00F66FBC;  // AglRenderSurface*: the display (see display.h)
 
 constexpr u32 kStrNewline = 0x00AF31F4;    // "\n"
 constexpr u32 kStrMode = 0x00AF31FC;       // "Display mode %s "
@@ -27,98 +24,111 @@ constexpr u32 kRes720_3D = 129;  // CELL_VIDEO_OUT_RESOLUTION_720_3D_FRAME_PACKI
 constexpr u32 kRes720 = 2, kRes480 = 4, kRes576 = 5;
 constexpr u32 kAspectAuto = 0, kAspect16_9 = 2;
 
-s32 availability(PPUContext& ctx, u32 id, u32 aspect) {
-    return static_cast<s32>(call(ctx, vimp::cellVideoOutGetResolutionAvailability, {0, id, aspect, 0}));
+// {id, name} entries of the mode / aspect name tables.
+struct NameEntry {
+    be_s32 id;
+    be_u32 name;  // const char*
+};
+
+// CellVideoOutConfiguration.
+struct VideoOutConfig {
+    u8 resolution;  // +0
+    u8 format;      // +1
+    pad<10> _2;
+    be_u32 pitch;   // +12
+};
+
+s32 availability(u32 id, u32 aspect) {
+    return call<s32>(vimp::cellVideoOutGetResolutionAvailability, 0u, id, aspect, 0u);
 }
 
 // The "Display mode ... is available" report.
-void print_available(PPUContext& ctx, u32 id, u32 aspect) {
-    call(ctx, vfn::printf, {kStrNewline});
-    for (u32 i = 0; i < 24; ++i) {
-        const u32 e = vg::mode_names + 8 * i;
-        if (load<s32>(e) == static_cast<s32>(id)) call(ctx, vfn::printf, {kStrMode, load<u32>(e + 4)});
-    }
-    for (u32 i = 0; i < 3; ++i) {
-        const u32 e = vg::aspect_names + 8 * i;
-        if (load<s32>(e) == static_cast<s32>(aspect)) call(ctx, vfn::printf, {kStrAspect, load<u32>(e + 4)});
-    }
-    call(ctx, vfn::printf, {kStrAvailable});
+void print_available(u32 id, u32 aspect) {
+    call(vfn::printf, kStrNewline);
+    const NameEntry* modes = host<NameEntry>(vg::mode_names);
+    for (u32 i = 0; i < 24; ++i)
+        if (modes[i].id == static_cast<s32>(id)) call(vfn::printf, kStrMode, modes[i].name.get());
+    const NameEntry* aspects = host<NameEntry>(vg::aspect_names);
+    for (u32 i = 0; i < 3; ++i)
+        if (aspects[i].id == static_cast<s32>(aspect)) call(vfn::printf, kStrAspect, aspects[i].name.get());
+    call(vfn::printf, kStrAvailable);
 }
 
-s32 check(PPUContext& ctx, u32 id, u32 aspect) {
-    const s32 r = availability(ctx, id, aspect);
-    if (r == 1) print_available(ctx, id, aspect);
+s32 check(u32 id, u32 aspect) {
+    const s32 r = availability(id, aspect);
+    if (r == 1) print_available(id, aspect);
     return r;
 }
 
 // Width / height into config +4 / +6, 5% margins at +24 / +26, the size
 // inside them at +28 / +30 and +33 = aspect is not 4:3.
 void set_screen(u32 w, u32 h) {
+    Config& cfg = config();
     const s32 mx = static_cast<s32>(w * 5) / 100;
     const s32 my = static_cast<s32>(h * 5) / 100;
-    field<u16>(kConfig, 4) = static_cast<u16>(w);
-    field<u16>(kConfig, 6) = static_cast<u16>(h);
-    field<u16>(kConfig, 24) = static_cast<u16>(mx);
-    field<u16>(kConfig, 26) = static_cast<u16>(my);
-    field<u16>(kConfig, 28) = static_cast<u16>(w - 2 * static_cast<u32>(mx));
-    field<u16>(kConfig, 30) = static_cast<u16>(h - 2 * static_cast<u32>(my));
-    field<u8>(kConfig, 33) = field<u8>(kStats, 11) != 1 ? 1 : 0;
+    cfg.width = static_cast<u16>(w);
+    cfg.height = static_cast<u16>(h);
+    cfg.safe_x = static_cast<u16>(mx);
+    cfg.safe_y = static_cast<u16>(my);
+    cfg.safe_w = static_cast<u16>(w - 2 * static_cast<u32>(mx));
+    cfg.safe_h = static_cast<u16>(h - 2 * static_cast<u32>(my));
+    cfg.wide = mem_stats().aspect != 1 ? 1 : 0;
 }
 
 }  // namespace
 
-// f32 Video_SelectMode()
+// void Video_SelectMode()
 // 720p frame packing when the TV offers it and reports a screen size
 // (also sets config +35, 3D available); otherwise 720p 16:9, the current
 // video-out mode, 480 or 576. Stores both resolutions, the safe area and
-// the refresh rate. Returns 1.0f in r3 (what is left there).
-DECOMP(0052FD2C, Video_SelectMode) {
-    store<u32>(kStats + 28, 0);
-    store<u32>(kStats + 24, kRes720_3D);
+// the refresh rate.
+void Video_SelectMode() {
+    MemStats& ms = mem_stats();
+    Config& cfg = config();
+    ms.res_id = 0u;
+    ms.res3d_id = kRes720_3D;
     u32 id;
-    if (check(ctx, kRes720_3D, kAspect16_9) == 1 &&
-        static_cast<s32>(call(ctx, vimp::cellVideoOutGetScreenSize, {0, kStats + 160})) == 0) {
+    if (check(kRes720_3D, kAspect16_9) == 1 && call<s32>(vimp::cellVideoOutGetScreenSize, 0u, &ms.screen_size) == 0) {
         id = kRes720;
-        store<u32>(kStats + 28, id);
-        field<u8>(kConfig, 35) = 1;
-        store<u32>(kStats + 24, kRes720_3D);
-    } else if (check(ctx, kRes720, kAspect16_9) == 1) {
+        ms.res_id = id;
+        cfg.stereo_ok = 1;
+        ms.res3d_id = kRes720_3D;
+    } else if (check(kRes720, kAspect16_9) == 1) {
         id = kRes720;
-        store<u32>(kStats + 28, id);
+        ms.res_id = id;
     } else {
-        call(ctx, vimp::cellVideoOutGetState, {0, 0, kStats});
-        id = ref<u8>(kStats + 8);
-        store<u32>(kStats + 28, id);
+        call(vimp::cellVideoOutGetState, 0u, 0u, &ms);
+        id = ms.resolution;
+        ms.res_id = id;
         if (id == 0) {
             id = kRes480;
-            if (check(ctx, kRes480, kAspectAuto) != 1 && check(ctx, kRes576, kAspectAuto) == 1) id = kRes576;
-            store<u32>(kStats + 28, id);
+            if (check(kRes480, kAspectAuto) != 1 && check(kRes576, kAspectAuto) == 1) id = kRes576;
+            ms.res_id = id;
         }
     }
 
-    store<u32>(kStats + 16, 0);
-    call(ctx, vimp::cellVideoOutGetResolution, {id, kStats + 16});
-    call(ctx, vfn::printf, {kStr2D, load<u16>(kStats + 16), load<u16>(kStats + 18)});
-    store<u32>(kStats + 20, 0);
-    call(ctx, vimp::cellVideoOutGetResolution, {load<u32>(kStats + 24), kStats + 20});
-    call(ctx, vfn::printf, {kStr3D, load<u16>(kStats + 20), load<u16>(kStats + 22)});
+    *at<be_u32>(&ms, 16) = 0u;  // the 2D resolution, as one word
+    call(vimp::cellVideoOutGetResolution, id, &ms.res_w);
+    call(vfn::printf, kStr2D, static_cast<u32>(ms.res_w), static_cast<u32>(ms.res_h));
+    *at<be_u32>(&ms, 20) = 0u;  // the 3D resolution
+    call(vimp::cellVideoOutGetResolution, ms.res3d_id.get(), &ms.buffer_w);
+    call(vfn::printf, kStr3D, static_cast<u32>(ms.buffer_w), static_cast<u32>(ms.buffer_h));
 
-    const u32 w = load<u16>(kStats + 16), h = load<u16>(kStats + 18);
-    ref<u8>(kStats + 8) = static_cast<u8>(load<u32>(kStats + 28));
-    field<u16>(kConfig, 8) = 0;
-    field<u16>(kConfig, 10) = 0;
+    const u32 w = ms.res_w, h = ms.res_h;
+    ms.resolution = static_cast<u8>(ms.res_id);
+    cfg.unk8 = 0;
+    cfg.unk10 = 0;
     set_screen(w, h);
 
     u32 rate;
-    switch (load<u16>(kStats + 14)) {
+    switch (ms.refresh_rates) {
     case 8: rate = 0x41F00000; break;  // 30 Hz
     case 4: rate = 0x42700000; break;  // 60 Hz
     case 2: rate = 0x42480000; break;  // 50 Hz
     default: rate = 0x426FC28F; break; // 59.94 Hz
     }
-    field<u32>(kConfig, 20) = rate;
-    store<u32>(kStats + 56, 0x3F800000);  // 1.0f
-    ctx.gpr[3] = 0x3F800000;
+    cfg.refresh = as_f32(rate);
+    ms.one = 1.0f;
 }
 
 // bool Video_Configure(u8 resolution_id, bool unbind_tiles, bool rebind)
@@ -126,71 +136,73 @@ DECOMP(0052FD2C, Video_SelectMode) {
 // optionally drops the tile / zcull bindings and binds the display (or
 // 3D) colour targets again, sets h-sync flips and registers the two
 // display buffers. A front buffer of a new size updates the display size
-// and config screen fields. Sets display +137; 0 if configuring fails.
-DECOMP(005312E4, Video_Configure) {
-    const u8 mode = arg<u8>(ctx, 0);
-    const bool unbind = arg<u8>(ctx, 1) != 0, rebind = arg<u8>(ctx, 2) != 0;
-    const u32 d = load<u32>(kDisplay);
-    u32 front;
-    if (((load<u32>(d + 52) >> 25) & 1) == 0) front = d + 16;
-    else if (field<u8>(kConfig, 35) == 0 || field<u8>(kConfig, 34) == 0) front = (ref<u8>(d + 148) >> 7) != 0 ? d + 84 : d + 64;
-    else front = load<u32>(kStats + 184) == 1 ? d + 100 : d + 108;
+// and config screen fields. Sets display +137; false if configuring fails.
+bool Video_Configure(u8 mode, bool unbind, bool rebind) {
+    // The pointers below are not checked by the original (it reads guest page 0).
+    Display* d = or_zero_page(display());
+    MemStats& ms = mem_stats();
+    Config& cfg = config();
+    gp<Target>* front;
+    if (!per_eye(d)) front = &d->colour16[0];
+    else if (cfg.stereo_ok == 0 || cfg.stereo == 0) front = alternate(d) ? &d->alt_colour : &d->eye_colour[0];
+    else front = ms.buffer_select == 1 ? &d->eye_view[0] : &d->eye_view[2];
 
-    const u32 pitch = load<u32>(load<u32>(front) + 32);
-    call(ctx, vimp::cellGcmResetFlipStatus);
-    call(ctx, vfn::Gcm_Sub5E0E50, {load<u32>(vg::gcm_context)});
-    call(ctx, vfn::Gcm_Sub5E3B84, {load<u32>(vg::gcm_context), load<u32>(vg::frame_count)});
-    store<u32>(vg::frame_count, load<u32>(vg::frame_count) + 1);
+    const u32 pitch = or_zero_page(front->get())->pitch;
+    call(vimp::cellGcmResetFlipStatus);
+    be_u32& frames = global<be_u32>(vg::frame_count);
+    call(vfn::Gcm_Sub5E0E50, global<be_u32>(vg::gcm_context).get());
+    call(vfn::Gcm_Sub5E3B84, global<be_u32>(vg::gcm_context).get(), frames.get());
+    frames = frames + 1;
     {
-        Stack frame(ctx, 16);  // CellVideoOutConfiguration
-        const u32 cfg = frame.addr();
-        for (u32 i = 0; i < 16; i += 4) store<u32>(cfg + i, 0);
-        ref<u8>(cfg + 0) = mode;  // resolutionId
-        ref<u8>(cfg + 1) = 0;     // format
-        store<u32>(cfg + 12, pitch);
-        if (static_cast<s32>(call(ctx, vimp::cellVideoOutConfigure, {0, cfg, 0, 0})) != 0) {
-            ctx.gpr[3] = 0;
-            return;
-        }
+        GuestFrame f(16);
+        VideoOutConfig* vc = f.as<VideoOutConfig>();
+        for (u32 i = 0; i < 4; ++i) f.as<be_u32>()[i] = 0u;
+        vc->resolution = mode;
+        vc->format = 0;
+        vc->pitch = pitch;
+        if (call<s32>(vimp::cellVideoOutConfigure, 0u, vc, 0u, 0u) != 0) return false;
     }
-    if (unbind) call(ctx, vfn::Tiles_Unbind);
+    if (unbind) Tiles_Unbind();
 
     if (rebind) {
-        const u32 d2 = load<u32>(kDisplay);
-        const bool in_3d = field<u8>(kConfig, 34) != 0;
-        const u32 a = in_3d ? 92 : 64, b = in_3d ? 96 : 68, c = in_3d ? 116 : 72;
-        const u32 e = in_3d ? 128 : 76, f = in_3d ? 132 : 80;
-        call(ctx, vfn::Target_BindTile, {d2 + a, 0});
-        call(ctx, vfn::Target_BindTile, {d2 + b, 0});
-        call(ctx, vfn::Target_BindTile, {d2 + c, 1});
-        call(ctx, vfn::Target_BindZcull, {d2 + c});
-        if (static_cast<s32>((load<u32>(d2 + 52) >> 22) & 7) > 1) {
-            call(ctx, vfn::Target_BindTile, {d2 + e, 0});
-            call(ctx, vfn::Target_BindTile, {d2 + f, 1});
-            call(ctx, vfn::Target_BindZcull, {d2 + f});
+        Display* d2 = or_zero_page(display());
+        const bool in_3d = cfg.stereo != 0;
+        Target_BindTile(in_3d ? &d2->copy[0] : &d2->eye_colour[0], false);
+        Target_BindTile(in_3d ? &d2->copy[1] : &d2->eye_colour[1], false);
+        gp<Target>* depth = in_3d ? &d2->packed : &d2->eye_depth;
+        Target_BindTile(depth, true);
+        Target_BindZcull(depth);
+        if (static_cast<s32>((d2->flags >> 22) & 7) > 1) {
+            Target_BindTile(in_3d ? &d2->extra_view[0] : &d2->extra[0], false);
+            gp<Target>* depth2 = in_3d ? &d2->extra_view[1] : &d2->extra[1];
+            Target_BindTile(depth2, true);
+            Target_BindZcull(depth2);
         }
     }
 
-    call(ctx, vimp::cellGcmSetFlipMode, {2});  // CELL_GCM_DISPLAY_HSYNC
-    const u32 d3 = load<u32>(kDisplay);
-    const bool from_3d = field<u8>(kConfig, 35) != 0 && field<u8>(kConfig, 34) != 0;
-    u32 buffers[2];
-    buffers[0] = load<u32>(d3 + (from_3d ? 92 : 64));
-    buffers[1] = load<u32>(d3 + (from_3d ? 96 : 68));
+    call(vimp::cellGcmSetFlipMode, 2u);  // CELL_GCM_DISPLAY_HSYNC
+    Display* d3 = or_zero_page(display());
+    const bool from_3d = cfg.stereo_ok != 0 && cfg.stereo != 0;
+    Target* buffers[2] = {from_3d ? d3->copy[0] : d3->eye_colour[0], from_3d ? d3->copy[1] : d3->eye_colour[1]};
     for (u32 i = 0; i < 2; ++i) {
-        const u32 t = buffers[i];
-        call(ctx, vimp::cellGcmSetDisplayBuffer,
-             {i, load<u32>(t + 4) >> 1, load<u32>(t + 32), load<u16>(t + 36), load<u16>(t + 38)});
+        const Target* t = or_zero_page(buffers[i]);
+        call(vimp::cellGcmSetDisplayBuffer, i, t->offset_loc >> 1, t->pitch.get(), static_cast<u32>(t->width),
+             static_cast<u32>(t->height));
     }
 
-    const u32 shown = load<u32>(front);
-    const u32 d4 = load<u32>(kDisplay);
-    const u16 w = load<u16>(shown + 36), h = load<u16>(shown + 38);
-    if (field<u16>(kConfig, 4) != w || field<u16>(kConfig, 6) != h) {
-        store<u32>(d4 + 56, w);
-        store<u32>(d4 + 60, h);
+    const Target* shown = or_zero_page(front->get());
+    Display* d4 = or_zero_page(display());
+    const u16 w = shown->width, h = shown->height;
+    if (cfg.width != w || cfg.height != h) {
+        d4->width = w;
+        d4->height = h;
         set_screen(w, h);
     }
-    ref<u8>(d + 137) = 1;
-    ctx.gpr[3] = 1;
+    *at<u8>(d, 137) = 1;
+    return true;
 }
+
+}  // namespace sly4::gfx
+
+NATIVE(0052FD2C, sly4::gfx::Video_SelectMode)
+NATIVE(005312E4, sly4::gfx::Video_Configure)

@@ -28,13 +28,10 @@ constexpr u32 cellVideoOutGetScreenSize = 0x00ABE3C4;
 }  // namespace imp
 
 namespace fn {
-constexpr u32 Video_SelectMode = 0x0052FD2C;  // decompiled: src/gfx/setup.cpp (was Gfx_Init52FD2C)
-constexpr u32 Video_Configure = 0x005312E4;   // decompiled: src/gfx/setup.cpp (was Gfx_Init5312E4)
+constexpr u32 Video_SelectMode = 0x0052FD2C;  // native: src/gfx/setup.cpp (declared in rsx.h)
+constexpr u32 Video_Configure = 0x005312E4;   // native: src/gfx/setup.cpp (declared in rsx.h)
 // Still recompiled.
 constexpr u32 printf = 0x007240F4;
-constexpr u32 Target_BindTile = 0x0052F32C;   // (Target** slot, u32 flag) cellGcmSetTileInfo + cellGcmBindTile (name?)
-constexpr u32 Target_BindZcull = 0x00530998;  // (Target** slot) cellGcmBindZcull (name?)
-constexpr u32 Tiles_Unbind = 0x005311D8;   // () cellGcmUnbindTile / cellGcmUnbindZcull for the display targets (name?)
 constexpr u32 Gcm_Sub5E0E50 = 0x005E0E50;  // (context) libgcm? (unknown)
 constexpr u32 Gcm_Sub5E3B84 = 0x005E3B84;  // (context, frame count) libgcm? (unknown)
 }  // namespace fn

@@ -36,20 +36,20 @@ namespace pool {
 
 namespace fn {
 // Decompiled in pool*.cpp.
-constexpr u32 StencilShadow_AddCaps = 0x00526650;         // slot 0 (name?)
-constexpr u32 StencilShadow_AddCapsSkinned = 0x00526A84;  // slot 1 (name?)
-constexpr u32 StencilShadow_FaceSign = 0x00526960;        // (StencilShadow*, index, u16* indices, f32* positions, f32* light) (name?)
-constexpr u32 StencilShadow_Begin = 0x0054B3D8;           // slot 5 (name?)
-constexpr u32 StencilShadow_Build = 0x00526D98;           // slot 6 (name?)
-constexpr u32 StencilShadow_DrawVolume = 0x0054A998;      // slot 7 (name?)
-constexpr u32 StencilShadow_DrawQuad = 0x0054B6E0;        // slot 8 (name?)
-constexpr u32 Draw_InlineArray = 0x007A31CC;              // (mode, vertex count, data, VertexFormat*) (name?)
-constexpr u32 MaterialAnim_SetState = 0x00501410;         // (track*, state) (name?)
+constexpr u32 StencilShadow_AddCaps = 0x00526650;  // native (rsx.h) slot 0 (name?)
+constexpr u32 StencilShadow_AddCapsSkinned = 0x00526A84;  // native (rsx.h) slot 1 (name?)
+constexpr u32 StencilShadow_FaceSign = 0x00526960;  // native (rsx.h) (StencilShadow*, index, u16* indices, f32* positions, f32* light) (name?)
+constexpr u32 StencilShadow_Begin = 0x0054B3D8;  // native (rsx.h) slot 5 (name?)
+constexpr u32 StencilShadow_Build = 0x00526D98;  // native (rsx.h) slot 6 (name?)
+constexpr u32 StencilShadow_DrawVolume = 0x0054A998;  // native (rsx.h) slot 7 (name?)
+constexpr u32 StencilShadow_DrawQuad = 0x0054B6E0;  // native (rsx.h) slot 8 (name?)
+constexpr u32 Draw_InlineArray = 0x007A31CC;  // native (rsx.h) (mode, vertex count, data, VertexFormat*) (name?)
+constexpr u32 MaterialAnim_SetState = 0x00501410;  // native (rsx.h) (track*, state) (name?)
 // layers4.h's Draw_Clear, DrawItem_DrawDepth, DrawItem_GetScale,
 // View_ProjectSphere and MaterialAnim_Update are decompiled in pool.cpp /
 // pool_draw.cpp.
 // Still recompiled.
-constexpr u32 DrawItem_DrawDepthSkinned = 0x005382C0;  // (mesh, g::skin_table, DrawItem*, item+60, item+28, 0x40000000) (name?)
+constexpr u32 DrawItem_DrawDepthSkinned = 0x005382C0;  // native (rsx.h) (mesh, g::skin_table, DrawItem*, item+60, item+28, 0x40000000) (name?)
 constexpr u32 cellGcmSetDrawIndexArray = 0x005E4F64;   // (context, mode, count, type, location, offset)
 constexpr u32 cellGcmSetDrawArrays = 0x005E4D98;       // (context, mode, first, count) (name?)
 }  // namespace fn
@@ -93,19 +93,19 @@ constexpr u32 kBufferBaseVtable = 0x00B24110, kBufferVtable = 0x00B24120;
 constexpr u32 kEntries = 80, kEntrySize = 20, kCurrent = 160;
 constexpr u32 kReportMark = 30636, kReportIndex = 1914, kReportRing = 0x7F;
 namespace fn {
-constexpr u32 SlotBase_Destruct = 0x004FCC10;        // base vtable slot 0 (name?)
-constexpr u32 SlotBase_DestructInline = 0x004FCC20;  // the same, called by Slot_Delete (name?)
-constexpr u32 SlotBase_Delete = 0x005276C4;          // base vtable slot 1 (name?)
-constexpr u32 Slot_Destruct = 0x0079C404;            // slot 0 (name?)
-constexpr u32 Slot_Delete = 0x007A395C;              // slot 1 (name?)
-constexpr u32 Slot_Issue = 0x00548694;               // slot 2 (name?)
-constexpr u32 Slot_GetResult = 0x00548848;           // slot 3 (Slot*, u32 out[2], u32 frames back) -> done (name?)
-constexpr u32 BufferBase_Destruct = 0x007A39B4;      // vtable 0x00B24110 slot 0 (name?)
-constexpr u32 BufferBase_Delete = 0x007A39C4;        // slot 1 (name?)
-constexpr u32 Buffer_Destruct = 0x007A3A08;          // vtable 0x00B24120 slot 0 (name?)
-constexpr u32 Buffer_Delete = 0x007A3A60;            // slot 1 (name?)
+constexpr u32 SlotBase_Destruct = 0x004FCC10;  // native (rsx.h) base vtable slot 0 (name?)
+constexpr u32 SlotBase_DestructInline = 0x004FCC20;  // native (rsx.h) the same, called by Slot_Delete (name?)
+constexpr u32 SlotBase_Delete = 0x005276C4;  // native (rsx.h) base vtable slot 1 (name?)
+constexpr u32 Slot_Destruct = 0x0079C404;  // native (rsx.h) slot 0 (name?)
+constexpr u32 Slot_Delete = 0x007A395C;  // native (rsx.h) slot 1 (name?)
+constexpr u32 Slot_Issue = 0x00548694;  // native (rsx.h) slot 2 (name?)
+constexpr u32 Slot_GetResult = 0x00548848;  // native (rsx.h) slot 3 (Slot*, u32 out[2], u32 frames back) -> done (name?)
+constexpr u32 BufferBase_Destruct = 0x007A39B4;  // native (rsx.h) vtable 0x00B24110 slot 0 (name?)
+constexpr u32 BufferBase_Delete = 0x007A39C4;  // native (rsx.h) slot 1 (name?)
+constexpr u32 Buffer_Destruct = 0x007A3A08;  // native (rsx.h) vtable 0x00B24120 slot 0 (name?)
+constexpr u32 Buffer_Delete = 0x007A3A60;  // native (rsx.h) slot 1 (name?)
 // Still recompiled.
-constexpr u32 Slot_DrawProxy = 0x00527708;           // (Slot*) the geometry each query pass draws (name?)
+constexpr u32 Slot_DrawProxy = 0x00527708;  // native (rsx.h) (Slot*) the geometry each query pass draws (name?)
 constexpr u32 cellGcmSetClearReport = 0x005E3248;    // (context, type) (name?)
 constexpr u32 cellGcmSetReport = 0x005E32D8;         // (context, type, index) (name?)
 }  // namespace fn

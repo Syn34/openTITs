@@ -8,9 +8,9 @@
 namespace sly4::shgroup {
 
 namespace fn {
-constexpr u32 Shader_LoadGroup = 0x0050F0F0;   // decompiled: src/gfx/shadergroup.cpp
-constexpr u32 Shader_FindByHash = 0x004FE990;  // decompiled: src/gfx/shadergroup.cpp
-constexpr u32 Material_Alloc = 0x004FF2E8;     // decompiled: src/gfx/shadergroup.cpp
+constexpr u32 Shader_LoadGroup = 0x0050F0F0;   // native: src/gfx/shadergroup.cpp
+constexpr u32 Shader_FindByHash = 0x004FE990;  // native: src/gfx/shadergroup.cpp
+constexpr u32 Material_Alloc = 0x004FF2E8;     // native: src/gfx/shadergroup.cpp
 // Still recompiled.
 constexpr u32 Material_Construct = 0x004FF0D8;  // (AglMaterial*) (name?)
 constexpr u32 PtrVector_Construct = 0x005516E0;

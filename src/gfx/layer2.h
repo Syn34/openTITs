@@ -14,7 +14,7 @@ namespace sly4::render {
 namespace layer2 {
 
 namespace fn {
-constexpr u32 Material_Bind = 0x0079CD0C;  // (Material*, Shader*) (name?)
+constexpr u32 Material_Bind = 0x0079CD0C;  // native (rsx.h) (Material*, Shader*) (name?)
 constexpr u32 memmove = 0x0071C3F0;
 }  // namespace fn
 

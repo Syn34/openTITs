@@ -9,7 +9,6 @@ namespace {
 constexpr u32 vp_warp = 0x01151A04, fp_warp = 0x01151A08;  // PostProc_Warp
 constexpr u32 Mat4_Ortho = 0x0056A358;                     // (f32[16]*, left, right, bottom, top, near, far) (name?)
 constexpr u32 cellGcmSetDrawIndexArray = 0x005E4F64;       // (context, mode, count, type, location, offset) (name?)
-constexpr u32 kVertexFormat0 = 0x00041740, kVertexOffset0 = 0x00041680;
 constexpr u32 kTriangleStrip = 6;
 
 struct GpuBuffer {

@@ -28,10 +28,10 @@ namespace draw3 {
 
 namespace fn {
 // Still recompiled.
-constexpr u32 MaterialAnim_UploadUV = 0x0050D124;  // (anim block or 0, u32 first constant, f32 su [f1], f32 sv [f2]) 2 vertex constants (name?)
-constexpr u32 FProgram_SetConstant = 0x0052F270;   // (u32 index, const f32 v[4]) into the current fragment program, marking it dirty on change (name?)
-constexpr u32 Draw_SetParticleState = 0x0050CF50;  // (0, bool, 32); also called by the SAC_* Draw slots (unknown, name?)
-constexpr u32 SlyCharacter2_Bind = 0x005BD298;     // shader vtable 0x00B25958 slot 8 (name?)
+constexpr u32 MaterialAnim_UploadUV = 0x0050D124;  // native (rsx.h) (anim block or 0, u32 first constant, f32 su [f1], f32 sv [f2]) 2 vertex constants (name?)
+constexpr u32 FProgram_SetConstant = 0x0052F270;  // native (rsx.h) (u32 index, const f32 v[4]) into the current fragment program, marking it dirty on change (name?)
+constexpr u32 Draw_SetParticleState = 0x0050CF50;  // native (rsx.h) (0, bool, 32); also called by the SAC_* Draw slots (unknown, name?)
+constexpr u32 SlyCharacter2_Bind = 0x005BD298;  // native (rsx.h) shader vtable 0x00B25958 slot 8 (name?)
 }  // namespace fn
 
 namespace g {
