@@ -8119,7 +8119,7 @@
 00933DF8 Hk_RigidBodyCtor933DF8               // (RigidBody*, const Cinfo*, 0x0132DBDC) (Havok; name?)
 00899720 Hk_BoxShapeCtor899720                // (BoxShape*, const Vector4* halfExtents; f32 radius) (Havok; name?)
 0091FB50 Hk_ShapeCinfoCtor91FB50              // (ShapeCinfo*) (Havok; name?)
-0091E100 Hk_ShapeCtor91E100                   // (Shape*, const ShapeCinfo*) (Havok; name?)
+0091E100 Hk_RigidBodyCtor_0091E100        // (hkpRigidBody*, const hkpRigidBodyCinfo*) (currently Hk_ShapeCtor91E100; 544-byte object) (name?)
 008807E8 Hk_BodyAttach8807E8                  // (body +120 object) (Havok; name?)
 0094059C Hk_WorldLock94059C                   // (*0x00F64C94) (Havok; name?)
 00802E08 Hk_Load802E08                        // (Stream*, Result*, {0,0,0} by value in r5/r6) -> object (name?)
@@ -12625,7 +12625,7 @@
 001CE094 Obj_UpdateContacts1CE094           // (Obj* o): 001CCF40(o, o+853, o+854) unless o->854 and vfn[32](0) in 2..4; edge of +853 -> vfn[420](2|6, 0), vfn[28](1,1), vfn[28](2,0); else edge of +854 (while +853) -> vfn[420](2|6, 0); decompiled: src/obj/mid19_b.cpp
 00F64738 g_ProjNameCounter_00F64738         // u32 running counter for "EntityCompWeapon_Proj_%i" (Obj_SpawnDef0EDE30) (name?)
 00B12CB8 VtSpawnQueryProj_00B12CB8          // vtable of the projectile spawn query (Obj_SpawnDef0EDE30) (name?)
-0030E1E0 Anim_PickState_0030E1E0          // (not done: released; vmaddfp/vperm matrix path + string append loop, ~2x the others)
+0030E1E0 Anim_PickState_0030E1E0          // s32 (Ctl* c): animation controller script step (command kinds 0..7), next state; decompiled: src/obj/big27_animstate.cpp
 003CF0F8 Obj_State1_003CF0F8                // (Obj*; f32 dt): state 1 of Obj_StateTick3CF648 (VMX; vmx agent) (name?)
 00F557F4 g_NodeGraph_00F557F4               // Graph*: +4 -> u16 +2 node count, +12 20-byte nodes (Walker_Step1574C) (name?)
 00F557F0 g_AvoidList_00F557F0               // List*: +24 count, +3732 entry pointers (Obj_ResetBase12928) (name?)
@@ -13446,7 +13446,7 @@
 001AC1E8 Obj1AC1E8_Ctor                    // (m, rec): 448-byte object ctor from a Record_Init_000E44E0 record (via 001AC38C) (name?)
 002F6578 Obj2F6578_Ctor                    // (m, rec): 1136-byte object ctor from a Record_Init_000E44E0 record (via 002F7BC4) (name?)
 00305A44 Obj305A44_Ctor                    // (m, rec): 1088-byte object ctor from a Record_Init_000E44E0 record (via 003072A8) (name?)
-001F85F0 ColObj_Ctor1F85F0                 // (m, const Rec256* d): 304-byte collision object ctor (via 001F9BA0) (name?)
+001F85F0 ColObj_Ctor1F85F0                // (ColObj* o, const Rec256* d) -> body: 304-byte collision object ctor; rigid body from the named physics object d->+160 or a box of half extents o+192; decompiled: src/obj/big27_colobj.cpp
 0077C760 NodeRef_AcquireExisting           // (h, a, h->+0, h; f1): the already-bound path of NodeRef_Acquire_0077CBE0 (name?)
 00F2FAF8 OPD_FindChildByName               // .opd of the WorldObj_ForEach callback used by 0008546C ({name, result} record) (name?)
 00F3A028 OPD_SortedTblCmpU32               // .opd of the default u32-key row comparator recognised by SortedTbl_Find_00789A1C (name?)
@@ -13480,3 +13480,16 @@
 000749C0 AnimCmd_ApplyDefValues_000749C0  // u32 f(Cmd* c, Effect* x): target (flag 0x8) def +216 values -> kind-2 components c->+20/24/28 (+20 = def +1464/68/72), kind-3 c->+32/36 (+32 vec = def +1488/+1504); decompiled: src/obj/mid28_c.cpp
 00096F40 AnimCmd_BindSkeleton_00096F40    // u32 f(Cmd* c, Effect* x): target animator +160 vt[44](a, skeleton c->+20 via Effect_Bind4BB7E0 or map *0x00F8F12C->+16) when bone-count fields match; kind-16 entries Comp_SetLook287318(e, 0); decompiled: src/obj/mid28_c.cpp
 0006C800 AnimCmd_SetTrackTime_0006C800    // u32 f(Cmd* c, Effect* x): track c->+24 time (c->+20 or kind-1 comp vt20) on the linked object's animator (Anim_SetTrackTime_00276A20 / _000DC550) or the component's anim (Obj_SetF32Via_00354150, x Track_Length when relative); decompiled: src/obj/mid28_c.cpp
+
+# Game code big sweep part 27
+00278830 Obj_AddCollider_00278830         // u32 (Obj* o, const ShapeDesc*, const HitRec*, const Mat44*, u32 bone, a5, a6): 512-byte Havok collider (vt 0x00B1D370) on a bone into o->+144[count]; decompiled: src/obj/big27_collider.cpp
+00278000 Obj_UpdateColliders_00278000     // u32 (Obj* o, -, const Mat44* frm, const ShapeDesc* desc; f32 t): reshape / re-frame o's colliders, cast each to its new transform; 1 on any hit; decompiled: src/obj/big27_collider.cpp
+003A9EF8 Obj_LaunchHeld_003A9EF8          // u32 (T* o): detach o->+368 from o->+372, aim it, linear + random angular velocity, push {body, piece}; decompiled: src/obj/big27_launch.cpp
+0030A900 Obj_DropMarker_0030A900          // u32 (T* o, const Src*, const f32 pos[3], u8 separate, u8 alt): 144-byte ground marker (separation, ray cast, SmallAlloc) pushed on o+52; decompiled: src/obj/big27_marker.cpp
+009265D4 Hk_ColliderCtor_009265D4         // (body, hkpShape*, const hkTransform* rows, u32 filter) (name?)
+0030BE48 AnimCtl_Play_0030BE48            // (player, anim, -, -, const f32* params, const Mat44* at, u8; f1, f2): reads r3 r4 r7 r8 r9 f1 f2 (name?)
+003087C0 Marker_Init_003087C0             // (Marker*, const f32 pos[3]) (name?)
+003081C8 Marker_SetState_003081C8         // (Marker*, u32 state) (name?)
+0106A3FC g_MarkerId                       // u32 running marker id (0030A900)
+0105B8C0 g_ColliderFlags                  // +72: bit 1 colliders on, bits 2 / 4 filter options (00278830)
+011DF31C g_HkHeap                         // Havok heap allocator object; vfn[20](p, bytes) frees (00278000)
