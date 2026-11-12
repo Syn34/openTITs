@@ -13830,3 +13830,21 @@
 00277210 Actor_SayPair_00277210           // bool f(Actor* o, text1, text2, -, -, -, key1, key2, u8 rev, -, -, wsel, voice1, voice2 (stk); f1..f5): two synced lines, node2 sign = len2 / (weight * len1); decompiled: src/obj/mid32_c.cpp
 00F360B8 FtdRecord_CompareOpd             // OPD of the 16-byte FTD record compare used with qsort by 002EAE24 (data)
 0105AE90 g_SpeechFixedRate                // u8: when set, Actor_Say uses the fixed rate constants 0x00276EB8 / 0x00277208 (data, name?)
+
+# Game code big sweep part 32
+00210D80 Area_EmitPoint_00210D80          // f32 f(Area* a, f32 p[3] in/out, f32* weight, f32* spread): sphere (+428 == 0) / box (== 3) sound area nearest point; weight = 1 clamped, spread 360 or atanf(r/d)*4 deg / (1-f)^3*360, +608 = falloff; decompiled: src/obj/big32_area.cpp
+002D02E0 Sensor_WedgeHasGrab_002D02E0     // bool f(Sensor* s): phantom +120 AABB = 30-degree wedge 8 units in front of owner +8, Hk_SetAabb924B90, then any overlapped shape with property 0x418F096F; decompiled: src/obj/big32_wedge.cpp
+0044DED8 Body_RefitBox_0044DED8           // void f(Body* b, const f32 box[2][4], f32 ext[2][4]): ext = +-old half extents; new 48-byte hkpBoxShape (Hk alloc) for the box, re-centred SetPos, remove / swap shape / re-add; decompiled: src/obj/big32_boxbody.cpp
+004ABC28 Shape_ApplyForce_004ABC28        // void f(Obj* o, const hkpShape* s, const hkTransform* xf): shape-type (u8 +8) dispatch of a body force, recursing over containers / transform shapes; decompiled: src/obj/big32_shapeforce.cpp
+000EB420 Obj_SweepTurnToMove_000EB420     // u32 f(Obj* o, const f32 m[4][4], const Vec3* p, f32 out[4][4], u8 turn): out = m at p via Hk_SweepToPoint_004A41C0, then forward turned toward the move (divisor 0x01021CD0 clamped 1..1000), rebuilt + Matrix_NormalizeInPlace; decompiled: src/obj/big32_sweepface.cpp
+0046D5C8 AudioMenu_Refresh_0046D5C8       // void f(Settings* s, Screen* scr): audio options menu: four volume slider ticks (s+4156..4168) and Format / CenterSpeakerSize / DynamicRange texts (u8 s+4152..4154); decompiled: src/obj/big32_audiomenu.cpp
+005E67D4 Atanf5E67D4                      // atanf: f1 -> f1 (wraps _Atan)
+0085F1F0 Body_ShapeChanged85F1F0          // (body + 16) after a body's shape is swapped (name?)
+004AA010 ShapeForce_Type3_4AA010          // (o, shape, xf): force handler for shape type 3 (name?; skipped, 302 instrs)
+004AAC60 ShapeForce_Type4_4AAC60          // (o, shape, xf): force handler for shape type 4 (name?)
+004AA4D0 ShapeForce_Type5A_4AA4D0         // (o, shape, xf): type 5 handler when o +56 > 0 (name?)
+004A9800 ShapeForce_Type5B_4A9800         // (o, shape, xf): type 5 handler otherwise (name?)
+007D16D0 Mat_RotateVec7D16D0              // (f32 out[4], const hkTransform* m, const f32 v[4]): rows 0..2 of m scaled by v.x/y/z, summed (VMX, all 4 lanes)
+010BC0D0 g_TickMinX                       // f32: audio slider tick x at volume 0 (data)
+010BC080 g_TickMaxX                       // f32: audio slider tick x at volume 1 (data)
+01021CD0 g_TurnDivisor                    // f32: Obj_SweepTurnToMove_000EB420 turn divisor (data)
